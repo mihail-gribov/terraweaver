@@ -1,0 +1,376 @@
+"""The world as the agent sees it: query and write entities without touching storage.
+
+`ensure()` is the important one — it's the single entry point for "record this
+entity", and it never silently guesses. If the incoming data plausibly refers to
+something already in the world but isn't certain, or contradicts what's stored, it
+returns a NeedsResolution naming the skill the agent must run instead of picking.
+"""
+from typing import Any
+
+from terraweaver import matching, ontology, resolution, timeutil
+from terraweaver.comments import Comments
+from terraweaver.resolution import (
+    SKILL_KINDS,
+    NeedsResolution,
+    ResolutionRequired,
+    ambiguous_identity,
+    contradicting_value,
+    looks_existing,
+)
+
+
+class NotInWorld(LookupError):
+    """get() found nothing: the entity the host meant isn't in the world."""
+
+
+class World:
+    def __init__(self, store, classes: dict[str, type]):
+        self.store = store
+        self.classes = classes
+        self.resolutions: list[dict] = []
+        self.pending: NeedsResolution | None = None
+        self.comments = Comments(store, classes)
+        # Enforce the consistency checks at the object model itself, not just at ensure():
+        # otherwise `person.organization = other` quietly bypasses every check.
+        ontology.set_write_guard(self._guard_write)
+        # Lets `Person.find(...)` reach this world without each class carrying a store.
+        ontology.set_world(self)
+
+    def _guard_write(self, instance, attr: str, existing, incoming) -> None:
+        if matching.label(existing) == matching.label(incoming):
+            return
+        needs = contradicting_value(instance, attr, existing, incoming)
+        self.pending = needs
+        raise ResolutionRequired(needs)
+
+    # --- who the conversation is between ---
+
+    @property
+    def me(self):
+        """The assistant itself."""
+        agents = self.store.load_all("Agent", self.classes)
+        return agents[0] if agents else None
+
+    @property
+    def owner(self):
+        """The person whose world this is."""
+        me = self.me
+        return me.owner if me is not None else None
+
+    # --- queries ---
+
+    DEFAULT_LIMIT = 50
+
+    def all(self, cls, limit: int | None = DEFAULT_LIMIT, history: bool = False) -> list:
+        """Entities of a class, most recently worked with first.
+
+        Limited by default: a personal world grows without bound, and an unbounded dump is
+        both useless to read and a way to flood whatever consumes it. Note that `all` does
+        not count as working with anything — it's a sweep, not attention, so it leaves the
+        access times alone. Otherwise one listing would flatten the very signal the ordering
+        is built on.
+
+        Only what holds now — history=True gives everything, ended and not yet started too.
+        """
+        ontology.note_world_call("world_queries")
+        instances = self.store.load_all(self._name(cls), self.classes)
+        if not history:
+            moment = timeutil.now()
+            instances = [e for e in instances if timeutil.in_period(
+                getattr(e, "valid_from", None), getattr(e, "valid_until", None), moment)]
+        instances.sort(key=lambda e: e.accessed_at, reverse=True)
+        return instances[:limit] if limit else instances
+
+    def find(self, cls, history: bool = False, **attrs):
+        """Entities matching the given attributes, split into matches and resemblances.
+
+        A lookup *by name* that isn't settled returns a NeedsResolution instead: several
+        people answer to that name, or nothing matches it and only resemblances turned up.
+        Handing back ranked candidates there would reopen the door this design closes —
+        `Person.find(full_name="Annie")[0]` silently picks a fuzzy match, which is exactly the
+        guess the user is supposed to make.
+        """
+        ontology.note_world_call("world_queries")
+        class_name = self._name(cls)
+        scored = matching.score_candidates(self.all(cls, limit=None, history=history),
+                                           class_name, attrs, filter_others=True)
+        # Relevance first; between equally good matches, whoever was dealt with most recently.
+        scored.sort(key=lambda pair: (-pair[1], -pair[0].accessed_at.timestamp()))
+        name_key = matching.NAME_KEYS.get(class_name)
+        looked_up_by_name = name_key in attrs and not any(
+            key in attrs for key in matching.STRONG_KEYS.get(class_name, [])
+        )
+        certain = [inst for inst, score in scored if score >= matching.CERTAIN]
+        similar = [inst for inst, score in scored if score < matching.CERTAIN]
+
+        if looked_up_by_name and scored and len(certain) != 1:
+            needs = ambiguous_identity(class_name, attrs, certain or similar, exact=bool(certain))
+            self.pending = needs
+            return needs
+        return matching.FindResult(certain, similar)
+
+    def resolve_reference(self, cls, **attrs):
+        """Identify the entity a task refers to, before any code runs.
+
+        Returns the instance only when the match is certain. A single *fuzzy* match is
+        deliberately not good enough — "5 Annies" and "probably this one Annie" are the same
+        problem, and both go to the user. Returns None when the world has no candidate.
+        """
+        ontology.note_world_call("world_queries")
+        class_name = self._name(cls)
+        # Identity is timeless: an ended or not-yet-started entity is still the same one.
+        scored = matching.score_candidates(self.all(cls, limit=None, history=True), class_name, attrs)
+        certain = [inst for inst, score in scored if score >= matching.CERTAIN]
+        if len(certain) == 1:
+            return self._determined(certain[0])
+        if scored:
+            candidates = certain if len(certain) > 1 else [inst for inst, _ in scored]
+            needs = ambiguous_identity(class_name, attrs, candidates)
+            self.pending = needs
+            return needs
+        return None
+
+    # --- writes ---
+
+    def get(self, cls, **attrs):
+        """The existing entity these attributes pick out. Never creates anything."""
+        class_name = self._name(cls)
+        if not attrs:
+            raise ValueError(f"say which one: {class_name}.get(<what the user said about it>)")
+        # Identity is timeless: the one meant may have ended or not started yet.
+        result = self.find(cls, history=True, **attrs)
+        if isinstance(result, NeedsResolution):
+            return result
+        if len(result.main) == 1:
+            entity = self._determined(result.main[0])
+            ontology.note_found(entity)
+            return entity
+        if result.main or result.similar:
+            needs = ambiguous_identity(class_name, attrs, result.main or result.similar, exact=bool(result.main))
+            self.pending = needs
+            return needs
+        described = ", ".join(f"{k}={v.label() if isinstance(v, ontology.Entity) else v}" for k, v in attrs.items())
+        raise NotInWorld(
+            f"no {class_name} with {described} in the world. If the user is telling you about a new "
+            f"one, record it with {class_name}.new(...); if you meant an existing one, look it up differently."
+        )
+
+    def new(self, cls, starts=None, until=None, ttl=None, permanent: bool = False, **attrs):
+        """Create what the host says is new — asking first if its twin is already here."""
+        ontology.note_world_call("world_writes")
+        class_name = self._name(cls)
+        period = _period(starts, until, ttl, permanent)
+        scored = matching.score_candidates(self.all(cls, limit=None, history=True), class_name, attrs)
+        twins = [inst for inst, score in scored if score >= matching.CERTAIN]
+        if twins:
+            needs = looks_existing(class_name, attrs, twins)
+            needs.context["period"] = period
+            self.pending = needs
+            return needs
+        created = self.create(class_name, attrs)
+        if period:
+            self.apply_period(created, period)
+        return created
+
+    def ensure(self, cls, starts=None, until=None, ttl=None, permanent: bool = False, **attrs):
+        """Return the entity these attributes describe, creating it if it's genuinely new.
+
+        Returns a NeedsResolution instead when the case needs the user to settle it. A period
+        (starts / until / ttl / permanent), if given, applies to whichever entity it turns out
+        to be — also once the user has settled which one.
+        """
+        ontology.note_world_call("world_writes")
+        class_name = self._name(cls)
+        period = _period(starts, until, ttl, permanent)
+        # Identity is timeless: matching sees every entity of the class, ended ones included,
+        # and all of them — the 50 most recent aren't enough to rule out a duplicate.
+        scored = matching.score_candidates(self.all(cls, limit=None, history=True), class_name, attrs)
+
+        certain = [inst for inst, score in scored if score >= matching.CERTAIN]
+        if len(certain) == 1:
+            outcome = self._apply_or_flag(self._determined(certain[0]), attrs)
+        elif len(certain) > 1:
+            outcome = ambiguous_identity(class_name, attrs, certain)
+        elif scored:
+            outcome = ambiguous_identity(class_name, attrs, [inst for inst, _ in scored])
+        else:
+            outcome = self.create(class_name, attrs)
+        if isinstance(outcome, NeedsResolution):
+            outcome.context["period"] = period
+        elif period:
+            self.apply_period(outcome, period)
+        return outcome
+
+    def set_period(self, instance, starts=None, until=None, ttl=None, permanent: bool = False) -> None:
+        period = _period(starts, until, ttl, permanent)
+        if not period:
+            raise ValueError("say when it holds: starts=..., until=... / ttl=..., or permanent=True")
+        self.apply_period(instance, period)
+
+    def apply_period(self, instance, period: dict) -> None:
+        ontology.note_world_call("world_writes")
+        with ontology.trusted_writes():
+            for attr, value in period.items():
+                setattr(instance, attr, value)
+        self.store.save_graph(instance)
+
+    def create(self, class_name: str, attrs: dict):
+        ontology.note_world_call("world_writes")
+        instance = self.classes[class_name](**attrs)
+        self.store.save_graph(instance)
+        return instance  # brand new, so created_at and accessed_at already coincide
+
+    def apply_attrs(self, instance, attrs: dict):
+        """Set attributes that aren't set yet; conflicting ones are the caller's problem."""
+        ontology.note_world_call("world_writes")
+        with ontology.trusted_writes():
+            for attr, value in attrs.items():
+                if getattr(instance, attr, None) is None:
+                    setattr(instance, attr, value)
+        instance.touch()
+        self.store.save_graph(instance)
+        return instance
+
+    def apply_resolved(self, instance, attr: str, value) -> None:
+        """Write a value the user has explicitly settled on — the guard steps aside for this."""
+        with ontology.trusted_writes():
+            setattr(instance, attr, value)
+        self.pending = None
+        self.store.save_graph(instance)
+
+    def save(self, instance) -> None:
+        ontology.note_world_call("world_writes")
+        instance.touch()
+        self.store.save_graph(instance)
+
+    def _determined(self, instance):
+        """Mark an entity as one we are now working with, and persist that.
+
+        Only a *determined* identity counts — an entity picked out as unambiguously this
+        one. Turning up among search candidates doesn't: a search is looking for someone,
+        not working with them, and counting it would make "who we've been dealing with"
+        mean nothing.
+        """
+        ontology.note_world_call("world_writes")
+        instance.touch()
+        if instance.id is not None:
+            self.store.save(instance)
+        return instance
+
+    def settle(self, needs: NeedsResolution, choice=None, *, new: bool = False):
+        """Apply the user's answer to a NeedsResolution.
+
+        `choice` is the entity the user meant — one of `needs.candidates` — or, for a
+        contradiction, the value that is right. `new=True` says it's someone/something new.
+        An option number still works, but naming the entity is what the user actually said,
+        and it can't silently point at the wrong row. None means the user didn't settle it:
+        the case stays unresolved and the world isn't touched.
+        """
+        return resolution.run_skill(needs, lambda question, options: _option_index(needs, choice, new), self)
+
+    def log_resolution(self, needs: NeedsResolution, choice: int | None, status: str) -> None:
+        self.resolutions.append({
+            "skill": needs.skill,
+            "kind": SKILL_KINDS.get(needs.skill, needs.skill),
+            "status": status,
+            "reason": needs.reason,
+            "question": needs.question,
+            "options": needs.options,
+            "chosen": needs.options[choice] if choice is not None else None,
+        })
+
+    # --- internals ---
+
+    def _apply_or_flag(self, instance, attrs: dict):
+        conflicts = matching.contradictions(instance, attrs)
+        if conflicts:
+            attr, existing, incoming = conflicts[0]
+            return contradicting_value(instance, attr, existing, incoming)
+        return self.apply_attrs(instance, attrs)
+
+    @staticmethod
+    def _name(cls) -> str:
+        return cls if isinstance(cls, str) else cls.__name__
+
+
+def _period(starts, until, ttl, permanent: bool) -> dict:
+    """The validity attributes a caller asked for; empty if they said nothing about time."""
+    period = {}
+    begin = timeutil.check_start(starts)
+    if begin is not None:
+        period["valid_from"] = begin
+    end = timeutil.period_end(until, ttl, permanent, base=begin)
+    if end is not timeutil.NO_END_GIVEN:
+        period["valid_until"] = end
+    return period
+
+
+def _option_index(needs: NeedsResolution, choice, new: bool) -> int | None:
+    """Turn what the user said into the option it stands for."""
+    if new:
+        if needs.skill != "resolve_ambiguity":
+            raise ValueError("new=True only answers 'which one?' — this question is about a contradicting value")
+        return len(needs.options) - 1  # the last option is always "someone new"
+    if choice is None or isinstance(choice, bool):
+        return None
+    if isinstance(choice, int):
+        return choice
+    if needs.skill == "resolve_ambiguity":
+        for index, candidate in enumerate(needs.candidates):
+            if candidate is choice or (isinstance(choice, ontology.Entity) and candidate == choice):
+                return index
+        raise ValueError(
+            f"{matching.label(choice)} is not one of the candidates: "
+            + "; ".join(matching.label(c) for c in needs.candidates) + ". Pass one of them, or new=True."
+        )
+    # A contradiction: the user names the value that is right.
+    for index, value in enumerate((needs.context["incoming"], needs.context["existing"])):
+        if choice is value or choice == value or matching.label(choice) == matching.label(value):
+            return index
+    raise ValueError(
+        f"{matching.label(choice)} is neither the stored value ({matching.label(needs.context['existing'])}) "
+        f"nor the new one ({matching.label(needs.context['incoming'])})"
+    )
+
+
+def describe_world_api() -> str:
+    """The part of the prompt that tells the agent how to touch the world."""
+    return """\
+Before you answer anything or change anything, be certain WHICH entities are involved.
+An answer built on the wrong Annie is worse than no answer, and it's not yours to guess:
+- If this conversation has already settled who is meant, use that entity — don't look it
+  up again and don't ask again.
+- Otherwise look it up. If what comes back is a NeedsResolution — several people match, or
+  one matches only loosely — stop and settle it with the user before doing anything else:
+
+      result = Person.find(full_name="Annie")
+      if isinstance(result, NeedsResolution):
+          anna = run_skill(result)          # asks the user, returns the settled entity
+
+- Only once every entity is unambiguous and nothing contradicts what's stored do you carry
+  out the task. Never do half the work and ask afterwards.
+
+World access (the object `world` is in your namespace; it hides all storage details):
+- Record anything the user tells you with Class.ensure(...) — never construct Person(...)
+  directly for it, or you'll create a second copy of someone who already exists.
+  Pass the user's own wording verbatim: do not transliterate, translate, correct or otherwise
+  normalize a name before passing it in ("Ada Lovelase" stays "Ada Lovelase"). Deciding that two
+  spellings mean the same person is not yours to make — matching is done for you, and anything
+  it can't settle goes to the user. Rewriting the name first hides the ambiguity and risks
+  silently merging two different people.
+- When the user says something changed ("now works at X"), pass the NEW value to
+  world.ensure(...) — that's what surfaces the contradiction with what's stored.
+- Assigning straight to an attribute of an entity the world already knows (person.organization
+  = other) raises ResolutionRequired whenever the new value contradicts what's stored. That is
+  not an error to work around — settle it and continue:
+
+      person = run_skill(world.pending)   # runs the named skill, asks the user, applies the answer
+- world.ensure(...) may return a NeedsResolution instead of an entity. That means the situation
+  is genuinely ambiguous or contradicts what's stored, and it is NOT yours to guess: it names
+  the skill that must run to settle it with the user. Handle it exactly like this:
+
+      result = world.ensure(Person, full_name="Ada")
+      if isinstance(result, NeedsResolution):
+          result = run_skill(result)   # asks the user, returns the settled entity
+      report(result)
+"""

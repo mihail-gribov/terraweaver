@@ -1,0 +1,78 @@
+{
+  "name": "Project",
+  "description": "A goal-directed effort the user is running or tracking — personal, professional, or a job/apartment search treated as a project.",
+  "attributes": [
+    {
+      "name": "name",
+      "type": "str",
+      "required": true,
+      "description": "Project name."
+    },
+    {
+      "name": "description",
+      "type": "str",
+      "required": false,
+      "description": "What this project is about."
+    },
+    {
+      "name": "status",
+      "type": "enum[active, paused, done]",
+      "required": true,
+      "description": "Current lifecycle state.",
+      "default": "active"
+    },
+    {
+      "name": "owner",
+      "type": "ref:Person",
+      "required": false,
+      "description": "Person responsible, usually the user."
+    },
+    {
+      "name": "participants",
+      "type": "list[ref:Person]",
+      "required": false,
+      "description": "Other people involved."
+    },
+    {
+      "name": "start_date",
+      "type": "datetime",
+      "required": false,
+      "description": "When the project started."
+    },
+    {
+      "name": "deadline",
+      "type": "datetime",
+      "required": false,
+      "description": "Target completion date, if any."
+    },
+    {
+      "name": "tags",
+      "type": "list[str]",
+      "required": false,
+      "description": "Free-form labels."
+    },
+    {
+      "name": "related_to",
+      "type": "list[ref:any]",
+      "required": false,
+      "description": "What this project covers — the vacancies, events and notes that belong to it."
+    }
+  ],
+  "methods": [
+    {
+      "name": "add_participant",
+      "signature": "add_participant(person: Person) -> None",
+      "description": "Add a person to `participants`."
+    },
+    {
+      "name": "add_note",
+      "signature": "add_note(text: str) -> Idea",
+      "description": "Create an Idea/Note linked to this project."
+    },
+    {
+      "name": "mark_done",
+      "signature": "mark_done() -> None",
+      "description": "Set status to 'done'."
+    }
+  ]
+}

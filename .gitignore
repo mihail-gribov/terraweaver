@@ -1,0 +1,10 @@
+.env
+__pycache__/
+*.pyc
+.venv/
+experiments/results/
+terraweaver.db
+data/perqa/raw/
+worlds/*.db
+.terraweaver-token
+data/memops/raw/

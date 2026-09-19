@@ -1,0 +1,107 @@
+"""A session: the namespace plus a described registry of everything in it.
+
+The namespace persists across tasks (Jupyter-kernel style), and every binding in it
+carries a description — resolved entities, pre-loaded collections, and whatever the
+agent's own code leaves behind. Together they are the structure of the current
+situation: what has already been established and what the next task can build on.
+
+Descriptions are derived by the harness rather than asked of the model, so the
+registry stays accurate even when the model doesn't volunteer one.
+"""
+import time
+from typing import Any
+
+from terraweaver.ontology import Entity
+
+
+class Session:
+    def __init__(self, classes: dict[str, type], seed: dict[str, Any] | None = None, world=None):
+        self.classes = classes
+        self.namespace: dict[str, Any] = dict(classes)
+        self.variables: dict[str, dict] = {}
+        # Names the harness puts in the namespace besides the classes (helpers, modules); they
+        # aren't the agent's variables and aren't reported as such.
+        self.preset: set[str] = set()
+        self.last_used = time.time()
+        # World variables currently injected; they're shared, not this session's own.
+        self.world_vars: set[str] = set()
+
+        for name, value in (seed or {}).items():
+            self.bind(name, value, "pre-loaded data")
+        if world is not None:
+            self.namespace["world"] = world
+            # Every conversation has these two, so they're always to hand.
+            if world.me is not None:
+                self.bind("me", world.me, "you — the assistant")
+            if world.owner is not None:
+                self.bind("owner", world.owner, "the person you're talking to")
+
+    def bind(self, name: str, value: Any, kind: str) -> None:
+        self.namespace[name] = value
+        self.variables[name] = {"kind": kind, "description": self.describe(value), "at": time.time()}
+
+    def sync(self) -> list[str]:
+        """Pick up bindings the agent's code left behind. Returns the newly seen names."""
+        ignored = set(self.classes) | {"report", "world", "run_skill", "NeedsResolution"} | self.preset | self.world_vars
+        new_names = []
+        for name, value in list(self.namespace.items()):
+            if name.startswith("_") or name in ignored or callable(value) or type(value).__module__ == "builtins" and callable(value):
+                continue
+            described = self.describe(value)
+            if name not in self.variables:
+                self.variables[name] = {"kind": "created while solving", "description": described, "at": time.time()}
+                new_names.append(name)
+            else:
+                self.variables[name]["description"] = described
+        return new_names
+
+    def describe(self, value: Any) -> str:
+        if isinstance(value, Entity):
+            return _describe_instance(value)
+        if isinstance(value, list):
+            if value and isinstance(value[0], Entity):
+                return f"list[{type(value[0]).__name__}] ({len(value)} items)"
+            return f"list ({len(value)} items)"
+        if isinstance(value, dict):
+            return f"dict ({len(value)} keys)"
+        text = repr(value)
+        return f"{type(value).__name__} = {text if len(text) <= 60 else text[:57] + '...'}"
+
+    def describe_for_prompt(self) -> str:
+        if not self.variables:
+            return ""
+        lines = ["\nIn your namespace right now (already established — build on these, don't redo them):"]
+        for name, info in self.variables.items():
+            lines.append(f"- {name}: {info['description']}  [{info['kind']}{_age(info.get('at'))}]")
+        return "\n".join(lines) + "\n"
+
+
+def _age(at: float | None) -> str:
+    """How long ago a variable appeared — an old one may belong to an earlier task."""
+    if at is None:
+        return ""
+    minutes = int((time.time() - at) // 60)
+    return f", {minutes} min ago" if minutes >= 1 else ""
+
+
+def _describe_instance(instance) -> str:
+    parts = [type(instance).__name__]
+    for attr in ("full_name", "name", "title"):
+        value = getattr(instance, attr, None)
+        if isinstance(value, str) and value:
+            parts.append(f"«{value}»")
+            break
+    extras = []
+    for attr in ("email", "organization", "status"):
+        value = getattr(instance, attr, None)
+        if value is None:
+            continue
+        label = None
+        if isinstance(value, Entity):
+            for name_attr in ("full_name", "name", "title"):
+                candidate = getattr(value, name_attr, None)
+                if isinstance(candidate, str):
+                    label = candidate
+                    break
+        extras.append(f"{attr}={label if label is not None else value}")
+    return " ".join(parts) + (f" ({', '.join(extras)})" if extras else "")

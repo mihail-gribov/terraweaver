@@ -1,0 +1,50 @@
+{
+  "name": "Preference",
+  "description": "A fact or preference about a subject (usually the user) — 'likes Python', 'allergic to peanuts', 'wants remote-only jobs'.",
+  "attributes": [
+    {
+      "name": "subject",
+      "type": "ref:Person",
+      "required": true,
+      "description": "Who this fact is about.",
+      "inverse": "Person.facts"
+    },
+    {
+      "name": "predicate",
+      "type": "str",
+      "required": true,
+      "description": "The relation, e.g. 'likes', 'dislikes', 'allergic_to', 'wants'."
+    },
+    {
+      "name": "value",
+      "type": "str",
+      "required": true,
+      "description": "The object of the relation."
+    },
+    {
+      "name": "confidence",
+      "type": "float",
+      "required": false,
+      "description": "0..1 confidence that this fact is accurate/current.",
+      "default": 1.0
+    },
+    {
+      "name": "source",
+      "type": "str",
+      "required": false,
+      "description": "Where this fact came from (e.g. 'user said', 'inferred')."
+    }
+  ],
+  "methods": [
+    {
+      "name": "update_value",
+      "signature": "update_value(new_value: str) -> None",
+      "description": "Replace `value`, e.g. when the user's preference changes."
+    },
+    {
+      "name": "confirm",
+      "signature": "confirm() -> None",
+      "description": "Set confidence to 1.0, e.g. after the user explicitly confirms it."
+    }
+  ]
+}

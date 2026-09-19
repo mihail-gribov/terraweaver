@@ -1,0 +1,37 @@
+{
+  "name": "Idea",
+  "description": "A free-form note, thought, or piece of information the user wants captured — not yet structured into its own entity.",
+  "attributes": [
+    {
+      "name": "title",
+      "type": "str",
+      "required": true,
+      "description": "Short label."
+    },
+    {
+      "name": "content",
+      "type": "str",
+      "required": true,
+      "description": "The note text."
+    },
+    {
+      "name": "tags",
+      "type": "list[str]",
+      "required": false,
+      "description": "Free-form labels."
+    },
+    {
+      "name": "related_to",
+      "type": "list[ref:any]",
+      "required": false,
+      "description": "Other entities this note relates to (any class)."
+    }
+  ],
+  "methods": [
+    {
+      "name": "link_to",
+      "signature": "link_to(entity) -> None",
+      "description": "Append an entity reference to `related_to`."
+    }
+  ]
+}

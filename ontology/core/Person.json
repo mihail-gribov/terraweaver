@@ -1,0 +1,96 @@
+{
+  "name": "Person",
+  "description": "A human being known to the user — themself, family, friends, colleagues, contacts.",
+  "attributes": [
+    {
+      "name": "full_name",
+      "type": "str",
+      "required": true,
+      "description": "Display name."
+    },
+    {
+      "name": "aliases",
+      "type": "list[str]",
+      "required": false,
+      "description": "Alternative names/nicknames used to refer to this person."
+    },
+    {
+      "name": "email",
+      "type": "email",
+      "required": false,
+      "description": "Primary email address."
+    },
+    {
+      "name": "phone",
+      "type": "phone",
+      "required": false,
+      "description": "Primary phone number."
+    },
+    {
+      "name": "organization",
+      "type": "ref:Organization",
+      "required": false,
+      "description": "Current employer or primary affiliation.",
+      "inverse": "Organization.employees"
+    },
+    {
+      "name": "relationship",
+      "type": "str",
+      "required": false,
+      "description": "What they are to the user — friend, colleague, recruiter, former manager."
+    },
+    {
+      "name": "job_title",
+      "type": "str",
+      "required": false,
+      "description": "What they do where they work."
+    },
+    {
+      "name": "location",
+      "type": "ref:Place",
+      "required": false,
+      "description": "Where this person is based."
+    },
+    {
+      "name": "assistant",
+      "type": "ref:Agent",
+      "required": false,
+      "description": "The assistant that looks after this person's world, if they have one."
+    },
+    {
+      "name": "facts",
+      "type": "list[ref:Preference]",
+      "required": false,
+      "description": "Facts/preferences recorded about this person."
+    },
+    {
+      "name": "tags",
+      "type": "list[str]",
+      "required": false,
+      "description": "Free-form labels for grouping/filtering."
+    },
+    {
+      "name": "notes",
+      "type": "str",
+      "required": false,
+      "description": "Free-text notes."
+    }
+  ],
+  "methods": [
+    {
+      "name": "send_email",
+      "signature": "send_email(subject: str, body: str) -> bool",
+      "description": "Send an email to this person's `email`. Requires `email` to be set."
+    },
+    {
+      "name": "add_fact",
+      "signature": "add_fact(predicate: str, value: str, confidence: float = 1.0) -> Preference",
+      "description": "Record a Preference/Fact instance about this person and link it via `subject`."
+    },
+    {
+      "name": "research",
+      "signature": "research() -> None",
+      "description": "Ground/enrich this person's attributes via live search (Tavily) when little is known about them."
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "name": "Place",
+  "description": "A physical location — home, office, venue, city, or a candidate listing's address.",
+  "attributes": [
+    {"name": "name", "type": "str", "required": true, "description": "Display name (e.g. 'Home', 'Acme HQ', or a venue name)."},
+    {"name": "address", "type": "str", "required": false, "description": "Street address."},
+    {"name": "city", "type": "str", "required": false, "description": "City."},
+    {"name": "country", "type": "str", "required": false, "description": "Country."},
+    {"name": "coordinates", "type": "dict", "required": false, "description": "{'lat': float, 'lon': float}."},
+    {"name": "category", "type": "enum[home, work, venue, listing, other]", "required": false, "description": "What kind of place this is."}
+  ],
+  "methods": [
+    {"name": "distance_to", "signature": "distance_to(other: Place) -> float", "description": "Approximate distance in km to another Place, based on coordinates."}
+  ]
+}

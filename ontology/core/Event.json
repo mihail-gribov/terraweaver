@@ -1,0 +1,79 @@
+{
+  "name": "Event",
+  "description": "A scheduled happening — meeting, interview, trip leg, appointment.",
+  "attributes": [
+    {
+      "name": "title",
+      "type": "str",
+      "required": true,
+      "description": "Short label for the event."
+    },
+    {
+      "name": "kind",
+      "type": "enum[interview, call, meeting, appointment, other]",
+      "required": false,
+      "description": "What kind of event this is. Recorded rather than inferred from the title — 'Интервью в DataWorks' and 'Собес в DW' are the same kind of thing.",
+      "default": "other"
+    },
+    {
+      "name": "about",
+      "type": "ref:any",
+      "required": false,
+      "description": "What the event concerns — the vacancy being interviewed for, the company being talked to, the project being discussed."
+    },
+    {
+      "name": "start_time",
+      "type": "datetime",
+      "required": true,
+      "description": "When the event starts."
+    },
+    {
+      "name": "end_time",
+      "type": "datetime",
+      "required": false,
+      "description": "When the event ends."
+    },
+    {
+      "name": "location",
+      "type": "ref:Place",
+      "required": false,
+      "description": "Where the event happens."
+    },
+    {
+      "name": "participants",
+      "type": "list[ref:Person]",
+      "required": false,
+      "description": "People involved."
+    },
+    {
+      "name": "status",
+      "type": "enum[planned, confirmed, cancelled]",
+      "required": true,
+      "description": "Current state.",
+      "default": "planned"
+    },
+    {
+      "name": "notes",
+      "type": "str",
+      "required": false,
+      "description": "Free-text notes."
+    }
+  ],
+  "methods": [
+    {
+      "name": "cancel",
+      "signature": "cancel() -> None",
+      "description": "Set status to 'cancelled'."
+    },
+    {
+      "name": "reschedule",
+      "signature": "reschedule(new_start: datetime, new_end: datetime = None) -> None",
+      "description": "Update start_time/end_time."
+    },
+    {
+      "name": "add_participant",
+      "signature": "add_participant(person: Person) -> None",
+      "description": "Add a person to `participants`."
+    }
+  ]
+}

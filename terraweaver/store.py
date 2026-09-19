@@ -1,0 +1,214 @@
+"""SQLite-backed generic instance store (EAV).
+
+Schema-as-data: an `instances` row per object (id, class_name) and one `values_`
+row per attribute, JSON-encoded. This is deliberate — renaming/adding/removing an
+attribute later is a data operation (update/insert/delete rows), not an ALTER TABLE,
+which is what makes the class-refactoring operations from the spec tractable on top
+of this store. References to other instances are encoded as {"$ref": id} /
+{"$refs": [id, ...]} and resolved on load with a memo dict so reference cycles
+(e.g. Person.organization <-> Organization.employees) don't recurse forever.
+"""
+import json
+import sqlite3
+import uuid
+from contextlib import contextmanager
+from datetime import datetime
+from typing import Any
+
+from terraweaver import ontology
+
+SCHEMA = """
+CREATE TABLE IF NOT EXISTS instances (
+    id TEXT PRIMARY KEY,
+    class_name TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS values_ (
+    instance_id TEXT NOT NULL,
+    attr TEXT NOT NULL,
+    value TEXT,
+    PRIMARY KEY (instance_id, attr)
+);
+CREATE INDEX IF NOT EXISTS idx_instances_class ON instances(class_name);
+"""
+
+
+def _is_instance(obj) -> bool:
+    return isinstance(obj, ontology.Entity)
+
+
+def _encode(value: Any) -> str:
+    if isinstance(value, datetime):
+        return json.dumps({"$dt": value.isoformat()})
+    if _is_instance(value):
+        return json.dumps({"$ref": value.id})
+    if isinstance(value, list) and value and all(_is_instance(v) for v in value):
+        return json.dumps({"$refs": [v.id for v in value]})
+    return json.dumps(value)
+
+
+def _decode(raw: str) -> tuple[str, Any]:
+    data = json.loads(raw)
+    if isinstance(data, dict) and set(data) == {"$dt"}:
+        return "dt", data["$dt"]
+    if isinstance(data, dict) and set(data) == {"$ref"}:
+        return "ref", data["$ref"]
+    if isinstance(data, dict) and set(data) == {"$refs"}:
+        return "refs", data["$refs"]
+    return "plain", data
+
+
+class Store:
+    def __init__(self, path: str = "terraweaver.db"):
+        self.conn = sqlite3.connect(path)
+        self.conn.executescript(SCHEMA)
+        self.conn.commit()
+        # One row, one object. Without this the same entity can exist twice in memory, and
+        # a stale copy saved later silently overwrites a fresh change made through the other
+        # — which is how a settled contradiction quietly reverted itself.
+        self._identity: dict[str, Any] = {}
+        # State of the outermost open transaction: nesting depth and the instances that
+        # received their id inside it.
+        self._tx_depth = 0
+        self._tx_new_ids: list = []
+
+    @contextmanager
+    def transaction(self):
+        """All writes inside land together or not at all.
+
+        A subgraph is only consistent as a whole — a person saved without the company whose
+        employees list now names them is a half-link. Nested calls join the outermost one.
+        On failure the database and freshly assigned ids are rolled back, and the identity map
+        is dropped: objects in it may carry changes that never reached the database, so the
+        next load must come from storage. Objects the caller still holds are stale then.
+        """
+        if self._tx_depth:
+            self._tx_depth += 1
+            try:
+                yield
+            finally:
+                self._tx_depth -= 1
+            return
+        self._tx_depth = 1
+        self._tx_new_ids = []
+        try:
+            yield
+            self.conn.commit()
+        except BaseException:
+            self.conn.rollback()
+            self._identity = {}
+            for obj in self._tx_new_ids:
+                obj.id = None
+            raise
+        finally:
+            self._tx_depth = 0
+            self._tx_new_ids = []
+
+    def _assign_id(self, instance) -> None:
+        if instance.id is None:
+            instance.id = uuid.uuid4().hex
+            self._tx_new_ids.append(instance)
+
+    def save(self, instance) -> str:
+        with self.transaction():
+            self._assign_id(instance)
+            self._identity[instance.id] = instance
+            class_name = type(instance).__name__
+            self.conn.execute(
+                "INSERT OR REPLACE INTO instances (id, class_name) VALUES (?, ?)",
+                (instance.id, class_name),
+            )
+            names = [a["name"] for a in instance._spec["attributes"]]
+            names += [a for a in ontology.MANAGED_VALUE_ATTRS if a not in names]
+            for name in names:
+                self.conn.execute(
+                    "INSERT OR REPLACE INTO values_ (instance_id, attr, value) VALUES (?, ?, ?)",
+                    (instance.id, name, _encode(getattr(instance, name, None))),
+                )
+        return instance.id
+
+    def save_all(self, instances) -> None:
+        with self.transaction():
+            for inst in instances:
+                self.save(inst)
+
+    def save_graph(self, instance, _seen: set[int] | None = None) -> None:
+        """Save an instance plus everything it references, so no ref dangles."""
+        _seen = _seen if _seen is not None else set()
+        graph: list = []
+        self._collect(instance, set(), graph)
+        with self.transaction():
+            # Ids must exist across the whole graph *before* anything is serialized, otherwise
+            # a ref to a not-yet-saved instance would be written as {"$ref": null}.
+            for obj in graph:
+                self._assign_id(obj)
+            for obj in graph:
+                if id(obj) not in _seen:
+                    _seen.add(id(obj))
+                    self.save(obj)
+
+    def _collect(self, instance, visited: set[int], out: list) -> None:
+        if id(instance) in visited:
+            return
+        visited.add(id(instance))
+        out.append(instance)
+        for attr in instance._spec["attributes"]:
+            value = getattr(instance, attr["name"], None)
+            if _is_instance(value):
+                self._collect(value, visited, out)
+            elif isinstance(value, list):
+                for item in value:
+                    if _is_instance(item):
+                        self._collect(item, visited, out)
+
+    def clear_all(self) -> None:
+        with self.transaction():
+            self.conn.execute("DELETE FROM values_")
+            self.conn.execute("DELETE FROM instances")
+            # Remarks hang off instances by id; a rebuilt world must not inherit old ones.
+            if self.conn.execute("SELECT 1 FROM sqlite_master WHERE name = 'comments'").fetchone():
+                self.conn.execute("DELETE FROM comments")
+            self._identity.clear()
+
+    def clear(self, class_name: str) -> None:
+        with self.transaction():
+            ids = [r[0] for r in self.conn.execute("SELECT id FROM instances WHERE class_name = ?", (class_name,))]
+            for instance_id in ids:
+                self.conn.execute("DELETE FROM values_ WHERE instance_id = ?", (instance_id,))
+            self.conn.execute("DELETE FROM instances WHERE class_name = ?", (class_name,))
+            for instance_id in ids:
+                self._identity.pop(instance_id, None)
+
+    def load(self, instance_id: str, classes: dict[str, type]):
+        """One instance by id, through the identity map."""
+        return self._load(instance_id, classes)
+
+    def load_all(self, class_name: str, classes: dict[str, type]) -> list:
+        ids = [r[0] for r in self.conn.execute("SELECT id FROM instances WHERE class_name = ?", (class_name,))]
+        return [self._load(instance_id, classes, self._identity) for instance_id in ids]
+
+    def _load(self, instance_id: str, classes: dict[str, type], memo: dict[str, Any] | None = None):
+        memo = self._identity if memo is None else memo
+        if instance_id in memo:
+            return memo[instance_id]
+        row = self.conn.execute("SELECT class_name FROM instances WHERE id = ?", (instance_id,)).fetchone()
+        if row is None:
+            raise KeyError(f"no instance with id {instance_id!r}")
+        cls = classes[row[0]]
+        obj = object.__new__(cls)  # bypass __init__: cyclic refs must register in memo before being filled in
+        # Loading is machinery, not a user-driven change: no guard, and nothing to record.
+        with ontology.trusted_writes(), ontology.not_recording():
+            obj.id = instance_id
+            memo[instance_id] = obj
+            for attr_name, raw in self.conn.execute(
+                "SELECT attr, value FROM values_ WHERE instance_id = ?", (instance_id,)
+            ):
+                kind, payload = _decode(raw)
+                if kind == "dt":
+                    setattr(obj, attr_name, datetime.fromisoformat(payload))
+                elif kind == "ref":
+                    setattr(obj, attr_name, self._load(payload, classes, memo))
+                elif kind == "refs":
+                    setattr(obj, attr_name, [self._load(i, classes, memo) for i in payload])
+                else:
+                    setattr(obj, attr_name, payload)
+        return obj

@@ -1,0 +1,105 @@
+{
+  "name": "Vacancy",
+  "description": "A job opening at an Organization, tracked as part of a job search.",
+  "attributes": [
+    {
+      "name": "title",
+      "type": "str",
+      "required": true,
+      "description": "Job title."
+    },
+    {
+      "name": "organization",
+      "type": "ref:Organization",
+      "required": true,
+      "description": "Company offering the job."
+    },
+    {
+      "name": "contact",
+      "type": "ref:Person",
+      "required": false,
+      "description": "The person handling this opening — recruiter, hiring manager, referrer."
+    },
+    {
+      "name": "location",
+      "type": "ref:Place",
+      "required": false,
+      "description": "Where the job is based."
+    },
+    {
+      "name": "remote",
+      "type": "bool",
+      "required": false,
+      "description": "Whether the job can be done remotely.",
+      "default": false
+    },
+    {
+      "name": "salary_min",
+      "type": "float",
+      "required": false,
+      "description": "Lower bound of the salary range."
+    },
+    {
+      "name": "salary_max",
+      "type": "float",
+      "required": false,
+      "description": "Upper bound of the salary range."
+    },
+    {
+      "name": "currency",
+      "type": "str",
+      "required": false,
+      "description": "Salary currency.",
+      "default": "USD"
+    },
+    {
+      "name": "stack",
+      "type": "list[str]",
+      "required": false,
+      "description": "Technologies/skills required."
+    },
+    {
+      "name": "requirements",
+      "type": "str",
+      "required": false,
+      "description": "Free-text requirements."
+    },
+    {
+      "name": "status",
+      "type": "enum[not_applied, applied, interviewing, rejected, offer]",
+      "required": true,
+      "description": "Where the user stands with this vacancy.",
+      "default": "not_applied"
+    },
+    {
+      "name": "applied_at",
+      "type": "datetime",
+      "required": false,
+      "description": "When the application was sent. Status alone says where things stand, not when."
+    },
+    {
+      "name": "url",
+      "type": "url",
+      "required": false,
+      "description": "Listing URL."
+    },
+    {
+      "name": "posted_at",
+      "type": "datetime",
+      "required": false,
+      "description": "When the listing was posted."
+    }
+  ],
+  "methods": [
+    {
+      "name": "apply",
+      "signature": "apply() -> None",
+      "description": "Mark this vacancy as applied (sets status to 'applied')."
+    },
+    {
+      "name": "matches_stack",
+      "signature": "matches_stack(skills: list[str]) -> float",
+      "description": "Fraction (0..1) of the given skills that appear in this vacancy's stack."
+    }
+  ]
+}

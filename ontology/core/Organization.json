@@ -1,0 +1,67 @@
+{
+  "name": "Organization",
+  "description": "A company or institution — employer, vendor, target company, etc.",
+  "attributes": [
+    {
+      "name": "name",
+      "type": "str",
+      "required": true,
+      "description": "Organization name."
+    },
+    {
+      "name": "aliases",
+      "type": "list[str]",
+      "required": false,
+      "description": "Other names it goes by — short forms, transliterations, former names."
+    },
+    {
+      "name": "website",
+      "type": "url",
+      "required": false,
+      "description": "Primary website URL.",
+      "level": "site"
+    },
+    {
+      "name": "industry",
+      "type": "str",
+      "required": false,
+      "description": "Industry/sector."
+    },
+    {
+      "name": "location",
+      "type": "ref:Place",
+      "required": false,
+      "description": "Headquarters or main location."
+    },
+    {
+      "name": "employees",
+      "type": "list[ref:Person]",
+      "required": false,
+      "description": "Known people affiliated with this organization."
+    },
+    {
+      "name": "tags",
+      "type": "list[str]",
+      "required": false,
+      "description": "Free-form labels."
+    },
+    {
+      "name": "notes",
+      "type": "str",
+      "required": false,
+      "description": "Free-text notes, e.g. facts/news gathered so far."
+    }
+  ],
+  "methods": [
+    {
+      "name": "research",
+      "signature": "research() -> None",
+      "description": "Ground/enrich attributes and notes via live search (Tavily) — facts, news, funding."
+    },
+    {
+      "name": "add_contact",
+      "signature": "add_contact(person: Person) -> None",
+      "description": "Link a Person to this organization (sets person.organization and appends to employees)."
+    }
+  ]
+}
