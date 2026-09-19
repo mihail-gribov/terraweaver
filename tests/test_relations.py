@@ -59,6 +59,10 @@ def main() -> int:
           darren.related("kin") == [kevin] and kevin.related("kin") == [darren])
     again = kevin.relate(darren, "kin", label="older brother")
     check("relating again updates, doesn't duplicate", len(darren.relations("kin")) == 1 and again is darren.relations("kin")[0])
+    darren.relate(kevin, "kin", label="younger brother")
+    tie = darren.relations("kin")[0]
+    check("each side of a symmetric relation keeps its own label",
+          tie.label == "older brother" and tie.label_reverse == "younger brother", f"{tie.label} / {tie.label_reverse}")
     check("a relation can't link something to itself", refused(lambda: kevin.relate(kevin, "social")) is not None)
 
     # --- one at a time: overlapping periods, not "now" ---

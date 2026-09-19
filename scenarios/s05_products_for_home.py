@@ -44,4 +44,5 @@ PROBES = [
      ['QN90D', 'Bravia', 'glare'], []),
 ]
 
-LEVEL = "hard"
+# Passed in both modes on Opus and Haiku, before and after relations: out of the comparison pool.
+LEVEL = "basic"

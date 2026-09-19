@@ -151,8 +151,8 @@ def ask(host, prompt: str, flags: list[str], resume: str | None, log: Path) -> d
 
 def check_answer(answer: str, must: list[str], must_not: list[str]) -> str | None:
     lowered = answer.lower()
-    for phrase in must:
-        if phrase.lower() not in lowered:
+    for phrase in must:  # "a|b" accepts either spelling ("2,100|2100")
+        if not any(option.lower() in lowered for option in phrase.split("|")):
             return f"doesn't mention {phrase!r}"
     for phrase in must_not:
         if phrase.lower() in lowered:

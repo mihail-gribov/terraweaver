@@ -131,6 +131,12 @@ def relate(world, a, b, kind: str, period: dict, attrs: dict):
     existing = [r for r in world.all(name, limit=None) if _between(r, subject, obj, rel.get("symmetric"))]
     if existing:
         found = existing[0]
+        # Seen from the other end of a symmetric relation, a label is that side's label:
+        # "Darren is Kevin's younger brother" after "Kevin is Darren's older brother".
+        if rel.get("symmetric") and not same(found.subject, subject) and "label" in attrs \
+                and any(a["name"] == "label_reverse" for a in cls._spec["attributes"]):
+            attrs = dict(attrs)
+            attrs["label_reverse"] = attrs.pop("label")
         for attr, value in attrs.items():
             if getattr(found, attr, None) != value:
                 setattr(found, attr, value)
