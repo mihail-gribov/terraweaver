@@ -84,6 +84,34 @@ Spec fields: `"symmetric"`, `"asymmetric"`, `"transitive"`, `"transitive_via"`, 
 `"irreflexive"`, `"functional": "at_any_time"`, `"inverse_functional"`, `"reverse"` (the name read
 from the object's side).
 
+## Relations in a class's description
+
+A class is described not only by its attributes but by the relations characteristic of it — what
+it is typically linked to, and how. Two sources, no duplication:
+
+- **which** relations a class takes part in comes from the relation types themselves: Membership
+  goes Person → Organization, so Person lists "membership → Organization" and Organization lists
+  "members ← Person". One source of truth, nothing to keep in sync;
+- **what they mean for this class** — typical labels and notes — lives in the class spec, in a
+  `relations` section: for Organization, PartOf is "a department or branch of another
+  organization"; for Place, "a district or building within a larger place".
+
+`describe_world` shows them under each class, after the attributes:
+
+    class Person:
+        full_name: str ...
+        relations:
+          kin ↔ Person                       brother, mother, cousin, in-laws
+          partner ↔ Person                   wife, girlfriend — one at a time
+          social ↔ Person                    best friend, acquaintance, neighbour
+          membership → Organization          role, kind, primary, team — job, studies, club
+          authority → Person / Organization  manager — one at a time, no cycles
+          service ← Person / Organization    their doctor, landlord, recruiter
+          ...
+
+`relate` accepts only relations the type allows for that pair of classes; Related is always
+allowed.
+
 ## Time
 
 Relations have the same lifetime as instances: `starts` / `until` / `ttl`; ordinary reads show
@@ -132,7 +160,8 @@ world, not silently accepted.
 
 1. `Relation(Entity)` base: subject/object, characteristics from the spec checked in code;
    `relate` / `relations` / `related` on every entity; reverse names and transitivity.
-2. The ten types plus Related as JSON classes with their attributes.
+2. The ten types plus Related as JSON classes with their attributes; a `relations` section in
+   entity class specs for class-specific labels; `describe_world` lists each class's relations.
 3. `Person.organization` / `job_title` derived from Membership, `relationship` as owner
    relations; fixture migrated.
 4. Re-run the MemOps relational scenarios (s16, s17) and compare with the run before the change:
