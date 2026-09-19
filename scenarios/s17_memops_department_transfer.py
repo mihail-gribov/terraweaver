@@ -1,0 +1,30 @@
+DESCRIPTION = """MemOps B04 (update chain, bridge entity): Kevin Chen transferred to B04, Supply Chain Operations —
+the effective date goes February 1st → January 15th → "the system says January 2nd" (tentative,
+explained away) → January 15th confirmed. The department has a manager (Linda Zhao) and an office
+(6th floor, Building 2) that never change. Answers go person → department → manager / office."""
+
+SETUP = ""
+
+CONVERSATIONS = [
+    [
+        "Using my world (terraweaver): Hey, I want to make sure I keep track of some departmental changes at work. Kevin Chen's transfer to B04, Supply Chain Operations, became effective on February 1st. I just found out about it recently and I need to remember the details because I keep getting confused about timelines. Can you help me keep this organized?\n\nThanks. One reason I want to track this is that I sometimes need to reach out to B04 for logistics approvals. Having Kevin there is helpful because I already know him from when he was in Procurement — we were on the same floor for over a year. It's way easier to ping someone you know than to cold-email a department inbox. Do you have any tips for managing cross-department requests efficiently?\n\nGood suggestions. Oh wait, I need to correct something — I double-checked with HR and Kevin's transfer was actually effective January 15th, not February 1st. My colleague Mei handles the HR paperwork and she confirmed the January 15th date. I must have been mixing it up with another event in February. Please update that for me.\n\nThat's right, January 15th. By the way, Kevin mentioned he's been leading a small sub-team in B04 focused on vendor logistics coordination. Sounds like a decent step up from what he was doing in Procurement. I'm glad he's settling in well over there. I should probably set up a more regular check-in with him now that I know his new role."
+    ],
+    [
+        "Using my world (terraweaver): I also want to make sure I remember some key facts about B04. Linda Zhao is the manager of B04, and B04 currently has 14 people including Linda. I keep needing to loop her in on cross-department requests and I always forget her name. Can you store that so I can reference it later? She's the one I need to CC on formal requests.\n\nPerfect. I also wanted to mention that B04 brought on three new hires last quarter, which is part of an expansion. Kevin told me they're piloting some new warehouse management software — I think it was called LogiTrack or something similar. I didn't write the name down so I might have it slightly off. But it seems like they're growing and modernizing their processes.\n\nRight, that's a good point about staying ahead of process changes. Also, one important detail: B04 is located on the 6th floor of Building 2. I used to think they were in Building 1 with the rest of operations, but they moved to Building 2 after the office renovation last year. So if I ever need to visit them in person, it's Building 2, 6th floor.\n\nExactly. There was one frustrating incident last month where B04 was supposed to send over the quarterly inventory reconciliation report and it was five days late. My own deadline to the finance team depended on their numbers, and I ended up staying late two nights in a row to make it work. I want to make sure that doesn't happen again this quarter.\n\nThose are solid suggestions. I think the shared deadline tracker idea is especially good. I'll propose that to Kevin next time we catch up. Having visibility into their timeline would really help me plan better on my end. I hate being caught off guard by delays like that — it's stressful and makes me look bad to the finance team even though it's not my fault."
+    ],
+    [
+        "Using my world (terraweaver): Quick update on the B04 situation. I was reviewing some old onboarding forms today and noticed that Kevin's original Procurement intake form still lists his start date as February 1st in the department field. Obviously that's outdated, but it caught my eye. Anyway, I had a meeting with Linda Zhao this morning about the upcoming quarter's deliverables.\n\nThe meeting went well overall. But here's something that confused me a bit — Kevin's manager Linda told me today that the official system shows his transfer date as January 2nd because of some payroll alignment thing. She said their internal system sometimes adjusts dates to the nearest pay period start. I'm not sure what to make of that since Mei from HR told me January 15th before.\n\nGood thinking. I actually just checked — Mei from HR just pinged me and confirmed that January 15th is the correct effective transfer date for Kevin. She said the January 2nd in the payroll system is just when they started pre-processing his benefits switch, not the actual transfer date. So January 15th stands as the real date.\n\nYes, one more thing from the meeting. Linda agreed to the shared deadline tracker idea, which is great. She said her team can commit to submitting the quarterly inventory reconciliation report at least three business days before my finance deadline going forward. That buffer should prevent the kind of crunch I went through last time. I'm relieved about that.\n\nAgreed, I'll send a follow-up email to Linda summarizing the agreement. By the way, I appreciate you helping me keep all this B04 information straight — the manager's name, Kevin's transfer date, the office location, all of it. It's a lot of small details that are easy to mix up, especially when different systems show different dates. Having one consistent record makes a big difference for me."
+    ]
+]
+
+EXPECT = """pass"""
+
+# Asked afterwards, each in a fresh conversation: (question, must mention, must not mention).
+PROBES = [
+    ("Using my world (terraweaver): which date should I enter as Kevin Chen's effective transfer date on a form?",
+     ['January 15'], []),
+    ("Using my world (terraweaver): draft a short delivery note for Kevin Chen's welcome package — his department, his manager and the office location.",
+     ['Supply Chain', 'Linda Zhao', '6th floor', 'Building 2'], []),
+]
+
+LEVEL = "hard"
