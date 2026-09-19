@@ -18,3 +18,10 @@ assert old.organization.name == "FinEdge" and old.job_title == "Head of Engineer
 new = Person.get(email="rwolfe@pixelforge.io")
 assert new is not old and new.organization.name == "PixelForge", "the new Robert isn't at PixelForge"
 """
+
+# Asked afterwards, each in a fresh conversation: (question, must mention, must not mention).
+# The same in every mode, so an agent keeping the data its own way is judged alike.
+PROBES = [
+    ('Using my world (terraweaver): how many people named Robert Wolfe do I know, and where does each work?',
+     ['FinEdge', 'PixelForge'], []),
+]

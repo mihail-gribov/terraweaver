@@ -24,3 +24,10 @@ if iv.status == "planned":
     assert [p.value for p in iv.history("status")][0] == "confirmed", "the old status isn't in the history"
 assert Person.get(email="anna.peterson@example.com").comments(contains="email sent"), "recruiter not told"
 """
+
+# Asked afterwards, each in a fresh conversation: (question, must mention, must not mention).
+# The same in every mode, so an agent keeping the data its own way is judged alike.
+PROBES = [
+    ('Using my world (terraweaver): when is my DataWorks interview now, and who did I tell about the change?',
+     ['25', 'Peterson'], []),
+]

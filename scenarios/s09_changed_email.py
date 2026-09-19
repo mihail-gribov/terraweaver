@@ -16,3 +16,10 @@ anna = annas[0]
 assert anna.email == "anna@dataworks.io", f"email is {anna.email}"
 assert anna.organization.name == "DataWorks", "her employer changed"
 """
+
+# Asked afterwards, each in a fresh conversation: (question, must mention, must not mention).
+# The same in every mode, so an agent keeping the data its own way is judged alike.
+PROBES = [
+    ("Using my world (terraweaver): what's Anna Peterson's email address?",
+     ['anna@dataworks.io'], []),
+]

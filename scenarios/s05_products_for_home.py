@@ -36,3 +36,10 @@ assert "glare" in everything, "why the LG was ruled out isn't recorded"
 """
 
 ANSWER_MUST = ["QN90D", "Bravia", "Supersonic", "glare"]
+
+# Asked afterwards, each in a fresh conversation: (question, must mention, must not mention).
+# The same in every mode, so an agent keeping the data its own way is judged alike.
+PROBES = [
+    ('Using my world (terraweaver): which TVs are still in the running, and why was one dropped?',
+     ['QN90D', 'Bravia', 'glare'], []),
+]

@@ -1,4 +1,4 @@
-"""Run host scenarios: a real agent (Claude Code) works on the world through MCP.
+"""Run host scenarios: a real agent (Claude Code) works on the user's world.
 
 Each scenario is a module in this directory:
 
@@ -7,15 +7,24 @@ Each scenario is a module in this directory:
     TURNS        what the user says: the task, then replies to the questions the host is
                  expected to ask (each sent in the same Claude Code conversation)
     CONVERSATIONS  instead of TURNS: several separate conversations, each a list of turns —
-                 for what must carry over between conversations through the world alone
-    EXPECT       code with `assert`s run against the world afterwards — the expected state
-    ANSWER_MUST / ANSWER_MUST_NOT   optional phrases the host's last answer must / mustn't contain
+                 for what must carry over between conversations
+    EXPECT       code with `assert`s run against the world afterwards (world mode only)
+    ANSWER_MUST / ANSWER_MUST_NOT   phrases the last answer must / mustn't contain
+    PROBES       questions asked afterwards, each in a fresh conversation, with phrases the answer
+                 must / mustn't contain — the same in every mode
 
-The runner starts its own world server (port 7010, its own database), so the working world
-is never touched. SETUP and EXPECT go through the same `run` tool the host uses.
+Two modes, so the world can be compared with what an agent does without it:
 
-    .venv/bin/python scenarios/run.py                # all scenarios
-    .venv/bin/python scenarios/run.py reschedule     # names containing a substring
+    world     Claude Code reaches the world through the TerraWeaver MCP server only.
+    baseline  Claude Code with its ordinary tools (bash, files, python) and a folder holding the
+              same starting data as JSON; it keeps and looks things up however it likes.
+
+The runner starts its own world server (port 7010, its own database), so the working world is
+never touched.
+
+    .venv/bin/python scenarios/run.py                      # all scenarios, world mode
+    .venv/bin/python scenarios/run.py --baseline s06 s08   # chosen scenarios, baseline mode
+    .venv/bin/python scenarios/run.py --port 7015 s06      # own server port, to run several at once
 """
 import asyncio
 import importlib.util
@@ -35,6 +44,17 @@ HERE = Path(__file__).resolve().parent
 PORT = 7010
 URL = f"http://127.0.0.1:{PORT}"
 RESULTS = ROOT / "experiments" / "results" / "scenarios"
+
+BASELINE_BRIEF = """\
+# Michael's personal data
+
+You are Michael's personal assistant. This folder is where his personal information lives:
+`world.json` holds the people he knows, organizations, places, events, vacancies from his job
+search, ideas, projects and facts about him, as they stood when this folder was set up.
+
+Keep it up to date as he tells you things, and answer his questions from it. Organize the
+folder however you find best — change formats, add files, use any tools you have.
+"""
 
 
 def load_scenarios(filters: list[str]) -> list:
@@ -59,32 +79,121 @@ async def world_run(code: str) -> tuple[bool, str]:
     return "[error" not in text, text
 
 
-def host_config(work: Path, session: str) -> Path:
-    """MCP config for one conversation. Each conversation gets its own namespace, so anything
-    that carries over between conversations has to come from the world itself."""
-    config = work / f"mcp-{session}.json"
-    config.write_text(json.dumps({"mcpServers": {"terraweaver": {
-        "type": "http", "url": f"{URL}/mcp", "headers": {"x-terraweaver-session": session}}}}))
-    return config
+class WorldHost:
+    """Claude Code with the TerraWeaver MCP server as its only tool."""
+
+    name = "world"
+
+    def __init__(self, work: Path, scenario: str):
+        self.work = work
+        self.scenario = scenario
+        self.count = 0
+
+    def conversation(self) -> list[str]:
+        self.count += 1
+        config = self.work / f"mcp-{self.scenario}-{self.count}.json"
+        config.write_text(json.dumps({"mcpServers": {"terraweaver": {
+            "type": "http", "url": f"{URL}/mcp",
+            "headers": {"x-terraweaver-session": f"{self.scenario}-{self.count}"}}}}))
+        return ["--mcp-config", str(config), "--strict-mcp-config", "--allowedTools", "mcp__terraweaver__*"]
+
+    cwd = property(lambda self: Path(tempfile.gettempdir()))
+
+    @staticmethod
+    def phrase(message: str) -> str:
+        return message
 
 
-def ask_host(prompt: str, config: Path, resume: str | None, log: Path) -> dict:
+class BaselineHost:
+    """Claude Code with its own tools and a folder holding the same starting data."""
+
+    name = "baseline"
+
+    def __init__(self, work: Path, scenario: str):
+        self.folder = work / f"baseline-{scenario}"
+        self.folder.mkdir()
+        export = json.loads(urllib.request.urlopen(f"{URL}/debug/export").read())
+        (self.folder / "world.json").write_text(json.dumps(export, indent=2, ensure_ascii=False))
+        (self.folder / "README.md").write_text(BASELINE_BRIEF)
+
+    def conversation(self) -> list[str]:
+        return ["--strict-mcp-config", "--allowedTools", "Bash Read Write Edit Glob Grep"]
+
+    cwd = property(lambda self: self.folder)
+
+    @staticmethod
+    def phrase(message: str) -> str:
+        return message.replace("Using my world (terraweaver):", "Using my personal data in this folder:")
+
+
+def ask(host, prompt: str, flags: list[str], resume: str | None, log: Path) -> dict:
     """One Claude Code turn; returns its final text, session id, turns and cost."""
-    cmd = ["claude", "-p", prompt, "--mcp-config", str(config), "--strict-mcp-config",
-           "--allowedTools", "mcp__terraweaver__*", "--output-format", "stream-json", "--verbose"]
+    cmd = ["claude", "-p", host.phrase(prompt), *flags, "--output-format", "stream-json", "--verbose"]
     if resume:
         cmd += ["--resume", resume]
-    run = subprocess.run(cmd, cwd=tempfile.gettempdir(), capture_output=True, text=True,
-                         stdin=subprocess.DEVNULL, timeout=900)
+    started = time.monotonic()
+    run = subprocess.run(cmd, cwd=host.cwd, capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=1200)
     with open(log, "a") as fh:
         fh.write(run.stdout)
-    outcome = {"text": "", "session": resume, "turns": 0, "cost": 0.0}
+    outcome = {"text": "", "session": resume, "turns": 0, "cost": 0.0, "seconds": time.monotonic() - started}
     for line in run.stdout.splitlines():
         event = json.loads(line)
         if event.get("type") == "result":
             outcome.update(text=event.get("result") or "", session=event.get("session_id"),
                            turns=event.get("num_turns", 0), cost=event.get("total_cost_usd", 0.0))
     return outcome
+
+
+def check_answer(answer: str, must: list[str], must_not: list[str]) -> str | None:
+    lowered = answer.lower()
+    for phrase in must:
+        if phrase.lower() not in lowered:
+            return f"doesn't mention {phrase!r}"
+    for phrase in must_not:
+        if phrase.lower() in lowered:
+            return f"mentions {phrase!r}"
+    return None
+
+
+def run_scenario(scenario, mode: str, work: Path, out_dir: Path) -> dict:
+    urllib.request.urlopen(urllib.request.Request(f"{URL}/debug/reset", method="POST"))
+    if getattr(scenario, "SETUP", "").strip():
+        ok, text = asyncio.run(world_run(scenario.SETUP))
+        if not ok:
+            return {"name": scenario.NAME, "mode": mode, "passed": False, "failure": f"setup failed: {text}"}
+    host = (WorldHost if mode == "world" else BaselineHost)(work, scenario.NAME)
+    log = out_dir / f"{scenario.NAME}.{mode}.jsonl"
+    totals = {"turns": 0, "cost": 0.0, "seconds": 0.0}
+    failures = []
+
+    def converse(messages: list[str]) -> str:
+        flags, session, answer = host.conversation(), None, ""
+        for message in messages:
+            outcome = ask(host, message, flags, session, log)
+            session, answer = outcome["session"], outcome["text"]
+            for key in totals:
+                totals[key] += outcome[key]
+        return answer
+
+    answer = ""
+    for conversation in getattr(scenario, "CONVERSATIONS", None) or [scenario.TURNS]:
+        answer = converse(conversation)
+    problem = check_answer(answer, getattr(scenario, "ANSWER_MUST", []), getattr(scenario, "ANSWER_MUST_NOT", []))
+    if problem:
+        failures.append(f"answer {problem}")
+    for number, (question, must, must_not) in enumerate(getattr(scenario, "PROBES", []), 1):
+        reply = converse([question])
+        (out_dir / f"{scenario.NAME}.{mode}.probe{number}.txt").write_text(reply)
+        problem = check_answer(reply, must, must_not)
+        if problem:
+            failures.append(f"probe {number} {problem}")
+    if mode == "world":
+        ok, text = asyncio.run(world_run(scenario.EXPECT))
+        if not ok:
+            failures.append("expected state not reached: " + text.strip().splitlines()[-1])
+    (out_dir / f"{scenario.NAME}.{mode}.answer.txt").write_text(answer)
+    return {"name": scenario.NAME, "mode": mode, "passed": not failures, "failure": "; ".join(failures) or None,
+            "turns": totals["turns"], "cost": round(totals["cost"], 2), "seconds": round(totals["seconds"])}
 
 
 def start_server(db: Path) -> subprocess.Popen:
@@ -102,50 +211,32 @@ def start_server(db: Path) -> subprocess.Popen:
 
 
 def main() -> int:
-    scenarios = load_scenarios(sys.argv[1:])
-    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    out_dir = RESULTS / stamp
+    global PORT, URL
+    args = sys.argv[1:]
+    if "--port" in args:
+        PORT = int(args.pop(args.index("--port") + 1))
+        args.remove("--port")
+        URL = f"http://127.0.0.1:{PORT}"
+    mode = "baseline" if "--baseline" in args else "world"
+    scenarios = load_scenarios([a for a in args if not a.startswith("--")])
+    out_dir = RESULTS / f"{datetime.now().strftime('%Y%m%d-%H%M%S')}-{mode}-{PORT}"
     out_dir.mkdir(parents=True, exist_ok=True)
     work = Path(tempfile.mkdtemp(prefix="tw-scenarios-"))
     server = start_server(work / "world.db")
     rows = []
     try:
         for scenario in scenarios:
-            urllib.request.urlopen(urllib.request.Request(f"{URL}/debug/reset", method="POST"))
-            failure = None
-            ok, text = asyncio.run(world_run(scenario.SETUP)) if getattr(scenario, "SETUP", "").strip() else (True, "")
-            if not ok:
-                failure = f"setup failed: {text}"
-            turns, cost, answer = 0, 0.0, ""
-            if failure is None:
-                for number, conversation in enumerate(getattr(scenario, "CONVERSATIONS", None) or [scenario.TURNS]):
-                    config = host_config(work, f"{scenario.NAME}-{number}")
-                    session = None
-                    for message in conversation:
-                        outcome = ask_host(message, config, session, out_dir / f"{scenario.NAME}.jsonl")
-                        session, answer = outcome["session"], outcome["text"]
-                        turns += outcome["turns"]
-                        cost += outcome["cost"]
-                ok, text = asyncio.run(world_run(scenario.EXPECT))
-                if not ok:
-                    failure = "expected state not reached: " + text.strip().splitlines()[-1]
-                lowered = answer.lower()
-                for phrase in getattr(scenario, "ANSWER_MUST", []):
-                    if phrase.lower() not in lowered and failure is None:
-                        failure = f"answer doesn't mention {phrase!r}"
-                for phrase in getattr(scenario, "ANSWER_MUST_NOT", []):
-                    if phrase.lower() in lowered and failure is None:
-                        failure = f"answer mentions {phrase!r}"
-            (out_dir / f"{scenario.NAME}.answer.txt").write_text(answer)
-            rows.append({"name": scenario.NAME, "passed": failure is None, "failure": failure,
-                         "turns": turns, "cost": round(cost, 2)})
-            print(f"{'PASS' if failure is None else 'FAIL'}  {scenario.NAME:32} turns={turns:<3} "
-                  f"${cost:.2f}" + (f"  — {failure}" if failure else ""), flush=True)
+            row = run_scenario(scenario, mode, work, out_dir)
+            rows.append(row)
+            print(f"{'PASS' if row['passed'] else 'FAIL'}  {row['name']:28} {mode:8} turns={row.get('turns', 0):<3} "
+                  f"${row.get('cost', 0):.2f} {row.get('seconds', 0)}s"
+                  + (f"  — {row['failure']}" if row["failure"] else ""), flush=True)
     finally:
         server.kill()
     (out_dir / "summary.json").write_text(json.dumps(rows, indent=2, ensure_ascii=False))
     passed = sum(r["passed"] for r in rows)
-    print(f"\n{passed}/{len(rows)} passed, ${sum(r['cost'] for r in rows):.2f}  — {out_dir.relative_to(ROOT)}")
+    print(f"\n{passed}/{len(rows)} passed [{mode}], ${sum(r.get('cost', 0) for r in rows):.2f} "
+          f"— {out_dir.relative_to(ROOT)}")
     return 0 if passed == len(rows) else 1
 
 

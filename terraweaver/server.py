@@ -10,6 +10,7 @@ Then connect a host to http://127.0.0.1:7000/mcp. Debug endpoints:
     GET  /health
     GET  /debug/runs?limit=20&session=...   what hosts ran, saw and changed
     GET  /debug/sessions                    namespaces per session, with their variables
+    GET  /debug/export                      the whole world as plain JSON
     POST /debug/reset                       rebuild the world from its fixture
 
 Bound to anything but localhost, every request except /health needs the token:
@@ -138,6 +139,11 @@ async def debug_runs(request: Request) -> JSONResponse:
 @server.custom_route("/debug/sessions", ["GET"])
 async def debug_sessions(request: Request) -> JSONResponse:
     return JSONResponse(runtime.sessions_summary())
+
+
+@server.custom_route("/debug/export", ["GET"])
+async def debug_export(request: Request) -> JSONResponse:
+    return JSONResponse(runtime.export())
 
 
 @server.custom_route("/debug/reset", ["POST"])

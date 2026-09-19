@@ -302,6 +302,35 @@ class WorldRuntime:
 
     # --- debugging ---
 
+    def export(self) -> dict:
+        """Everything the world holds, as plain JSON: for comparing against agents that keep
+        the same data in files. References appear as {"id", "label"}."""
+        def plain(value):
+            if isinstance(value, Entity):
+                return {"id": value.id, "label": value.label()}
+            if isinstance(value, list):
+                return [plain(v) for v in value]
+            if isinstance(value, datetime):
+                return value.isoformat()
+            return value
+
+        out: dict[str, list] = {}
+        for name, cls in self.classes.items():
+            rows = []
+            for entity in self.world.all(cls, limit=None, history=True):
+                row = {"id": entity.id}
+                for attr in cls._spec["attributes"]:
+                    if "derived" not in attr:
+                        row[attr["name"]] = plain(getattr(entity, attr["name"], None))
+                rows.append(row)
+            if rows:
+                out[name] = rows
+        out["comments"] = [
+            {"about": plain(c.about), "text": c.text, "when": plain(c.when), "tentative": c.tentative}
+            for c in self.world.comments.search(limit=10_000, include_expired=True)
+        ]
+        return out
+
     def runs(self, limit: int = 20, session: str | None = None) -> list[dict]:
         query = "SELECT id, at, session, code, ok, output, error, access, written, duration_ms FROM runs"
         params: tuple = ()

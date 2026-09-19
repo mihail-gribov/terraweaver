@@ -22,3 +22,10 @@ offer = [c for c in priya.comments() if "offer" in c.text.lower()] + [
     f for f in Preference.find(subject=priya) if "offer" in f.value.lower()]
 assert offer, "the FinEdge offer isn't recorded anywhere on Priya"
 """
+
+# Asked afterwards, each in a fresh conversation: (question, must mention, must not mention).
+# The same in every mode, so an agent keeping the data its own way is judged alike.
+PROBES = [
+    ('Using my world (terraweaver): where does Priya Shah work, and does she have any job offers?',
+     ['GreenGrid', 'FinEdge', 'offer'], []),
+]

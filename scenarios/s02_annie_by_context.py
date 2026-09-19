@@ -17,3 +17,10 @@ EXPECT = """
 assert Person.get(email="anna.sullivan@example.com").comments(contains="email sent"), "nothing sent to Anna Sullivan"
 assert not Person.get(email="anna.peterson@example.com").comments(contains="email sent"), "wrote to the wrong Annie"
 """
+
+# Asked afterwards, each in a fresh conversation: (question, must mention, must not mention).
+# The same in every mode, so an agent keeping the data its own way is judged alike.
+PROBES = [
+    ('Using my world (terraweaver): who did I send the meetup details to?',
+     ['Sullivan'], []),
+]

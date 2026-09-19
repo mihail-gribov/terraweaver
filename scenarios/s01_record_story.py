@@ -29,3 +29,12 @@ berlin = bob.comments(contains="Berlin")
 assert berlin and berlin[0].tentative, "Bob's move is a tentative remark"
 assert bob.organization.name == "FinEdge", "Bob's employer untouched"
 """
+
+# Asked afterwards, each in a fresh conversation: (question, must mention, must not mention).
+# The same in every mode, so an agent keeping the data its own way is judged alike.
+PROBES = [
+    ("Using my world (terraweaver): what do you know about Priya Shah, and about Bob's plans?",
+     ['GreenGrid', 'Berlin'], []),
+    ("Using my world (terraweaver): what's coming up with CloudNine, and who invited me?",
+     ['meetup', 'Sullivan'], []),
+]
