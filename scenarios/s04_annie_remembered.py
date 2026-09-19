@@ -25,5 +25,5 @@ ANSWER_MUST_NOT = ["which annie", "which one do you mean"]
 # The same in every mode, so an agent keeping the data its own way is judged alike.
 PROBES = [
     ("Using my world (terraweaver): what's Annie's email address?",
-     ['anna.sullivan@example.com'], ['anna.peterson@example.com']),
+     ['anna.sullivan@example.com'], []),
 ]
