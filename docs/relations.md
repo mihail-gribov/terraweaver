@@ -58,6 +58,14 @@ A type says what kind of relation it is — how it behaves — not what it is ca
 | **Located** | Person / Organization / thing → Place | many-to-one at any point in time for home and office; many-to-many otherwise | transitive along place nesting | lives in, office at, kept at |
 | **Ownership** | Person / Organization → thing / Place | one-to-many; many-to-many when joint | asymmetric | owns, rents, borrowed |
 | **Participation** | Person / Organization → Event / Project | many-to-many | asymmetric | attendee, organizer, speaker |
+| **Related** | anything → anything | many-to-many | none — the world infers nothing | godfather, loan guarantor, "my sister's former roommate" |
+
+**Related** is the free type, for a link none of the others fits. Direction is as written, and
+the world assumes no symmetry, transitivity or limits. A label and a description are required
+(checked in code), so it doesn't become a dump. If the label is one another type knows
+("brother", "manager", "dentist"), the world points to that type in the result — the write still
+goes through. A label that keeps recurring in Related is a missing type: counted like attribute
+and procedure usage, later for Nemotron to propose mapping it to an existing type or a new one.
 
 Terms, as used in the spec fields:
 
@@ -124,7 +132,7 @@ world, not silently accepted.
 
 1. `Relation(Entity)` base: subject/object, characteristics from the spec checked in code;
    `relate` / `relations` / `related` on every entity; reverse names and transitivity.
-2. The ten types as JSON classes with their attributes.
+2. The ten types plus Related as JSON classes with their attributes.
 3. `Person.organization` / `job_title` derived from Membership, `relationship` as owner
    relations; fixture migrated.
 4. Re-run the MemOps relational scenarios (s16, s17) and compare with the run before the change:
