@@ -150,8 +150,10 @@ def run_skill(needs: NeedsResolution, ask_user: Callable[[str, list[str]], int],
     if needs.skill == "resolve_ambiguity":
         if choice < len(needs.candidates):
             settled = world.apply_attrs(needs.candidates[choice], needs.context["incoming"])
+            world.remember_choice(needs, settled)
         else:
             settled = world.create(needs.context["class_name"], needs.context["incoming"])
+            world.remember_choice(needs, None)
         if needs.context.get("period"):
             world.apply_period(settled, needs.context["period"])
         return settled

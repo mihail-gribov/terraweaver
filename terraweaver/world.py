@@ -19,6 +19,17 @@ from terraweaver.resolution import (
 )
 
 
+CHOICES_SCHEMA = """
+CREATE TABLE IF NOT EXISTS name_choices (
+    class_name TEXT NOT NULL,
+    name TEXT NOT NULL,          -- the name as normalized by matching
+    entity_id TEXT NOT NULL,
+    chosen_at TEXT NOT NULL,
+    PRIMARY KEY (class_name, name)
+);
+"""
+
+
 class NotInWorld(LookupError):
     """get() found nothing: the entity the host meant isn't in the world."""
 
@@ -30,6 +41,9 @@ class World:
         self.resolutions: list[dict] = []
         self.pending: NeedsResolution | None = None
         self.comments = Comments(store, classes)
+        # Who the user meant by a name, once they said so. The next "Annie" is that Annie —
+        # announced, never silent, so the user can correct it.
+        store.conn.executescript(CHOICES_SCHEMA)
         # Enforce the consistency checks at the object model itself, not just at ensure():
         # otherwise `person.organization = other` quietly bypasses every check.
         ontology.set_write_guard(self._guard_write)
@@ -39,6 +53,12 @@ class World:
     def _guard_write(self, instance, attr: str, existing, incoming) -> None:
         if matching.label(existing) == matching.label(incoming):
             return
+        # A list that only grows is accumulating, not contradicting: adding a candidate to a
+        # project's related_to keeps everything that was there. Losing an item is the conflict.
+        if isinstance(existing, list) and isinstance(incoming, list):
+            kept = {matching.label(item) for item in incoming}
+            if all(matching.label(item) in kept for item in existing):
+                return
         needs = contradicting_value(instance, attr, existing, incoming)
         self.pending = needs
         raise ResolutionRequired(needs)
@@ -104,6 +124,9 @@ class World:
         similar = [inst for inst, score in scored if score < matching.CERTAIN]
 
         if looked_up_by_name and scored and len(certain) != 1:
+            chosen = self._remembered(class_name, attrs, certain or similar)
+            if chosen is not None:
+                return matching.FindResult([chosen], [inst for inst, _ in scored if inst is not chosen])
             needs = ambiguous_identity(class_name, attrs, certain or similar, exact=bool(certain))
             self.pending = needs
             return needs
@@ -189,6 +212,8 @@ class World:
         certain = [inst for inst, score in scored if score >= matching.CERTAIN]
         if len(certain) == 1:
             outcome = self._apply_or_flag(self._determined(certain[0]), attrs)
+        elif (chosen := self._remembered(class_name, attrs, certain or [inst for inst, _ in scored])) is not None:
+            outcome = self._apply_or_flag(self._determined(chosen), attrs)
         elif len(certain) > 1:
             outcome = ambiguous_identity(class_name, attrs, certain)
         elif scored:
@@ -268,6 +293,40 @@ class World:
         """
         return resolution.run_skill(needs, lambda question, options: _option_index(needs, choice, new), self)
 
+    def remember_choice(self, needs: NeedsResolution, entity) -> None:
+        """The user said who they meant by that name; the next lookup by it will assume so."""
+        class_name = needs.context.get("class_name")
+        name = needs.context.get("incoming", {}).get(matching.NAME_KEYS.get(class_name, ""))
+        if not isinstance(name, str):
+            return
+        key = (class_name, matching.normalize(name))
+        if entity is None:  # "someone new": the name is shared by one more now, so ask again next time
+            self.store.conn.execute("DELETE FROM name_choices WHERE class_name = ? AND name = ?", key)
+            return
+        self.store.conn.execute(
+            "INSERT OR REPLACE INTO name_choices (class_name, name, entity_id, chosen_at) VALUES (?, ?, ?, ?)",
+            key + (entity.id, timeutil.now().isoformat()),
+        )
+
+    def _remembered(self, class_name: str, attrs: dict, candidates: list):
+        """The candidate the user chose for this name before, if they did and it's among these."""
+        name = attrs.get(matching.NAME_KEYS.get(class_name, ""))
+        if not isinstance(name, str):
+            return None
+        row = self.store.conn.execute(
+            "SELECT entity_id, chosen_at FROM name_choices WHERE class_name = ? AND name = ?",
+            (class_name, matching.normalize(name)),
+        ).fetchone()
+        if row is None:
+            return None
+        chosen = next((c for c in candidates if c.id == row[0]), None)
+        if chosen is not None:
+            ontology.note_assumed(
+                f'"{name}" -> {chosen.label()}, as the user settled on {row[1][:10]}; '
+                f"say so in your answer, and if they mean someone else, ask"
+            )
+        return chosen
+
     def log_resolution(self, needs: NeedsResolution, choice: int | None, status: str) -> None:
         self.resolutions.append({
             "skill": needs.skill,
@@ -282,6 +341,10 @@ class World:
     # --- internals ---
 
     def _apply_or_flag(self, instance, attrs: dict):
+        # The name it was identified by is how the user refers to it, not a new value for it:
+        # "Annie" doesn't contradict "Anna Sullivan".
+        name_key = matching.NAME_KEYS.get(type(instance).__name__)
+        attrs = {k: v for k, v in attrs.items() if k != name_key}
         conflicts = matching.contradictions(instance, attrs)
         if conflicts:
             attr, existing, incoming = conflicts[0]

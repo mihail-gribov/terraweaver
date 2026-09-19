@@ -80,6 +80,7 @@ class Recording:
         self.attrs: dict[int, set] = {}
         self.found: dict[int, Any] = {}
         self.remarks: list[str] = []  # comments added, forgotten or confirmed, as the host should read them
+        self.assumed: list[str] = []  # identities taken from what the user settled before
 
 
 @contextmanager
@@ -116,6 +117,11 @@ def _note_changed(entity, attr: str | None = None) -> None:
 def note_found(entity) -> None:
     if _CHANGED is not None:
         _CHANGED.found[id(entity)] = entity
+
+
+def note_assumed(text: str) -> None:
+    if _CHANGED is not None and text not in _CHANGED.assumed:
+        _CHANGED.assumed.append(text)
 
 
 def note_remark(text: str) -> None:

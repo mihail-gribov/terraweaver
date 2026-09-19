@@ -239,10 +239,10 @@ class WorldRuntime:
             ast.parse(expression, mode="eval")
         except SyntaxError as exc:
             return {"ok": False, "output": "", "error": f"not a single Python expression: {exc.msg}",
-                    "access": {}, "created": [], "updated": [], "found": [], "comments": [], "new_variables": {}, "duration_ms": 0}
+                    "access": {}, "created": [], "updated": [], "found": [], "comments": [], "assumed": [], "new_variables": {}, "duration_ms": 0}
         if not name.isidentifier():
             return {"ok": False, "output": "", "error": f"{name!r} can't be a variable name",
-                    "access": {}, "created": [], "updated": [], "found": [], "comments": [], "new_variables": {}, "duration_ms": 0}
+                    "access": {}, "created": [], "updated": [], "found": [], "comments": [], "assumed": [], "new_variables": {}, "duration_ms": 0}
         return self.run(f"world.pin({name}, ({expression}), {description!r})", key)
 
     def unset_variables(self, key: str, names: str) -> dict[str, Any]:
@@ -251,7 +251,7 @@ class WorldRuntime:
         bad = [n for n in listed if not n.isidentifier()]
         if bad:
             return {"ok": False, "output": "", "error": f"not variable names: {', '.join(bad)}",
-                    "access": {}, "created": [], "updated": [], "found": [], "comments": [], "new_variables": {}, "duration_ms": 0}
+                    "access": {}, "created": [], "updated": [], "found": [], "comments": [], "assumed": [], "new_variables": {}, "duration_ms": 0}
         return self.run(f"world.unpin({', '.join(listed)})" if listed else "pass", key)
 
     def run(self, code: str, key: str) -> dict[str, Any]:
@@ -260,7 +260,7 @@ class WorldRuntime:
         stdout = io.StringIO()
         error = None
         access: dict[str, int] = {}
-        effects = {"created": [], "updated": [], "found": [], "comments": []}
+        effects = {"created": [], "updated": [], "found": [], "comments": [], "assumed": []}
         started = time.monotonic()
         # World variables are fresh in every run: entities come from the world as they are now,
         # and one pinned by another session shows up here too.
@@ -331,7 +331,9 @@ class WorldRuntime:
             if key.startswith("__"):
                 continue
             items = value.values() if isinstance(value, dict) else value if isinstance(value, (list, tuple, set)) else [value]
-            roots.extend(item for item in items if isinstance(item, Entity))
+            # Only what the world already holds: an object that never got stored — left behind
+            # by a run that failed and was rolled back — must not come back as a new entity.
+            roots.extend(item for item in items if isinstance(item, Entity) and item.id is not None)
         for root in roots:
             self.store.save_graph(root, seen)
 
@@ -368,7 +370,7 @@ class WorldRuntime:
                 result["output"],
                 result["error"],
                 json.dumps(result["access"]),
-                json.dumps({k: result[k] for k in ("created", "updated", "found", "comments")}, ensure_ascii=False),
+                json.dumps({k: result[k] for k in ("created", "updated", "found", "comments", "assumed")}, ensure_ascii=False),
                 result["duration_ms"],
             ),
         )
@@ -424,7 +426,8 @@ def _effects(recording, created: set[int]) -> dict[str, list[str]]:
             changed.append(f"{name(entity)}: {', '.join(attrs)}")
     found = [name(e) for key, e in recording.found.items()
              if key not in created and not recording.attrs.get(key, set()) - _BOOKKEEPING]
-    return {"created": made, "updated": changed, "found": found, "comments": list(recording.remarks)}
+    return {"created": made, "updated": changed, "found": found, "comments": list(recording.remarks),
+            "assumed": list(recording.assumed)}
 
 
 def format_result(result: dict) -> str:
@@ -435,7 +438,7 @@ def format_result(result: dict) -> str:
     parts.append(result["output"] or "(no output)")
     if result["error"]:
         parts.append(f"[error — nothing from this run was kept]\n{result['error']}")
-    for kind in ("created", "updated", "found", "comments"):
+    for kind in ("created", "updated", "found", "comments", "assumed"):
         if result.get(kind):
             parts.append(f"[{kind}] " + "; ".join(result[kind]))
     if result["new_variables"]:

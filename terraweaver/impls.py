@@ -14,6 +14,10 @@ def person_send_email(self, subject: str, body: str) -> bool:
     if not self.email:
         raise ValueError(f"{self.full_name} has no email on file")
     print(f"[send_email] to={self.email} subject={subject!r}")
+    # The world remembers what was sent to whom — "when did I last write to Anna?" is a
+    # question about the world like any other.
+    from datetime import datetime, timezone
+    self.comment(f"email sent: {subject}", when=datetime.now(timezone.utc), permanent=True)
     return True
 
 

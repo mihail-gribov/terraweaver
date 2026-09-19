@@ -229,6 +229,31 @@ def main() -> int:
     check("new asks before creating a twin", getattr(twin, "skill", None) == "resolve_ambiguity")
     check("settling the twin as the same one returns it", world.settle(twin, petr) is petr)
 
+    # --- who the user meant by a name is remembered ---
+    annie = Person.find(full_name="Annie")
+    sullivan = Person.get(email="anna.sullivan@example.com")
+    world.settle(annie, sullivan)
+    check("once settled, the name picks that person", Person.get(full_name="Annie") is sullivan)
+    check("and ensure by that name doesn't call the nickname a contradiction",
+          Person.ensure(full_name="Annie", phone="555") is sullivan)
+    world.remember_choice(annie, None)  # what answering "someone new" to that question records
+    check("someone new under the name makes it a question again",
+          getattr(Person.find(full_name="Annie"), "skill", None) == "resolve_ambiguity")
+
+    # --- a list attribute that only grows is not a contradiction ---
+    Project, Idea = classes["Project"], classes["Idea"]
+    tv = Project.new(name="Living room TV")
+    first = Idea.new(title="TV candidate: Samsung QN90D", content="Candidate.")
+    tv.related_to = [first]
+    tv.related_to = tv.related_to + [Idea.new(title="TV candidate: Sony Bravia 8", content="Candidate.")]
+    check("appending to a list goes through", len(tv.related_to) == 2)
+    refused = False
+    try:
+        tv.related_to = [tv.related_to[1]]
+    except ResolutionRequired:
+        refused = True
+    check("dropping an item from it is still a question", refused)
+
     store.clear_all()
     check("a rebuilt world starts without old remarks",
           not store.conn.execute("SELECT COUNT(*) FROM comments").fetchone()[0])

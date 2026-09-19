@@ -186,7 +186,9 @@ def build(classes: dict[str, type], store) -> None:
             title=title,
             kind=kind,
             about=subject if kind == "interview" else org,
-            start_time=now + timedelta(days=in_days),
+            # Whole hours: a fixture time of "now + 3 days" carried minutes and microseconds
+            # that hosts dutifully turned into appointments at 8:48 PM.
+            start_time=(now + timedelta(days=in_days)).replace(hour=15, minute=0, second=0, microsecond=0),
             location=org.location,
             participants=[owner] + [people[name] for name in participants],
             status=status,
