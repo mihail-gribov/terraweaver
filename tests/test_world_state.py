@@ -114,6 +114,25 @@ def main() -> int:
     Person, Organization = classes["Person"], classes["Organization"]
     ada = Person.find(email="ada@example.com").main[0]
 
+    # --- a write the class can't hold fails loudly instead of vanishing on save ---
+    try:
+        ada.favourite_colour = "green"
+        undeclared_refused = False
+    except AttributeError:
+        undeclared_refused = True
+    check("an attribute the class doesn't have is refused", undeclared_refused)
+    techcorp = Organization.get(name="TechCorp")
+    try:
+        techcorp.employees = []
+        derived_refused = False
+    except TypeError:
+        derived_refused = True
+    check("a derived side of a relationship can't be set", derived_refused)
+    dataworks = Organization.get(name="DataWorks")
+    world.settle(Person.find(email="ada@example.com").main[0].__class__.ensure(email="ada@example.com", organization=dataworks), 0)
+    check("changing jobs moves a person between employee lists",
+          ada not in techcorp.employees and ada in dataworks.employees)
+
     # --- an unrelated write is left alone ---
     ada.phone = "+7 900 000-00-00"
     check("a non-conflicting write goes through", ada.phone == "+7 900 000-00-00")

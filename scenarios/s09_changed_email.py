@@ -1,0 +1,18 @@
+DESCRIPTION = """A value that changes: Anna Peterson's email. The stored value disagrees with the new
+one, so the world raises it; the user has already said it changed, so the end state must be the new
+email on the same person — no second Anna Peterson, nothing else touched."""
+
+SETUP = ""
+
+TURNS = [
+    "Using my world (terraweaver): Anna Peterson's email has changed — it's anna@dataworks.io now.",
+    "Yes, the new one is right.",
+]
+
+EXPECT = """
+annas = [p for p in Person.all(limit=None) if p.full_name == "Anna Peterson"]
+assert len(annas) == 1, f"expected one Anna Peterson, got {len(annas)}"
+anna = annas[0]
+assert anna.email == "anna@dataworks.io", f"email is {anna.email}"
+assert anna.organization.name == "DataWorks", "her employer changed"
+"""

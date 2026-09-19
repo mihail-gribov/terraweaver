@@ -3,6 +3,13 @@
 Ordered by what currently blocks progress. The focus is reading the world; write tasks are
 deliberately parked (see below).
 
+## Two instances in every world: `user` and `agent`
+
+Every world should hold two explicit instances: `user` — the person the world belongs to and
+the host talks with — and `agent` — the assistant itself. Today the fixture has `owner` (a
+Person) and `me` (an Agent persona); decide whether `user` / `agent` replace them or sit next
+to them, and make them present in every world, not only in `job_search`.
+
 ## Debug the host–world loop
 
 The world is served over MCP; the host agent writes code against the object model through

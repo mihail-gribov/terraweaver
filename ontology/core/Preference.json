@@ -6,8 +6,7 @@
       "name": "subject",
       "type": "ref:Person",
       "required": true,
-      "description": "Who this fact is about.",
-      "inverse": "Person.facts"
+      "description": "Who this fact is about."
     },
     {
       "name": "predicate",

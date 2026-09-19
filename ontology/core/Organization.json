@@ -37,7 +37,8 @@
       "name": "employees",
       "type": "list[ref:Person]",
       "required": false,
-      "description": "Known people affiliated with this organization."
+      "description": "People whose organization is this one. Derived — set Person.organization to change it.",
+      "derived": "Person.organization"
     },
     {
       "name": "tags",

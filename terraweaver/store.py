@@ -117,7 +117,7 @@ class Store:
                 "INSERT OR REPLACE INTO instances (id, class_name) VALUES (?, ?)",
                 (instance.id, class_name),
             )
-            names = [a["name"] for a in instance._spec["attributes"]]
+            names = [a["name"] for a in instance._spec["attributes"] if "derived" not in a]
             names += [a for a in ontology.MANAGED_VALUE_ATTRS if a not in names]
             for name in names:
                 self.conn.execute(
@@ -152,6 +152,8 @@ class Store:
         visited.add(id(instance))
         out.append(instance)
         for attr in instance._spec["attributes"]:
+            if "derived" in attr:
+                continue
             value = getattr(instance, attr["name"], None)
             if _is_instance(value):
                 self._collect(value, visited, out)
@@ -200,9 +202,13 @@ class Store:
         with ontology.trusted_writes(), ontology.not_recording():
             obj.id = instance_id
             memo[instance_id] = obj
+            derived = ontology.derived_names(cls._spec)
+            known = {a["name"] for a in cls._spec["attributes"]} | set(ontology.MANAGED_VALUE_ATTRS)
             for attr_name, raw in self.conn.execute(
                 "SELECT attr, value FROM values_ WHERE instance_id = ?", (instance_id,)
             ):
+                if attr_name in derived or attr_name not in known:
+                    continue  # stored by an older version: now computed, or no longer part of the class
                 kind, payload = _decode(raw)
                 if kind == "dt":
                     setattr(obj, attr_name, datetime.fromisoformat(payload))

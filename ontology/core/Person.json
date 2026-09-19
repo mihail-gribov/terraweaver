@@ -30,8 +30,7 @@
       "name": "organization",
       "type": "ref:Organization",
       "required": false,
-      "description": "Current employer or primary affiliation.",
-      "inverse": "Organization.employees"
+      "description": "Current employer or primary affiliation."
     },
     {
       "name": "relationship",
@@ -55,13 +54,15 @@
       "name": "assistant",
       "type": "ref:Agent",
       "required": false,
-      "description": "The assistant that looks after this person's world, if they have one."
+      "description": "The assistant whose owner this person is. Derived — set Agent.owner to change it.",
+      "derived": "Agent.owner"
     },
     {
       "name": "facts",
       "type": "list[ref:Preference]",
       "required": false,
-      "description": "Facts/preferences recorded about this person."
+      "description": "Facts recorded about this person. Derived — record one with add_fact.",
+      "derived": "Preference.subject"
     },
     {
       "name": "tags",

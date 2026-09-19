@@ -2,11 +2,36 @@
   "name": "Agent",
   "description": "The assistant itself — who it is, how it speaks, and whose world it looks after.",
   "attributes": [
-    {"name": "name", "type": "str", "required": true, "description": "What the assistant is called."},
-    {"name": "character", "type": "str", "required": false, "description": "What it's like: temperament, attitude, what it cares about."},
-    {"name": "speaking_style", "type": "str", "required": false, "description": "How it talks — register, length, quirks."},
-    {"name": "owner", "type": "ref:Person", "required": false, "description": "The person whose world this is and who the assistant answers to.", "inverse": "Person.assistant"},
-    {"name": "notes", "type": "str", "required": false, "description": "Anything else it knows about itself."}
+    {
+      "name": "name",
+      "type": "str",
+      "required": true,
+      "description": "What the assistant is called."
+    },
+    {
+      "name": "character",
+      "type": "str",
+      "required": false,
+      "description": "What it's like: temperament, attitude, what it cares about."
+    },
+    {
+      "name": "speaking_style",
+      "type": "str",
+      "required": false,
+      "description": "How it talks — register, length, quirks."
+    },
+    {
+      "name": "owner",
+      "type": "ref:Person",
+      "required": false,
+      "description": "The person whose world this is and who the assistant answers to."
+    },
+    {
+      "name": "notes",
+      "type": "str",
+      "required": false,
+      "description": "Anything else it knows about itself."
+    }
   ],
   "methods": []
 }

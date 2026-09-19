@@ -46,6 +46,11 @@ def set_world(world) -> None:
     _WORLD = world
 
 
+def world_if_bound():
+    """The world, or None while a fixture is still being built without one."""
+    return _WORLD
+
+
 def current_world():
     if _WORLD is None:
         raise RuntimeError("no world is bound: this class isn't attached to a world yet")
@@ -187,6 +192,10 @@ class Entity:
         class_name = type(self).__name__
         for attr in type(self)._spec["attributes"]:
             name = attr["name"]
+            if "derived" in attr:
+                if name in kwargs:
+                    raise TypeError(_derived_message(class_name, attr))
+                continue
             if name in kwargs:
                 setattr(self, name, kwargs.pop(name))
             elif attr.get("required") and "default" not in attr:
@@ -308,6 +317,17 @@ class Entity:
         spec = type(self)._spec
         class_name = type(self).__name__
         if name not in _MANAGED_ATTRS and not name.startswith("_"):
+            declared = next((a for a in spec["attributes"] if a["name"] == name), None)
+            # An attribute the class doesn't have used to be accepted and then lost on save —
+            # a write that looked fine and never happened.
+            if declared is None:
+                raise AttributeError(
+                    f"{class_name} has no attribute '{name}'. Its attributes are: "
+                    + ", ".join(a["name"] for a in spec["attributes"])
+                    + ". What has no attribute goes into a dated remark: entity.comment(...)."
+                )
+            if "derived" in declared:
+                raise TypeError(_derived_message(class_name, declared))
             _check_type(class_name, spec, name, value)
             # Stored as given, only without stray whitespace; comparisons use the kind's normalize.
             if isinstance(value, str):
@@ -325,8 +345,6 @@ class Entity:
         object.__setattr__(self, name, value)
         if not name.startswith("_"):
             _note_changed(self, name)
-        if name not in _MANAGED_ATTRS and not name.startswith("_"):
-            _maintain_inverse(self, spec, name, value)
 
 
 def _period_text(starts, until) -> str:
@@ -374,32 +392,48 @@ def _check_type(class_name: str, spec: dict[str, Any], attr_name: str, value) ->
                 )
 
 
-def _maintain_inverse(instance, spec: dict[str, Any], attr_name: str, value) -> None:
-    """Keep the other side of a declared relationship in sync.
+def derived_names(spec: dict[str, Any]) -> set[str]:
+    """Attributes computed from the other side of a relationship rather than stored."""
+    return {a["name"] for a in spec.get("attributes", []) if "derived" in a}
 
-    Without this, `person.organization = acme` leaves acme.employees without the person:
-    a half-link that the agent has no reason to notice and the world can't be trusted on.
 
-    The other side's declared type decides the move: a list attribute gets appended to, a
-    single reference gets assigned. Appending to everything turned `owner.assistant` into a
-    list of assistants.
+def _derived_message(class_name: str, attr: dict) -> str:
+    source_class, source_attr = attr["derived"].split(".", 1)
+    return (f"{class_name}.{attr['name']} is derived from {attr['derived']} and can't be set directly; "
+            f"set {source_attr} on the {source_class} instead")
+
+
+def _derived_property(class_name: str, attr: dict):
+    """A relationship's second side, computed from the one side that is stored.
+
+    Storing both sides (Person.organization and Organization.employees) meant keeping them in
+    sync by hand, and every gap in that was an inconsistency: a person who changed jobs stayed
+    on the old company's list, a contact added twice was listed twice. Now only the single
+    reference is stored; the list is whoever currently points here.
     """
-    declared = next((a for a in spec["attributes"] if a["name"] == attr_name), None)
-    if not declared or "inverse" not in declared or value is None:
-        return
-    _, other_attr = declared["inverse"].split(".", 1)
-    other = next((a for a in type(value)._spec["attributes"] if a["name"] == other_attr), None)
-    _note_changed(value, other_attr)
-    if other is not None and not other["type"].startswith("list["):
-        if getattr(value, other_attr, None) is not instance:
-            object.__setattr__(value, other_attr, instance)
-        return
-    current = getattr(value, other_attr, None)
-    if current is None:
-        current = []
-        object.__setattr__(value, other_attr, current)
-    if instance not in current:
-        current.append(instance)
+    source_class, source_attr = attr["derived"].split(".", 1)
+    many = attr["type"].startswith("list[")
+
+    def get(self):
+        world = current_world()
+        pointing = [e for e in world.all(source_class, limit=None)
+                    if _refers(getattr(e, source_attr, None), self)]
+        if many:
+            return pointing
+        return pointing[0] if pointing else None
+
+    def refuse(self, value):
+        raise TypeError(_derived_message(class_name, attr))
+
+    return property(get, refuse, doc=attr.get("description", ""))
+
+
+def _refers(value, target) -> bool:
+    if value is None:
+        return False
+    if isinstance(value, list):
+        return any(_refers(v, target) for v in value)
+    return value is target or (getattr(value, "id", None) is not None and getattr(value, "id", None) == target.id)
 
 
 def _intentional(impl):
@@ -437,6 +471,9 @@ def build_classes(specs: dict[str, dict[str, Any]], impls: dict[tuple[str, str],
             # classes (e.g. Person.add_fact needs to construct a Preference).
             "_classes": classes,
         }
+        for attr in spec.get("attributes", []):
+            if "derived" in attr:
+                namespace[attr["name"]] = _derived_property(name, attr)
         for method in spec.get("methods", []):
             mname = method["name"]
             impl = impls.get((name, mname))
@@ -546,6 +583,9 @@ def describe_for_prompt(specs: dict[str, dict[str, Any]]) -> str:
         for attr in spec["attributes"]:
             req = "required" if attr.get("required") else "optional"
             default = f", default={attr['default']!r}" if "default" in attr else ""
+            if "derived" in attr:
+                lines.append(f"    {attr['name']}: {attr['type']}  # read-only, from {attr['derived']} — {attr.get('description', '')}")
+                continue
             lines.append(f"    {attr['name']}: {attr['type']}  # {req}{default} — {attr.get('description', '')}")
         for method in spec.get("methods", []):
             lines.append(f"    def {method['signature']}:  # {method.get('description', '')}")

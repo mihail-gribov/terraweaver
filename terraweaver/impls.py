@@ -6,6 +6,8 @@ signature + description alone doesn't determine behavior.
 """
 import math
 
+from terraweaver.ontology import world_if_bound
+
 
 
 # --- Person ---
@@ -22,8 +24,12 @@ def person_send_email(self, subject: str, body: str) -> bool:
 
 
 def person_add_fact(self, predicate: str, value: str, confidence: float = 1.0):
+    # Saved here: facts is derived from Preference.subject, so nothing else carries it to storage.
     Preference = type(self)._classes["Preference"]
-    return Preference(subject=self, predicate=predicate, value=value, confidence=confidence)
+    fact = Preference(subject=self, predicate=predicate, value=value, confidence=confidence)
+    if world_if_bound() is not None:  # a fixture being built saves what it gets back
+        fact.save()
+    return fact
 
 
 # Person.research / Organization.research (Tavily grounding) are deliberately left
@@ -35,10 +41,8 @@ def person_add_fact(self, predicate: str, value: str, confidence: float = 1.0):
 # --- Organization ---
 
 def organization_add_contact(self, person) -> None:
-    # The inverse link puts the person into employees; appending here as well listed them twice.
+    # employees is derived from Person.organization; setting that is all there is to do.
     person.organization = self
-    if person not in (self.employees or []):
-        self.employees = (self.employees or []) + [person]
 
 
 # --- Project ---
@@ -55,7 +59,10 @@ def project_mark_done(self) -> None:
 def project_add_note(self, text: str):
     Idea = type(self)._classes["Idea"]
     title = text if len(text) <= 40 else text[:37] + "..."
-    return Idea(title=title, content=text, related_to=[self])
+    note = Idea(title=title, content=text, related_to=[self])
+    if world_if_bound() is not None:
+        note.save()
+    return note
 
 
 # --- Place ---
