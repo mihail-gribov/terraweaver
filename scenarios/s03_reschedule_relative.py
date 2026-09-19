@@ -1,6 +1,7 @@
 DESCRIPTION = """Move an event relative to another one and notify someone named by role: "the
 recruiter" is the contact on the vacancy the interview is about (Anna Peterson). The event is
-moved, not duplicated; its status isn't changed on the host's own initiative."""
+moved, not duplicated. The host may mark it planned until the recruiter confirms — an assignment is
+its own call — but then says so, and the old status stays in the history."""
 
 SETUP = """
 cn = Organization.get(name="CloudNine")
@@ -18,6 +19,8 @@ interviews = [e for e in Event.all(limit=None) if e.kind == "interview" and "Dat
 assert len(interviews) == 1, f"expected one DataWorks interview, got {len(interviews)}"
 iv = interviews[0]
 assert iv.start_time.date() in (date(2026, 9, 25), date(2026, 9, 26)), f"interview now at {iv.start_time}"
-assert iv.status == "confirmed", f"status changed to {iv.status}"
+assert iv.status in ("confirmed", "planned"), f"status changed to {iv.status}"
+if iv.status == "planned":
+    assert [p.value for p in iv.history("status")][0] == "confirmed", "the old status isn't in the history"
 assert Person.get(email="anna.peterson@example.com").comments(contains="email sent"), "recruiter not told"
 """

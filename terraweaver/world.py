@@ -9,6 +9,7 @@ from typing import Any
 
 from terraweaver import matching, ontology, resolution, timeutil
 from terraweaver.comments import Comments
+from terraweaver.history import ValueHistory
 from terraweaver.resolution import (
     SKILL_KINDS,
     NeedsResolution,
@@ -44,24 +45,26 @@ class World:
         # Who the user meant by a name, once they said so. The next "Annie" is that Annie —
         # announced, never silent, so the user can correct it.
         store.conn.executescript(CHOICES_SCHEMA)
-        # Enforce the consistency checks at the object model itself, not just at ensure():
-        # otherwise `person.organization = other` quietly bypasses every check.
-        ontology.set_write_guard(self._guard_write)
+        # Every overwrite of a known entity's attribute leaves the old value in history.
+        self.history = ValueHistory(store, classes)
+        ontology.set_write_guard(self._keep_old_value)
         # Lets `Person.find(...)` reach this world without each class carrying a store.
         ontology.set_world(self)
 
-    def _guard_write(self, instance, attr: str, existing, incoming) -> None:
+    def _keep_old_value(self, instance, attr: str, existing, incoming) -> None:
+        """An assignment is the host's statement and isn't questioned; what it replaces is kept.
+
+        Questions belong to identification — ensure, get, find — where a disagreement can mean
+        a different entity. An assignment says which entity and what is now true.
+        """
         if matching.label(existing) == matching.label(incoming):
             return
-        # A list that only grows is accumulating, not contradicting: adding a candidate to a
-        # project's related_to keeps everything that was there. Losing an item is the conflict.
+        # A list that only grows is accumulating: nothing was replaced.
         if isinstance(existing, list) and isinstance(incoming, list):
             kept = {matching.label(item) for item in incoming}
             if all(matching.label(item) in kept for item in existing):
                 return
-        needs = contradicting_value(instance, attr, existing, incoming)
-        self.pending = needs
-        raise ResolutionRequired(needs)
+        self.history.record(instance, attr, existing)
 
     # --- who the conversation is between ---
 
@@ -341,6 +344,7 @@ class World:
     # --- internals ---
 
     def _apply_or_flag(self, instance, attrs: dict):
+        original = attrs
         # The name it was identified by is how the user refers to it, not a new value for it:
         # "Annie" doesn't contradict "Anna Sullivan".
         name_key = matching.NAME_KEYS.get(type(instance).__name__)
@@ -348,7 +352,12 @@ class World:
         conflicts = matching.contradictions(instance, attrs)
         if conflicts:
             attr, existing, incoming = conflicts[0]
-            return contradicting_value(instance, attr, existing, incoming)
+            needs = contradicting_value(instance, attr, existing, incoming)
+            # What "a different one" would be created from, name included.
+            needs.context["class_name"] = type(instance).__name__
+            needs.context["incoming_attrs"] = dict(original)
+            self.pending = needs
+            return needs
         return self.apply_attrs(instance, attrs)
 
     @staticmethod
@@ -371,9 +380,7 @@ def _period(starts, until, ttl, permanent: bool) -> dict:
 def _option_index(needs: NeedsResolution, choice, new: bool) -> int | None:
     """Turn what the user said into the option it stands for."""
     if new:
-        if needs.skill != "resolve_ambiguity":
-            raise ValueError("new=True only answers 'which one?' — this question is about a contradicting value")
-        return len(needs.options) - 1  # the last option is always "someone new"
+        return len(needs.options) - 1  # the last option is always "someone / something new"
     if choice is None or isinstance(choice, bool):
         return None
     if isinstance(choice, int):

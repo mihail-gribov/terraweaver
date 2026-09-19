@@ -248,6 +248,11 @@ class Entity:
         from terraweaver import timeutil
         current_world().set_period(self, until=at or timeutil.now())
 
+    def history(self, attr: str) -> list:
+        """The values this attribute has held, oldest first, each with when it stopped; the
+        current one last."""
+        return current_world().history.of(self, attr)
+
     def current(self) -> bool:
         """Whether this entity holds now."""
         from terraweaver import timeutil
@@ -332,16 +337,15 @@ class Entity:
             # Stored as given, only without stray whitespace; comparisons use the kind's normalize.
             if isinstance(value, str):
                 value = value.strip()
-        guarded = (
+        overwrite = (
             _WRITE_GUARD is not None
-            and not _TRUSTED
             and not name.startswith("_")
             and name not in _MANAGED_ATTRS
             and getattr(self, "id", None) is not None  # only entities the world already knows
             and getattr(self, name, None) is not None  # only overwrites, not first assignment
         )
-        if guarded:
-            _WRITE_GUARD(self, name, getattr(self, name), value)  # may refuse the write
+        if overwrite:
+            _WRITE_GUARD(self, name, getattr(self, name), value)  # keeps the old value in history
         object.__setattr__(self, name, value)
         if not name.startswith("_"):
             _note_changed(self, name)
@@ -547,6 +551,10 @@ Every class below shares these, so they aren't repeated for each one:
 
     entity.save()
         Persist that entity and everything it references.
+
+    Assigning an attribute (anna.email = "...") is your statement — the user said so or you
+    concluded it — and it goes through as it is. The old value isn't lost:
+    entity.history("email") lists what it held before and until when.
 
     When a record holds. An entity holds from when it's recorded and for good, unless told
     otherwise: Class.ensure(..., starts=date(...)) for what begins later (a job from October),

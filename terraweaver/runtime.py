@@ -82,8 +82,12 @@ Rules the world enforces:
   candidates (`needs.candidates`). Ask the user, then `entity = world.settle(needs, <the entity
   they meant>)`, or `world.settle(needs, new=True)` if it's someone new. Never answer it
   yourself — not even with new=True. If the user won't choose, leave it unresolved.
-- Assigning a value that contradicts what's stored raises ResolutionRequired; the question is in
-  `world.pending`. Ask the user, then `world.settle(world.pending, <the value that is right>)`.
+- Assigning an attribute is your statement and goes through: `anna.email = "..."` when the user
+  says it changed, or when you concluded it. The old value is kept — `anna.history("email")`.
+  A disagreement shows up as a question only when identifying: `Person.ensure(full_name="Ada",
+  organization=dataworks)` with Ada recorded at TechCorp asks whether it changed, the record is
+  right, or it's a different person — `world.settle(needs, <the value that is right>)`, or
+  `new=True` for a different one.
 - Your code can reach the world and plain computation only. """ + sandbox.AVAILABLE + "\n"
 
 
@@ -129,8 +133,8 @@ class WorldView:
     def ensure(self, cls, *, starts=None, until=None, ttl=None, permanent: bool = False, **attrs):
         return self._world.ensure(cls, starts=starts, until=until, ttl=ttl, permanent=permanent, **attrs)
 
-    def settle(self, needs: NeedsResolution, choice: int | None):
-        return self._world.settle(needs, choice)
+    def settle(self, needs: NeedsResolution, choice=None, *, new: bool = False):
+        return self._world.settle(needs, choice, new=new)
 
     def comments(self, since=None, until=None, contains: str | None = None, limit: int = 50,
                  include_expired: bool = False):

@@ -79,21 +79,28 @@ def main() -> int:
     check("and it points at the right person",
           any(f.value == "chess" and f.subject.full_name == "Ada Lovelace" for f in facts))
 
-    # --- a contradicting write can't slip past ---
+    # --- an assignment is the host's statement: it goes through, and the old value is kept ---
     classes, store, world = fresh_world()
     Person, Organization = classes["Person"], classes["Organization"]
     ada = Person.find(email="ada@example.com").main[0]
-    dataworks = Organization.find(name="DataWorks").main[0]
-    refused = False
-    try:
-        ada.organization = dataworks
-    except ResolutionRequired:
-        refused = True
-    check("a contradicting attribute write is refused", refused)
-    check("and it names the skill that settles it",
-          world.pending is not None and world.pending.skill == "resolve_contradiction")
+    techcorp, dataworks = Organization.get(name="TechCorp"), Organization.get(name="DataWorks")
+    ada.organization = dataworks
+    check("an assignment goes through without a question",
+          Person.find(email="ada@example.com").main[0].organization is dataworks)
+    past = ada.history("organization")
+    check("the old value stays in the history",
+          [p.value for p in past] == [techcorp, dataworks] and past[0].until is not None and past[1].until is None)
+    ada.organization = techcorp
+
+    # --- a disagreement while identifying is a question, with "a different one" among the answers ---
+    needs = world.ensure(Person, full_name="Ada Lovelace", email="ada@example.com", organization=dataworks)
+    check("ensure with a conflicting value asks", getattr(needs, "skill", None) == "resolve_contradiction")
+    check("and offers that it's a different person", len(getattr(needs, "options", [])) == 3)
     check("the world is untouched until the user decides",
-          Person.find(email="ada@example.com").main[0].organization.name == "TechCorp")
+          Person.find(email="ada@example.com").main[0].organization is techcorp)
+    other = world.settle(needs, new=True)
+    check("answering 'a different one' creates a second person and leaves the first alone",
+          other is not ada and other.organization is dataworks and ada.organization is techcorp)
 
     # --- printing an entity can't blow up ---
     # The world is a graph with cycles (person -> company -> employees -> person). Recursing
@@ -266,12 +273,9 @@ def main() -> int:
     tv.related_to = [first]
     tv.related_to = tv.related_to + [Idea.new(title="TV candidate: Sony Bravia 8", content="Candidate.")]
     check("appending to a list goes through", len(tv.related_to) == 2)
-    refused = False
-    try:
-        tv.related_to = [tv.related_to[1]]
-    except ResolutionRequired:
-        refused = True
-    check("dropping an item from it is still a question", refused)
+    tv.related_to = [tv.related_to[1]]
+    check("dropping an item goes through, and the fuller list is in the history",
+          len(tv.history("related_to")[-2].value) == 2 and len(tv.related_to) == 1)
 
     store.clear_all()
     check("a rebuilt world starts without old remarks",

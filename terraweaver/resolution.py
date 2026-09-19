@@ -124,9 +124,11 @@ def contradicting_value(instance, attr: str, existing_value, incoming_value) -> 
         reason=f"stored {attr} disagrees with the new information",
         question=(
             f"For {_describe(instance)} the record says {attr} = {_short(existing_value)}, "
-            f"but now it's {_short(incoming_value)}. Which is right?"
+            f"but now it's {_short(incoming_value)}. Did it change, is the record right, or is "
+            f"this a different {type(instance).__name__}?"
         ),
-        options=[f"{_short(incoming_value)} (new)", f"{_short(existing_value)} (as recorded)"],
+        options=[f"{_short(incoming_value)} (it changed)", f"{_short(existing_value)} (as recorded)",
+                 f"a different {type(instance).__name__}"],
         candidates=[instance],
         context={"attr": attr, "existing": existing_value, "incoming": incoming_value},
     )
@@ -159,8 +161,17 @@ def run_skill(needs: NeedsResolution, ask_user: Callable[[str, list[str]], int],
         return settled
 
     instance = needs.candidates[0]
-    if choice == 0:  # the incoming value wins
+    if choice == 0:  # the incoming value wins; the old one goes to history
         world.apply_resolved(instance, needs.context["attr"], needs.context["incoming"])
+    elif choice == 2 and needs.context.get("incoming_attrs") is not None:  # not the same one at all
+        class_name = needs.context["class_name"]
+        try:
+            return world.create(class_name, needs.context["incoming_attrs"])
+        except TypeError as missing:
+            raise ValueError(
+                f"to record a different {class_name}, more is needed than was given ({missing}); "
+                f"record it with {class_name}.new(...)"
+            ) from None
     else:
         world.save(instance)
     return instance

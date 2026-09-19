@@ -41,6 +41,8 @@ _FORBIDDEN_ATTRS = {
     "ag_code", "f_globals", "f_locals", "f_builtins", "f_back", "f_code", "tb_frame", "tb_next",
     "format_map", "mro",
 }
+# Names that are only strings — `type(e).__name__` is how code says which error it caught.
+_SAFE_DUNDERS = {"__name__", "__qualname__", "__doc__"}
 # A format string can reach attributes too: "{0.__class__}".format(x).
 _FORMAT_FIELD_ATTR = re.compile(r"\{[^}]*[.\[]")
 
@@ -63,7 +65,8 @@ def check(code: str, protected: set[str] = frozenset()) -> ast.AST:
             raise SandboxViolation(f"'{node.arg}' is a world variable; pick another parameter name")
         if isinstance(node, (ast.Import, ast.ImportFrom)):
             raise SandboxViolation("imports aren't available: everything you can use is already in the namespace")
-        if isinstance(node, ast.Attribute) and (node.attr.startswith("_") or node.attr in _FORBIDDEN_ATTRS):
+        if isinstance(node, ast.Attribute) and node.attr not in _SAFE_DUNDERS and (
+                node.attr.startswith("_") or node.attr in _FORBIDDEN_ATTRS):
             raise SandboxViolation(f"attribute '{node.attr}' is not accessible")
         if isinstance(node, ast.Name) and node.id.startswith("__"):
             raise SandboxViolation(f"name '{node.id}' is not accessible")

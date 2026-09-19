@@ -167,7 +167,7 @@ class Store:
             self.conn.execute("DELETE FROM values_")
             self.conn.execute("DELETE FROM instances")
             # Remarks hang off instances by id; a rebuilt world must not inherit old ones.
-            for table in ("comments", "name_choices"):
+            for table in ("comments", "name_choices", "value_history"):
                 if self.conn.execute("SELECT 1 FROM sqlite_master WHERE name = ?", (table,)).fetchone():
                     self.conn.execute(f"DELETE FROM {table}")
             self._identity.clear()
