@@ -80,6 +80,10 @@ def similarity(a: str | None, b: str | None, by_parts: bool = True) -> float:
     # A part matching is enough to consider someone, never enough to be sure of them:
     # "Alan" matches "Alan Turing" perfectly and would still be the wrong Alan if the user
     # knows two. Capping it below CERTAIN keeps that case going to the user.
+    # Both names in several parts: judge by the parts. The whole strings of "Kevin Liu" and
+    # "Darren Liu" are 60% alike through the shared surname — siblings, not one person.
+    if len(a_norm.split()) > 1 and len(b_parts) > 1:
+        return whole if whole >= CERTAIN else min(parts, PART_CEILING)
     return max(whole, min(parts, PART_CEILING))
 
 

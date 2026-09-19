@@ -9,12 +9,12 @@ b04.relate(meridian, "part_of", label="department")
 logistics = Organization.new(name="Logistics")
 logistics.relate(meridian, "part_of", label="division")
 kevin = Person.new(full_name="Kevin Chen", email="kchen@meridian.example")
-kevin.relate(b04, "membership", role="vendor logistics lead", primary=True, starts=date(2026, 1, 15))
+kevin.relate(b04, "membership", title="vendor logistics lead", primary=True, starts=date(2026, 1, 15))
 linda = Person.new(full_name="Linda Zhao", email="lzhao@meridian.example")
-linda.relate(b04, "membership", role="department manager", primary=True)
+linda.relate(b04, "membership", title="department manager", primary=True)
 linda.relate(b04, "authority", label="manager")
 tom = Person.new(full_name="Tom Reyes", email="treyes@meridian.example")
-tom.relate(logistics, "membership", role="operations lead", primary=True)
+tom.relate(logistics, "membership", title="operations lead", primary=True)
 """
 
 TURNS = [

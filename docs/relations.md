@@ -84,6 +84,33 @@ Spec fields: `"symmetric"`, `"asymmetric"`, `"transitive"`, `"transitive_via"`, 
 `"irreflexive"`, `"functional": "at_any_time"`, `"inverse_functional"`, `"reverse"` (the name read
 from the object's side).
 
+## Roles inside a type
+
+A type's characteristics hold for the type as a whole, and Kin as a whole is many-to-many — so on
+its own it can't say that a person has one mother. That lives one level down, in **roles**: each
+type may list them in its `relation.roles`, with
+
+- `inverse` — what the other end is ("mother" ↔ "child", "manager" ↔ "report");
+- `max` — how many subjects may hold the role for one object at overlapping times (one mother,
+  two parents, one CEO of an organization, four grandparents); `counts_as` puts a role in a group
+  with its own limit (mother and father both count as parent);
+- `synonyms` — how users say it; the label is matched to a role ("mom" → mother, "older brother"
+  → sibling, "Chief Executive Officer" → ceo), qualifiers like older/younger/late ignored;
+- `alternatives` — what to suggest when the limit is hit ("stepmother").
+
+A second mother is refused with the alternatives and the advice to ask the user which record is
+right. `relation.role_of(entity)` reads each end in its own terms. Kin also has `compose` rules
+that name a chain — parent's parent → grandparent, sibling's partner → sibling-in-law — used by
+`a.how_related(b)`, which walks current relations and answers in words.
+
+`a.relate(b, kind, label=X)` reads "a is b's X"; from the other end the reverse name reads
+naturally (`michael.relate(greg, "served_by", label="landlord")`). Results show every relation
+as that sentence ("Greg Hunt is Michael's landlord (service)") so a reversed one is easy to spot.
+
+Membership keeps the position in the user's words in `title` and the controlled role in `role`
+(ceo and chair one at a time per organization; founders, owners, employees many). A free-text
+`role="VP"` is taken as the title, and the role is looked for in it.
+
 ## Relations in a class's description
 
 A class is described not only by its attributes but by the relations characteristic of it — what

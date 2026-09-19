@@ -19,6 +19,45 @@
       "neighbor",
       "former colleague",
       "colleague"
+    ],
+    "roles": [
+      {
+        "name": "friend",
+        "inverse": "friend",
+        "synonyms": [
+          "friend",
+          "best friend",
+          "buddy",
+          "close friend"
+        ]
+      },
+      {
+        "name": "acquaintance",
+        "inverse": "acquaintance",
+        "synonyms": [
+          "acquaintance"
+        ]
+      },
+      {
+        "name": "neighbour",
+        "inverse": "neighbour",
+        "synonyms": [
+          "neighbour",
+          "neighbor"
+        ]
+      },
+      {
+        "name": "colleague",
+        "inverse": "colleague",
+        "synonyms": [
+          "colleague",
+          "former colleague",
+          "coworker",
+          "co-worker",
+          "classmate",
+          "old classmate"
+        ]
+      }
     ]
   },
   "attributes": [
@@ -27,6 +66,12 @@
       "type": "str",
       "required": false,
       "description": "What the user calls this relation, in their words."
+    },
+    {
+      "name": "role",
+      "type": "str",
+      "required": false,
+      "description": "The role the subject plays for the object, from this type's roles; filled from the label when it matches one."
     },
     {
       "name": "how_met",

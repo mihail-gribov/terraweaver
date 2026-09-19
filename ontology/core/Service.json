@@ -24,6 +24,13 @@
       "therapist",
       "accountant",
       "trainer"
+    ],
+    "roles": [
+      {
+        "name": "provider",
+        "inverse": "client",
+        "synonyms": []
+      }
     ]
   },
   "attributes": [
@@ -32,6 +39,12 @@
       "type": "str",
       "required": false,
       "description": "What the user calls this relation, in their words."
+    },
+    {
+      "name": "role",
+      "type": "str",
+      "required": false,
+      "description": "The role the subject plays for the object, from this type's roles; filled from the label when it matches one."
     },
     {
       "name": "fee",

@@ -81,7 +81,7 @@ def main() -> int:
     b04 = Organization.new(name="Supply Chain Operations", aliases=["B04"])
     b04.relate(company, "part_of", label="department")
     chen = Person.new(full_name="Kevin Chen", email="kchen@meridian.example")
-    job = chen.relate(b04, "membership", role="vendor logistics lead", starts=date(2026, 1, 15))
+    job = chen.relate(b04, "membership", title="vendor logistics lead", starts=date(2026, 1, 15))
     linda = Person.new(full_name="Linda Zhao", email="lzhao@meridian.example")
     linda.relate(b04, "authority", label="manager")
     check("read from the object's end by the reverse name", b04.related("members") == [chen])
@@ -94,8 +94,8 @@ def main() -> int:
     check("an endpoint of the wrong class is refused", refused(lambda: b04.relate(chen, "kin")) is not None)
 
     # --- a relation is an instance: attributes, history, comments ---
-    job.role = "team lead"
-    check("a relation's attribute keeps its history", [p.value for p in job.history("role")] == ["vendor logistics lead", "team lead"])
+    job.title = "team lead"
+    check("a relation's attribute keeps its history", [p.value for p in job.history("title")] == ["vendor logistics lead", "team lead"])
     job.comment("moved from Procurement")
     check("a relation takes comments", bool(job.comments(contains="Procurement")))
 
@@ -118,6 +118,36 @@ def main() -> int:
     check("Related needs a label and a description", refused(lambda: godfather.relate(priya, "related")) is not None)
     check("with them it goes through", refused(lambda: godfather.relate(
         priya, "related", label="godfather", description="Priya's godfather")) is None)
+
+    # --- roles: limits, inverses, chains ---
+    maria = Person.new(full_name="Maria Gribova", email="maria@example.com")
+    mom = maria.relate(owner, "kin", label="mom")
+    check("a label is matched to a role", mom.role == "mother" and mom.role_of(owner) == "child")
+    olga = Person.new(full_name="Olga Petrova", email="olga.p@example.com")
+    second = refused(lambda: olga.relate(owner, "kin", label="mother"))
+    check("a second mother is refused, naming the alternative", second is not None and "stepmother" in second, str(second))
+    check("a stepmother goes through", refused(lambda: olga.relate(owner, "kin", label="stepmother")) is None)
+    sister = Person.new(full_name="Olga Gribova", email="olga@example.com")
+    owner.relate(sister, "kin", label="brother")
+    mark = Person.new(full_name="Mark Stone", email="mark@example.com")
+    mark.relate(sister, "partner", label="husband")
+    check("a chain is named", (owner.how_related(mark) or "").startswith("Mark Stone is Michael's sibling in law"),
+          str(owner.how_related(mark)))
+    meridian = Organization.get(name="Meridian Corp")
+    ceo = Person.new(full_name="Ruth Adler", email="ruth@meridian.example")
+    ceo.relate(meridian, "membership", role="Chief Executive Officer")
+    check("a free-text role becomes the title, and the role is found in it",
+          ceo.relations("membership")[0].title == "Chief Executive Officer" and ceo.relations("membership")[0].role == "ceo")
+    other = Person.new(full_name="Sam Cole", email="sam@meridian.example")
+    check("a second current CEO is refused", refused(lambda: other.relate(meridian, "membership", title="CEO")) is not None)
+    check("founders can be many", refused(lambda: other.relate(meridian, "membership", title="co-founder")) is None
+          and refused(lambda: ceo.relate(meridian, "membership", label="founder")) is None)
+    check("a relation reads as a sentence", mom.display_name() == "Maria Gribova is Michael's mom (kin)", mom.display_name())
+    check("its period reads under the names it's written with", job.starts is not None and job.until is None)
+
+    # --- new() asks about someone the name merely resembles ---
+    maybe = Person.new(full_name="Darren", email="d@example.org")
+    check("new() with a resembling name asks instead of creating", getattr(maybe, "skill", None) == "resolve_ambiguity")
 
     # --- find compares entities by identity, not name ---
     twin = Organization.new(name="Meridian Corp (Boston)")

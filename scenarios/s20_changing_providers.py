@@ -5,7 +5,7 @@ different answers."""
 SETUP = """
 clinic = Organization.new(name="SmileCare")
 rao = Person.new(full_name="Arun Rao", email="rao@smilecare.example")
-rao.relate(clinic, "membership", role="dentist", primary=True)
+rao.relate(clinic, "membership", title="dentist", primary=True)
 rao.relate(owner, "service", label="dentist")
 """
 

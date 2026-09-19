@@ -279,11 +279,28 @@ class Entity:
 
         return relations.relations_of(current_world(), self, kind, history)
 
+    def how_related(self, other, max_hops: int = 3) -> str | None:
+        """How `other` is connected to this entity, in words: "Mark Stone is Michael's sibling in
+        law: Michael → sister Olga → husband Mark Stone". None if nothing links them."""
+        from terraweaver import relations
+
+        return relations.how_related(current_world(), self, other, max_hops)
+
     def related(self, kind: str, *, history: bool = False) -> list:
         """The entities at the other end of relations of `kind` (and the rest of a chain)."""
         from terraweaver import relations
 
         return relations.related(current_world(), self, kind, history)
+
+    @property
+    def starts(self):
+        """When it begins to hold (None: since it was recorded) — as given with starts=."""
+        return getattr(self, "valid_from", None)
+
+    @property
+    def until(self):
+        """When it stops holding (None: no end) — as given with until= / ttl=."""
+        return getattr(self, "valid_until", None)
 
     def current(self) -> bool:
         """Whether this entity holds now."""
@@ -620,12 +637,21 @@ Every class below shares these, so they aren't repeated for each one:
     entity.save()
         Persist that entity and everything it references.
 
-    Relations link two entities and carry their own data (docs: "Relation types" below):
-        kevin.relate(b04, "membership", role="vendor logistics lead", starts=date(2026, 1, 15))
+    Relations link two entities and carry their own data (docs: "Relation types" below).
+    a.relate(b, kind, label=X) reads "a is b's X": maria.relate(michael, "kin", label="mother")
+    says Maria is Michael's mother. From the other end, use the reverse name:
+    michael.relate(greg, "served_by", label="landlord") says Greg is Michael's landlord. Results
+    show each relation as that sentence — check it reads the way you meant. A relation's period
+    reads back under the same names it's written with: rel.starts, rel.until. The label is matched to the type's roles ("mom" -> mother,
+    "older brother" -> sibling), and the world checks each role's limits — a second mother is
+    refused with the alternatives (stepmother). relation.role_of(entity) says what an end is to
+    the other ("child" for Michael). a.how_related(b) walks the relations and names the chain
+    ("sister's husband" -> sibling in law).
+        kevin.relate(b04, "membership", title="vendor logistics lead", starts=date(2026, 1, 15))
         kevin.relate(darren, "kin", label="older brother")
         linda.relate(b04, "authority", label="manager")
         b04.relate(company, "part_of")
-    relate returns the relation — assign its attributes like any entity's (m.role = "team lead"),
+    relate returns the relation — assign its attributes like any entity's (m.title = "team lead"),
     comment on it, end it (m.expire()). entity.relations(kind) gives the relations themselves;
     entity.related(kind) the entities at the other end — also by the reverse name (b04.related(
     "members")) and along chains (kevin.related("membership") includes the company B04 is part
@@ -703,7 +729,14 @@ def describe_for_prompt(specs: dict[str, dict[str, Any]]) -> str:
                          f"{' / '.join(rel['to'])}  # {spec.get('description', '')}")
             if traits:
                 lines.append(f"    # {'; '.join(traits)}")
-            if rel.get("labels"):
+            if rel.get("roles"):
+                shown = []
+                for r in rel["roles"]:
+                    limit = f" (at most {r['max']})" if r.get("max") else ""
+                    names = ", ".join(r.get("synonyms", [])[:3])
+                    shown.append(f"{r['name']}{limit}" + (f" [{names}]" if names and names != r["name"] else ""))
+                lines.append(f"    # roles — a.relate(b, '{rel['kind']}', label=...) reads 'a is b's label': {'; '.join(shown)}")
+            elif rel.get("labels"):
                 lines.append(f"    # typical labels: {', '.join(rel['labels'][:8])}")
             lines += [line for line in _attribute_lines(spec) if not line.lstrip().startswith(("subject:", "object:"))]
             lines.append("")

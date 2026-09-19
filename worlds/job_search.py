@@ -143,7 +143,7 @@ def build(classes: dict[str, type], store) -> None:
         people[full_name] = person
         if company:
             store.save(Membership(id=f"membership:{index:02d}", subject=person, object=companies[company],
-                                  role=job_title, kind="employment", primary=True))
+                                  title=job_title, kind="employment", primary=True))
         tie = f"tie:{index:02d}"
         if relationship == "recruiter":
             store.save(Service(id=tie, subject=person, object=owner, label="recruiter"))

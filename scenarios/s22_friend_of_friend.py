@@ -6,7 +6,7 @@ SETUP = """
 priya = Person.new(full_name="Priya Shah", email="priya@example.com")
 owner.relate(priya, "social", label="friend")
 omar = Person.new(full_name="Omar Haddad", email="omar@healthsync.example")
-omar.relate(Organization.get(name="HealthSync"), "membership", role="engineering manager", primary=True)
+omar.relate(Organization.get(name="HealthSync"), "membership", title="engineering manager", primary=True)
 priya.relate(omar, "social", label="old classmate")
 """
 

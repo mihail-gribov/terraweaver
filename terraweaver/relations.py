@@ -30,18 +30,27 @@ class Relation(Entity):
     """Common ancestor of relation types: an instance linking a subject and an object."""
 
     def display_name(self) -> str:
+        """The relation as a sentence, so a reversed one is easy to spot: "Greg Hunt is
+        Michael's landlord (service)", not an arrow whose direction has to be remembered."""
         subject, obj = getattr(self, "subject", None), getattr(self, "object", None)
         kind = type(self)._spec["relation"]["kind"]
-        own = self.__dict__.get("label")
-        shown = f"{kind}: {own}" if own else kind
+        what = self.__dict__.get("label") or (self.__dict__.get("role") or "").replace("_", " ") or kind
         left = subject.display_name() if isinstance(subject, Entity) else "?"
         right = obj.display_name() if isinstance(obj, Entity) else "?"
-        arrow = "↔" if type(self)._spec["relation"].get("symmetric") else "→"
-        return f"{left} {arrow} {right} ({shown})"
+        return f"{left} is {right}'s {what} ({kind})"
 
     def other(self, entity):
         """The end of this relation that isn't `entity`."""
         return self.object if same(self.subject, entity) else self.subject
+
+    def role_of(self, entity):
+        """What `entity` is to the other end: the subject plays `role`, the object its inverse.
+        Maria —mother→ Michael: role_of(maria) is "mother", role_of(michael) is "child"."""
+        role = self.__dict__.get("role")
+        if same(entity, self.subject):
+            return role or self.__dict__.get("label")
+        inverse = role_info(type(self), role).get("inverse") if role else None
+        return inverse or self.__dict__.get("label_reverse") or (self.__dict__.get("label") if spec(type(self)).get("symmetric") else None)
 
 
 def same(a, b) -> bool:
@@ -81,6 +90,64 @@ def type_for_label(classes: dict[str, type], label: str) -> str | None:
         if wanted in [l.lower() for l in spec(cls).get("labels", [])]:
             return name
     return None
+
+
+_QUALIFIERS = ("older ", "younger ", "elder ", "big ", "little ", "baby ", "twin ", "my ", "late ", "ex-", "ex ")
+
+
+def role_info(cls, role: str | None) -> dict:
+    return next((r for r in spec(cls).get("roles", []) if r["name"] == role), {})
+
+
+def match_role(cls, label: str | None) -> str | None:
+    """The role a label names: "older brother" -> sibling, "mom" -> mother."""
+    if not label:
+        return None
+    text = " ".join(str(label).lower().split())
+    stripped = True
+    while stripped:
+        stripped = False
+        for q in _QUALIFIERS:
+            if text.startswith(q):
+                text, stripped = text[len(q):], True
+    roles = spec(cls).get("roles", [])
+    for r in roles:
+        if text in [x.lower() for x in r.get("synonyms", [])] or text == r["name"].replace("_", " "):
+            return r["name"]
+    last = text.split()[-1] if text.split() else text
+    for r in roles:
+        if last in [x.lower() for x in r.get("synonyms", []) if " " not in x]:
+            return r["name"]
+    return None
+
+
+def _check_roles(world, name, cls, subject, obj, role, start, end) -> None:
+    """A role's limit: a person has at most one mother, two parents, four grandparents."""
+    info = role_info(cls, role)
+    limits = [(role, info.get("max"), {role})] if info.get("max") else []
+    group = info.get("counts_as")
+    if group:
+        members = {r["name"] for r in spec(cls).get("roles", []) if r.get("counts_as") == group} | {group}
+        limits.append((group, role_info(cls, group).get("max"), members))
+    for label, most, members in limits:
+        if not most:
+            continue
+        holders = []
+        for r in world.all(name, limit=None, history=True):
+            if not _overlaps(r, start, end):
+                continue
+            plays = r.role_of(r.subject) if same(r.object, obj) else r.role_of(r.object) if same(r.subject, obj) else None
+            if plays in members and not same(r.other(obj), subject):
+                holders.append(r.other(obj))
+        if len(holders) >= most:
+            alternatives = info.get("alternatives") or role_info(cls, group).get("alternatives") or []
+            names = ", ".join(h.display_name() for h in holders)
+            raise ValueError(
+                f"{obj.display_name()} already has {'a ' + label if most == 1 else str(most) + ' ' + label + 's'}: "
+                f"{names}. A person has at most {most}. "
+                + (f"If {subject.display_name()} is a {' or '.join(alternatives)}, say so in the label. " if alternatives else "")
+                + "If the existing record is wrong, end or forget it first — ask the user which is right."
+            )
 
 
 def _fits(entity, allowed: list[str]) -> bool:
@@ -124,6 +191,20 @@ def relate(world, a, b, kind: str, period: dict, attrs: dict):
         if fitting:
             ontology.note_hint(f"'{attrs['label']}' is what {fitting} is for — "
                                f"{spec(world.classes[fitting])['kind']} knows how that link behaves")
+    if rel.get("roles"):
+        given = attrs.get("role")
+        text_field = rel.get("role_text")
+        if given and not role_info(cls, given):
+            if text_field and not attrs.get(text_field):
+                # role="VP" is how people write a position: keep it as the title, find the role in it.
+                attrs = {**attrs, text_field: given}
+                attrs.pop("role")
+                given = None
+            else:
+                raise ValueError(f"{name} has no role {given!r}; its roles: {', '.join(r['name'] for r in rel['roles'])}")
+        found_role = given or match_role(cls, attrs.get("label")) or (match_role(cls, attrs.get(text_field)) if text_field else None)
+        if found_role:
+            attrs = {**attrs, "role": found_role}
     for end in (subject, obj):
         if end.id is None:
             world.save(end)
@@ -133,10 +214,11 @@ def relate(world, a, b, kind: str, period: dict, attrs: dict):
         found = existing[0]
         # Seen from the other end of a symmetric relation, a label is that side's label:
         # "Darren is Kevin's younger brother" after "Kevin is Darren's older brother".
-        if rel.get("symmetric") and not same(found.subject, subject) and "label" in attrs \
-                and any(a["name"] == "label_reverse" for a in cls._spec["attributes"]):
+        if rel.get("symmetric") and not same(found.subject, subject):
             attrs = dict(attrs)
-            attrs["label_reverse"] = attrs.pop("label")
+            attrs.pop("role", None)  # said from the other end: the stored role is the other side's
+            if "label" in attrs and any(a["name"] == "label_reverse" for a in cls._spec["attributes"]):
+                attrs["label_reverse"] = attrs.pop("label")
         for attr, value in attrs.items():
             if getattr(found, attr, None) != value:
                 setattr(found, attr, value)
@@ -147,6 +229,8 @@ def relate(world, a, b, kind: str, period: dict, attrs: dict):
     start = period.get("valid_from") or timeutil.now()
     end = period.get("valid_until")
     _check_functional(world, name, rel, subject, obj, start, end, attrs)
+    if attrs.get("role"):
+        _check_roles(world, name, cls, subject, obj, attrs["role"], start, end)
     if rel.get("acyclic") and _reaches(world, name, obj, subject):
         raise ValueError(f"{name} can't form a cycle: {obj.display_name()} already leads to {subject.display_name()}")
     created = world.create(name, {"subject": subject, "object": obj, **attrs})
@@ -258,6 +342,67 @@ def _unique(items: list) -> list:
     return out
 
 
+def how_related(world, a, b, max_hops: int = 3) -> str | None:
+    """How `b` is connected to `a` through current relations, in words, with a family name for
+    the chain when there is one (sister's husband -> sibling-in-law)."""
+    frontier = [(a, [])]
+    seen = {a.id}
+    for _ in range(max_hops):
+        nxt = []
+        for node, path in frontier:
+            for r in relations_of(world, node):
+                other = r.other(node)
+                if other.id in seen:
+                    continue
+                step = path + [(r, other)]
+                if same(other, b):
+                    return _describe_path(world, a, step)
+                seen.add(other.id)
+                nxt.append((other, step))
+        frontier = nxt
+    return None
+
+
+def _step_role(r, entity) -> str:
+    role = r.role_of(entity)
+    return role or spec(type(r))["kind"]
+
+
+def _describe_path(world, a, path) -> str:
+    parts = [a.display_name()]
+    for r, entity in path:
+        own = entity is r.subject and r.__dict__.get("label") or r.__dict__.get("label_reverse") if not same(entity, r.subject) else r.__dict__.get("label")
+        parts.append(f"{own or _step_role(r, entity)} {entity.display_name()}")
+    target = path[-1][1]
+    name = _family_name(world, [(r, e) for r, e in path])
+    lead = f"{target.display_name()} is {a.display_name()}'s {name.replace('_', ' ')}" if name else \
+        f"{target.display_name()} is connected to {a.display_name()}"
+    return f"{lead}: " + " → ".join(parts)
+
+
+def _family_name(world, path) -> str | None:
+    """The kinship term for a chain of family and partner steps, if the rules name it."""
+    kin = world.classes.get("Kin")
+    if kin is None:
+        return None
+    roles = []
+    for r, entity in path:
+        kind = spec(type(r))["kind"]
+        if kind == "partner":
+            roles.append("partner")
+        elif kind == "kin":
+            role = r.role_of(entity)
+            roles.append(role_info(kin, role).get("counts_as") or role)
+        else:
+            return None
+    if len(roles) == 1:
+        return roles[0]
+    for rule in spec(kin).get("compose", []):
+        if rule["path"] == roles:
+            return rule["gives"]
+    return None
+
+
 # --- attributes derived from relations ---
 
 def _primary(world, person, history: bool = False) -> list:
@@ -311,7 +456,7 @@ def _primary_membership(person):
 
 def _get_job_title(person):
     job = _primary_membership(person)
-    return job.role if job is not None else None
+    return job.title if job is not None else None
 
 
 def _set_job_title(person, title) -> None:
@@ -319,14 +464,14 @@ def _set_job_title(person, title) -> None:
     if job is None:
         raise TypeError(
             "job_title is the role in the person's primary membership — set their organization first, "
-            "or person.relate(org, 'membership', role=...)"
+            "or person.relate(org, 'membership', title=...)"
         )
-    job.role = title
+    job.title = title
 
 
 def _history_job_title(person) -> list:
     job = _primary_membership(person)
-    return job.history("role") if job is not None else []
+    return job.history("title") if job is not None else []
 
 
 def _get_relationship(person):

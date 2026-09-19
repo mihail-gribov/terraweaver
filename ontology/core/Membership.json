@@ -19,6 +19,105 @@
       "student",
       "member",
       "volunteer"
+    ],
+    "role_text": "title",
+    "roles": [
+      {
+        "name": "ceo",
+        "inverse": "organization",
+        "max": 1,
+        "synonyms": [
+          "ceo",
+          "chief executive",
+          "chief executive officer",
+          "general director",
+          "managing director"
+        ]
+      },
+      {
+        "name": "chair",
+        "inverse": "organization",
+        "max": 1,
+        "synonyms": [
+          "chair",
+          "chairman",
+          "chairwoman",
+          "chairperson",
+          "chair of the board"
+        ]
+      },
+      {
+        "name": "founder",
+        "inverse": "organization",
+        "synonyms": [
+          "founder",
+          "co-founder",
+          "cofounder"
+        ]
+      },
+      {
+        "name": "board_member",
+        "inverse": "organization",
+        "synonyms": [
+          "board member",
+          "director on the board",
+          "non-executive director"
+        ]
+      },
+      {
+        "name": "owner",
+        "inverse": "organization",
+        "synonyms": [
+          "owner",
+          "co-owner",
+          "shareholder"
+        ]
+      },
+      {
+        "name": "employee",
+        "inverse": "employer",
+        "synonyms": [
+          "employee",
+          "staff",
+          "engineer",
+          "developer",
+          "manager",
+          "analyst"
+        ]
+      },
+      {
+        "name": "contractor",
+        "inverse": "client",
+        "synonyms": [
+          "contractor",
+          "consultant",
+          "freelancer"
+        ]
+      },
+      {
+        "name": "student",
+        "inverse": "school",
+        "synonyms": [
+          "student",
+          "pupil",
+          "graduate student",
+          "phd student"
+        ]
+      },
+      {
+        "name": "member",
+        "inverse": "organization",
+        "synonyms": [
+          "member"
+        ]
+      },
+      {
+        "name": "volunteer",
+        "inverse": "organization",
+        "synonyms": [
+          "volunteer"
+        ]
+      }
     ]
   },
   "attributes": [
@@ -32,7 +131,13 @@
       "name": "role",
       "type": "str",
       "required": false,
-      "description": "Position or title in it."
+      "description": "Their role from this type's roles (ceo, founder, employee…); filled from the label or title when it matches one."
+    },
+    {
+      "name": "title",
+      "type": "str",
+      "required": false,
+      "description": "Their position in their own words: 'vendor logistics lead', 'Head of Engineering'."
     },
     {
       "name": "kind",

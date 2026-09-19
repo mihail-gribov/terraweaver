@@ -22,6 +22,21 @@
       "director",
       "supervisor",
       "team lead"
+    ],
+    "roles": [
+      {
+        "name": "manager",
+        "inverse": "report",
+        "synonyms": [
+          "manager",
+          "boss",
+          "head",
+          "director",
+          "supervisor",
+          "team lead",
+          "lead"
+        ]
+      }
     ]
   },
   "attributes": [
@@ -30,6 +45,12 @@
       "type": "str",
       "required": false,
       "description": "What the user calls this relation, in their words."
+    },
+    {
+      "name": "role",
+      "type": "str",
+      "required": false,
+      "description": "The role the subject plays for the object, from this type's roles; filled from the label when it matches one."
     }
   ],
   "methods": []
