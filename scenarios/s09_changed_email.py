@@ -23,3 +23,6 @@ PROBES = [
     ("Using my world (terraweaver): what's Anna Peterson's email address?",
      ['anna@dataworks.io'], []),
 ]
+
+# Passed in every mode with Opus and Haiku: kept for regression, left out of comparisons.
+LEVEL = "basic"

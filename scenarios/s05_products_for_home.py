@@ -43,3 +43,5 @@ PROBES = [
     ('Using my world (terraweaver): which TVs are still in the running, and why was one dropped?',
      ['QN90D', 'Bravia', 'glare'], []),
 ]
+
+LEVEL = "hard"

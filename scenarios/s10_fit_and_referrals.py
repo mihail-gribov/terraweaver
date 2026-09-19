@@ -15,3 +15,6 @@ assert len(Vacancy.find(status="not_applied")) == 21, "vacancy statuses changed"
 
 ANSWER_MUST = ["Research Scientist", "Alan", "Ada"]
 ANSWER_MUST_NOT = ["Gameplay Programmer", "Frontend Engineer"]
+
+# Passed in every mode with Opus and Haiku: kept for regression, left out of comparisons.
+LEVEL = "basic"

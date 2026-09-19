@@ -29,3 +29,5 @@ PROBES = [
     ('Using my world (terraweaver): where does Priya Shah work, and does she have any job offers?',
      ['GreenGrid', 'FinEdge', 'offer'], []),
 ]
+
+LEVEL = "hard"

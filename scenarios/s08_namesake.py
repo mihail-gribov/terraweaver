@@ -25,3 +25,5 @@ PROBES = [
     ('Using my world (terraweaver): how many people named Robert Wolfe do I know, and where does each work?',
      ['FinEdge', 'PixelForge'], []),
 ]
+
+LEVEL = "hard"

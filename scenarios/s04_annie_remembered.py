@@ -27,3 +27,5 @@ PROBES = [
     ("Using my world (terraweaver): what's Annie's email address?",
      ['anna.sullivan@example.com'], []),
 ]
+
+LEVEL = "hard"

@@ -38,3 +38,5 @@ PROBES = [
     ("Using my world (terraweaver): what's coming up with CloudNine, and who invited me?",
      ['meetup', 'Sullivan'], []),
 ]
+
+LEVEL = "hard"

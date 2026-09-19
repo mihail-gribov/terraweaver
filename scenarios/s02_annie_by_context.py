@@ -24,3 +24,6 @@ PROBES = [
     ('Using my world (terraweaver): who did I send the meetup details to?',
      ['Sullivan'], []),
 ]
+
+# Passed in every mode with Opus and Haiku: kept for regression, left out of comparisons.
+LEVEL = "basic"

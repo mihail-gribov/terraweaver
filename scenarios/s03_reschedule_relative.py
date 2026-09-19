@@ -31,3 +31,6 @@ PROBES = [
     ('Using my world (terraweaver): when is my DataWorks interview now, and who did I tell about the change?',
      ['25', 'Peterson'], []),
 ]
+
+# Passed in every mode with Opus and Haiku: kept for regression, left out of comparisons.
+LEVEL = "basic"

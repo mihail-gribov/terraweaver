@@ -25,6 +25,8 @@ never touched.
     .venv/bin/python scenarios/run.py                      # all scenarios, world mode
     .venv/bin/python scenarios/run.py --baseline s06 s08   # chosen scenarios, baseline mode
     .venv/bin/python scenarios/run.py --port 7015 s06      # own server port, to run several at once
+    .venv/bin/python scenarios/run.py --model haiku s06    # another model as the host
+    .venv/bin/python scenarios/run.py --level hard         # only the scenarios that tell modes apart
 """
 import asyncio
 import importlib.util
@@ -44,6 +46,7 @@ HERE = Path(__file__).resolve().parent
 PORT = 7010
 URL = f"http://127.0.0.1:{PORT}"
 RESULTS = ROOT / "experiments" / "results" / "scenarios"
+MODEL: str | None = None  # the host's model; None = Claude Code's default
 
 BASELINE_BRIEF = """\
 # Michael's personal data
@@ -129,6 +132,8 @@ class BaselineHost:
 def ask(host, prompt: str, flags: list[str], resume: str | None, log: Path) -> dict:
     """One Claude Code turn; returns its final text, session id, turns and cost."""
     cmd = ["claude", "-p", host.phrase(prompt), *flags, "--output-format", "stream-json", "--verbose"]
+    if MODEL:
+        cmd += ["--model", MODEL]
     if resume:
         cmd += ["--resume", resume]
     started = time.monotonic()
@@ -211,15 +216,23 @@ def start_server(db: Path) -> subprocess.Popen:
 
 
 def main() -> int:
-    global PORT, URL
+    global PORT, URL, MODEL
     args = sys.argv[1:]
+    if "--model" in args:
+        MODEL = args.pop(args.index("--model") + 1)
+        args.remove("--model")
     if "--port" in args:
         PORT = int(args.pop(args.index("--port") + 1))
         args.remove("--port")
         URL = f"http://127.0.0.1:{PORT}"
+    level = None
+    if "--level" in args:
+        level = args.pop(args.index("--level") + 1)
+        args.remove("--level")
     mode = "baseline" if "--baseline" in args else "world"
-    scenarios = load_scenarios([a for a in args if not a.startswith("--")])
-    out_dir = RESULTS / f"{datetime.now().strftime('%Y%m%d-%H%M%S')}-{mode}-{PORT}"
+    scenarios = [s for s in load_scenarios([a for a in args if not a.startswith("--")])
+                 if level is None or getattr(s, "LEVEL", "basic") == level]
+    out_dir = RESULTS / f"{datetime.now().strftime('%Y%m%d-%H%M%S')}-{mode}-{MODEL or 'default'}-{PORT}"
     out_dir.mkdir(parents=True, exist_ok=True)
     work = Path(tempfile.mkdtemp(prefix="tw-scenarios-"))
     server = start_server(work / "world.db")
@@ -228,11 +241,16 @@ def main() -> int:
         for scenario in scenarios:
             row = run_scenario(scenario, mode, work, out_dir)
             rows.append(row)
-            print(f"{'PASS' if row['passed'] else 'FAIL'}  {row['name']:28} {mode:8} turns={row.get('turns', 0):<3} "
+            print(f"{'PASS' if row['passed'] else 'FAIL'}  {row['name']:28} {mode:8} {MODEL or 'default':7} turns={row.get('turns', 0):<3} "
                   f"${row.get('cost', 0):.2f} {row.get('seconds', 0)}s"
                   + (f"  — {row['failure']}" if row["failure"] else ""), flush=True)
     finally:
         server.kill()
+        # Claude Code keeps per-folder memory under ~/.claude/projects; the baseline folders of
+        # this run left theirs there. They're throwaway, like the folders.
+        import shutil
+        for leftover in (Path.home() / ".claude" / "projects").glob(f"-tmp-{work.name}-*"):
+            shutil.rmtree(leftover, ignore_errors=True)
     (out_dir / "summary.json").write_text(json.dumps(rows, indent=2, ensure_ascii=False))
     passed = sum(r["passed"] for r in rows)
     print(f"\n{passed}/{len(rows)} passed [{mode}], ${sum(r.get('cost', 0) for r in rows):.2f} "

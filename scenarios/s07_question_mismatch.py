@@ -20,3 +20,6 @@ PROBES = [
     ("Using my world (terraweaver): what's on my calendar with QuantumLeap?",
      ['Alan', 'call'], []),
 ]
+
+# Passed in every mode with Opus and Haiku: kept for regression, left out of comparisons.
+LEVEL = "basic"
