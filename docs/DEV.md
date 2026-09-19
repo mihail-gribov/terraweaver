@@ -84,7 +84,7 @@ The session header names the namespace; without it all windows of one client sha
 
 No model needed; they need the venv (tldextract):
 
-    for t in find world_state values runtime; do .venv/bin/python tests/test_$t.py | tail -1; done
+    for t in find world_state values runtime relations; do .venv/bin/python tests/test_$t.py | tail -1; done
 
 ## Host scenarios
 

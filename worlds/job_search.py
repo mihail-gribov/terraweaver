@@ -132,27 +132,32 @@ def build(classes: dict[str, type], store) -> None:
     store.save(owner)
     store.save_graph(classes["Agent"](id="agent:me", owner=owner, **AGENT))
 
+    # Where people work and what they are to the owner are relations, not fields: a job carries
+    # a role and dates, and "former manager" is an Authority that ended.
+    Membership, Social, Service, Authority = (classes[n] for n in ("Membership", "Social", "Service", "Authority"))
+    now_ = datetime.now(timezone.utc)
     people = {}
     for index, (full_name, email, company, relationship, job_title, aliases) in enumerate(PEOPLE_DATA):
-        person = Person(
-            id=f"person:{index:02d}",
-            full_name=full_name,
-            aliases=list(aliases),
-            email=email,
-            relationship=relationship,
-            job_title=job_title,
-            organization=companies[company] if company else None,
-        )
+        person = Person(id=f"person:{index:02d}", full_name=full_name, aliases=list(aliases), email=email)
+        store.save(person)
         people[full_name] = person
-        # save_graph, not save: linking a person to a company also changes the company's
-        # side of the relationship, and that has to reach the store too.
-        store.save_graph(person)
+        if company:
+            store.save(Membership(id=f"membership:{index:02d}", subject=person, object=companies[company],
+                                  role=job_title, kind="employment", primary=True))
+        tie = f"tie:{index:02d}"
+        if relationship == "recruiter":
+            store.save(Service(id=tie, subject=person, object=owner, label="recruiter"))
+        elif relationship == "former manager":
+            store.save(Authority(id=tie, subject=person, object=owner, label="manager",
+                                 valid_until=now_ - timedelta(days=365)))
+        else:
+            store.save(Social(id=tie, subject=owner, object=person, label=relationship))
 
     for predicate, value, confidence in OWNER_FACTS:
         store.save_graph(owner.add_fact(predicate=predicate, value=value, confidence=confidence))
 
     # Whoever we know at a company is our way in to its openings.
-    contacts = {p.organization.name: p for p in people.values() if p.organization is not None}
+    contacts = {company: people[name] for name, _, company, *_ in PEOPLE_DATA if company}
 
     now = datetime.now(timezone.utc)
     vacancies = []

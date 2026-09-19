@@ -134,7 +134,7 @@ class WorldVariables:
 
 def _show(value: Any) -> str:
     if isinstance(value, Entity):
-        return f"{type(value).__name__} «{value.label()}»"
+        return f"{type(value).__name__} «{value.display_name()}»"
     if isinstance(value, list) and value and all(isinstance(v, Entity) for v in value):
         return f"[{', '.join(_show(v) for v in value[:5])}{', …' if len(value) > 5 else ''}]"
     if value is None:

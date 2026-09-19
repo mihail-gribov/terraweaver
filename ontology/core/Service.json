@@ -1,0 +1,50 @@
+{
+  "name": "Service",
+  "description": "Someone providing a service to a person: doctor, lawyer, landlord, recruiter, tutor, coach, mentor.",
+  "relation": {
+    "kind": "service",
+    "from": [
+      "Person",
+      "Organization"
+    ],
+    "to": [
+      "Person"
+    ],
+    "asymmetric": true,
+    "reverse": "served_by",
+    "labels": [
+      "doctor",
+      "dentist",
+      "lawyer",
+      "landlord",
+      "recruiter",
+      "tutor",
+      "coach",
+      "mentor",
+      "therapist",
+      "accountant",
+      "trainer"
+    ]
+  },
+  "attributes": [
+    {
+      "name": "label",
+      "type": "str",
+      "required": false,
+      "description": "What the user calls this relation, in their words."
+    },
+    {
+      "name": "fee",
+      "type": "float",
+      "required": false,
+      "description": "What it costs, per visit or month."
+    },
+    {
+      "name": "schedule",
+      "type": "str",
+      "required": false,
+      "description": "When it happens."
+    }
+  ],
+  "methods": []
+}

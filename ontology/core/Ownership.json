@@ -1,0 +1,37 @@
+{
+  "name": "Ownership",
+  "description": "Someone owning, renting or borrowing a thing or a place.",
+  "relation": {
+    "kind": "ownership",
+    "from": [
+      "Person",
+      "Organization"
+    ],
+    "to": [
+      "any"
+    ],
+    "asymmetric": true,
+    "reverse": "owned_by",
+    "labels": [
+      "owns",
+      "rents",
+      "borrowed",
+      "leases"
+    ]
+  },
+  "attributes": [
+    {
+      "name": "label",
+      "type": "str",
+      "required": false,
+      "description": "What the user calls this relation, in their words."
+    },
+    {
+      "name": "price",
+      "type": "float",
+      "required": false,
+      "description": "What was paid, or the rent."
+    }
+  ],
+  "methods": []
+}

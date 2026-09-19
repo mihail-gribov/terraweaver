@@ -76,7 +76,7 @@ class Comment:
         flag = " (tentative)" if self.tentative else ""
         if self.until is not None:
             flag += f" (expired {_show_date(self.until)})" if self.expired else f" (until {_show_date(self.until)})"
-        return f"<Comment on {self.about.label()} — {when}{self.text}{flag}>"
+        return f"<Comment on {self.about.display_name()} — {when}{self.text}{flag}>"
 
 
 class Comments:
@@ -112,7 +112,7 @@ class Comments:
                 (entity.id, text.strip(), _encode_date(when), recorded.isoformat(), int(bool(tentative)),
                  _encode_date(ends), int(default)),
             )
-        ontology.note_remark(f"added on {entity.label()}: {text.strip()}")
+        ontology.note_remark(f"added on {entity.display_name()}: {text.strip()}")
         return Comment(cursor.lastrowid, entity, text.strip(), when, recorded, bool(tentative), ends, self)
 
     def set_end(self, comment: Comment, until=None, ttl=None, permanent: bool = False):
@@ -141,7 +141,7 @@ class Comments:
         ontology.note_world_call("world_writes")
         with self.store.transaction():
             self.store.conn.execute("DELETE FROM comments WHERE id = ?", (comment.id,))
-        ontology.note_remark(f"forgotten on {comment.about.label()}: {comment.text}")
+        ontology.note_remark(f"forgotten on {comment.about.display_name()}: {comment.text}")
 
     def confirm(self, comment: Comment):
         """Confirm a remark. Returns its end: kept if the host set it, the ordinary default if not."""

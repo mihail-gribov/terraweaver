@@ -1,0 +1,45 @@
+{
+  "name": "Social",
+  "description": "Friends, acquaintances, neighbours, former colleagues.",
+  "relation": {
+    "kind": "social",
+    "from": [
+      "Person"
+    ],
+    "to": [
+      "Person"
+    ],
+    "symmetric": true,
+    "irreflexive": true,
+    "labels": [
+      "friend",
+      "best friend",
+      "acquaintance",
+      "neighbour",
+      "neighbor",
+      "former colleague",
+      "colleague"
+    ]
+  },
+  "attributes": [
+    {
+      "name": "label",
+      "type": "str",
+      "required": false,
+      "description": "What the user calls this relation, in their words."
+    },
+    {
+      "name": "how_met",
+      "type": "str",
+      "required": false,
+      "description": "How they came to know each other."
+    },
+    {
+      "name": "closeness",
+      "type": "int",
+      "required": false,
+      "description": "1 (distant) to 5 (closest)."
+    }
+  ],
+  "methods": []
+}

@@ -32,7 +32,7 @@ class Past:
     until: datetime | None
 
     def __repr__(self):
-        shown = self.value.label() if hasattr(self.value, "label") else repr(self.value)
+        shown = self.value.display_name() if hasattr(self.value, "display_name") else repr(self.value)
         return f"<{shown} until {timeutil.show(self.until)}>" if self.until else f"<{shown} now>"
 
 

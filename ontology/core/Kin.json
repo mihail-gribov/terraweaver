@@ -1,0 +1,46 @@
+{
+  "name": "Kin",
+  "description": "Family: blood relatives and in-laws.",
+  "relation": {
+    "kind": "kin",
+    "from": [
+      "Person"
+    ],
+    "to": [
+      "Person"
+    ],
+    "symmetric": true,
+    "irreflexive": true,
+    "labels": [
+      "brother",
+      "sister",
+      "mother",
+      "father",
+      "son",
+      "daughter",
+      "grandmother",
+      "grandfather",
+      "cousin",
+      "aunt",
+      "uncle",
+      "mother-in-law",
+      "father-in-law",
+      "sibling"
+    ]
+  },
+  "attributes": [
+    {
+      "name": "label",
+      "type": "str",
+      "required": false,
+      "description": "What the user calls this relation, in their words."
+    },
+    {
+      "name": "label_reverse",
+      "type": "str",
+      "required": false,
+      "description": "The label seen from the other side (brother ↔ sister)."
+    }
+  ],
+  "methods": []
+}

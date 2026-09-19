@@ -1,0 +1,30 @@
+{
+  "name": "Related",
+  "description": "Any other link, when none of the other types fits. Label and description are required.",
+  "relation": {
+    "kind": "related",
+    "from": [
+      "any"
+    ],
+    "to": [
+      "any"
+    ],
+    "free": true,
+    "labels": []
+  },
+  "attributes": [
+    {
+      "name": "label",
+      "type": "str",
+      "required": true,
+      "description": "What the user calls this relation, in their words."
+    },
+    {
+      "name": "description",
+      "type": "str",
+      "required": true,
+      "description": "What this link is, in a sentence."
+    }
+  ],
+  "methods": []
+}

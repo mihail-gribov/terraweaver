@@ -210,6 +210,9 @@ def _same_value(instance, attr: str, a, b) -> bool:
     Plain strings keep the looser comparison (case and spacing ignored); an email, phone or
     URL goes through its kind's own normalize.
     """
+    # Two entities are the same only if they are the same record — not if they share a name.
+    if isinstance(a, Entity) and isinstance(b, Entity):
+        return a is b or (a.id is not None and a.id == b.id)
     found = values.kind_of(type(instance)._spec, attr)
     if found is not None and found[0] is not values.Value and isinstance(a, str) and isinstance(b, str):
         kind, options = found
@@ -228,7 +231,7 @@ def _holds(instance, attr: str, wanted) -> bool:
     if isinstance(wanted, Condition):
         return wanted.test(current)
     if isinstance(current, list) and not isinstance(wanted, list):
-        return any(label(item) == label(wanted) for item in current)
+        return any(_same_value(instance, attr, item, wanted) for item in current)
     return _same_value(instance, attr, current, wanted)
 
 

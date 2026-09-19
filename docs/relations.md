@@ -1,6 +1,6 @@
 # Relations
 
-Design agreed 2026-09-19; not implemented yet.
+Design agreed and implemented 2026-09-19 (`terraweaver/relations.py`, relation types in `ontology/core/`, tests in `tests/test_relations.py`). Participation is defined but `Event.participants` / `Project.participants` still exist.
 
 ## Why
 

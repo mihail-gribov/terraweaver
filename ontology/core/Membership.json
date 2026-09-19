@@ -1,0 +1,59 @@
+{
+  "name": "Membership",
+  "description": "A person belonging to an organization: a job, studies, a club, volunteering.",
+  "relation": {
+    "kind": "membership",
+    "from": [
+      "Person"
+    ],
+    "to": [
+      "Organization"
+    ],
+    "asymmetric": true,
+    "irreflexive": true,
+    "transitive_via": "PartOf",
+    "reverse": "members",
+    "labels": [
+      "works at",
+      "employee",
+      "student",
+      "member",
+      "volunteer"
+    ]
+  },
+  "attributes": [
+    {
+      "name": "label",
+      "type": "str",
+      "required": false,
+      "description": "What the user calls this relation, in their words."
+    },
+    {
+      "name": "role",
+      "type": "str",
+      "required": false,
+      "description": "Position or title in it."
+    },
+    {
+      "name": "kind",
+      "type": "enum[employment, study, club, volunteer, other]",
+      "required": false,
+      "description": "What kind of belonging.",
+      "default": "employment"
+    },
+    {
+      "name": "primary",
+      "type": "bool",
+      "required": false,
+      "description": "The main one — what Person.organization shows. One at a time.",
+      "default": false
+    },
+    {
+      "name": "team",
+      "type": "str",
+      "required": false,
+      "description": "Team or group inside the organization."
+    }
+  ],
+  "methods": []
+}

@@ -1,0 +1,36 @@
+{
+  "name": "Authority",
+  "description": "One person directing another, or heading an organization or department.",
+  "relation": {
+    "kind": "authority",
+    "from": [
+      "Person"
+    ],
+    "to": [
+      "Person",
+      "Organization"
+    ],
+    "asymmetric": true,
+    "irreflexive": true,
+    "acyclic": true,
+    "inverse_functional": "at_any_time",
+    "reverse": "managed_by",
+    "labels": [
+      "manager",
+      "boss",
+      "head",
+      "director",
+      "supervisor",
+      "team lead"
+    ]
+  },
+  "attributes": [
+    {
+      "name": "label",
+      "type": "str",
+      "required": false,
+      "description": "What the user calls this relation, in their words."
+    }
+  ],
+  "methods": []
+}

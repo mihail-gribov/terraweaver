@@ -1,0 +1,44 @@
+{
+  "name": "Located",
+  "description": "Where someone or something is: lives in, office at, kept at.",
+  "relation": {
+    "kind": "located",
+    "from": [
+      "any"
+    ],
+    "to": [
+      "Place"
+    ],
+    "asymmetric": true,
+    "reverse": "hosts",
+    "labels": [
+      "lives in",
+      "home",
+      "office",
+      "based in",
+      "kept at"
+    ]
+  },
+  "attributes": [
+    {
+      "name": "label",
+      "type": "str",
+      "required": false,
+      "description": "What the user calls this relation, in their words."
+    },
+    {
+      "name": "kind",
+      "type": "enum[home, work, other]",
+      "required": false,
+      "description": "What kind of location.",
+      "default": "other"
+    },
+    {
+      "name": "detail",
+      "type": "str",
+      "required": false,
+      "description": "Floor, building, room."
+    }
+  ],
+  "methods": []
+}

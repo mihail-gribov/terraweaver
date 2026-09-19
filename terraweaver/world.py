@@ -175,7 +175,7 @@ class World:
             needs = ambiguous_identity(class_name, attrs, result.main or result.similar, exact=bool(result.main))
             self.pending = needs
             return needs
-        described = ", ".join(f"{k}={v.label() if isinstance(v, ontology.Entity) else v}" for k, v in attrs.items())
+        described = ", ".join(f"{k}={v.display_name() if isinstance(v, ontology.Entity) else v}" for k, v in attrs.items())
         raise NotInWorld(
             f"no {class_name} with {described} in the world. If the user is telling you about a new "
             f"one, record it with {class_name}.new(...); if you meant an existing one, look it up differently."
@@ -229,6 +229,21 @@ class World:
             self.apply_period(outcome, period)
         return outcome
 
+    def _apply_deferred(self, instance) -> None:
+        """Attributes given at construction that live in relations (Person(organization=...)):
+        they need the entity stored first."""
+        from terraweaver import relations
+
+        deferred = instance.__dict__.pop("_deferred", {})
+        for name in sorted(deferred, key=lambda n: relations.APPLY_ORDER.index(n) if n in relations.APPLY_ORDER else 99):
+            setattr(instance, name, deferred[name])
+
+    def relate(self, a, b, kind: str, starts=None, until=None, ttl=None, permanent: bool = False, **attrs):
+        from terraweaver import relations
+
+        ontology.note_world_call("world_writes")
+        return relations.relate(self, a, b, kind, _period(starts, until, ttl, permanent), attrs)
+
     def set_period(self, instance, starts=None, until=None, ttl=None, permanent: bool = False) -> None:
         period = _period(starts, until, ttl, permanent)
         if not period:
@@ -246,6 +261,7 @@ class World:
         ontology.note_world_call("world_writes")
         instance = self.classes[class_name](**attrs)
         self.store.save_graph(instance)
+        self._apply_deferred(instance)
         return instance  # brand new, so created_at and accessed_at already coincide
 
     def apply_attrs(self, instance, attrs: dict):
@@ -345,7 +361,7 @@ class World:
         chosen = next((c for c in candidates if c.id == row[0]), None)
         if chosen is not None:
             ontology.note_assumed(
-                f'"{name}" -> {chosen.label()}, as the user settled on {row[1][:10]}; '
+                f'"{name}" -> {chosen.display_name()}, as the user settled on {row[1][:10]}; '
                 f"say so in your answer, and if they mean someone else, ask"
             )
         return chosen

@@ -86,6 +86,7 @@ class Recording:
         self.found: dict[int, Any] = {}
         self.remarks: list[str] = []  # comments added, forgotten or confirmed, as the host should read them
         self.assumed: list[str] = []  # identities taken from what the user settled before
+        self.hints: list[str] = []  # what the world suggests about a write that went through
 
 
 @contextmanager
@@ -127,6 +128,11 @@ def note_found(entity) -> None:
 def note_assumed(text: str) -> None:
     if _CHANGED is not None and text not in _CHANGED.assumed:
         _CHANGED.assumed.append(text)
+
+
+def note_hint(text: str) -> None:
+    if _CHANGED is not None and text not in _CHANGED.hints:
+        _CHANGED.hints.append(text)
 
 
 def note_remark(text: str) -> None:
@@ -194,7 +200,10 @@ class Entity:
             name = attr["name"]
             if "derived" in attr:
                 if name in kwargs:
-                    raise TypeError(_derived_message(class_name, attr))
+                    if not attr.get("settable"):
+                        raise TypeError(_derived_message(class_name, attr))
+                    # Relations need both ends stored; the world applies these after saving.
+                    self.__dict__.setdefault("_deferred", {})[name] = kwargs.pop(name)
                 continue
             if name in kwargs:
                 setattr(self, name, kwargs.pop(name))
@@ -251,7 +260,30 @@ class Entity:
     def history(self, attr: str) -> list:
         """The values this attribute has held, oldest first, each with when it stopped; the
         current one last."""
+        declared = next((a for a in type(self)._spec["attributes"] if a["name"] == attr), None)
+        if declared is not None and declared.get("derived") == "relation":
+            from terraweaver import relations
+
+            history = relations.DERIVED[(type(self).__name__, attr)][2]
+            return history(self) if history else []
         return current_world().history.of(self, attr)
+
+    def relate(self, other, kind: str, *, starts=None, until=None, ttl=None, permanent: bool = False, **attrs):
+        """Record that this entity stands in relation `kind` to `other`; returns the relation."""
+        return current_world().relate(self, other, kind, starts=starts, until=until, ttl=ttl,
+                                      permanent=permanent, **attrs)
+
+    def relations(self, kind: str | None = None, *, history: bool = False) -> list:
+        """The relations this entity takes part in — of one type, or all."""
+        from terraweaver import relations
+
+        return relations.relations_of(current_world(), self, kind, history)
+
+    def related(self, kind: str, *, history: bool = False) -> list:
+        """The entities at the other end of relations of `kind` (and the rest of a chain)."""
+        from terraweaver import relations
+
+        return relations.related(current_world(), self, kind, history)
 
     def current(self) -> bool:
         """Whether this entity holds now."""
@@ -285,7 +317,7 @@ class Entity:
             ACCESS["entity_reads"] += 1
         return value
 
-    def label(self) -> str:
+    def display_name(self) -> str:
         """Short human handle for this entity."""
         for attr in ("full_name", "name", "title"):
             value = getattr(self, attr, None)
@@ -332,6 +364,9 @@ class Entity:
                     + ". What has no attribute goes into a dated remark: entity.comment(...)."
                 )
             if "derived" in declared:
+                if declared.get("settable"):
+                    object.__setattr__(self, name, value)  # the property's setter records it
+                    return
                 raise TypeError(_derived_message(class_name, declared))
             _check_type(class_name, spec, name, value)
             # Stored as given, only without stray whitespace; comparisons use the kind's normalize.
@@ -363,9 +398,9 @@ def _period_text(starts, until) -> str:
 def _brief(value) -> str:
     """How a value appears inside an entity's repr — references by label, never expanded."""
     if isinstance(value, Entity):
-        return f"<{type(value).__name__} {value.label()}>"
+        return f"<{type(value).__name__} {value.display_name()}>"
     if isinstance(value, list) and any(isinstance(v, Entity) for v in value):
-        shown = ", ".join(f"<{type(v).__name__} {v.label()}>" if isinstance(v, Entity) else repr(v) for v in value[:3])
+        shown = ", ".join(f"<{type(v).__name__} {v.display_name()}>" if isinstance(v, Entity) else repr(v) for v in value[:3])
         return f"[{shown}{', …' if len(value) > 3 else ''}]"
     return repr(value)
 
@@ -379,7 +414,7 @@ def _check_type(class_name: str, spec: dict[str, Any], attr_name: str, value) ->
         return
     if declared.startswith("ref:"):
         expected = declared[4:]
-        if expected != "any" and type(value).__name__ != expected:
+        if expected != "any" and type(value).__name__ not in expected.split("|"):
             raise TypeError(
                 f"{class_name}.{attr_name} must be a {expected} instance, got {type(value).__name__} "
                 f"({value!r}). Get the entity first, e.g. {expected}.ensure(name=...)."
@@ -402,9 +437,24 @@ def derived_names(spec: dict[str, Any]) -> set[str]:
 
 
 def _derived_message(class_name: str, attr: dict) -> str:
+    if attr["derived"] == "relation":
+        return (f"{class_name}.{attr['name']} is read from relations and can't be set directly — "
+                f"{attr.get('description', '')}")
     source_class, source_attr = attr["derived"].split(".", 1)
     return (f"{class_name}.{attr['name']} is derived from {attr['derived']} and can't be set directly; "
             f"set {source_attr} on the {source_class} instead")
+
+
+def _relation_property(class_name: str, attr: dict):
+    """An attribute read from relations (Person.organization from the primary Membership)."""
+    from terraweaver import relations
+
+    getter, setter, _ = relations.DERIVED[(class_name, attr["name"])]
+
+    def refuse(self, value):
+        raise TypeError(f"{class_name}.{attr['name']} is derived from relations and can't be set directly")
+
+    return property(lambda self: getter(self), setter or refuse, doc=attr.get("description", ""))
 
 
 def _derived_property(class_name: str, attr: dict):
@@ -475,8 +525,26 @@ def build_classes(specs: dict[str, dict[str, Any]], impls: dict[tuple[str, str],
             # classes (e.g. Person.add_fact needs to construct a Preference).
             "_classes": classes,
         }
+        base = Entity
+        if "relation" in spec:
+            from terraweaver.relations import Relation
+
+            base = Relation
+            ends = [
+                {"name": "subject", "type": "ref:" + "|".join(spec["relation"]["from"]), "required": True,
+                 "description": "Where the relation starts."},
+                {"name": "object", "type": "ref:" + "|".join(spec["relation"]["to"]), "required": True,
+                 "description": "Where the relation leads."},
+            ]
+            if not any(a["name"] == "subject" for a in spec["attributes"]):
+                spec["attributes"] = ends + spec["attributes"]
+            for end in spec["attributes"][:2]:
+                if "any" in end["type"]:
+                    end["type"] = "ref:any"
         for attr in spec.get("attributes", []):
-            if "derived" in attr:
+            if attr.get("derived") == "relation":
+                namespace[attr["name"]] = _relation_property(name, attr)
+            elif "derived" in attr:
                 namespace[attr["name"]] = _derived_property(name, attr)
         for method in spec.get("methods", []):
             mname = method["name"]
@@ -484,7 +552,7 @@ def build_classes(specs: dict[str, dict[str, Any]], impls: dict[tuple[str, str],
             namespace[mname] = _intentional(impl) if impl else _make_stub(name, mname)
         # Everything shared comes from Entity; a generated class carries only its own
         # spec and methods.
-        classes[name] = type(name, (Entity,), namespace)
+        classes[name] = type(name, (base,), namespace)
     return classes
 
 
@@ -552,6 +620,18 @@ Every class below shares these, so they aren't repeated for each one:
     entity.save()
         Persist that entity and everything it references.
 
+    Relations link two entities and carry their own data (docs: "Relation types" below):
+        kevin.relate(b04, "membership", role="vendor logistics lead", starts=date(2026, 1, 15))
+        kevin.relate(darren, "kin", label="older brother")
+        linda.relate(b04, "authority", label="manager")
+        b04.relate(company, "part_of")
+    relate returns the relation — assign its attributes like any entity's (m.role = "team lead"),
+    comment on it, end it (m.expire()). entity.relations(kind) gives the relations themselves;
+    entity.related(kind) the entities at the other end — also by the reverse name (b04.related(
+    "members")) and along chains (kevin.related("membership") includes the company B04 is part
+    of). What no type fits: a.relate(b, "related", label="godfather", description="…").
+    Person.organization / job_title / relationship read from these relations and can be assigned.
+
     Assigning an attribute (anna.email = "...") is your statement — the user said so or you
     concluded it — and it goes through as it is. The old value isn't lost:
     entity.history("email") lists what it held before and until when.
@@ -584,18 +664,62 @@ Every class below shares these, so they aren't repeated for each one:
 
 
 def describe_for_prompt(specs: dict[str, dict[str, Any]]) -> str:
-    """Render class specs as compact text for the agent's system prompt."""
+    """Render class specs as compact text for the agent's system prompt.
+
+    Entity classes come first, each with its attributes, methods and the relations it takes part
+    in; then the relation types, each with how it behaves and its own attributes.
+    """
+    from terraweaver.relations import describe_relations
+
     lines = []
-    for name, spec in specs.items():
+    entities = {n: s for n, s in specs.items() if "relation" not in s}
+    relation_types = {n: s for n, s in specs.items() if "relation" in s}
+    for name, spec in entities.items():
         lines.append(f"class {name}:  # {spec.get('description', '')}")
-        for attr in spec["attributes"]:
-            req = "required" if attr.get("required") else "optional"
-            default = f", default={attr['default']!r}" if "default" in attr else ""
-            if "derived" in attr:
-                lines.append(f"    {attr['name']}: {attr['type']}  # read-only, from {attr['derived']} — {attr.get('description', '')}")
-                continue
-            lines.append(f"    {attr['name']}: {attr['type']}  # {req}{default} — {attr.get('description', '')}")
+        lines += _attribute_lines(spec)
         for method in spec.get("methods", []):
             lines.append(f"    def {method['signature']}:  # {method.get('description', '')}")
+        if relation_types:
+            lines.append("    relations:  # entity.relate(other, kind, ...), entity.related(kind)")
+            lines += describe_relations(specs, name)
         lines.append("")
+    if relation_types:
+        lines.append("Relation types — instances linking a subject and an object, with their own attributes and")
+        lines.append("validity period (starts / until), history and comments:")
+        lines.append("")
+        for name, spec in relation_types.items():
+            rel = spec["relation"]
+            traits = [t for t in ("symmetric", "transitive", "acyclic") if rel.get(t)]
+            if rel.get("functional") == "at_any_time":
+                traits.append("one at a time per subject")
+            if rel.get("inverse_functional") == "at_any_time":
+                traits.append("one at a time per object")
+            if rel.get("transitive_via"):
+                traits.append(f"extends through {rel['transitive_via']}")
+            if rel.get("reverse"):
+                traits.append(f"read from the object's end as '{rel['reverse']}'")
+            arrow = "↔" if rel.get("symmetric") else "→"
+            lines.append(f"relation {name} ('{rel['kind']}'): {' / '.join(rel['from'])} {arrow} "
+                         f"{' / '.join(rel['to'])}  # {spec.get('description', '')}")
+            if traits:
+                lines.append(f"    # {'; '.join(traits)}")
+            if rel.get("labels"):
+                lines.append(f"    # typical labels: {', '.join(rel['labels'][:8])}")
+            lines += [line for line in _attribute_lines(spec) if not line.lstrip().startswith(("subject:", "object:"))]
+            lines.append("")
     return "\n".join(lines)
+
+
+def _attribute_lines(spec: dict[str, Any]) -> list[str]:
+    lines = []
+    for attr in spec["attributes"]:
+        req = "required" if attr.get("required") else "optional"
+        default = f", default={attr['default']!r}" if "default" in attr else ""
+        if attr.get("derived") == "relation":
+            access = "settable, " if attr.get("settable") else "read-only, "
+            lines.append(f"    {attr['name']}: {attr['type']}  # {access}from relations — {attr.get('description', '')}")
+        elif "derived" in attr:
+            lines.append(f"    {attr['name']}: {attr['type']}  # read-only, from {attr['derived']} — {attr.get('description', '')}")
+        else:
+            lines.append(f"    {attr['name']}: {attr['type']}  # {req}{default} — {attr.get('description', '')}")
+    return lines

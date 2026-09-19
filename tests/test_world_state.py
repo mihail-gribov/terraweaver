@@ -153,20 +153,20 @@ def main() -> int:
     orgs_before = len(store.load_all("Organization", classes))
     carol = Person(full_name="Carol", email="carol@initech.com")
     initech = Organization(name="Initech")
-    carol.organization = initech
+    job = classes["Membership"](subject=carol, object=initech, primary=True)  # a relation holds both ends
     initech.notes = {"unserializable"}  # a set can't be encoded, so the graph fails midway
     failed = False
     try:
-        store.save_graph(carol)
+        store.save_graph(job)
     except TypeError:
         failed = True
     check("a failing graph save raises", failed)
     check("and leaves no part of the graph stored",
           len(store.load_all("Person", classes)) == people_before
           and len(store.load_all("Organization", classes)) == orgs_before)
-    check("and gives back the ids it handed out", carol.id is None and initech.id is None)
+    check("and gives back the ids it handed out", carol.id is None and initech.id is None and job.id is None)
     initech.notes = None
-    store.save_graph(carol)
+    store.save_graph(job)
     check("the same graph saves once fixed",
           Person.find(email="carol@initech.com").main[0].organization.name == "Initech")
 

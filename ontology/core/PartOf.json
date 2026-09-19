@@ -1,0 +1,39 @@
+{
+  "name": "PartOf",
+  "description": "A part of a larger whole: a department or branch of an organization, a district of a city.",
+  "relation": {
+    "kind": "part_of",
+    "from": [
+      "Organization",
+      "Place"
+    ],
+    "to": [
+      "Organization",
+      "Place"
+    ],
+    "same_class": true,
+    "asymmetric": true,
+    "irreflexive": true,
+    "acyclic": true,
+    "transitive": true,
+    "functional": "at_any_time",
+    "reverse": "parts",
+    "labels": [
+      "department",
+      "branch",
+      "team",
+      "division",
+      "district",
+      "building"
+    ]
+  },
+  "attributes": [
+    {
+      "name": "label",
+      "type": "str",
+      "required": false,
+      "description": "What the user calls this relation, in their words."
+    }
+  ],
+  "methods": []
+}

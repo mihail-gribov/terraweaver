@@ -37,8 +37,8 @@
       "name": "employees",
       "type": "list[ref:Person]",
       "required": false,
-      "description": "People whose organization is this one. Derived — set Person.organization to change it.",
-      "derived": "Person.organization"
+      "description": "People with a current Membership in it.",
+      "derived": "relation"
     },
     {
       "name": "tags",
@@ -64,5 +64,11 @@
       "signature": "add_contact(person: Person) -> None",
       "description": "Link a Person to this organization (sets person.organization and appends to employees)."
     }
-  ]
+  ],
+  "relations": {
+    "members": "people who work, study or belong there",
+    "part_of": "the organization it is a department or branch of; parts — its departments",
+    "managed_by": "who heads it",
+    "located": "its offices"
+  }
 }

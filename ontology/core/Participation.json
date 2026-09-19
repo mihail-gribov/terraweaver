@@ -1,0 +1,38 @@
+{
+  "name": "Participation",
+  "description": "Taking part in an event or a project.",
+  "relation": {
+    "kind": "participation",
+    "from": [
+      "Person",
+      "Organization"
+    ],
+    "to": [
+      "Event",
+      "Project"
+    ],
+    "asymmetric": true,
+    "reverse": "participants",
+    "labels": [
+      "attendee",
+      "organizer",
+      "speaker",
+      "member"
+    ]
+  },
+  "attributes": [
+    {
+      "name": "label",
+      "type": "str",
+      "required": false,
+      "description": "What the user calls this relation, in their words."
+    },
+    {
+      "name": "role",
+      "type": "str",
+      "required": false,
+      "description": "Their role in it."
+    }
+  ],
+  "methods": []
+}

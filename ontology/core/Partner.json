@@ -1,0 +1,35 @@
+{
+  "name": "Partner",
+  "description": "A couple: spouse, girlfriend or boyfriend, partner. One at a time.",
+  "relation": {
+    "kind": "partner",
+    "from": [
+      "Person"
+    ],
+    "to": [
+      "Person"
+    ],
+    "symmetric": true,
+    "irreflexive": true,
+    "functional": "at_any_time",
+    "labels": [
+      "wife",
+      "husband",
+      "spouse",
+      "girlfriend",
+      "boyfriend",
+      "partner",
+      "fiancee",
+      "fiance"
+    ]
+  },
+  "attributes": [
+    {
+      "name": "label",
+      "type": "str",
+      "required": false,
+      "description": "What the user calls this relation, in their words."
+    }
+  ],
+  "methods": []
+}

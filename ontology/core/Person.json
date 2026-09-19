@@ -30,19 +30,25 @@
       "name": "organization",
       "type": "ref:Organization",
       "required": false,
-      "description": "Current employer or primary affiliation."
+      "description": "Where they mainly work or study now — their primary Membership. Assigning closes the old one and opens a new one; history('organization') lists past ones.",
+      "derived": "relation",
+      "settable": true
     },
     {
       "name": "relationship",
       "type": "str",
       "required": false,
-      "description": "What they are to the user — friend, colleague, recruiter, former manager."
+      "description": "What they are to the owner, read from the relations between the owner and them. Assigning a label (\"friend\", \"recruiter\", \"former manager\") records such a relation.",
+      "derived": "relation",
+      "settable": true
     },
     {
       "name": "job_title",
       "type": "str",
       "required": false,
-      "description": "What they do where they work."
+      "description": "Their role in their primary Membership. Set organization first.",
+      "derived": "relation",
+      "settable": true
     },
     {
       "name": "location",
@@ -93,5 +99,13 @@
       "signature": "research() -> None",
       "description": "Ground/enrich this person's attributes via live search (Tavily) when little is known about them."
     }
-  ]
+  ],
+  "relations": {
+    "kin": "family: brother, mother, cousin, in-laws",
+    "partner": "their spouse or partner — one at a time",
+    "social": "friends, acquaintances, neighbours",
+    "membership": "their job, studies, clubs",
+    "authority": "whom they manage; managed_by — their manager",
+    "service": "services they provide; served_by — their doctor, landlord, recruiter"
+  }
 }
