@@ -181,6 +181,11 @@ class Store:
             for instance_id in ids:
                 self._identity.pop(instance_id, None)
 
+    def is_live(self, instance) -> bool:
+        """Whether this object is the one the identity map holds for its row (or nothing does)."""
+        held = self._identity.get(instance.id)
+        return held is None or held is instance
+
     def load(self, instance_id: str, classes: dict[str, type]):
         """One instance by id, through the identity map."""
         return self._load(instance_id, classes)

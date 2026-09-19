@@ -13,7 +13,7 @@ import io
 import json
 import time
 import traceback
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -310,7 +310,7 @@ class WorldRuntime:
                 return {"id": value.id, "label": value.label()}
             if isinstance(value, list):
                 return [plain(v) for v in value]
-            if isinstance(value, datetime):
+            if isinstance(value, (datetime, date)):
                 return value.isoformat()
             return value
 
@@ -366,7 +366,10 @@ class WorldRuntime:
             items = value.values() if isinstance(value, dict) else value if isinstance(value, (list, tuple, set)) else [value]
             # Only what the world already holds: an object that never got stored — left behind
             # by a run that failed and was rolled back — must not come back as a new entity.
-            roots.extend(item for item in items if isinstance(item, Entity) and item.id is not None)
+            # And only the live object for each entity: a copy orphaned by a rollback is stale, and
+            # saving it would overwrite what the world holds now.
+            roots.extend(item for item in items if isinstance(item, Entity) and item.id is not None
+                         and self.store.is_live(item))
         for root in roots:
             self.store.save_graph(root, seen)
 

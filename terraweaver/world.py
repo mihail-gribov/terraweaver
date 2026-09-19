@@ -294,7 +294,27 @@ class World:
         and it can't silently point at the wrong row. None means the user didn't settle it:
         the case stays unresolved and the world isn't touched.
         """
+        needs = self._current_copies(needs)
+        if isinstance(choice, ontology.Entity) and choice.id is not None:
+            choice = self._current(choice)
         return resolution.run_skill(needs, lambda question, options: _option_index(needs, choice, new), self)
+
+    def _current(self, entity):
+        """The object that stands for this entity now. A question asked before a run was rolled
+        back holds copies the rollback orphaned; applying the answer to one of those, and later
+        saving another, is how a settled value quietly turned back into the old one."""
+        try:
+            return self.store.load(entity.id, self.classes)
+        except KeyError:
+            return entity
+
+    def _current_copies(self, needs: NeedsResolution) -> NeedsResolution:
+        fresh = lambda v: self._current(v) if isinstance(v, ontology.Entity) and v.id is not None else v
+        needs.candidates = [fresh(c) for c in needs.candidates]
+        for key in ("existing", "incoming"):
+            if key in needs.context:
+                needs.context[key] = fresh(needs.context[key])
+        return needs
 
     def remember_choice(self, needs: NeedsResolution, entity) -> None:
         """The user said who they meant by that name; the next lookup by it will assume so."""

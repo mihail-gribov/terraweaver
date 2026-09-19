@@ -53,6 +53,10 @@ def main() -> int:
     check("recorded alias matches", not isinstance(result, NeedsResolution) and names(result.main) == ["Barbara Liskov"],
           f"got {result!r}")
 
+    result = Person.find(full_name="Barb Liskov")
+    check("nickname with surname matches", not isinstance(result, NeedsResolution)
+          and names(result.main) == ["Barbara Liskov"], f"got {result!r}")
+
     result = Person.find(email="ada@example.com")
     check("strong key matches without a name", not isinstance(result, NeedsResolution)
           and names(result.main) == ["Ada Lovelace"])

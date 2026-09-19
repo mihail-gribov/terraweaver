@@ -90,7 +90,12 @@ def known_names(instance, name_key: str | None) -> list:
         value = getattr(instance, name_key, None)
         if isinstance(value, str) and value:
             names.append(value)
-    names += [a for a in (getattr(instance, ALIAS_KEY, None) or []) if isinstance(a, str)]
+    aliases = [a for a in (getattr(instance, ALIAS_KEY, None) or []) if isinstance(a, str)]
+    names += aliases
+    # A person goes by a nickname with their surname too: "Barb Liskov" is Barbara Liskov.
+    if name_key == "full_name" and names and len(names[0].split()) > 1:
+        surname = names[0].split()[-1]
+        names += [f"{a} {surname}" for a in aliases if len(a.split()) == 1]
     return names
 
 
