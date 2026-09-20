@@ -167,12 +167,23 @@ Every class below shares these, so they aren't repeated for each one:
     says there is one. anna.tags = ["job-search", "berlin"]. They are kept in one form, so
     "job search" and "Job-Search" are the same tag however they were typed (what you typed stays
     in the record):
-        world.tagged("berlin")        — everything carrying it, whatever the spelling
-        world.tagged_all("berlin", "conference")  — everything carrying both: one gathers, two pick out
+        anna.tag("berlin", "apartment-hunt", until=date(2027, 3, 1))  — several at once, one period
+        anna.untag("apartment-hunt")  — it stops holding now; the record keeps that it once did
+        anna.tags                     — what holds for her now
+        anna.spells("tags")           — every stretch each tag has held, in order
+        anna.suggest_tags()           — tags worth considering, from whatever reads like her
+        world.tagged("berlin")        — everything carrying it now, whatever the spelling
+        world.tagged("berlin", any_time=True)     — and everything that ever did
+        world.tagged_all("berlin", "conference")  — carrying both: one gathers, two pick out
         world.tags()                  — every tag, how often used, how it has been written
         world.merge_tags("job-search", "jobsearch")   — two words for one idea, when you know it
         world.untag("q3-push")        — take one off everything, when it has stopped meaning anything
-        anna.suggest_tags()           — tags worth considering, from whatever reads like her
+    A tag holds for a time, like everything else here: `starts=`, `until=`, `ttl=`,
+    `permanent=True`, and reads that take `any_time=True`. A set of tags put on in one breath
+    usually shares one period, which is why tag() takes several at once. The same tag can hold
+    over more than one stretch — on in spring, off in summer, on again — and each stretch is kept,
+    so "what was this tagged in June" has an answer. Assigning the list (anna.tags = [...]) says
+    "these are the tags now", which ends the ones no longer named.
     Suggesting applies nothing and merging is yours to decide: what a tag means is what the user
     means by the word, and the world only counts and points.
 

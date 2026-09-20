@@ -118,9 +118,9 @@ class WorldView:
         """Every tag in this world: how often it is used, on what, and how it has been written."""
         return self._world.tags()
 
-    def tagged(self, tag: str) -> list:
-        """Everything carrying this tag, however it was written."""
-        return self._world.tagged(tag)
+    def tagged(self, tag: str, at=None, any_time: bool = False) -> list:
+        """Everything carrying this tag now — or at a moment, or ever."""
+        return self._world.tagged(tag, at, any_time)
 
     def untag(self, tag: str, among: list | None = None) -> int:
         """Take a tag off everything, or off the ones given — the other half of tagging."""

@@ -60,6 +60,24 @@ When a read hides something, the world says so rather than letting silence pass 
     [hints] Michael: 1 that ended (Olga is Michael's wife (partner)) — not shown, because
             partner relations read as they hold now; any_time=True includes them
 
+## The same words everywhere
+
+A period is a period, whatever it is about: an entity that holds until June, a relation that
+ended in March, a tag that was on for a quarter. They are written the same way — `starts=`,
+`until=`, `ttl=`, `permanent=True` — read the same way — now by default, `any_time=True` for
+everything — and kept in the same place: on the statement that made the claim.
+
+That last part is why there is no separate table of periods. A period is *when an assertion
+held*, not a property of the thing it is about; splitting it off would leave a statement unable
+to say what it means on its own, and the assembler joining two tables to find out. What a
+separate table would have given — every stretch of one thing in one place — is a view, and it is
+`entity.spells(slot)`: each period something held, in order, with whose word it was.
+
+    anna.tag("apartment-hunt", until=date(2027, 3, 1))
+    anna.untag("apartment-hunt")      # ends it; the stretch stays in the record
+    anna.tag("apartment-hunt")        # a second stretch, not a contradiction of the first
+    anna.spells("tags")               # both of them, in order
+
 ## One function for everything dated
 
 `entity.timeline(since=None, until=None)` works on anything that has time — an entity or a

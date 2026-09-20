@@ -226,6 +226,16 @@ class Facts:
         return self._insert(self.table(self._class(subject, class_name), WORKED_OUT), subject,
                             slot, value, valid_from, valid_until, _now(), WORKED, run_id, ids)
 
+    def end(self, statement_id: str, at=None) -> None:
+        """Say when this stopped holding. Not a retraction: it was true, and then it wasn't.
+
+        A tag that held from March to September, a job that ended, a rule that applied for a
+        quarter — the difference between "this was never so" and "this stopped being so" is the
+        whole of history, and only the second one can be asked about later."""
+        table, row = _split(statement_id)
+        self.conn.execute(f"UPDATE {table} SET valid_until = ? WHERE id = ? AND valid_until IS NULL",
+                          (_iso(at) or _now(), row))
+
     def retract(self, statement_id: str, by: str | None = None) -> None:
         """Take a statement back — it was wrong, or the run that made it was undone. It stays in
         the table: what was said is part of the record even when it is no longer believed."""

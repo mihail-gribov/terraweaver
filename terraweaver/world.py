@@ -331,11 +331,11 @@ class World:
 
         return tagging.vocabulary(self)
 
-    def tagged(self, tag: str) -> list:
-        """Everything carrying this tag, however it was written."""
+    def tagged(self, tag: str, at=None, any_time: bool = False) -> list:
+        """Everything carrying this tag now — or at a moment, or ever."""
         from terraweaver import tags as tagging
 
-        return tagging.tagged(self, tag)
+        return tagging.tagged(self, tag, at, any_time)
 
     def merge_tags(self, into: str, *others: str) -> int:
         """Make several tags one: everything carrying any of them ends up carrying the first."""
@@ -398,12 +398,14 @@ class World:
         source, run_id = ontology.stated_by()
         for attr in type(instance)._spec["attributes"]:
             name = attr["name"]
-            if "derived" in attr or name in ontology.MANAGED_VALUE_ATTRS:
-                continue
+            if "derived" in attr or name in ontology.MANAGED_VALUE_ATTRS or name == "tags":
+                continue  # tags go through their own door below, so periods work from the start
             value = attrs.get(name, instance.__dict__.get(name))  # as given, not as tidied
             if value is not None and value != []:
                 self.facts.state(instance.id, name, ontology._as_statement(value),
                                  source=source, run_id=run_id, class_name=class_name)
+        if isinstance(attrs.get("tags"), list) and attrs["tags"]:
+            instance._set_tags(attrs["tags"])
         self._apply_deferred(instance)
         return instance  # brand new, so created_at and accessed_at already coincide
 

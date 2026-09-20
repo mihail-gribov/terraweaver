@@ -169,6 +169,32 @@ def _alike(one: list, other: list) -> float:
     return sum(a * b for a, b in zip(one, other))
 
 
+def _tags_whose_time_is_up(world) -> str | None:
+    """Tags whose period has ended, taken off the things that carry them.
+
+    A tag put on until the end of the quarter stops holding when the quarter does, and nobody
+    writes anything that day. So somebody has to notice: the statement knows its period, the
+    entity is what everything reads tags from, and this is where the two are brought back
+    together. Nothing is deleted — the tag simply stops being one of this thing's tags."""
+    from terraweaver import tags as tagging
+
+    moment = datetime.now(timezone.utc).replace(tzinfo=None)
+    changed = []
+    for statement in world.facts.with_slot("tags"):
+        if statement.valid_until is None or statement.valid_until > moment:
+            continue
+        try:
+            entity = world.store.load(statement.subject, world.classes)
+        except KeyError:
+            continue
+        values = statement.value if isinstance(statement.value, list) else [statement.value]
+        stale = {tagging.canonical(v) for v in values if isinstance(v, str)}
+        if stale & {tagging.canonical(t) for t in tagging.tags_of(entity)}:
+            entity._show_tags()
+            changed.append(f"{', '.join(sorted(stale))} off {entity.display_name()}")
+    return "tags whose time was up: " + "; ".join(changed[:4]) if changed else None
+
+
 def _tags_worth_reviewing(world) -> str | None:
     """Tags that have grown since anyone last considered them, and tags written several ways.
 
@@ -229,6 +255,8 @@ JOBS = [
         "count what the classes offer and nobody fills"),
     Job("loose-links", timedelta(days=3), _links_without_rules,
         "find links used often that no type has rules for"),
+    Job("tags-expired", timedelta(hours=12), _tags_whose_time_is_up,
+        "take off tags whose period has ended"),
     Job("tags", timedelta(days=2), _tags_worth_reviewing,
         "say which tags have moved enough to be worth another look"),
     Job("said-twice", timedelta(days=3), _remarks_said_twice,

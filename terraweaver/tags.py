@@ -78,7 +78,34 @@ def tags_of(entity) -> list[str]:
     return [t for t in (values or []) if isinstance(t, str) and t.strip()]
 
 
-def vocabulary(world) -> dict[str, dict]:
+def holding(world, entity, at=None) -> list[str]:
+    """The tags that hold for this one at a given moment — read from the record, not the image.
+
+    The image is a snapshot, written when somebody last touched this thing; time moves on
+    without anybody writing. Anything that asks a question goes through here."""
+    from datetime import datetime, timezone
+
+    moment = at or datetime.now(timezone.utc).replace(tzinfo=None)
+    out = []
+    for statement in world.facts.about(entity.subject_id if hasattr(entity, "subject_id")
+                                       else entity.id, "tags"):
+        if not statement.holds_at(moment):
+            continue
+        values = statement.value if isinstance(statement.value, list) else [statement.value]
+        out += [v for v in values if isinstance(v, str)]
+    return tidy(out)
+
+
+def ever(world, entity) -> list[str]:
+    """Every tag this one has ever carried, whether or not it still does."""
+    out = []
+    for statement in world.facts.about(getattr(entity, "subject_id", None) or entity.id, "tags"):
+        values = statement.value if isinstance(statement.value, list) else [statement.value]
+        out += [v for v in values if isinstance(v, str)]
+    return tidy(out)
+
+
+def vocabulary(world, at=None, any_time: bool = False) -> dict[str, dict]:
     """Every tag in this world: how often it is used, on what, and how it has been written.
 
     The spellings matter as much as the count — three ways of writing one tag is exactly the
@@ -89,7 +116,8 @@ def vocabulary(world) -> dict[str, dict]:
         if not any(a["name"] == "tags" for a in cls._spec["attributes"]):
             continue
         for entity in world.all(class_name, limit=None, history=True):
-            for tag in tags_of(entity):
+            for tag in (ever(world, entity) if any_time
+                        else (holding(world, entity, at) or tags_of(entity))):
                 entry = found.setdefault(canonical(tag),
                                          {"count": 0, "classes": set(), "spellings": set(),
                                           "entities": []})
@@ -100,9 +128,13 @@ def vocabulary(world) -> dict[str, dict]:
     return found
 
 
-def tagged(world, tag: str) -> list:
-    """Everything carrying this tag, however it was written."""
-    entry = vocabulary(world).get(canonical(tag))
+def tagged(world, tag: str, at=None, any_time: bool = False) -> list:
+    """Everything carrying this tag, however it was written.
+
+    Reads as everything else does: what holds now by default, `at=` for a moment in the past,
+    `any_time=True` for anything that ever held it. The words are the same because the mechanism
+    is the same — a period on a statement (docs/time.md)."""
+    entry = vocabulary(world, at, any_time).get(canonical(tag))
     return list(entry["entities"]) if entry else []
 
 
@@ -204,11 +236,9 @@ def merge(world, into: str, *others: str) -> int:
     changed = 0
     for tag in losing:
         for entity in tagged(world, tag):
-            kept = [t for t in tags_of(entity) if canonical(t) not in losing]
-            if keep not in [canonical(t) for t in kept]:
-                kept.append(keep)
-            entity.tags = kept
-            world.save(entity)
+            entity.untag(tag)
+            if keep not in {canonical(t) for t in holding(world, entity)}:
+                entity.tag(keep)
             changed += 1
         world.store.conn.execute("DELETE FROM tag_reviews WHERE tag = ?", (tag,))
     reviewed(world, keep)
@@ -226,10 +256,8 @@ def remove(world, tag: str, *, among: list | None = None) -> int:
     gone = canonical(tag)
     changed = 0
     for entity in (among if among is not None else tagged(world, gone)):
-        kept = [t for t in tags_of(entity) if canonical(t) != gone]
-        if len(kept) != len(tags_of(entity)):
-            entity.tags = kept
-            world.save(entity)
+        if gone in {canonical(t) for t in holding(world, entity)}:
+            entity.untag(gone)
             changed += 1
     world.store.conn.execute("DELETE FROM tag_reviews WHERE tag = ?", (gone,))
     return changed

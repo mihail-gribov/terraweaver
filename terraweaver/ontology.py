@@ -397,6 +397,10 @@ class Entity:
             for past in (world.history.of(self, attr["name"]) if attr["name"] not in _MANAGED_ATTRS else []):
                 if past.until is not None:
                     moments.append((past.until, f"{attr['name']} was {_brief(past.value)} until here"))
+        for spell in self.spells("tags"):
+            moments.append((spell.starts, f"tagged {spell.value}"))
+            if spell.until is not None:
+                moments.append((spell.until, f"no longer tagged {spell.value}"))
         for comment in self.comments(any_time=True):
             moments.append((comment.when or comment.recorded_at, f"remark: {comment.text}"))
         for relation in (relations.relations_of(world, self, None, True) if not isinstance(self, Relation_base()) else []):
@@ -467,6 +471,123 @@ class Entity:
         from terraweaver import graph
 
         return graph.reaches(current_world(), self, kind, up)
+
+    def _no_world(self) -> bool:
+        world = world_if_bound()
+        return world is None or getattr(world, "facts", None) is None
+
+    def tag(self, *names: str, starts=None, until=None, ttl=None, permanent: bool = False):
+        """Put a tag on, for a while or for good.
+
+        A tag is often true of something for a season and not after: `q3-push`, `apartment-hunt`,
+        `on-loan`. Each one is stated on its own, so it carries a period like anything else in
+        this world — and when the period is over it simply stops being one of this thing's tags,
+        without anybody deleting anything.
+        """
+        from terraweaver import tags as tagging
+
+        if self._no_world():
+            with trusted_writes(), not_recording():
+                object.__setattr__(self, "tags", tagging.tidy(list(self.tags or []) + list(names)))
+            return self
+        world = current_world()
+        source, run_id = stated_by()
+        period = {}
+        if starts is not None or until is not None or ttl is not None or permanent:
+            from terraweaver.world import _period
+
+            period = _period(starts, until, ttl, permanent)
+        if self.id is None:
+            world.save(self)
+        for name in names:
+            world.facts.state(self.subject_id, "tags", name, source=source,
+                              run_id=run_id, class_name=type(self).__name__,
+                              valid_from=period.get("valid_from"),
+                              valid_until=period.get("valid_until"))
+        self._show_tags()
+        return self
+
+    def untag(self, *names: str):
+        """Take a tag off: it stops holding now, and the record keeps that it once did.
+
+        Ended, not retracted — it was true of this thing for a while, and asking later what it
+        was tagged in June should still answer. Tag it again next year and that is a second
+        spell, not a contradiction of the first."""
+        from terraweaver import tags as tagging
+
+        if self._no_world():
+            gone = {tagging.canonical(name) for name in names}
+            with trusted_writes(), not_recording():
+                object.__setattr__(self, "tags",
+                                   [t for t in (self.tags or []) if tagging.canonical(t) not in gone])
+            return self
+        world = current_world()
+        wanted = {tagging.canonical(name) for name in names}
+        for statement in world.facts.about(self.subject_id, "tags"):
+            if statement.valid_until is not None:
+                continue
+            values = statement.value if isinstance(statement.value, list) else [statement.value]
+            if any(tagging.canonical(v) in wanted for v in values if isinstance(v, str)):
+                world.facts.end(statement.id)
+        self._show_tags()
+        return self
+
+    def spells(self, slot: str = "tags", value: str | None = None) -> list:
+        """Every stretch of time something held of this one — all of them, in order.
+
+        A tag put on in March, taken off in September and put back in November is three facts and
+        one word, and a world that only knows the last one cannot answer "what was this in June".
+        Reads out of the statements, where the periods are; no separate account is kept.
+        """
+        from terraweaver import timeutil
+
+        world = current_world()
+        out = []
+        for statement in world.facts.about(self.subject_id, slot):
+            values = statement.value if isinstance(statement.value, list) else [statement.value]
+            for one in values:
+                if value is not None and str(one) != str(value):
+                    continue
+                out.append(Spell(one, timeutil.moment(statement.valid_from or statement.stated_at),
+                                 timeutil.moment(statement.valid_until), statement.source))
+        return sorted(out, key=lambda spell: spell.starts)
+
+    def _set_tags(self, wanted) -> None:
+        """Make these the tags that hold: state the new ones, end the ones no longer named."""
+        from terraweaver import tags as tagging
+
+        world = world_if_bound()
+        if world is None or getattr(world, "facts", None) is None:
+            # A fixture being built before there is a world: nothing to state yet, and the image
+            # is all there is. The tidying still applies, because that part is not about time.
+            with trusted_writes(), not_recording():
+                object.__setattr__(self, "tags", tagging.tidy(wanted))
+            return
+        now_holding = {tagging.canonical(t) for t in tagging.holding(world, self)}
+        asked = [t for t in wanted if isinstance(t, str) and t.strip()]
+        fresh = {tagging.canonical(t) for t in asked}
+        if fresh - now_holding:
+            self.tag(*[t for t in asked if tagging.canonical(t) not in now_holding])
+        if now_holding - fresh:
+            self.untag(*(now_holding - fresh))
+        self._show_tags()
+
+    def _show_tags(self) -> None:
+        """Put what holds now into the entity, which is where everything reads tags from."""
+        from terraweaver import assembly, tags as tagging
+
+        world = current_world()
+        said = world.facts.about(self.subject_id, "tags")
+        moment = datetime.now(timezone.utc).replace(tzinfo=None)
+        holding = []
+        for statement in said:
+            if not statement.holds_at(moment):
+                continue
+            values = statement.value if isinstance(statement.value, list) else [statement.value]
+            holding += [v for v in values if isinstance(v, str)]
+        with trusted_writes(), not_recording():
+            object.__setattr__(self, "tags", tagging.tidy(holding))
+        world.store.save(self)
 
     def suggest_tags(self, limit: int = 3) -> list:
         """Tags worth considering for this one, from whatever else reads like it. Candidates and
@@ -585,14 +706,12 @@ class Entity:
                     return
                 raise TypeError(_derived_message(class_name, declared))
             _check_type(class_name, spec, name, value)
-            if name == "tags" and isinstance(value, list):
-                # Tags are held in one form, because a tag typed three ways is three categories
-                # that never find each other. Tidying is a rule, though, and rules live in the
-                # assembly, not in the record: the statement below keeps what was given, so the
-                # rule can change and the world be rebuilt from what was actually written.
-                from terraweaver import tags as tagging
-
-                given, value = list(value), tagging.tidy(value)
+            if name == "tags" and isinstance(value, list) and getattr(self, "id", None) is not None:
+                # One way in, whichever way it is written. `anna.tags = [...]` says "these are the
+                # tags now", so it is the same act as tagging what is new and untagging what is
+                # gone — and it goes through the same door, which is what keeps periods honest.
+                self._set_tags(value)
+                return
             # Stored as given, only without stray whitespace; comparisons use the kind's normalize.
             if isinstance(value, str):
                 value = value.strip()
@@ -631,6 +750,27 @@ class Entity:
                                   run_id=run_id, class_name=type(self).__name__)
         if not name.startswith("_"):
             _note_changed(self, name)
+
+
+@dataclass
+class Spell:
+    """One stretch of time something held of an entity — a tag, a value, a state."""
+
+    value: Any
+    starts: datetime
+    until: datetime | None
+    source: str
+
+    @property
+    def holds(self) -> bool:
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        return self.starts <= now and (self.until is None or self.until > now)
+
+    def __repr__(self):
+        from terraweaver import timeutil
+
+        ends = timeutil.show(self.until) if self.until else "…"
+        return f"<{self.value!r} {timeutil.show(self.starts)} → {ends}{'' if self.holds else ', over'}>"
 
 
 @dataclass
