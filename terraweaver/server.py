@@ -72,6 +72,14 @@ async def describe_world(ctx: Context) -> str:
 
 
 @server.tool()
+async def describe_classes(names: list[str], ctx: Context) -> str:
+    """What these classes are made of: attributes with their types, methods, and the relations
+    they take part in. The world's prompt lists the class names; ask here for the few a task
+    needs, e.g. ["Person", "Event"]."""
+    return runtime.describe_classes(names)
+
+
+@server.tool()
 async def run(code: str, ctx: Context) -> str:
     """Execute Python against the user's world and return its stdout. Variables persist between
     calls in this session. A run that raises keeps nothing it wrote."""

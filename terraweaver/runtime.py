@@ -19,7 +19,7 @@ from typing import Any
 
 from terraweaver import onboarding, ontology, sandbox
 from terraweaver.impls import IMPLS
-from terraweaver.describe import COMMON_MEMBERS, HOST_GUIDE, describe_for_prompt
+from terraweaver.describe import COMMON_MEMBERS, HOST_GUIDE, catalogue, describe_for_prompt
 from terraweaver.ontology import Entity, build_classes, load_specs
 from terraweaver.resolution import NeedsResolution
 from terraweaver.session import Session
@@ -259,11 +259,26 @@ class WorldRuntime:
         return "\n".join([
             HOST_GUIDE,
             COMMON_MEMBERS,
-            describe_for_prompt(self.specs),
+            catalogue(self.specs),
             self.variables.describe(),
             self._questions_note(),
             session.describe_for_prompt(),
         ])
+
+    def describe_classes(self, names: list[str]) -> str:
+        """What the named classes are made of — attributes, methods, relations.
+
+        The prompt carries the names; this carries the detail, for the few classes a task
+        actually touches."""
+        known = {n.lower(): n for n in self.specs}
+        wanted = [known[n.strip().lower()] for n in names if n.strip().lower() in known]
+        missing = [n for n in names if n.strip().lower() not in known]
+        if not wanted:
+            return ("No such class: " + ", ".join(missing) + ".\n\n" + catalogue(self.specs))
+        text = describe_for_prompt(self.specs, only=wanted)
+        if missing:
+            text += "\nNot in this world: " + ", ".join(missing) + "."
+        return text
 
     def _questions_note(self) -> str:
         """A host starting a task should know there is something the user could settle."""

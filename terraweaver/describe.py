@@ -43,6 +43,11 @@ Rules the world enforces:
   something already in the world or something new, and say so by the call: `Class.get(...)`
   for an existing one (never creates; NotInWorld if absent), `Class.new(...)` for a new one
   (asks the user if its twin exists), `Class.ensure(...)` only when you genuinely can't tell.
+  The prompt lists class names only. Before writing code that touches a class, call
+  describe_classes(["Person", "Event"]) — attributes with their types, methods, and the
+  relations that class takes part in. Guessing an attribute name costs a turn to undo; asking
+  about three classes costs a few hundred tokens.
+
   Never construct `Class(...)` directly. Check the [created] / [updated] / [found] lines of
   each result against what you meant. What has no attribute to go into is attached as a dated
   remark: `anna.comment("allergic to nuts", when=date(...))`.
@@ -332,8 +337,38 @@ Every class below shares these, so they aren't repeated for each one:
 """
 
 
-def describe_for_prompt(specs: dict[str, dict[str, Any]]) -> str:
-    """Render class specs as compact text for the agent's system prompt.
+def catalogue(specs: dict[str, dict[str, Any]]) -> str:
+    """The classes by name, one line each — what the prompt carries.
+
+    Spelling out every attribute, method and relation of every class cost six thousand tokens in
+    front of every task, most of them about classes the task never touches. So the prompt says
+    what there is, and `describe_classes([...])` says what any of them is made of. The one line
+    per class is there to choose by, not to work from.
+    """
+    entities = [f"{n} — {s.get('description', '').strip()}" for n, s in specs.items()
+                if "relation" not in s]
+    links = []
+    for name, spec in specs.items():
+        rel = spec.get("relation")
+        if not rel:
+            continue
+        reverse = f" / '{rel['reverse']}'" if rel.get("reverse") else ""
+        links.append(f"{name} ('{rel['kind']}'{reverse}): "
+                     f"{' / '.join(rel['from'])} → {' / '.join(rel['to'])}")
+    return "\n".join(
+        ["Classes in this world — names only. Before writing code that touches one, call",
+         "describe_classes([\"Person\", \"Event\"]) for its attributes, methods and relations.",
+         ""]
+        + [f"  {line}" for line in entities]
+        + ["", "Relation types — a.relate(b, kind, label=X) reads as the sentence \"a is b's X\", so the",
+           "dentist, the manager, the mother stands first. The reverse name reads it from the other end.",
+           ""]
+        + [f"  {line}" for line in links]
+        + [""])
+
+
+def describe_for_prompt(specs: dict[str, dict[str, Any]], only: list[str] | None = None) -> str:
+    """Render class specs as compact text: everything, or only the classes asked for.
 
     Entity classes come first, each with its attributes, methods and the relations it takes part
     in; then the relation types, each with how it behaves and its own attributes.
@@ -341,6 +376,9 @@ def describe_for_prompt(specs: dict[str, dict[str, Any]]) -> str:
     from terraweaver.relations import describe_relations
 
     lines = []
+    wanted = {n.lower() for n in only} if only else None
+    if wanted is not None:
+        specs = {n: s for n, s in specs.items() if n.lower() in wanted}
     entities = {n: s for n, s in specs.items() if "relation" not in s}
     relation_types = {n: s for n, s in specs.items() if "relation" in s}
     for name, spec in entities.items():
@@ -352,7 +390,7 @@ def describe_for_prompt(specs: dict[str, dict[str, Any]]) -> str:
             lines.append("    relations:  # entity.relate(other, kind, ...), entity.related(kind)")
             lines += describe_relations(specs, name)
         lines.append("")
-    if relation_types:
+    if relation_types and only is None:
         lines.append("Relation types — instances linking a subject and an object, with their own attributes and")
         lines.append("validity period (starts / until), history and comments.")
         lines.append("")
@@ -363,6 +401,7 @@ def describe_for_prompt(specs: dict[str, dict[str, Any]]) -> str:
         lines.append("To say it from the other end, use the reverse name: michael.relate(nina, \"served_by\",")
         lines.append("label=\"dentist\") records the same relation, read from the client's side.")
         lines.append("")
+    if relation_types:
         for name, spec in relation_types.items():
             rel = spec["relation"]
             traits = [t for t in ("symmetric", "transitive", "acyclic") if rel.get(t)]

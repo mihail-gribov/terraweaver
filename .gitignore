@@ -10,3 +10,6 @@ worlds/*.db
 data/memops/raw/
 var/
 var/
+data/longmemeval/
+data/memoryagentbench/
+benchmarks/results/
