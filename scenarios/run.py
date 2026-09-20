@@ -206,14 +206,16 @@ def start_server(db: Path) -> subprocess.Popen:
     server = subprocess.Popen(
         [sys.executable, "-m", "terraweaver.server", "--db", str(db), "--port", str(PORT), "--rebuild"],
         cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    for _ in range(40):
+    for _ in range(120):  # a cold start builds classes, opens the world and may rebuild a fixture
+        if server.poll() is not None:
+            raise RuntimeError(f"the scenario world server died on startup (exit {server.returncode})")
         try:
             urllib.request.urlopen(f"{URL}/health", timeout=1)
             return server
         except OSError:
-            time.sleep(0.25)
+            time.sleep(0.5)
     server.kill()
-    raise RuntimeError("the scenario world server didn't start")
+    raise RuntimeError("the scenario world server didn't answer in a minute")
 
 
 def pass_hat_k(per_scenario: list[list[bool]], k: int) -> float:

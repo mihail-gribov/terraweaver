@@ -153,6 +153,12 @@ Every class below shares these, so they aren't repeated for each one:
         linda.relate(b04, "authority", label="manager")
         b04.relate(company, "part_of")
     entity.relations(kind)[i].counterpart is the end that isn't the entity you asked from.
+    Walking the graph, for when the answer is a chain rather than a field. The world does the
+    walking; what a chain means is yours to say:
+        a.path_to(b)          how these two are connected, step by step — None if nothing does
+        a.near(hops=2)        everyone within a few links, nearest first, with the way there
+        a.shared_with(b)      what both are connected to: people, companies, places in common
+        a.reaches("part_of")  everything along one kind of link, as far as it goes
     relate returns the relation — assign its attributes like any entity's (m.title = "team lead"),
     comment on it, end it (m.expire()). entity.relations(kind) gives the relations themselves;
     entity.related(kind) the entities at the other end — also by the reverse name (b04.related(

@@ -443,6 +443,31 @@ class Entity:
         """
         return self.__dict__.get("_subject") or self.id
 
+    def path_to(self, other, max_hops: int = 4, kind: str | None = None):
+        """How this entity and that one are connected, step by step — or None if nothing links
+        them. The world walks the links that were written down; what the chain means is yours."""
+        from terraweaver import graph
+
+        return graph.path_to(current_world(), self, other, max_hops, kind)
+
+    def near(self, hops: int = 2, kind: str | None = None) -> list:
+        """Everything within a few links, nearest first, each with the way there."""
+        from terraweaver import graph
+
+        return graph.near(current_world(), self, hops, kind)
+
+    def shared_with(self, other, kind: str | None = None) -> list:
+        """What both are connected to — the people, companies or places in common."""
+        from terraweaver import graph
+
+        return graph.shared_with(current_world(), self, other, kind)
+
+    def reaches(self, kind: str, up: bool = True) -> list:
+        """Everything along one kind of link, as far as it goes: a department tree, a family line."""
+        from terraweaver import graph
+
+        return graph.reaches(current_world(), self, kind, up)
+
     def why(self, attr: str):
         """What the world worked out for this attribute, and what it rests on — for when the user
         asks why you think so. It comes back as the judgement, the statements behind it, and
