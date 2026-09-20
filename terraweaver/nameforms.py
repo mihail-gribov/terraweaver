@@ -1,7 +1,9 @@
 """Which names are forms of one name.
 
-"Mike" and "Michael" are the same name said two ways, and so are "Миша" and "Михаил". That is
-knowledge about language, not about a person: it holds for everyone called Michael, it can be
+"Mike" and "Michael" are the same name said two ways, and so are "Миша" and "Михаил" — and so
+is "Gribov" written "Грибов". A name in another alphabet is not another name; it is the same one
+written the way that language writes it. All of this is knowledge about language, not about a
+person: it holds for everyone called Michael, it can be
 checked, and nobody needs to confirm it. "Sota" for Sasha is the opposite — a fact about one
 person, true only because someone in their life decided it was.
 
@@ -50,20 +52,76 @@ FORMS = {
 KNOWN: set = set()
 
 
+# One alphabet is not another name. Enough to compare a name written either way; this is not a
+# transliteration standard and doesn't try to be — it is here so "Миша Грибов" and "Mike Gribov"
+# meet, which they plainly should.
+CYRILLIC = {
+    "а": "a", "б": "b", "в": "v", "г": "g", "д": "d", "е": "e", "ё": "e", "ж": "zh", "з": "z",
+    "и": "i", "й": "y", "к": "k", "л": "l", "м": "m", "н": "n", "о": "o", "п": "p", "р": "r",
+    "с": "s", "т": "t", "у": "u", "ф": "f", "х": "kh", "ц": "ts", "ч": "ch", "ш": "sh",
+    "щ": "shch", "ъ": "", "ы": "y", "ь": "", "э": "e", "ю": "yu", "я": "ya",
+}
+
+
+def latin(text: str) -> str:
+    """The same name in one alphabet, so two spellings of it can be compared."""
+    return "".join(CYRILLIC.get(letter, letter) for letter in text.lower())
+
+
 def _pairs() -> set:
-    out = set(KNOWN)
+    """Every pair the table and what has been learned make — in one alphabet, and with spelling
+    choices taken out, so the table doesn't have to list "Mikhail" and "Mihail" separately."""
+    out = {(skeleton(a), skeleton(b)) for a, b in KNOWN}
     for canonical, forms in FORMS.items():
-        everything = [canonical] + list(forms)
-        for one in everything:
-            for other in everything:
-                if one != other:
-                    out.add((one, other))
+        everything = [skeleton(canonical)] + [skeleton(f) for f in forms]
+        out |= {(one, other) for one in everything for other in everything if one != other}
     return out
 
 
+def by_table(first: str, second: str) -> bool:
+    """The standard forms: a table of what people called X are also called."""
+    return (skeleton(first), skeleton(second)) in _pairs()
+
+
+# Two ways of writing one sound. People pick between them by habit — "Mikhail" on the passport,
+# "Mihail" because it is easier to say back — and neither is a different name.
+SPELLINGS = (("kh", "h"), ("ck", "k"), ("ph", "f"), ("c", "k"), ("yi", "i"), ("iy", "i"),
+             ("yy", "y"))
+
+
+def skeleton(name: str) -> str:
+    """A name with its spelling choices taken out, so two spellings of it can be compared."""
+    text = _norm(name)
+    for written, plainer in SPELLINGS:
+        text = text.replace(written, plainer)
+    out = []
+    for letter in text:  # "Anna" and "Ana" are one name written twice
+        if not out or out[-1] != letter:
+            out.append(letter)
+    return "".join(out)
+
+
+def by_spelling(first: str, second: str) -> bool:
+    """The same name, spelled the way whoever wrote it preferred."""
+    return skeleton(first) == skeleton(second)
+
+
+def by_initial(first: str, second: str) -> bool:
+    """A name written as an initial: "M. Gribov" is Michael Gribov, unless two Ms are about."""
+    short, long = sorted((first, second), key=len)
+    return len(short.rstrip(".")) == 1 and long.startswith(short.rstrip("."))
+
+
+# How one given name is recognised as another. The standard ways are here; the world can add its
+# own for what it meets — a house spelling, a name from a language this table doesn't cover —
+# and those are procedures like any other (procedures.py), kept because they earned their place.
+MATCHERS = [by_table, by_spelling, by_initial]
+
+
 def one_name(first: str, second: str) -> bool:
-    """Whether these two are known forms of one given name."""
-    return (_norm(first), _norm(second)) in _pairs()
+    """Whether these two are forms of one given name, by any rule the world knows."""
+    left, right = _norm(first), _norm(second)
+    return left == right or any(match(left, right) for match in MATCHERS)
 
 
 def learn(first: str, second: str) -> None:
@@ -85,9 +143,9 @@ def same_name(full: str, other: str) -> bool:
     if not (left[0] == right[0] or one_name(left[0], right[0])):
         return False
     if len(left) > 1 and len(right) > 1:
-        return left[-1] == right[-1]
+        return left[-1] == right[-1] or skeleton(left[-1]) == skeleton(right[-1])
     return True
 
 
 def _norm(text: str) -> str:
-    return " ".join(str(text).lower().replace("ё", "е").split())
+    return " ".join(latin(str(text)).split())
