@@ -10,6 +10,11 @@ plainly what it does and does not cover.
 
 ## What has to exist first: an ingestion path
 
+Confirmed with the other session working this repo on 2026-09-21: nothing of this exists yet,
+and `benchmarks/` is free. `scenarios/run.py` drives a live MCP host and scores against per-
+scenario EXPECT/PROBES — worth reading before writing a runner, and not to be bent into an
+ingestion path.
+
 Every memory benchmark hands over a transcript; our world is written by a host agent. So one
 component is needed before any of them can run: `benchmarks/ingest.py`, sessions in
 chronological order → statements, with the session as the source and its timestamp as the
@@ -96,8 +101,11 @@ RAM, `bge-m3` already served by Ollama.
 
 ## What must be built before Stage B means anything
 
-1. **Hybrid `like()`** — lexical branch, filters by class / relation / period, a threshold.
-   `single-session-user` questions are pure retrieval; dense-only cosine will lose them.
+1. **A lexical branch in `like()`** — `single-session-user` questions are pure retrieval and
+   often hinge on an exact word (a model number, a surname in a note), which cosine alone will
+   lose. Filtering and composition already exist in `selecting.where()` (attributes, links, tags,
+   meaning, `at=`, `closeness=`), so `like()` stays a scorer: same `(entity, text, score)` shape,
+   same score scale, or `where()` and `tags.look_alike()` break with it.
 2. **Verbatim retention on ingest** — the session text as a dated comment, so an extraction miss
    is recoverable instead of fatal.
 3. **An abstention path in the answer contract** — the world says it does not know, and the

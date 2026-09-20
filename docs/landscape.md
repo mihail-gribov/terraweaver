@@ -192,11 +192,12 @@ What they do not express:
 
 1. **No hybrid retrieval.** `like()` is dense cosine over a full table scan, with a synchronous
    `refresh()` on every query. The field's consensus is BM25 + dense + graph traversal fused
-   (RRF). We have no lexical branch, no rerank and no score threshold — an off-topic query still
-   returns a top-5.
-2. **Meaning does not compose with structure.** There is no way to ask "about batteries, among
-   people at Acme, within the last year": `like()` takes no class, relation or period filter.
-   Those are precisely the questions where typed memory beats vectors (MOOSEDev).
+   (RRF). We have no lexical branch and no rerank, so an exact-word question — a model number, a
+   surname in a note — is answered by similarity or not at all.
+2. **Meaning composes with structure, as of 2026-09-21.** `selecting.where()` narrows by
+   attributes, links, tags and meaning in one call, with the class optional, `at=` for a moment
+   and `closeness=` as the threshold on the meaning score. This was the gap; it is now the door,
+   and `like()` should stay a scorer rather than grow filters of its own.
 3. **No number on it.** We measured that clustering remarks by embedding does not work (0.46–0.61
    within a topic against 0.49 across topics) and acted on it, but recall@k of the search itself
    on our own scenarios is unmeasured.
