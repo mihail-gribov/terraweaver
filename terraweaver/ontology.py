@@ -539,18 +539,12 @@ class Entity:
         one word, and a world that only knows the last one cannot answer "what was this in June".
         Reads out of the statements, where the periods are; no separate account is kept.
         """
-        from terraweaver import timeutil
+        from terraweaver import periods, timeutil
 
         world = current_world()
-        out = []
-        for statement in world.facts.about(self.subject_id, slot):
-            values = statement.value if isinstance(statement.value, list) else [statement.value]
-            for one in values:
-                if value is not None and str(one) != str(value):
-                    continue
-                out.append(Spell(one, timeutil.moment(statement.valid_from or statement.stated_at),
-                                 timeutil.moment(statement.valid_until), statement.source))
-        return sorted(out, key=lambda spell: spell.starts)
+        periods.rebuild(world)  # cheap, and always exactly what the statements say
+        return [Spell(one, timeutil.moment(starts), timeutil.moment(until), "record")
+                for one, starts, until in periods.stretches(world, self.subject_id, slot, value)]
 
     def _set_tags(self, wanted) -> None:
         """Make these the tags that hold: state the new ones, end the ones no longer named."""

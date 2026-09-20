@@ -354,6 +354,20 @@ This is what fuzzy searching runs on. "Someone who dislikes being hurried" finds
 that says "hates being rushed" — no word in common — which is exactly the kind of question that
 has no attribute to be asked against.
 
+## Three derivations, one record
+
+The statements are the only thing recorded. Everything else in this world is derived from them
+and may be thrown away at any time:
+
+    images     the entities, by identity and resolution rules        (assembly.py, rebuild.py)
+    periods    when things held, coalesced into one row per stretch  (periods.py)
+    meanings   an index over what was said, for finding by sense     (meaning.py)
+
+Each is rebuilt by a deterministic pass, states nothing, and outranks nothing. Change a rule —
+who counts as the same person, how stretches are folded, which embedding model — and the world
+is derived again from exactly what it was told. That is the property the whole design exists to
+keep, and each new derivation has to earn its place without touching it.
+
 ## Finding by meaning
 
 Most of a world is structured and needs no help. Some of it is deliberately prose — a remark

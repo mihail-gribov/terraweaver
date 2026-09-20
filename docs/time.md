@@ -67,11 +67,22 @@ ended in March, a tag that was on for a quarter. They are written the same way �
 `until=`, `ttl=`, `permanent=True` — read the same way — now by default, `any_time=True` for
 everything — and kept in the same place: on the statement that made the claim.
 
-That last part is why there is no separate table of periods. A period is *when an assertion
-held*, not a property of the thing it is about; splitting it off would leave a statement unable
-to say what it means on its own, and the assembler joining two tables to find out. What a
-separate table would have given — every stretch of one thing in one place — is a view, and it is
-`entity.spells(slot)`: each period something held, in order, with whose word it was.
+The statements are where a period is *said*: a period is when an assertion held, and a statement
+that could not say so would not mean anything on its own.
+
+But the record is append-only, and that is wrong for working with. "On in March, off in June" and
+"on again in June" are two rows and stay two rows, though they are plainly one stretch. So the
+periods are also derived into a table of their own (`periods.py`) — one row per stretch,
+normalised: what overlaps or touches becomes one, what sits inside another disappears into it.
+That normalising is arithmetic over intervals, so a deterministic pass does it and nobody argues
+about the result; and because it is a derivation, it can be thrown away and rebuilt like the
+images or the meaning index.
+
+    subject   nature ("tags", "valid", a relation kind)   value   starts   until
+
+Questions go through it — what held in June, who carried this tag then — and the classes hide it:
+`entity.spells("tags")` is the stretches, `world.tagged(tag, at=...)` the other end of the same
+question.
 
     anna.tag("apartment-hunt", until=date(2027, 3, 1))
     anna.untag("apartment-hunt")      # ends it; the stretch stays in the record

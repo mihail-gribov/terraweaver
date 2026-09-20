@@ -79,21 +79,15 @@ def tags_of(entity) -> list[str]:
 
 
 def holding(world, entity, at=None) -> list[str]:
-    """The tags that hold for this one at a given moment — read from the record, not the image.
+    """The tags that hold for this one at a given moment.
 
-    The image is a snapshot, written when somebody last touched this thing; time moves on
-    without anybody writing. Anything that asks a question goes through here."""
-    from datetime import datetime, timezone
+    Read from the periods table (periods.py), where stretches are already coalesced — not from
+    the entity, which is a snapshot written when somebody last touched it while time moved on."""
+    from terraweaver import periods
 
-    moment = at or datetime.now(timezone.utc).replace(tzinfo=None)
-    out = []
-    for statement in world.facts.about(entity.subject_id if hasattr(entity, "subject_id")
-                                       else entity.id, "tags"):
-        if not statement.holds_at(moment):
-            continue
-        values = statement.value if isinstance(statement.value, list) else [statement.value]
-        out += [v for v in values if isinstance(v, str)]
-    return tidy(out)
+    periods.rebuild(world)
+    subject = getattr(entity, "subject_id", None) or entity.id
+    return tidy(periods.holding(world, subject, "tags", at))
 
 
 def ever(world, entity) -> list[str]:
