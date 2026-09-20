@@ -143,6 +143,15 @@ def main() -> int:
           matching.similarity("Dr. Rao", "Arun Rao") >= matching.PLAUSIBLE,
           str(matching.similarity("Dr. Rao", "Arun Rao")))
 
+    # --- a merely similar name must not stop a new person from being recorded ---
+    # "Wilma Chen" blocked "William Chen" from ever entering the world: new() returned a
+    # question, nobody answered it, and the person simply wasn't there.
+    made = Person.new(full_name="William Chen", email="william.chen@stripe.com")
+    check("a name that merely resembles doesn't block a new record",
+          not isinstance(made, NeedsResolution) and made.full_name == "William Chen", f"got {made!r}")
+    twin = Person.new(full_name="William", email="other.william@example.com")
+    check("a name they answer to still asks", isinstance(twin, NeedsResolution), f"got {twin!r}")
+
     # --- an unsettled question reads like an unsettled result ---
     # Host code checks a result the same way every time; when the question raised AttributeError
     # on .matched the run was rolled back and the question came back from scratch, four times.

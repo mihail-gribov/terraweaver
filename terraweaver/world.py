@@ -228,11 +228,13 @@ class World:
         class_name = self._name(cls)
         period = _period(starts, until, ttl, permanent)
         scored = matching.score_candidates(self.all(cls, limit=None, history=True), class_name, attrs)
-        # A twin (same email, same full name) — or, for a name, someone it merely resembles:
-        # "Darren" when "Darren Liu" is recorded is far likelier to be him than a second Darren,
-        # and creating one silently splits everything said about him in two.
-        # Only names identify: two ideas or events with similar titles are just similar.
-        resembling = [inst for inst, _ in scored] if class_name in matching.PART_MATCH_CLASSES else []
+        # A twin (same email, same full name) — or someone whose name this is: "Darren" when
+        # "Darren Liu" is recorded is far likelier to be him than a second Darren, and creating
+        # one silently splits everything said about him in two. Only names identify, and only a
+        # name they answer to: "Wilma Chen" must not stop "William Chen" from being recorded —
+        # that once left the person out of the world entirely, with nothing said about it.
+        resembling = ([inst for inst, score in scored if score >= matching.PART_CEILING]
+                      if class_name in matching.PART_MATCH_CLASSES else [])
         twins = [inst for inst, score in scored if score >= matching.CERTAIN] or resembling
         if twins:
             needs = looks_existing(class_name, attrs, twins)
