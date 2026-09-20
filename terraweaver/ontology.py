@@ -586,14 +586,13 @@ class Entity:
                 raise TypeError(_derived_message(class_name, declared))
             _check_type(class_name, spec, name, value)
             if name == "tags" and isinstance(value, list):
-                # Tags are kept in one form, because a tag typed three ways is three categories
-                # that never find each other. What was actually typed is not lost: the statement
-                # behind this write keeps it (facts.py), so a review can still see the spellings.
+                # Tags are held in one form, because a tag typed three ways is three categories
+                # that never find each other. Tidying is a rule, though, and rules live in the
+                # assembly, not in the record: the statement below keeps what was given, so the
+                # rule can change and the world be rebuilt from what was actually written.
                 from terraweaver import tags as tagging
 
-                said = list(value)
-                value = tagging.tidy(value)
-                _state_raw(self, name, said)
+                given, value = list(value), tagging.tidy(value)
             # Stored as given, only without stray whitespace; comparisons use the kind's normalize.
             if isinstance(value, str):
                 value = value.strip()
@@ -615,6 +614,7 @@ class Entity:
         object.__setattr__(self, name, value)
         # When a record holds is data about it like any other, so it is stated too; only the
         # world's own bookkeeping (id, when we first saw it, when it was last touched) isn't.
+        given = value if "given" not in dir() else given
         if (_CHANGED is not None and not name.startswith("_")
                 and name not in ("id", "created_at", "accessed_at")
                 and getattr(self, "id", None) is not None):
@@ -627,7 +627,7 @@ class Entity:
                 # Against the subject, not the image: an entity is a cluster of subjects
                 # (assembly.py), and a statement made now must stay with the one it was made
                 # about — otherwise a later split cannot put anything back where it belongs.
-                world.facts.state(self.subject_id, name, _as_statement(value), source=source,
+                world.facts.state(self.subject_id, name, _as_statement(given), source=source,
                                   run_id=run_id, class_name=type(self).__name__)
         if not name.startswith("_"):
             _note_changed(self, name)
@@ -678,18 +678,6 @@ def _remark_note(entity) -> str:
     except Exception:  # noqa: BLE001 - a repr must never fail
         return ""
     return f", {count} remark{'s' if count > 1 else ''} (.comments())" if count else ""
-
-
-def _state_raw(entity, name: str, value) -> None:
-    """Record what was written before the world tidies it, so the record keeps the original."""
-    world = world_if_bound()
-    if _CHANGED is None or world is None or getattr(entity, "id", None) is None:
-        return
-    if getattr(world, "facts", None) is None:
-        return
-    source, run_id = stated_by()
-    world.facts.state(entity.subject_id, f"{name}:as written", _as_statement(value),
-                      source=source, run_id=run_id, class_name=type(entity).__name__)
 
 
 def _as_statement(value):

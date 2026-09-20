@@ -388,14 +388,10 @@ class World:
             name = attr["name"]
             if "derived" in attr or name in ontology.MANAGED_VALUE_ATTRS:
                 continue
-            value = instance.__dict__.get(name)
+            value = attrs.get(name, instance.__dict__.get(name))  # as given, not as tidied
             if value is not None and value != []:
                 self.facts.state(instance.id, name, ontology._as_statement(value),
                                  source=source, run_id=run_id, class_name=class_name)
-        # Tags are tidied on the way in, so the record keeps what was actually typed.
-        if isinstance(attrs.get("tags"), list) and attrs["tags"]:
-            self.facts.state(instance.id, "tags:as written", list(attrs["tags"]),
-                             source=source, run_id=run_id, class_name=class_name)
         self._apply_deferred(instance)
         return instance  # brand new, so created_at and accessed_at already coincide
 

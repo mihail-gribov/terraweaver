@@ -32,6 +32,11 @@
       "type": "str",
       "required": false,
       "description": "Where this fact came from (e.g. 'user said', 'inferred')."
+    },
+    {
+      "name": "tags",
+      "type": "list[str]",
+      "description": "Loose ties to other things, for what no attribute or relation says: everything about the move, everyone from that conference."
     }
   ],
   "methods": [

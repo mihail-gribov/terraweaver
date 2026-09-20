@@ -27,6 +27,11 @@
       "description": "The person whose world this is and who the assistant answers to."
     },
     {
+      "name": "tags",
+      "type": "list[str]",
+      "description": "Loose ties to other things, for what no attribute or relation says: everything about the move, everyone from that conference."
+    },
+    {
       "name": "notes",
       "type": "str",
       "required": false,

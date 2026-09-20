@@ -11,9 +11,13 @@ So the world does two things and refuses a third.
 
 **It holds them to one shape.** A tag is kept in one form — lower case, single spaces, no
 trailing punctuation — because a tag typed three ways is three categories that never find each
-other. That is data uniformity, which is the world's business. What was actually typed is not
-lost: the statement behind the write keeps it (`tags:as written`), so a review can still see
-that somebody wrote "Job-Search" in March, and so nothing is rewritten in the record.
+other. That is data uniformity, which is the world's business.
+
+Tidying is a rule, though, and rules belong to the assembly rather than to the record: the
+statement keeps the tag as it was given, the entity holds it in one form. So the rule can change
+— a different way of folding spaces, a decision to keep case — and the world is rebuilt from what
+was actually written. It is the same arrangement as an email address: stored as typed, compared
+in one form.
 
 **It counts them.** What tags exist, how often each is used and on what — the evidence any
 review needs. A tag used once is not a category, it is a note someone left.
@@ -104,9 +108,18 @@ def once_only(world) -> list[str]:
 
 
 def written_several_ways(world) -> list[tuple[str, list[str]]]:
-    """Tags whose spellings differ only in shape — the same word typed two ways."""
-    return sorted((tag, sorted(entry["spellings"])) for tag, entry in vocabulary(world).items()
-                  if len(entry["spellings"]) > 1)
+    """Tags typed more than one way, read from the record rather than from the entities.
+
+    The entities hold the tidy form — that is the point of tidying — so the spellings are only
+    in the statements, which keep what was given. Worth knowing: a tag written four ways is
+    usually a host being careless, and occasionally two ideas that got folded into one.
+    """
+    spellings: dict = {}
+    for statement in world.facts.with_slot("tags"):
+        for tag in statement.value or []:
+            if isinstance(tag, str) and tag.strip():
+                spellings.setdefault(canonical(tag), set()).add(tag)
+    return sorted((tag, sorted(ways)) for tag, ways in spellings.items() if len(ways) > 1)
 
 
 def look_alike(world, closeness: float = 0.8) -> list[tuple[str, str, float]]:

@@ -153,7 +153,7 @@ Every class below shares these, so they aren't repeated for each one:
         linda.relate(b04, "authority", label="manager")
         b04.relate(company, "part_of")
     entity.relations(kind)[i].counterpart is the end that isn't the entity you asked from.
-    Tags are for a tie too vague to formalise — everything about the move, everyone from that
+    tags — every class has them. A tie too vague to formalise — everything about the move, everyone from that
     conference, what matters this month. A relation type has to say what the tie *is*; a tag only
     says there is one. anna.tags = ["job-search", "berlin"]. They are kept in one form, so
     "job search" and "Job-Search" are the same tag however they were typed (what you typed stays

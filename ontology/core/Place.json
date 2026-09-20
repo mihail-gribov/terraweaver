@@ -37,6 +37,11 @@
       "type": "enum[home, work, venue, listing, other]",
       "required": false,
       "description": "What kind of place this is."
+    },
+    {
+      "name": "tags",
+      "type": "list[str]",
+      "description": "Loose ties to other things, for what no attribute or relation says: everything about the move, everyone from that conference."
     }
   ],
   "methods": [

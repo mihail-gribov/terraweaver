@@ -88,6 +88,11 @@
       "type": "datetime",
       "required": false,
       "description": "When the listing was posted."
+    },
+    {
+      "name": "tags",
+      "type": "list[str]",
+      "description": "Loose ties to other things, for what no attribute or relation says: everything about the move, everyone from that conference."
     }
   ],
   "methods": [

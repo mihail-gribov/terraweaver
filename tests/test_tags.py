@@ -33,8 +33,8 @@ def main() -> int:
     check("and the entity holds it in that one form",
           w.classes["Person"].get(full_name="Cara Dahl").tags == ["job-search", "berlin"],
           str(w.classes["Person"].get(full_name="Cara Dahl").tags))
-    typed = [s.value for s in w.world.facts.all() if s.slot == "tags:as written"]
-    check("while the record keeps what was actually typed",
+    typed = [s.value for s in w.world.facts.all() if s.slot == "tags"]
+    check("while the record keeps them as they were given",
           any("Job-Search" in written for written in typed), str(typed))
     check("finding by tag ignores how it was written",
           len(w.world.tagged("Berlin")) == 3, str(w.world.tagged("Berlin")))
