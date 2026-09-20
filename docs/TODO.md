@@ -17,6 +17,29 @@ The world is served over MCP; the host agent writes code against the object mode
 (`docs/procedural-memory.md`), `remember`, `research`, `extend` — builds on this loop, so it
 comes first.
 
+## Research for one thing: "find out more about this"
+
+The person says "I'm interested in a BMW X5, 2026". The world records the thing and then goes and
+fills it in — specifications, prices, what people say about it — so that by the time they come
+back to it there is something to talk about. `entity.research()`, roughly.
+
+The shape it should take, from what is already decided elsewhere:
+
+- **a ticket, not a call.** Expensive, several pages, background, one at a time, on a budget; it
+  does not happen in the middle of answering someone.
+- **what it finds are statements**, each with the page it came from as its source — so they are
+  checkable, outranked by the person's own word, and retractable one by one if a source turns
+  out to be rubbish. Where it summarises rather than copies, that is a conclusion with its basis
+  (`facts.conclude`), and it goes stale like any other.
+- **only where it is allowed** (`lookup.py`): a public thing — a car model, a company, a place —
+  or anything at all if the person asked for it about that thing. Never a person from this world,
+  and never a query carrying what they told us.
+- **it has an "as of".** Prices and reviews age; the entity should say when it was looked into,
+  and the tick should notice when that was long ago.
+
+Open: whether a researched thing is an ordinary entity of an ordinary class (a `Product` we do
+not have yet) or something looser, and how much of a page is worth keeping versus fetching again.
+
 ## Giving a new link its rules: the parts not built
 
 The chain is described in `docs/architecture.md`. What exists: the trigger (`ticks.py`,

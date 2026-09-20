@@ -301,6 +301,12 @@ which outranks what the assistant worked out for itself and is outranked by the 
 account of their life. It carries its URL, so it can be checked; it can be retracted, so a bad
 source can be undone; and it goes stale like anything else.
 
+What may be asked is decided in code, not by judgement (`lookup.py`): a short list of purposes
+we named in advance — what a kind of thing is, how a kind of link behaves, the registered name
+behind a trading name — plus anything the person asked us to look into, in their words. A query
+for one of our own purposes is read against what this world holds, and if a name, an address or
+a number from it turns up, the lookup doesn't happen.
+
 The work of reaching out is deferred and belongs to the agenda (`docs/ideas-research.md`): a
 ticket, one at a time, on a budget — not something that happens in the middle of answering
 someone.
