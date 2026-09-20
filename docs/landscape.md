@@ -2,7 +2,9 @@
 
 A survey of where personal-agent memory actually stands, written to answer three questions:
 what the field is converging on, where this project is genuinely ahead, and what we do not
-express at all — including with tags and meaning search, which were finished this week.
+express at all — including with tags and meaning search, which were finished this week. It also
+states, because the survey makes it unavoidable, what kind of thing this is: not another memory
+mechanism, though it implements memory well.
 Companion to [related-work.md](related-work.md), which covers the literature behind our three
 hardest problems; this one covers the products and the direction of travel.
 
@@ -99,7 +101,51 @@ over a persistent Python environment; programmatic tool calling keeps intermedia
 sandbox instead of the context. The bet we made a year ago is no longer contrarian, which is good
 for the world's ergonomics and bad for it as a differentiator.
 
-## 2. Where we are genuinely ahead
+## 2. Why this is not a memory layer
+
+Everything in section 1 is about memory: store what was said, retrieve it when it is relevant,
+keep the timeline straight. That is a real problem and a crowded one, and if this project is
+filed under it we will be compared on recall@k against systems that do nothing else.
+
+It is the wrong category. A memory layer holds statements and hands them back. This world holds
+a model of somebody's life that has structure of its own and changes that structure:
+
+- **It grows its own schema.** A class gains an attribute when the evidence says it should
+  (`growth.py`, `ontology/grown/`, [schema-growth.md](schema-growth.md)); a relation label used
+  often enough is a missing relation type with characteristics to be settled
+  ([architecture.md](architecture.md), `properties.py`). A memory layer's schema is whatever the
+  extractor emitted.
+- **It concludes, and says on what basis.** `facts.conclude()` writes the world's own inferences
+  into `reasoning_*` tables, ranked below anything a person said, retractable one at a time.
+  Judgement is a recorded, weakest-source kind of statement rather than a hidden summary.
+- **It keeps procedures**, not just facts ([procedural-memory.md](procedural-memory.md)):
+  how this person does a recurring thing, attached to the class it belongs to.
+- **It models dynamics rather than recording them.** Validity periods live on entities *and*
+  relations; `until` / `ttl` / `expire()` state up front that a fact is expected to stop holding;
+  overlap of periods, not "now", decides conflicts; a current read that hides an ended relation
+  emits a hint. The world is a state that moves, with the movement written down.
+- **It reaches outside itself.** `lookup.py` permits a query about a public thing (a car model, a
+  company, a place) or anything the person asked about, never about a person in this world, and
+  what comes back is statements with the page as their source and an "as of". The world can go
+  and find out, under a rule that is checked in code.
+- **It notices and proposes.** `ticks.py` finds what has gone stale, what is said twice, which
+  tags have drifted; `assembly.unsettled()` reports identities that cannot be settled without
+  help; open questions hold doubt on the entity until somebody answers.
+
+Memory is something this can do — efficiently, because statements with sources, periods and
+reversible assembly are exactly what memory needs. But the thing being built is a governed,
+self-structuring model of a person's world, and the honest comparison set is
+[personal world models](https://emergentmind.com/topics/personal-world-models) and the
+governance layer of the personal knowledge stack, not Mem0 and Zep.
+
+The part of "world model" we cannot yet claim is consequence prediction: state plus a candidate
+action giving a predicted next state, and refusing to act when the prediction is unacceptable
+([self.md](https://self.md/concepts/jepa-world-models) draws the line as memory / state / world
+model / planner / guardrails). We model observed dynamics and anticipated staleness; we do not
+yet model what happens if the agent does something. That gap is worth naming precisely, because
+everything else on that ladder is already here.
+
+## 3. Where we are genuinely ahead
 
 - **Statements → assembly → images.** The record keeps what was said; images are derived and
   disposable. `rebuild()` is idempotent, so the assembly *rule* can change and the world is
@@ -121,7 +167,7 @@ for the world's ergonomics and bad for it as a differentiator.
 - **We measure honestly**: pass^k, world versus baseline with the same host, instability tracked
   as a metric rather than excused. Against the benchmark rot above, this is defensible.
 
-## 3. Tags and meaning search: what they express, and what they do not
+## 4. Tags and meaning search: what they express, and what they do not
 
 What is already right: a tag is held in one form while the statement keeps it as typed (the same
 arrangement as an email address); tags are statements, so they carry **time and source** and read
@@ -150,7 +196,7 @@ What they do not express:
    and `unsettled()` all produce work for somebody, and the agenda that would carry it
    (`agenda.db`) is designed but not built.
 
-## 4. What we do not express at all
+## 5. What we do not express at all
 
 - **No passive capture.** The market ingests mail, calendar and transcripts; our world grows only
   through conversation. Our evidence threshold for creating an entity is better than Rowboat's,
@@ -159,11 +205,9 @@ What they do not express:
   user. This is what π-Bench measures and what a judge perceives as intelligence.
 - **No consolidation off the hot path.** `rebuild()` is synchronous; there is no background pass
   that deduplicates, ages and proposes schema.
-- **We are not a world model in the state-transition sense.** No prediction of the consequences
-  of an action, no simulation, no guardrail on irreversible effects
-  ([self.md](https://self.md/concepts/jepa-world-models) puts the distinction well: memory is
-  what happened, state is what is true now, a world model is what happens if I act). We are
-  memory and state, and should say so.
+- **No consequence prediction** (section 2): the world holds state and its dynamics, but not
+  "what happens if the agent does X", and there is no gate that refuses an action whose predicted
+  outcome is unacceptable. Irreversible effects are not modelled at all.
 - **Scale is untested.** PerQA volumes, latency, tens of thousands of entities. `describe_world`
   is ~490 lines read before every task, and that cost is already visible in money.
 - **No export format.** "Portable on a memory stick" is a claim; the format is our SQLite.
@@ -172,7 +216,7 @@ What they do not express:
   criticised for exactly that).
 - **No external benchmark number.** We measure only our own scenarios.
 
-## 5. What follows from this
+## 6. What follows from this
 
 Ordered by return on effort:
 
@@ -184,8 +228,10 @@ Ordered by return on effort:
 3. **The agenda**, even minimal: review-due tags, look-alikes, unsettled identities and open
    questions in one list of tickets. Without it, half of what is built is unobservable.
 4. **One external benchmark on a slice** — see below.
-5. **Position it as the governance layer** of personal knowledge — records, sources, reversible
-   decisions, questions — rather than as another memory.
+5. **Position it by what it is**: a governed, self-structuring model of a person's world —
+   records, sources, reversible decisions, open questions, a schema that grows, procedures, a
+   line to the outside — which implements memory as one of its uses. Not another memory layer;
+   the comparison set in section 2 is the one to be judged against.
 
 ### On running an external benchmark
 
@@ -201,6 +247,13 @@ The candidates are not equivalent:
   passive capture, so the work is dual-use rather than wasted.
 - **π-Bench / MCP-Persona** sit at the agent level, which is what we actually are, and are the
   heaviest to run.
+
+A memory benchmark measures a projection of this world, not the world: it scores recall over a
+transcript, and says nothing about a schema that grows, a doubt that is carried until answered,
+or a fact that was fetched from outside with an "as of". That is a reason to run one small
+slice and stop, not a reason to skip it — the projection is where the field's numbers live, and
+one comparable number buys credibility for the parts that have no benchmark yet. π-Bench and
+MCP-Persona score the agent, which is closer to the real claim.
 
 Whatever is chosen, it must be run in both modes — world and baseline, same host, same model —
 because our claim is "the world makes the host better", not "our retrieval is state of the art".
