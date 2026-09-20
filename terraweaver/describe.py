@@ -256,7 +256,17 @@ Every class below shares these, so they aren't repeated for each one:
                      rel.keep(...), rel.expire()
       a tag          anna.tag("apartment-hunt", until=...) — several at once share one period;
                      anna.untag(...) ends it, and each stretch is kept (anna.spells("tags"))
+      one text       anna.add("descriptions", "on parental leave", starts=..., until=...) —
+                     any list[text] slot: several free texts, each its own dated item.
+                     anna.drop("descriptions", "...") ends one; anna.spells("descriptions")
+                     lists the stretches. `anna.descriptions = [...]` means "these are the
+                     ones now" and goes through the same door.
       a remark       anna.comment(text, when=..., until=..., ttl=..., permanent=True)
+    A slot typed list[text] holds several free texts, each stated on its own and each able to
+    hold for a time — that is what descriptions are, and what any "several things said about
+    this" attribute should be. A slot typed list[enum[a, b, c]] is the same, drawn from a fixed
+    vocabulary. What the vocabulary has no word for goes in a free text, never a new word.
+
     Not an attribute value: `anna.email = ...` holds from when you write it, and there is no way
     yet to say a value held from March to June. Say it in a remark and note the dates there.
 

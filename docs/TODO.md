@@ -256,3 +256,32 @@ here are half-open — [from, until) — so the handover is "until October 1", a
 where the host is looking. Worth a check in code rather than a line in the guide: for a relation
 type with `one_of_a_label`, when one ends and another of the same label starts within a day or
 two but not at the same moment, say that there is a gap (or an overlap) and what closes it.
+
+## Free text is a type now, and comments are the odd one out
+
+`list[text]` makes a slot hold several free texts, each stated on its own, each with its own
+period: `entity.add("descriptions", ..., starts=, until=)`, `entity.drop(...)`,
+`entity.spells("descriptions")`. Assigning the whole list goes through the same door. Tags are
+the same machinery with one extra rule (one form to compare by), and `list[enum[a, b, c]]` is
+the same again, drawn from a vocabulary.
+
+Which leaves comments as a second mechanism for the same thing — free text about an entity, with
+a date and a period — kept in its own table with its own words (`when`, `tentative`, `ttl`,
+`forget()`, world-wide search). Two things worth deciding:
+
+- Whether a comment becomes a `list[text]` item with `tentative` as a marker on the statement,
+  and comments.py becomes a way of reading rather than a place of storage. That would leave one
+  answer to "where does free text go", and one set of words for its time.
+- What a comment has that a text item doesn't: `when` (the thing happened then) separate from
+  the period (it holds from then), a default ttl, and searching across every entity at once. The
+  first is real and would have to survive the merge.
+
+## The ladder, as a template for structuring
+
+Prose → vocabulary → value is the same slot growing up, and it is the shape the world should use
+when it structures something itself (level 2, `ontology/grown`): a `list[text]` slot whose texts
+keep repeating the same few words is a `list[enum[...]]` waiting to be declared, and a slot that
+never holds more than one is an ordinary attribute. The world can see all three from the record
+alone — count the distinct texts, count how often each recurs, count how many hold at once — and
+propose the change rather than make it. Nothing does this yet; properties.py does the equivalent
+for relations, and is the model to follow.

@@ -585,6 +585,108 @@ class Entity:
         world = world_if_bound()
         return world is None or getattr(world, "facts", None) is None
 
+    def add(self, slot: str, *texts: str, starts=None, until=None, ttl=None,
+            permanent: bool = False, every=None, lasting=None):
+        """Put one more text into a dated list — a description, a tag, anything of that type.
+
+        A `list[text]` slot holds several free texts, and each one is a statement of its own:
+        said when it was said, holding for as long as it holds, ended without anything being
+        deleted. That is what makes prose part of this world rather than beside it — a second
+        description does not overwrite the first, and a description that stopped being true
+        stops holding on a date instead of disappearing.
+
+            anna.add("descriptions", "does cell chemistry at a battery startup")
+            acme.add("descriptions", "hiring freeze", starts=date(2026, 3, 1))
+            mike.add("tags", "on-call", every="3 weeks", lasting=timedelta(days=7))
+        """
+        tidy = _texts_as(slot)
+        if self._no_world():
+            with trusted_writes(), not_recording():
+                object.__setattr__(self, slot, tidy(list(getattr(self, slot, None) or []) + list(texts)))
+            return self
+        world = current_world()
+        source, run_id = stated_by()
+        period = {}
+        if starts is not None or until is not None or ttl is not None or permanent:
+            from terraweaver.world import _period
+
+            period = _period(starts, until, ttl, permanent)
+        if self.id is None:
+            world.save(self)
+        # Stated as written, shown in one form: a tag typed three ways is one tag to compare
+        # by and three spellings in the record, which is what makes the tidying rule changeable.
+        for text in _as_written(texts):
+            if every is not None:
+                self.repeat(every=every, lasting=lasting, tag=text if slot == "tags" else None,
+                            starts=period.get("valid_from") or starts,
+                            until=period.get("valid_until"))
+                continue
+            world.facts.state(self.subject_id, slot, text, source=source, run_id=run_id,
+                              class_name=type(self).__name__,
+                              valid_from=period.get("valid_from"),
+                              valid_until=period.get("valid_until"))
+        self._show(slot)
+        return self
+
+    def drop(self, slot: str, *texts: str):
+        """Take a text out of a dated list: it stops holding now, and the record keeps that it did."""
+        tidy = _texts_as(slot)
+        if self._no_world():
+            gone = set(tidy(texts))
+            with trusted_writes(), not_recording():
+                object.__setattr__(self, slot,
+                                   [t for t in (getattr(self, slot, None) or []) if t not in gone])
+            return self
+        world = current_world()
+        wanted = set(tidy(texts))
+        for statement in world.facts.about(self.subject_id, slot):
+            if statement.valid_until is not None:
+                continue
+            values = statement.value if isinstance(statement.value, list) else [statement.value]
+            if any(t in wanted for t in tidy([v for v in values if isinstance(v, str)])):
+                world.facts.end(statement.id)
+        self._show(slot)
+        return self
+
+    def _show(self, slot: str) -> None:
+        """Put what holds now into the entity, which is where everything reads the slot from."""
+        world = current_world()
+        moment = datetime.now(timezone.utc).replace(tzinfo=None)
+        holding = []
+        for statement in world.facts.about(self.subject_id, slot):
+            if not statement.holds_at(moment):
+                continue
+            values = statement.value if isinstance(statement.value, list) else [statement.value]
+            holding += [v for v in values if isinstance(v, str)]
+        with trusted_writes(), not_recording():
+            object.__setattr__(self, slot, _texts_as(slot)(holding))
+        world.store.save(self)
+
+    def _set_many(self, slot: str, wanted) -> None:
+        """"These are the texts now": state what is new, end what is no longer named."""
+        tidy = _texts_as(slot)
+        world = world_if_bound()
+        if world is None or getattr(world, "facts", None) is None:
+            with trusted_writes(), not_recording():
+                object.__setattr__(self, slot, tidy(wanted))
+            return
+        from terraweaver import periods
+
+        periods.rebuild(world)
+        # What the record says holds, never what the entity happens to carry: at creation the
+        # entity already carries what was asked for, and taking that as "already stated" left
+        # every tag given to Class.new() unrecorded.
+        now_holding = set(tidy(periods.holding(world, self.subject_id, slot)))
+        given = _as_written(wanted)          # as said, in the order said
+        asked = tidy(given)                  # the same, in the form things are compared in
+        fresh = [text for text in given if (tidy([text]) or [None])[0] not in now_holding]
+        if fresh:
+            self.add(slot, *fresh)
+        gone = [text for text in now_holding if text not in asked]
+        if gone:
+            self.drop(slot, *gone)
+        self._show(slot)
+
     def tag(self, *names: str, starts=None, until=None, ttl=None, permanent: bool = False,
             every=None, lasting=None):
         """Put a tag on, for a while, for good, or every so often.
@@ -598,33 +700,8 @@ class Entity:
         every August. The rule is stated once and the period table keeps it as one row; see
         repeat() below, which this passes through to.
         """
-        from terraweaver import tags as tagging
-
-        if self._no_world():
-            with trusted_writes(), not_recording():
-                object.__setattr__(self, "tags", tagging.tidy(list(self.tags or []) + list(names)))
-            return self
-        world = current_world()
-        source, run_id = stated_by()
-        period = {}
-        if starts is not None or until is not None or ttl is not None or permanent:
-            from terraweaver.world import _period
-
-            period = _period(starts, until, ttl, permanent)
-        if self.id is None:
-            world.save(self)
-        for name in names:
-            if every is not None:
-                self.repeat(every=every, lasting=lasting, tag=name,
-                            starts=period.get("valid_from") or starts,
-                            until=period.get("valid_until"))
-                continue
-            world.facts.state(self.subject_id, "tags", name, source=source,
-                              run_id=run_id, class_name=type(self).__name__,
-                              valid_from=period.get("valid_from"),
-                              valid_until=period.get("valid_until"))
-        self._show_tags()
-        return self
+        return self.add("tags", *names, starts=starts, until=until, ttl=ttl,
+                        permanent=permanent, every=every, lasting=lasting)
 
     def untag(self, *names: str):
         """Take a tag off: it stops holding now, and the record keeps that it once did.
@@ -632,24 +709,7 @@ class Entity:
         Ended, not retracted — it was true of this thing for a while, and asking later what it
         was tagged in June should still answer. Tag it again next year and that is a second
         spell, not a contradiction of the first."""
-        from terraweaver import tags as tagging
-
-        if self._no_world():
-            gone = {tagging.canonical(name) for name in names}
-            with trusted_writes(), not_recording():
-                object.__setattr__(self, "tags",
-                                   [t for t in (self.tags or []) if tagging.canonical(t) not in gone])
-            return self
-        world = current_world()
-        wanted = {tagging.canonical(name) for name in names}
-        for statement in world.facts.about(self.subject_id, "tags"):
-            if statement.valid_until is not None:
-                continue
-            values = statement.value if isinstance(statement.value, list) else [statement.value]
-            if any(tagging.canonical(v) in wanted for v in values if isinstance(v, str)):
-                world.facts.end(statement.id)
-        self._show_tags()
-        return self
+        return self.drop("tags", *names)
 
     def spells(self, slot: str = "tags", value: str | None = None) -> list:
         """Every stretch of time something held of this one — all of them, in order.
@@ -666,41 +726,10 @@ class Entity:
                 for one, starts, until in periods.stretches(world, self.subject_id, slot, value)]
 
     def _set_tags(self, wanted) -> None:
-        """Make these the tags that hold: state the new ones, end the ones no longer named."""
-        from terraweaver import tags as tagging
-
-        world = world_if_bound()
-        if world is None or getattr(world, "facts", None) is None:
-            # A fixture being built before there is a world: nothing to state yet, and the image
-            # is all there is. The tidying still applies, because that part is not about time.
-            with trusted_writes(), not_recording():
-                object.__setattr__(self, "tags", tagging.tidy(wanted))
-            return
-        now_holding = {tagging.canonical(t) for t in tagging.holding(world, self)}
-        asked = [t for t in wanted if isinstance(t, str) and t.strip()]
-        fresh = {tagging.canonical(t) for t in asked}
-        if fresh - now_holding:
-            self.tag(*[t for t in asked if tagging.canonical(t) not in now_holding])
-        if now_holding - fresh:
-            self.untag(*(now_holding - fresh))
-        self._show_tags()
+        self._set_many("tags", wanted)
 
     def _show_tags(self) -> None:
-        """Put what holds now into the entity, which is where everything reads tags from."""
-        from terraweaver import assembly, tags as tagging
-
-        world = current_world()
-        said = world.facts.about(self.subject_id, "tags")
-        moment = datetime.now(timezone.utc).replace(tzinfo=None)
-        holding = []
-        for statement in said:
-            if not statement.holds_at(moment):
-                continue
-            values = statement.value if isinstance(statement.value, list) else [statement.value]
-            holding += [v for v in values if isinstance(v, str)]
-        with trusted_writes(), not_recording():
-            object.__setattr__(self, "tags", tagging.tidy(holding))
-        world.store.save(self)
+        self._show("tags")
 
     def suggest_tags(self, limit: int = 3) -> list:
         """Tags worth considering for this one, from whatever else reads like it. Candidates and
@@ -819,11 +848,13 @@ class Entity:
                     return
                 raise TypeError(_derived_message(class_name, declared))
             _check_type(class_name, spec, name, value)
-            if name == "tags" and isinstance(value, list) and getattr(self, "id", None) is not None:
-                # One way in, whichever way it is written. `anna.tags = [...]` says "these are the
-                # tags now", so it is the same act as tagging what is new and untagging what is
-                # gone — and it goes through the same door, which is what keeps periods honest.
-                self._set_tags(value)
+            if (isinstance(value, list) and getattr(self, "id", None) is not None
+                    and name in dated_lists(spec)):
+                # One way in, whichever way it is written. `anna.tags = [...]` and
+                # `anna.character = [...]` both say "these are the texts now", so each is the
+                # same act as adding what is new and dropping what is gone — through the same
+                # door, which is what keeps the periods honest.
+                self._set_many(name, value)
                 return
             # One form of time, whatever came in. A world that keeps some times with a zone and
             # some without cannot compare its own records — and the host, holding a literal
@@ -960,6 +991,37 @@ def _also_repeats(made, every, lasting, starts, until):
     return made
 
 
+def _as_written(values) -> list:
+    """The texts as they were said, without repeats or stray whitespace — what is stated."""
+    out = []
+    for value in values or []:
+        if not isinstance(value, str) or not value.strip():
+            continue
+        said = " ".join(value.split())
+        if said not in out:
+            out.append(said)
+    return out
+
+
+def _texts_as(slot: str):
+    """How a slot shows its texts: tags in one form so they find each other, prose as written."""
+    from terraweaver import tags as tagging
+
+    return tagging.tidy if slot == "tags" else _as_written
+
+
+def dated_lists(spec: dict) -> set:
+    """The slots of a class that hold several texts, each with its own period.
+
+    Three shapes of the same idea, and a world structuring itself climbs between them: free
+    prose (`list[text]`) for what has no vocabulary yet, a vocabulary (`list[enum[...]]`) once
+    the same words keep coming back, and a plain value for what is only ever one thing. Tags are
+    the free shape shared by every class."""
+    return {a["name"] for a in spec.get("attributes", [])
+            if str(a.get("type", "")).startswith(("list[text]", "list[enum["))
+            or a["name"] == "tags"}
+
+
 def _period_text(starts, until) -> str:
     if starts is None and until is None:
         return ""
@@ -1025,6 +1087,16 @@ def _check_type(class_name: str, spec: dict[str, Any], attr_name: str, value) ->
                    if allowed[-1] in ("other", "misc") else
                    "Pick the closest, and put what the user actually said in a remark.")
             )
+    elif declared.startswith("list[enum["):
+        allowed = [v.strip() for v in declared[len("list[enum["):-2].split(",")]
+        if not isinstance(value, list):
+            raise TypeError(f"{class_name}.{attr_name} is a list of: {', '.join(allowed)}")
+        for one in value:
+            if not isinstance(one, str) or not any(v.lower() == one.strip().lower() for v in allowed):
+                raise ValueError(
+                    f"{class_name}.{attr_name} takes any number of: {', '.join(allowed)} — "
+                    f"{one!r} is none of them. What the vocabulary has no word for belongs in a "
+                    f"free text: entity.add('descriptions', ...) or entity.comment(...).")
     elif declared.startswith("list[ref:"):
         expected = declared[len("list[ref:"):-1]
         if expected == "any":

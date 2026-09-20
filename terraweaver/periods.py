@@ -49,8 +49,19 @@ CREATE INDEX IF NOT EXISTS idx_periods_subject ON periods(subject, nature);
 CREATE INDEX IF NOT EXISTS idx_periods_value ON periods(nature, value);
 """
 
-# Slots whose statements describe a stretch of time rather than a value that simply is.
+# Slots whose statements describe a stretch of time rather than a value that simply is: the
+# dated lists of texts a class declares (`list[text]`), tags among them.
 OVER_TIME = ("tags",)
+
+
+def over_time(world) -> list[str]:
+    """Which slots hold texts that come and go — read from the classes, not written down twice."""
+    from terraweaver import ontology
+
+    slots = set(OVER_TIME)
+    for cls in getattr(world, "classes", {}).values():
+        slots |= ontology.dated_lists(getattr(cls, "_spec", {}))
+    return sorted(slots)
 
 # Where a repeat rule is kept in the record: one statement saying what repeats, and how.
 REPEATS = "repeats"
@@ -259,7 +270,7 @@ def _repeat_rules(world) -> list[dict]:
 def _from_statements(world):
     """(subject, nature, value, stretches) for everything the statements say held for a time."""
     gathered: dict = {}
-    for slot in OVER_TIME:
+    for slot in over_time(world):
         for statement in world.facts.with_slot(slot):
             values = statement.value if isinstance(statement.value, list) else [statement.value]
             for one in values:
