@@ -487,6 +487,12 @@ class Entity:
             # Stored as given, only without stray whitespace; comparisons use the kind's normalize.
             if isinstance(value, str):
                 value = value.strip()
+                declared_type = declared.get("type") or ""
+                if declared_type.startswith("enum["):  # one word for one thing, however it was typed
+                    allowed = [v.strip() for v in declared_type[len("enum["):-1].split(",")]
+                    value = next(v for v in allowed if v.lower() == value.lower())
+                elif declared_type in ("email", "phone", "url", "domain"):
+                    _ask_about_value(self, name, declared_type, value)
         overwrite = (
             _WRITE_GUARD is not None
             and not name.startswith("_")
@@ -549,6 +555,24 @@ def _brief(value) -> str:
     return repr(value)
 
 
+def _ask_about_value(entity, name: str, kind: str, value: str) -> None:
+    """A value that can't be what it's declared to be. The user said it, so it's kept — but the
+    world holds the shape of its data, so it asks the host to check it rather than filing a
+    phone number that has no digits in it."""
+    from terraweaver import values
+
+    if values.looks_like(kind, value) or getattr(entity, "id", None) is None:
+        return
+    world = current_world()
+    world.questions.raise_(
+        entity, "unclear_value",
+        f"{name} recorded as {value!r}, which doesn't read as {'an' if kind[0] in 'aeiou' else 'a'} "
+        f"{kind}. Is that right?",
+        options=[f"it is the {kind}", "it's something else — put it in a remark"],
+        touches=[f"attr:{name}"],
+    )
+
+
 def _check_type(class_name: str, spec: dict[str, Any], attr_name: str, value) -> None:
     """Enforce declared ref types, so a bare string can't land in a relationship field."""
     if value is None:
@@ -562,6 +586,20 @@ def _check_type(class_name: str, spec: dict[str, Any], attr_name: str, value) ->
             raise TypeError(
                 f"{class_name}.{attr_name} must be a {expected} instance, got {type(value).__name__} "
                 f"({value!r}). Get the entity first, e.g. {expected}.ensure(name=...)."
+            )
+    elif declared.startswith("enum["):
+        allowed = [v.strip() for v in declared[len("enum["):-1].split(",")]
+        if not isinstance(value, str):
+            raise TypeError(f"{class_name}.{attr_name} is one of: {', '.join(allowed)}; got {value!r}")
+        # A vocabulary is there so the same thing is recorded the same way — the world's own
+        # business. Spelling and case are not: "Meeting" is the word, written differently.
+        match = next((v for v in allowed if v.lower() == value.strip().lower()), None)
+        if match is None:
+            raise ValueError(
+                f"{class_name}.{attr_name} is one of: {', '.join(allowed)} — {value!r} is none of them. "
+                + (f"Use '{allowed[-1]}' and say what it is in a remark: entity.comment(...)."
+                   if allowed[-1] in ("other", "misc") else
+                   "Pick the closest, and put what the user actually said in a remark.")
             )
     elif declared.startswith("list[ref:"):
         expected = declared[len("list[ref:"):-1]
@@ -792,6 +830,13 @@ Every class below shares these, so they aren't repeated for each one:
     "members")) and along chains (kevin.related("membership") includes the company B04 is part
     of). What no type fits: a.relate(b, "related", label="godfather", description="…").
     Person.organization / job_title / relationship read from these relations and can be assigned.
+
+    What the world holds to. It doesn't mind how you write your code — import what you like of
+    what's already here, name things as you please. What it does hold is the data: an attribute
+    with a vocabulary takes one of its words (however you type it — "Meeting" is "meeting"), and
+    anything else is refused with the list; a value declared an email, phone or web address that
+    can't be one is kept and asked about; a relation must satisfy the rules of its type; and a
+    run is all or nothing, so a subgraph is never half-written.
 
     Assigning an attribute (anna.email = "...") is your statement — the user said so or you
     concluded it — and it goes through as it is. The old value isn't lost:

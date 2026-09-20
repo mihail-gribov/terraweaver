@@ -136,3 +136,20 @@ def canonical(spec: dict, attr: str, value):
         return value
     kind, options = found
     return kind.normalize(value, **options)
+
+
+def looks_like(kind: str, raw) -> bool:
+    """Whether a value can be what it says it is. Not validation for its own sake: an address
+    with no @, a number with no digits, a web address with no host are not written differently —
+    they are something else, and the world asks rather than filing them as that kind."""
+    if not isinstance(raw, str) or not raw.strip():
+        return True
+    text = raw.strip()
+    if kind == "email":
+        return "@" in text and "." in text.split("@")[-1] and " " not in text
+    if kind == "phone":
+        return sum(c.isdigit() for c in text) >= 5
+    if kind in ("url", "domain"):
+        host = Domain.normalize(text)
+        return bool(host) and "." in host and " " not in host
+    return True

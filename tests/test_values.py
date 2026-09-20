@@ -3,6 +3,7 @@
 Run: .venv/bin/python tests/test_values.py
 """
 import sys
+from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -59,6 +60,28 @@ def main() -> int:
           Organization.find(website="https://careers.techcorp.com/jobs").main == [techcorp])
     twin = Person.new(full_name="Ada L", email="Ada@Example.com")
     check("an email written differently still reveals a twin", getattr(twin, "skill", None) == "resolve_ambiguity")
+
+    # --- one word for one thing, however it was typed ---
+    event = classes["Event"].new(title="Sync", kind="Meeting", start_time=datetime(2026, 10, 1, 10, 0))
+    check("a vocabulary word is kept in the world's spelling", event.kind == "meeting", str(event.kind))
+    refused = None
+    try:
+        classes["Event"].new(title="Chat", kind="catch-up", start_time=datetime(2026, 10, 1, 11, 0))
+    except (ValueError, TypeError) as exc:
+        refused = str(exc)
+    check("a word outside the vocabulary is refused with the list",
+          refused is not None and "interview, call, meeting" in refused, str(refused))
+    check("and the refusal says what to do instead", refused is not None and "remark" in refused)
+
+    # --- a value that can't be its kind is kept, and asked about ---
+    ada = Person.get(email="ada@example.com")
+    ada.phone = "call me maybe"
+    asked = [q for q in ada.questions() if "phone" in q.text]
+    check("a phone with no number in it is questioned, not refused",
+          ada.phone == "call me maybe" and len(asked) == 1, str(asked))
+    ada.phone = "+1 (555) 010-2030"
+    check("a real number raises nothing",
+          len([q for q in ada.questions() if "010-2030" in q.text]) == 0)
 
     print()
     if failures:
