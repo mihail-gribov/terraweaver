@@ -186,6 +186,32 @@ def main() -> int:
     check("another source saying the same is its own statement, because whose word it is matters",
           len(facts.about("r1")) == 2, str(facts.about("r1")))
 
+    # --- some slots hold more than one thing, and that is not a disagreement ---
+    specs = {"Person": {"attributes": [{"name": "email", "type": "list[email]"},
+                                       {"name": "organization", "type": "ref:Organization"}]}}
+    facts = Facts(sqlite3.connect(":memory:"))
+    facts.state("m1", "email", "ada@work.example", source="user", class_name="Person")
+    facts.state("m1", "email", "ada@home.example", source="user")
+    facts.state("m1", "organization", "TechCorp", source="user")
+    facts.state("m1", "organization", "DataWorks", source="user")
+    image = list(assembly.assemble(facts, specs=specs).values())[0]
+    check("two addresses are two addresses, not a quarrel",
+          sorted(image.values["email"]) == ["ada@home.example", "ada@work.example"],
+          str(image.values["email"]))
+    check("two employers at once still are a quarrel", bool(image.conflicts.get("organization")),
+          str(image.conflicts))
+
+    # --- a name has forms, and none of them contradicts the others ---
+    facts = Facts(sqlite3.connect(":memory:"))
+    for form in ("Michael", "Mike", "Michael Gribov"):
+        facts.state("n1", "full_name", form, source="user", class_name="Person")
+    image = list(assembly.assemble(facts).values())[0]
+    check("every form of the name is kept", image.names == ["Michael Gribov", "Mike", "Michael"],
+          str(image.names))
+    check("the fullest is the one shown", image.values["full_name"] == "Michael Gribov",
+          str(image.values["full_name"]))
+    check("and none of it counts as a disagreement", not image.conflicts, str(image.conflicts))
+
     print()
     if failures:
         print(f"{len(failures)} failed: {', '.join(failures)}")

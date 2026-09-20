@@ -51,6 +51,17 @@ The literature calls these inconsistency-tolerant query answering, prioritized r
 deferred entity resolution and bitemporality — `docs/related-work.md` maps each piece to its name
 and to what that work does better than we do.
 
+One more thing the assembler has to know, and the class is what tells it: **how many of a thing
+there can be at once.** Two email addresses are two addresses; two employers at the same time are
+a disagreement. The class says which by declaring the slot a list or not, so the assembler never
+has to guess — and never reports a second phone number as a quarrel.
+
+Names are the case where this matters most. A person is called Michael, and Mike, and Michael
+Gribov, and none of those contradicts the others: they are forms of one name. So they are
+collected rather than resolved — `image.names` holds every form, fullest first, and the fullest
+is the one shown, because it is the one that identifies without context. A nickname stops being
+a second-class "alias" and is simply another thing the person is called.
+
 ## What was said, and what the world worked out
 
 Not every statement is something someone said. Some are what the world concluded: a hundred

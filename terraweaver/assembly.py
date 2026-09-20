@@ -36,6 +36,7 @@ class Image:
 
     id: str                      # the leading subject of the cluster: stable while it holds
     subjects: list[str]          # every subject this image was assembled from
+    names: list = field(default_factory=list)   # every form of the name, fullest first
     values: dict[str, Any] = field(default_factory=dict)
     sources: dict[str, str] = field(default_factory=dict)   # slot -> whose word it is
     conflicts: dict[str, list] = field(default_factory=dict)  # slot -> statements left standing
@@ -106,6 +107,35 @@ def _kept_apart(told_apart: set, find: Callable[[str], str], a: str, b: str) -> 
     return False
 
 
+def name_forms(statements: list, at: datetime) -> list:
+    """Every form of a name that still holds, fullest first.
+
+    A person is called several things — Michael, Mike, Michael Gribov — and none of them
+    contradicts the others. They are forms of one name, so they are collected rather than
+    resolved, and the fullest is the one to show: it is the one that identifies without
+    context. Ties go to what was said most recently."""
+    standing = [s for s in statements if s.holds_at(at) and isinstance(s.value, str)]
+    forms, seen = [], set()
+    for statement in sorted(standing, key=lambda s: (len(str(s.value).split()), s.last_said),
+                            reverse=True):
+        key = " ".join(str(statement.value).lower().split())
+        if key not in seen:
+            seen.add(key)
+            forms.append(statement.value)
+    return forms
+
+
+def holds_many(specs: dict | None, class_name: str | None, slot: str) -> bool:
+    """Whether a slot can hold more than one thing at a time.
+
+    Two email addresses are not a disagreement — they are two addresses. Two employers at once
+    are. Which is which is not for the assembler to guess: the class says so, by declaring the
+    slot a list or not, and that is a level-2 decision (`docs/architecture.md`)."""
+    spec = (specs or {}).get(class_name or "", {})
+    declared = next((a.get("type", "") for a in spec.get("attributes", []) if a["name"] == slot), "")
+    return declared.startswith("list[")
+
+
 def resolve(statements: list, at: datetime | None = None):
     """Which statement about one slot the image shows: the most trusted, then the latest.
 
@@ -124,7 +154,8 @@ def resolve(statements: list, at: datetime | None = None):
     return best, rivals
 
 
-def assemble(facts, rule: Callable[[list, list], bool] = same_name, at: datetime | None = None) -> dict[str, Image]:
+def assemble(facts, rule: Callable[[list, list], bool] = same_name, at: datetime | None = None,
+             specs: dict | None = None) -> dict[str, Image]:
     """Build every image from every fact. Cheap enough to do from scratch; the same code path
     serves "rebuild the world" and "rebuild the one entity this run touched"."""
     belongs = clusters(facts, rule)
@@ -139,7 +170,30 @@ def assemble(facts, rule: Callable[[list, list], bool] = same_name, at: datetime
                 if statement.slot in (SAME_AS, NOT_SAME_AS):
                     continue
                 by_slot.setdefault(statement.slot, []).append(statement)
+        class_name = next((facts.class_of(s) for s in image.subjects if facts.class_of(s)), None)
+        name_slot = matching.NAME_KEYS.get(class_name or "")
         for slot, statements in by_slot.items():
+            if slot == name_slot:
+                image.names = name_forms(statements, at or datetime.utcnow())
+                if image.names:
+                    image.values[slot] = image.names[0]
+                    image.sources[slot] = statements[-1].source
+                continue
+            if holds_many(specs, class_name, slot):
+                # Everything still standing, newest first. Nothing here is a rival to anything.
+                standing = [s for s in statements if s.holds_at(at or datetime.utcnow())]
+                if not standing:
+                    continue
+                seen, many = set(), []
+                for statement in sorted(standing, key=lambda s: s.last_said, reverse=True):
+                    key = _text(statement.value)
+                    if key not in seen:
+                        seen.add(key)
+                        many.append(belongs.get(statement.refers_to) if statement.is_reference
+                                    else statement.value)
+                image.values[slot] = many
+                image.sources[slot] = standing[-1].source
+                continue
             best, rivals = resolve(statements, at)
             if best is None or best.value is None:
                 continue
