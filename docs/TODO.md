@@ -17,6 +17,21 @@ The world is served over MCP; the host agent writes code against the object mode
 (`docs/procedural-memory.md`), `remember`, `research`, `extend` — builds on this loop, so it
 comes first.
 
+## Judgements: the parts not built yet
+
+The layer itself works — `facts.conclude(...)` with a basis, staleness when the basis moves,
+`entity.why(attr)` handing the host the judgement and what it rests on. What is missing:
+
+- **the forms**: `ontology/judgements/` — what a judgement is *about*, what it is drawn from,
+  what fields it has, and what work produces it. The third structure of classes
+  (`docs/architecture.md`), still only described.
+- **the machinery**: what to re-derive, when, on what budget. This is work for the agenda: one
+  expensive job at a time, ordered by who is actually asked about.
+- **"why do you think that" reaching the ticket.** Today the answer is the judgement plus its
+  basis, handed to the host to put into a sentence. Once work is organised into tickets, the
+  run that made it names the ticket that ordered it — `run_id` already carries it — and the
+  answer can include what the world was trying to work out, not only what it read.
+
 ## Onboarding: what belongs in it beyond the two parties
 
 `terraweaver/onboarding.py` is the named step that brings a world up from the files beside it.

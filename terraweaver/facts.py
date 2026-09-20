@@ -158,6 +158,21 @@ class Facts:
         kept = sorted(i for i in statement.basis if i in live)
         return _digest(kept) != statement.basis_digest
 
+    def why(self, subject: str, slot: str) -> tuple[Statement, list[Statement]] | None:
+        """The judgement standing on this slot and what it rests on, or None if nobody worked it
+        out. The world hands this over; explaining it is the host's job, because an explanation
+        is a sentence to a person and the world doesn't talk to people.
+
+        Later, when work is organised into tickets, the run this was made in will name the ticket
+        that ordered it — `run_id` already carries it — and "why do you think that" will reach
+        back to the task as well as the evidence.
+        """
+        judgements = [s for s in self.about(subject, slot) if s.is_conclusion]
+        if not judgements:
+            return None
+        latest = judgements[-1]
+        return latest, self.basis_of(latest)
+
     def basis_of(self, statement: Statement) -> list[Statement]:
         """The statements a conclusion was drawn from — "why do you think that", answerable."""
         if not statement.is_conclusion or not statement.basis:

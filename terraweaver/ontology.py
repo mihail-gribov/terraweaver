@@ -404,6 +404,19 @@ class Entity:
         return current_world().comments.add(self, text, when=when if when is not None else starts,
                                             tentative=tentative, until=until, ttl=ttl, permanent=permanent)
 
+    def why(self, attr: str):
+        """What the world worked out for this attribute, and what it rests on — for when the user
+        asks why you think so. It comes back as the judgement, the statements behind it, and
+        whether it has gone stale; putting that into a sentence is yours. Nothing comes back for
+        an attribute someone simply told us: then the answer is that they did."""
+        world = current_world()
+        found = world.facts.why(self.id, attr) if getattr(self, "id", None) else None
+        if found is None:
+            return None
+        judgement, basis = found
+        return Judgement(judgement.value, judgement.stated_at, judgement.run_id,
+                         world.facts.stale(judgement), basis)
+
     def question(self, text: str, options=(), about: str | None = None) -> Any:
         """Record something about this entity that doesn't add up and isn't yours to decide —
         "two phone numbers, which is current?". It stays open until the user answers it.
@@ -517,6 +530,24 @@ class Entity:
         object.__setattr__(self, name, value)
         if not name.startswith("_"):
             _note_changed(self, name)
+
+
+@dataclass
+class Judgement:
+    """Something the world worked out, with what it rests on. Handed to the host to explain."""
+
+    value: Any
+    made_at: datetime
+    made_in: str | None   # the run — and, once work is organised into tickets, the ticket
+    stale: bool
+    because: list         # the statements it was drawn from
+
+    def __repr__(self):
+        from terraweaver import timeutil
+
+        rests = "; ".join(str(s.value) for s in self.because[:4])
+        return (f"<judged {self.value!r} on {timeutil.show(self.made_at)}"
+                f"{', stale' if self.stale else ''} — from: {rests}>")
 
 
 @dataclass
