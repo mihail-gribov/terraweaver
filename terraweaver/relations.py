@@ -39,12 +39,25 @@ class Relation(Entity):
         right = obj.display_name() if isinstance(obj, Entity) else "?"
         return f"{left} is {right}'s {what} ({kind})"
 
+    @property
+    def counterpart(self):
+        """The end that isn't the one you asked from — set when the relation came out of
+        entity.relations(...), which is where a host means "the other one"."""
+        asked = self.__dict__.get("_asked_from")
+        if asked is None:
+            raise AttributeError(
+                "this relation wasn't read from one end, so there is no 'other' one: use "
+                "rel.subject, rel.object, or rel.other(entity)."
+            )
+        return self.other(asked)
+
     def related(self, kind=None, **kw):
         """A relation has two ends and they have names — asking it for "the related one" is the
         question it can't answer, so say which end you mean."""
         raise TypeError(
-            "a relation links two ends: rel.subject, rel.object, or rel.other(entity) for the end "
-            "that isn't the one you asked from. rel.role_of(entity) says what an end is to the other."
+            "a relation links two ends: rel.counterpart is the end that isn't the one you asked "
+            "from (michael.relations('served_by')[0].counterpart), or name it — rel.subject, "
+            "rel.object, rel.other(entity). rel.role_of(entity) says what an end is to the other."
         )
 
     def other(self, entity):
@@ -211,6 +224,12 @@ def relate(world, a, b, kind: str, period: dict, attrs: dict):
     subject, obj = (b, a) if reverse else (a, b)
     cls = world.classes[name]
     rel = spec(cls)
+    for end in (subject, obj):
+        if hasattr(end, "skill") and hasattr(end, "candidates"):  # an unanswered question, not an entity
+            raise TypeError(
+                f"{name} links two entities, and one of them is still a question: {end.reason}. "
+                f"Settle it first — ask the user, then world.settle(<it>, <the one they meant>)."
+            )
     if not isinstance(subject, Entity) or not isinstance(obj, Entity):
         raise TypeError(f"{name} links two entities; got {type(subject).__name__} and {type(obj).__name__}")
     if not _fits(subject, rel["from"]) or not _fits(obj, rel["to"]):
@@ -396,6 +415,8 @@ def relations_of(world, entity, kind: str | None = None, history: bool = False) 
     # singular answer — "who is my dentist" — is the same whoever asks and whenever they ask.
     found.sort(key=lambda r: (timeutil.as_datetime(r.valid_from or r.created_at), r.created_at),
                reverse=True)
+    for relation in found:  # so rel.counterpart knows which end the host asked from
+        relation.__dict__["_asked_from"] = entity
     return found
 
 

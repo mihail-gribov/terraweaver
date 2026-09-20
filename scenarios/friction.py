@@ -62,7 +62,7 @@ def main() -> int:
     runs = failed = 0
     per_scenario: Counter = Counter()
     for directory in dirs:
-        for transcript in directory.glob("*.jsonl"):
+        for transcript in sorted(directory.rglob("*.jsonl")):  # repeat runs keep each try in its own folder
             for text in tool_results(transcript):
                 if "This is the user's personal world" in text[:300]:
                     continue  # the world description, not a run

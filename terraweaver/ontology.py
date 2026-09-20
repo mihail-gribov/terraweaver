@@ -387,10 +387,15 @@ class Entity:
         """Persist this entity and everything it references."""
         current_world().save(self)
 
-    def comment(self, text: str, when=None, tentative: bool = False, until=None, ttl=None, permanent: bool = False):
-        """Attach a dated remark to this entity — for what its attributes have no place for."""
-        return current_world().comments.add(self, text, when=when, tentative=tentative, until=until, ttl=ttl,
-                                            permanent=permanent)
+    def comment(self, text: str, when=None, tentative: bool = False, until=None, ttl=None,
+                starts=None, permanent: bool = False):
+        """Attach a dated remark to this entity — for what its attributes have no place for.
+
+        `starts=` is taken as `when=`: everywhere else in the world that word opens a period, and
+        a remark's period opens on the day it is about. One vocabulary, however the host reaches
+        for it."""
+        return current_world().comments.add(self, text, when=when if when is not None else starts,
+                                            tentative=tentative, until=until, ttl=ttl, permanent=permanent)
 
     def question(self, text: str, options=(), about: str | None = None) -> Any:
         """Record something about this entity that doesn't add up and isn't yours to decide —
@@ -824,6 +829,7 @@ Every class below shares these, so they aren't repeated for each one:
         kevin.relate(darren, "kin", label="older brother")
         linda.relate(b04, "authority", label="manager")
         b04.relate(company, "part_of")
+    entity.relations(kind)[i].counterpart is the end that isn't the entity you asked from.
     relate returns the relation — assign its attributes like any entity's (m.title = "team lead"),
     comment on it, end it (m.expire()). entity.relations(kind) gives the relations themselves;
     entity.related(kind) the entities at the other end — also by the reverse name (b04.related(

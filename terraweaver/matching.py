@@ -175,6 +175,27 @@ def score_candidates(existing_instances: list, class_name: str, attrs: dict, fil
     return sorted(scored, key=lambda pair: -pair[1])
 
 
+class Matches(list):
+    """The matches themselves. A list — but one that says what it is when mistaken for a single
+    entity, because `result.main.full_name` is the shape hosts reach for and a bare
+    'list has no attribute' tells them nothing."""
+
+    def __init__(self, items, which: str):
+        super().__init__(items)
+        self._which = which
+
+    def __getattr__(self, name: str):
+        if name.startswith("_"):
+            raise AttributeError(name)
+        if len(self) == 1:
+            where = f"result.{self._which}[0].{name}"
+        elif self:
+            where = f"one of them ({len(self)} here), e.g. result.{self._which}[0].{name}"
+        else:
+            where = "there are none — say so rather than filling the gap"
+        raise AttributeError(f"these are the matches, not one entity: no {name!r} on a list. Use {where}.")
+
+
 class FindResult(list):
     """Search results split into what actually matches and what merely resembles.
 
@@ -191,8 +212,8 @@ class FindResult(list):
 
     def __init__(self, main: list, similar: list):
         super().__init__(list(main) + list(similar))
-        self.main = list(main)
-        self.similar = list(similar)
+        self.main = Matches(main, "main")
+        self.similar = Matches(similar, "similar")
 
     @property
     def matched(self) -> bool:

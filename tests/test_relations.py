@@ -154,6 +154,20 @@ def main() -> int:
     check("find by a referenced entity matches that record only",
           [p.full_name for p in Person.find(organization=b04).main] == ["Kevin Chen"])
 
+    # --- the end you didn't ask from has a name ---
+    served = owner.relations("served_by")
+    check("a relation read from one end knows the other",
+          served and served[0].counterpart is not owner, str(served[:1]))
+    loose = refused(lambda: served[0].related("service"))
+    check("and asking it for 'the related one' points at that name",
+          loose is not None and "counterpart" in (loose or ""), str(loose))
+
+    # --- an unanswered question is not an entity to link ---
+    asked = Person.new(full_name="Darren")  # resembles Darren Liu: a question, not a person
+    linked = refused(lambda: owner.relate(asked, "social", label="friend"))
+    check("relating to an unsettled question says to settle it first",
+          linked is not None and "still a question" in (linked or ""), str(linked))
+
     print()
     if failures:
         print(f"{len(failures)} failed: {', '.join(failures)}")
