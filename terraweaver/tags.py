@@ -1,15 +1,19 @@
 """Tags: the loosest way to tie things together, and the one that rots fastest.
 
-A tag is what someone reaches for when a thing belongs with other things but no relation says
-how — "job-search", "berlin", "to-read". It costs nothing to add, which is its virtue and its
+A tag is what someone reaches for when things belong together and no relation says how —
+"job-search", "berlin", "to-read". It is the place for a tie too vague to formalise: everything
+about the move, everyone from that conference, the things that matter this month. A relation type
+would have to say what the tie *is*; a tag only says that there is one. It costs nothing to add, which is its virtue and its
 problem: within a month a world has `job-search`, `job search`, `jobsearch` and `work`, and none
 of them finds the others.
 
 So the world does two things and refuses a third.
 
-**It holds them to one shape.** A tag is written down the way it was typed and compared in one
-form: lower case, single spaces, no trailing punctuation. That is data uniformity, which is the
-world's business, and it costs nobody anything.
+**It holds them to one shape.** A tag is kept in one form — lower case, single spaces, no
+trailing punctuation — because a tag typed three ways is three categories that never find each
+other. That is data uniformity, which is the world's business. What was actually typed is not
+lost: the statement behind the write keeps it (`tags:as written`), so a review can still see
+that somebody wrote "Job-Search" in March, and so nothing is rewritten in the record.
 
 **It counts them.** What tags exist, how often each is used and on what — the evidence any
 review needs. A tag used once is not a category, it is a note someone left.
@@ -47,6 +51,18 @@ def canonical(tag: str) -> str:
     """The form a tag is compared in — not the form it is stored in."""
     text = _TIDY.sub("-", str(tag).strip().lower())
     return text.strip("-•,.;:!?").replace("--", "-")
+
+
+def tidy(values) -> list[str]:
+    """A list of tags as the world keeps them: one form each, in order, without repeats."""
+    out: list[str] = []
+    for tag in values or []:
+        if not isinstance(tag, str) or not tag.strip():
+            continue
+        clean = canonical(tag)
+        if clean and clean not in out:
+            out.append(clean)
+    return out
 
 
 def tags_of(entity) -> list[str]:
@@ -154,3 +170,46 @@ def due_for_review(world) -> list[tuple[str, int, int]]:
         elif now >= before + max(2, before * GROWN_BY):
             due.append((tag, now, before))
     return sorted(due, key=lambda row: row[1] - row[2], reverse=True)
+
+
+def merge(world, into: str, *others: str) -> int:
+    """Make several tags one: everything carrying any of them ends up carrying the first.
+
+    Deduplication proper — not the shapes of one word, which are already one tag, but two words a
+    person used for one idea. It is an ordinary write, so it is stated, reversible and visible in
+    the record; and it is done because somebody decided, never because the world felt like it.
+    """
+    run_script(world.store.conn, SCHEMA)
+    keep = canonical(into)
+    losing = {canonical(other) for other in others} - {keep}
+    if not losing:
+        return 0
+    changed = 0
+    for tag in losing:
+        for entity in tagged(world, tag):
+            kept = [t for t in tags_of(entity) if canonical(t) not in losing]
+            if keep not in [canonical(t) for t in kept]:
+                kept.append(keep)
+            entity.tags = kept
+            world.save(entity)
+            changed += 1
+        world.store.conn.execute("DELETE FROM tag_reviews WHERE tag = ?", (tag,))
+    reviewed(world, keep)
+    return changed
+
+
+def suggest(world, entity, limit: int = 3) -> list[tuple[str, float]]:
+    """Tags worth considering for this one, from whatever else reads like it.
+
+    Candidates and their strength, nothing applied. What earns a tag is a judgement about what
+    this person means by the word, and the host — or the model, on the agenda — makes it.
+    """
+    close = world.meanings.similar(world, entity, limit=8)
+    mine = {canonical(t) for t in tags_of(entity)}
+    scored: dict = {}
+    for other, _, score in close:
+        for tag in tags_of(other):
+            clean = canonical(tag)
+            if clean not in mine:
+                scored[clean] = max(scored.get(clean, 0.0), round(score, 3))
+    return sorted(scored.items(), key=lambda pair: -pair[1])[:limit]

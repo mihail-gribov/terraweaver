@@ -153,13 +153,17 @@ Every class below shares these, so they aren't repeated for each one:
         linda.relate(b04, "authority", label="manager")
         b04.relate(company, "part_of")
     entity.relations(kind)[i].counterpart is the end that isn't the entity you asked from.
-    Tags are the loosest way to put things together, for when they belong with each other and no
-    relation says how: anna.tags = ["job-search", "berlin"]. Compared in one form, so "job search"
-    and "Job-Search" are one tag however they were typed:
-        world.tagged("berlin")   — everything carrying it, whatever the spelling
-        world.tags()             — every tag, how often it is used, how it has been written
-    Use one when no attribute and no relation fits. What a tag ought to mean, and whether two of
-    them are one idea, is not settled here — the world counts them and says which have moved.
+    Tags are for a tie too vague to formalise — everything about the move, everyone from that
+    conference, what matters this month. A relation type has to say what the tie *is*; a tag only
+    says there is one. anna.tags = ["job-search", "berlin"]. They are kept in one form, so
+    "job search" and "Job-Search" are the same tag however they were typed (what you typed stays
+    in the record):
+        world.tagged("berlin")        — everything carrying it, whatever the spelling
+        world.tags()                  — every tag, how often used, how it has been written
+        world.merge_tags("job-search", "jobsearch")   — two words for one idea, when you know it
+        anna.suggest_tags()           — tags worth considering, from whatever reads like her
+    Suggesting applies nothing and merging is yours to decide: what a tag means is what the user
+    means by the word, and the world only counts and points.
 
     Finding by meaning, for what is written as prose rather than filled in:
         world.like("works on batteries")   — remarks and notes that read like that, closest first

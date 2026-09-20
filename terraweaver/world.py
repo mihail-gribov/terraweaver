@@ -337,6 +337,12 @@ class World:
 
         return tagging.tagged(self, tag)
 
+    def merge_tags(self, into: str, *others: str) -> int:
+        """Make several tags one: everything carrying any of them ends up carrying the first."""
+        from terraweaver import tags as tagging
+
+        return tagging.merge(self, into, *others)
+
     def rebuild(self, rule=None, at=None) -> dict:
         """Build every entity again from what was said. See rebuild.py — it is always safe."""
         from terraweaver import rebuild as rebuilding
@@ -386,6 +392,10 @@ class World:
             if value is not None and value != []:
                 self.facts.state(instance.id, name, ontology._as_statement(value),
                                  source=source, run_id=run_id, class_name=class_name)
+        # Tags are tidied on the way in, so the record keeps what was actually typed.
+        if isinstance(attrs.get("tags"), list) and attrs["tags"]:
+            self.facts.state(instance.id, "tags:as written", list(attrs["tags"]),
+                             source=source, run_id=run_id, class_name=class_name)
         self._apply_deferred(instance)
         return instance  # brand new, so created_at and accessed_at already coincide
 

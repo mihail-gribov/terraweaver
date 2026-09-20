@@ -468,6 +468,13 @@ class Entity:
 
         return graph.reaches(current_world(), self, kind, up)
 
+    def suggest_tags(self, limit: int = 3) -> list:
+        """Tags worth considering for this one, from whatever else reads like it. Candidates and
+        how strongly they read, nothing applied — what earns a tag is yours to decide."""
+        from terraweaver import tags as tagging
+
+        return tagging.suggest(current_world(), self, limit)
+
     def similar(self, limit: int = 5) -> list:
         """Whatever else in the world reads like what is said about this one. Candidates only —
         nothing here decides who someone is."""
@@ -578,6 +585,15 @@ class Entity:
                     return
                 raise TypeError(_derived_message(class_name, declared))
             _check_type(class_name, spec, name, value)
+            if name == "tags" and isinstance(value, list):
+                # Tags are kept in one form, because a tag typed three ways is three categories
+                # that never find each other. What was actually typed is not lost: the statement
+                # behind this write keeps it (facts.py), so a review can still see the spellings.
+                from terraweaver import tags as tagging
+
+                said = list(value)
+                value = tagging.tidy(value)
+                _state_raw(self, name, said)
             # Stored as given, only without stray whitespace; comparisons use the kind's normalize.
             if isinstance(value, str):
                 value = value.strip()
@@ -662,6 +678,18 @@ def _remark_note(entity) -> str:
     except Exception:  # noqa: BLE001 - a repr must never fail
         return ""
     return f", {count} remark{'s' if count > 1 else ''} (.comments())" if count else ""
+
+
+def _state_raw(entity, name: str, value) -> None:
+    """Record what was written before the world tidies it, so the record keeps the original."""
+    world = world_if_bound()
+    if _CHANGED is None or world is None or getattr(entity, "id", None) is None:
+        return
+    if getattr(world, "facts", None) is None:
+        return
+    source, run_id = stated_by()
+    world.facts.state(entity.subject_id, f"{name}:as written", _as_statement(value),
+                      source=source, run_id=run_id, class_name=type(entity).__name__)
 
 
 def _as_statement(value):

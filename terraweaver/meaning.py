@@ -152,6 +152,7 @@ class Meanings:
 
     def similar(self, world, entity, limit: int = 5) -> list:
         """Whatever else reads like what is said about this one."""
+        self.refresh(world)  # before reading: an entity indexed a moment ago is the usual case
         mine = [row[0] for row in self.store.conn.execute(
             "SELECT text FROM meanings WHERE subject = ?", (entity.id,))]
         if not mine:
