@@ -98,6 +98,19 @@ def embedder():
         return Plain()
 
 
+# How many of an entity's texts have a say when it is scored as a whole. All of them compete;
+# the strongest few decide. One is too few — a single short text carries an entity in on noise,
+# and short texts are the noisiest (a one-word text scores 0.355 against things it has nothing
+# to do with, where a ten-word one scores 0.276). All of them is too many — averaging everything
+# said about a person describes nobody.
+TOP_TEXTS = 3
+# How much the other texts count next to the closest one. Enough that two matching texts beat
+# one, little enough that one strong match still beats a pile of vaguely related ones. A plain
+# average of the top few is unfair to whoever has fewer texts, and it showed: it put the wrong
+# person first once in six.
+BACKING = 0.35
+
+
 class Meanings:
     def __init__(self, store, model=None):
         self.store = store
@@ -186,13 +199,18 @@ class Meanings:
             vectors.setdefault(subject, []).append((said, json.loads(raw)))
         scored = []
         for subject, texts in vectors.items():
-            best_text, best = max(((said, _close(wanted, vector)) for said, vector in texts),
-                                  key=lambda pair: pair[1])
+            each = sorted(((said, _close(wanted, vector)) for said, vector in texts),
+                          key=lambda pair: pair[1], reverse=True)
+            best_text, best = each[0]
             if how == "best":
                 score = best
-            else:
+            elif how == "mean":
                 middle = _unit([sum(values) / len(texts) for values in zip(*(v for _, v in texts))])
                 score = _close(wanted, middle)
+            else:  # "all": the closest text decides, the rest of them have a say
+                rest = [score for _, score in each[1:TOP_TEXTS]]
+                backing = sum(rest) / len(rest) if rest else best
+                score = (best + BACKING * backing) / (1 + BACKING)
             scored.append((score, subject, best_text))
         scored.sort(reverse=True)
         out = []

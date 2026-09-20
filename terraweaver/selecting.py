@@ -45,7 +45,7 @@ DEFAULT_LIMIT = 50
 
 
 def where(world, cls=None, *, related=None, tagged=None, tagged_all=None, mentions=None,
-          like=None, how: str = "best", closeness: float = 0.3, at=None, any_time: bool = False,
+          like=None, how: str = "all", closeness: float = 0.3, at=None, any_time: bool = False,
           limit: int | None = DEFAULT_LIMIT, **attributes) -> list:
     """Everything that answers all of it. Without a class: of any kind. See the module docstring."""
     from terraweaver import relations
@@ -78,11 +78,14 @@ def where(world, cls=None, *, related=None, tagged=None, tagged_all=None, mentio
         found = keep
 
     if like:
-        # Scored on each one's closest text, not on the average of its texts: `closeness` is an
-        # absolute threshold, and an average lifts everything towards the middle — measured on
-        # six questions, the gap between the right answer and the rest fell from +0.21 to +0.14
-        # and half again as many strangers came in over 0.5. `world.similar()` averages instead,
-        # because "generally like this one" has no line to cross.
+        # Scored on all of this one's texts: the closest decides and the rest back it up.
+        # Measured on six questions against six people — by the closest text alone the gap
+        # between the right answer and the rest is +0.21 but nine strangers come in over 0.5;
+        # by the average of everything said it is +0.14 and fourteen do; this way it is +0.17
+        # and five do, with the right answer first in all six either way. how="best" and
+        # how="mean" are still there. Short texts are why this matters: a one-word text scores
+        # 0.36 against things it has nothing to do with, where a ten-word one scores 0.28, so
+        # letting a single tag carry an entity into an answer is exactly the wrong bet.
         order, matched = {}, {}
         for entity, score, said in world.meanings.entities(world, like, limit=200, how=how,
                                                            any_time=any_time):

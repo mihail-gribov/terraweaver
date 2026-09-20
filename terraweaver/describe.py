@@ -265,7 +265,8 @@ Every class below shares these, so they aren't repeated for each one:
     Searching words, two ways, and they are not the same question:
         world.where(mentions="lisbon flat")   — literally: every word appears, case ignored,
                                                 nothing stemmed, same answer every time
-        world.where(like="a shop selling bread")  — by meaning, which is a judgement
+        world.where(like="a shop selling bread")  — by meaning, which is a judgement; an entity
+                                                is scored on all its texts, the closest first
         world.texts("lisbon", slot="descriptions")  — the texts themselves, not their entities
     Everything said in words lives in one derived table (texts.py), so both of these are one
     query, and each text carries its own meaning rather than the entity carrying an average.
