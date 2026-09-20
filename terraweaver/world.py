@@ -134,7 +134,7 @@ class World:
             chosen = self._remembered(class_name, attrs, certain or similar)
             if chosen is not None:
                 return matching.FindResult([chosen], [inst for inst, _ in scored if inst is not chosen])
-            only = self._only_match(class_name, attrs, certain or similar)
+            only = self._only_match(class_name, attrs, scored)
             if only is not None:
                 return matching.FindResult([only], [inst for inst, _ in scored if inst is not only])
             needs = ambiguous_identity(class_name, attrs, certain or similar, exact=bool(certain))
@@ -142,18 +142,24 @@ class World:
             return needs
         return matching.FindResult(certain, similar)
 
-    def _only_match(self, class_name: str, attrs: dict, candidates: list):
+    def _only_match(self, class_name: str, attrs: dict, scored: list):
         """One candidate, and nothing that disagrees with it, is not an ambiguity — it's them.
 
         "Darren" when the world holds one Darren Liu and no other Darren is far likelier to be
         him than a question worth the user's time. Asking cost hosts three to six turns and, on
-        one run, produced a second Olga. So the rule: no contradiction, same one. A contradiction
-        is a second candidate, or a value that disagrees with what's recorded — either of those
-        and the question stands, because then the world genuinely doesn't know.
+        one run, produced a second Olga. So the rule: no contradiction, same one.
+
+        Three things count as a contradiction, and any of them keeps the question:
+        a second candidate; a value that disagrees with what's recorded; and a name that merely
+        resembles instead of being one this entity answers to. That last one is what keeps
+        "William Chen" from being quietly swallowed by "Wilma Chen" — a different first name is
+        a different person, while "Darren" is simply part of "Darren Liu".
         """
-        if len(candidates) != 1:
+        if len(scored) != 1:
             return None
-        entity = candidates[0]
+        entity, score = scored[0]
+        if score < matching.PART_CEILING:
+            return None
         name_key = matching.NAME_KEYS.get(class_name)
         rest = {k: v for k, v in attrs.items() if k != name_key}
         if matching.contradictions(entity, rest):
@@ -202,7 +208,8 @@ class World:
             ontology.note_found(entity)
             return entity
         if result.main or result.similar:
-            only = self._only_match(class_name, attrs, result.main or result.similar)
+            only = self._only_match(class_name, attrs,
+                                    matching.score_candidates(result.main or result.similar, class_name, attrs))
             if only is not None:
                 ontology.note_found(only)
                 return only
@@ -258,7 +265,7 @@ class World:
             outcome = self._apply_or_flag(self._determined(chosen), attrs)
         elif len(certain) > 1:
             outcome = ambiguous_identity(class_name, attrs, certain)
-        elif scored and (only := self._only_match(class_name, attrs, [inst for inst, _ in scored])) is not None:
+        elif scored and (only := self._only_match(class_name, attrs, scored)) is not None:
             outcome = self._apply_or_flag(only, attrs)
         elif scored:
             outcome = ambiguous_identity(class_name, attrs, [inst for inst, _ in scored])

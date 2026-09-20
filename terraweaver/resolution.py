@@ -44,6 +44,31 @@ class NeedsResolution:
     candidates: list = field(default_factory=list)
     context: dict = field(default_factory=dict)
 
+    # A question comes back where a result was asked for, and host code checks a result the same
+    # way every time. Without these it raises AttributeError, the run is rolled back, and the
+    # question is asked again from scratch — seen four times in one scenario. So it answers like
+    # an unsettled result: nothing matched, here is what it could be, and here is the question.
+    @property
+    def matched(self) -> bool:
+        return False
+
+    @property
+    def main(self) -> list:
+        return []
+
+    @property
+    def similar(self) -> list:
+        return list(self.candidates)
+
+    def __len__(self) -> int:
+        return 0
+
+    def __iter__(self):
+        return iter(())
+
+    def __bool__(self) -> bool:
+        return True  # it is something, and it must not read as "nothing came back"
+
     def __repr__(self):
         return f"NeedsResolution(skill={self.skill!r}, reason={self.reason!r}, options={self.options!r})"
 
