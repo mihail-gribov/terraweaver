@@ -3,8 +3,10 @@
 A survey of where personal-agent memory actually stands, written to answer three questions:
 what the field is converging on, where this project is genuinely ahead, and what we do not
 express at all — including with tags and meaning search, which were finished this week. It also
-states, because the survey makes it unavoidable, what kind of thing this is: not another memory
-mechanism, though it implements memory well.
+states, because the survey makes it unavoidable, what kind of thing this is: not *just* a memory
+mechanism. Memory's functions are ours as well — but memory is a larger thing than a key-value
+store with clever rules for writing and reading, and doing it properly is most of why the rest
+of the world exists.
 Companion to [related-work.md](related-work.md), which covers the literature behind our three
 hardest problems; this one covers the products and the direction of travel.
 
@@ -101,49 +103,59 @@ over a persistent Python environment; programmatic tool calling keeps intermedia
 sandbox instead of the context. The bet we made a year ago is no longer contrarian, which is good
 for the world's ergonomics and bad for it as a differentiator.
 
-## 2. Why this is not a memory layer
+## 2. Not just memory — and memory is more than a store
 
-Everything in section 1 is about memory: store what was said, retrieve it when it is relevant,
-keep the timeline straight. That is a real problem and a crowded one, and if this project is
-filed under it we will be compared on recall@k against systems that do nothing else.
+Everything in section 1 is filed under memory: extract facts, embed them, retrieve them when
+they look relevant, keep the timeline straight. That is storage with clever rules for writing
+and reading. If this project is filed beside it, it gets compared on recall@k against systems
+that do nothing else.
 
-It is the wrong category. A memory layer holds statements and hands them back. This world holds
-a model of somebody's life that has structure of its own and changes that structure:
+The answer is not that we are not memory. We owe every function memory owes: remembering what
+was said, returning it when it is wanted, keeping it true as it ages. That duty is not up for
+negotiation, and a world that fails it is not interesting. The point is that memory itself is
+bigger than the category makes it. Remembering a life means deciding what is worth keeping,
+holding two accounts of the same thing until one of them settles, knowing where each piece came
+from and how much it is worth, forgetting on purpose, and — the part nobody in a store can do —
+changing the shape of what is kept as the life changes shape. A store with a fixed schema and a
+similarity function drifts away from the person it describes within a year.
+
+So the mechanisms below are not extras bolted onto a memory; they are what memory needs in order
+to stay true over years:
 
 - **It grows its own schema.** A class gains an attribute when the evidence says it should
   (`growth.py`, `ontology/grown/`, [schema-growth.md](schema-growth.md)); a relation label used
   often enough is a missing relation type with characteristics to be settled
   ([architecture.md](architecture.md), `properties.py`). A memory layer's schema is whatever the
-  extractor emitted.
+  extractor happened to emit.
 - **It concludes, and says on what basis.** `facts.conclude()` writes the world's own inferences
-  into `reasoning_*` tables, ranked below anything a person said, retractable one at a time.
-  Judgement is a recorded, weakest-source kind of statement rather than a hidden summary.
-- **It keeps procedures**, not just facts ([procedural-memory.md](procedural-memory.md)):
-  how this person does a recurring thing, attached to the class it belongs to.
-- **It models dynamics rather than recording them.** Validity periods live on entities *and*
-  relations; `until` / `ttl` / `expire()` state up front that a fact is expected to stop holding;
+  into `reasoning_*` tables, ranked below anything a person said and retractable one at a time.
+  Judgement is a recorded, weakest-source statement rather than a hidden summary.
+- **It keeps procedures**, not only facts ([procedural-memory.md](procedural-memory.md)): how
+  this person does a recurring thing, attached to the class it belongs to.
+- **It models dynamics rather than logging them.** Validity periods live on entities *and*
+  relations; `until` / `ttl` / `expire()` say in advance that a fact is expected to stop holding;
   overlap of periods, not "now", decides conflicts; a current read that hides an ended relation
   emits a hint. The world is a state that moves, with the movement written down.
-- **It reaches outside itself.** `lookup.py` permits a query about a public thing (a car model, a
-  company, a place) or anything the person asked about, never about a person in this world, and
-  what comes back is statements with the page as their source and an "as of". The world can go
-  and find out, under a rule that is checked in code.
-- **It notices and proposes.** `ticks.py` finds what has gone stale, what is said twice, which
+- **It reaches outside itself.** `lookup.py` permits a query about a public thing — a car model,
+  a company, a place — or anything the person asked about, never about a person in this world,
+  and what comes back is statements carrying the page as their source and an "as of".
+- **It notices and proposes.** `ticks.py` finds what has gone stale, what was said twice, which
   tags have drifted; `assembly.unsettled()` reports identities that cannot be settled without
-  help; open questions hold doubt on the entity until somebody answers.
+  help; open questions hold a doubt on the entity until somebody answers it.
 
-Memory is something this can do — efficiently, because statements with sources, periods and
-reversible assembly are exactly what memory needs. But the thing being built is a governed,
-self-structuring model of a person's world, and the honest comparison set is
-[personal world models](https://emergentmind.com/topics/personal-world-models) and the
-governance layer of the personal knowledge stack, not Mem0 and Zep.
+Statements with sources, periods and reversible assembly are exactly what memory needs, which is
+why this does memory well. But the thing being built is a governed, self-structuring model of a
+person's world, and the honest comparison set is
+[personal world models](https://emergentmind.com/topics/personal-world-models) and the governance
+layer of the personal knowledge stack — with Mem0 and Zep as one capability inside it, not as
+peers.
 
 The part of "world model" we cannot yet claim is consequence prediction: state plus a candidate
 action giving a predicted next state, and refusing to act when the prediction is unacceptable
-([self.md](https://self.md/concepts/jepa-world-models) draws the line as memory / state / world
+([self.md](https://self.md/concepts/jepa-world-models) draws the ladder as memory / state / world
 model / planner / guardrails). We model observed dynamics and anticipated staleness; we do not
-yet model what happens if the agent does something. That gap is worth naming precisely, because
-everything else on that ladder is already here.
+model what happens if the agent acts. Worth naming precisely, because everything else on that
+ladder is already here.
 
 ## 3. Where we are genuinely ahead
 
@@ -230,8 +242,8 @@ Ordered by return on effort:
 4. **One external benchmark on a slice** — see below.
 5. **Position it by what it is**: a governed, self-structuring model of a person's world —
    records, sources, reversible decisions, open questions, a schema that grows, procedures, a
-   line to the outside — which implements memory as one of its uses. Not another memory layer;
-   the comparison set in section 2 is the one to be judged against.
+   line to the outside. It owes memory's functions and should be tested on them; it is not
+   another memory layer, and the comparison set in section 2 is the one to be judged against.
 
 ### On running an external benchmark
 
@@ -248,10 +260,10 @@ The candidates are not equivalent:
 - **π-Bench / MCP-Persona** sit at the agent level, which is what we actually are, and are the
   heaviest to run.
 
-A memory benchmark measures a projection of this world, not the world: it scores recall over a
-transcript, and says nothing about a schema that grows, a doubt that is carried until answered,
-or a fact that was fetched from outside with an "as of". That is a reason to run one small
-slice and stop, not a reason to skip it — the projection is where the field's numbers live, and
+A memory benchmark scores one face of this world. It is a face we are obliged to have — failing
+it would be a real failure — but it scores recall over a transcript and says nothing about a
+schema that grows, a doubt carried until it is answered, or a fact fetched from outside with an
+"as of". That is a reason to run one small slice and stop, not a reason to skip it — the projection is where the field's numbers live, and
 one comparable number buys credibility for the parts that have no benchmark yet. π-Bench and
 MCP-Persona score the agent, which is closer to the real claim.
 
