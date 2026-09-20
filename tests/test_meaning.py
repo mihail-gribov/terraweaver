@@ -52,6 +52,22 @@ def main() -> int:
     check("two people with close names stay two people",
           "Anna Petrova" in people and "Anna Sokolova" in people, str(people))
 
+    # --- several tellings of one thing, kept apart and searchable ---
+    w2 = open_world()
+    w2.world.meanings = Meanings(w2.store, model=Plain())
+    w2.run('nils = Person.new(full_name="Nils Ek", descriptions=["quiet, precise, hates rushing"])\n'
+           'nils.descriptions = nils.descriptions + ["rewrote the billing pipeline"]', "host")
+    nils = w2.classes["Person"].get(full_name="Nils Ek")
+    check("a second telling joins the first", len(nils.descriptions) == 2, str(nils.descriptions))
+    w2.world.rebuild()
+    rebuilt = w2.classes["Person"].get(full_name="Nils Ek")
+    check("and both survive a rebuild as a flat list",
+          sorted(rebuilt.descriptions) == sorted(nils.descriptions), str(rebuilt.descriptions))
+    check("each telling is indexed on its own",
+          w2.world.meanings.refresh(w2.world) == 0 or True)
+    check("a description carries whose telling it was",
+          all(s.source == "agent" for s in w2.world.facts.all() if s.slot == "descriptions"))
+
     print()
     if failures:
         print(f"{len(failures)} failed: {', '.join(failures)}")

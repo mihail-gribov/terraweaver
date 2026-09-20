@@ -48,7 +48,7 @@ LOCAL_MODEL = os.environ.get("TERRAWEAVER_EMBEDDING", "bge-m3")
 
 # Free-text attributes worth finding by meaning. Names are not here on purpose: a name is for
 # identity, and identity is not decided by proximity.
-TEXT_ATTRIBUTES = ("notes", "description", "title", "value")
+TEXT_ATTRIBUTES = ("descriptions", "notes", "description", "title", "value")
 
 
 class Plain:
@@ -174,8 +174,14 @@ class Meanings:
             for entity in world.all(class_name, limit=None, history=True):
                 for name in names:
                     said = getattr(entity, name, None)
-                    if isinstance(said, str) and len(said.strip()) > 8:
-                        yield f"{class_name}:{entity.id}:{name}", entity.id, name, said.strip()
+                    # A slot may hold several tellings — descriptions usually do — and each one
+                    # is its own text: two people describing someone differently is two things
+                    # to find them by, not one blurred average.
+                    for i, telling in enumerate(said if isinstance(said, list) else [said]):
+                        if isinstance(telling, str) and len(telling.strip()) > 8:
+                            ref = f"{class_name}:{entity.id}:{name}"
+                            yield (f"{ref}:{i}" if isinstance(said, list) else ref,
+                                   entity.id, name, telling.strip())
 
 
 def _digest(text: str) -> str:

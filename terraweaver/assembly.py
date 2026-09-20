@@ -275,11 +275,17 @@ def assemble(facts, rule: Callable[[list, list], bool] = same_name, at: datetime
                     continue
                 seen, many = set(), []
                 for statement in sorted(standing, key=lambda s: s.last_said, reverse=True):
-                    key = _text(statement.value)
-                    if key not in seen:
+                    # A statement about a list slot may carry one value or the whole list — the
+                    # host writes `tags = tags + ["x"]` as often as it appends — so they are
+                    # flattened here. Otherwise an image ends up holding lists of lists, which is
+                    # nobody's idea of a list of tags.
+                    values = statement.value if isinstance(statement.value, list) else [statement.value]
+                    for value in values:
+                        key = _text(value)
+                        if key in seen:
+                            continue
                         seen.add(key)
-                        many.append(belongs.get(statement.refers_to) if statement.is_reference
-                                    else statement.value)
+                        many.append(belongs.get(value.get("$subject")) if _is_ref(value) else value)
                 image.values[slot] = many
                 image.sources[slot] = standing[-1].source
                 continue

@@ -15,6 +15,11 @@
       "description": "The note text."
     },
     {
+      "name": "descriptions",
+      "type": "list[str]",
+      "description": "How this one has been described, in whoever's words — several are normal, because people describe the same thing differently and each telling is worth keeping."
+    },
+    {
       "name": "tags",
       "type": "list[str]",
       "required": false,

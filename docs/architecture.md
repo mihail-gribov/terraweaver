@@ -337,6 +337,23 @@ covering forty things has become two, whether one nobody has used since March sh
 are judgements about what a person means by a word. The world measures and points; the model
 proposes, on the agenda; somebody decides.
 
+## Descriptions
+
+Every class has `descriptions`, and it holds several. People describe the same thing differently
+— "quiet, precise, hates being rushed" and "the one who rewrote the billing pipeline over a
+weekend" are both true of one person — and neither replaces the other. On the statements layer
+that costs nothing: several tellings are several statements on one slot, which is what a list
+slot already means.
+
+A telling may come from the person, or from a source: a company's own account of itself, what a
+place is known for. The first is private knowledge, the second public, and the record keeps whose
+telling each one was, so they never blur — the person's word outranks a page, as everywhere else.
+Nothing about a *person* is ever looked up (`lookup.py`).
+
+This is what fuzzy searching runs on. "Someone who dislikes being hurried" finds the description
+that says "hates being rushed" — no word in common — which is exactly the kind of question that
+has no attribute to be asked against.
+
 ## Finding by meaning
 
 Most of a world is structured and needs no help. Some of it is deliberately prose — a remark

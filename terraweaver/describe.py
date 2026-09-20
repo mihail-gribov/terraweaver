@@ -153,6 +153,15 @@ Every class below shares these, so they aren't repeated for each one:
         linda.relate(b04, "authority", label="manager")
         b04.relate(company, "part_of")
     entity.relations(kind)[i].counterpart is the end that isn't the entity you asked from.
+    descriptions — every class has them: how this one has been described, in whoever's words.
+    Several are normal and none replaces another, because people describe the same thing
+    differently and each telling is worth keeping:
+        anna.descriptions = anna.descriptions + ["quiet, precise, hates being rushed"]
+    They are what fuzzy searching runs on (world.like below), so a description written down is a
+    way of finding someone later by something you can't name as an attribute. A description may
+    be the user's words or something publicly known — a company's own account of itself, what a
+    place is — and the record keeps whose telling each one was, so the two never blur.
+
     tags — every class has them. A tie too vague to formalise — everything about the move, everyone from that
     conference, what matters this month. A relation type has to say what the tie *is*; a tag only
     says there is one. anna.tags = ["job-search", "berlin"]. They are kept in one form, so

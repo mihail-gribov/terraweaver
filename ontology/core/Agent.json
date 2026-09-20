@@ -27,6 +27,11 @@
       "description": "The person whose world this is and who the assistant answers to."
     },
     {
+      "name": "descriptions",
+      "type": "list[str]",
+      "description": "How this one has been described, in whoever's words — several are normal, because people describe the same thing differently and each telling is worth keeping."
+    },
+    {
       "name": "tags",
       "type": "list[str]",
       "description": "Loose ties to other things, for what no attribute or relation says: everything about the move, everyone from that conference."
