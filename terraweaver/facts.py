@@ -21,7 +21,9 @@ belongs to, so a statement can be found without knowing where to look.
     value        the value, or a reference to another subject
     valid_from   when it holds from      2026-08-01
     valid_until  when it stops holding   null
-    stated_at    when we were told       2026-09-20 10:14
+    stated_at    when we were first told this          2026-09-20 10:14
+    restated_at when it was last said again, and `times` how often — the same thing said twice
+                 is one statement that has been heard twice, not two statements
     source       whose word it is        user | agent | companies-house.gov.uk
     run_id       in which run — and, once work is organised into tickets, which ticket
     basis        what a conclusion was drawn from, with a digest: move the basis and the
@@ -61,6 +63,8 @@ CREATE TABLE IF NOT EXISTS {table} (
     valid_from TEXT,
     valid_until TEXT,
     stated_at TEXT NOT NULL,
+    restated_at TEXT,
+    times INTEGER NOT NULL DEFAULT 1,
     source TEXT NOT NULL,
     run_id TEXT,
     basis TEXT,
@@ -70,8 +74,8 @@ CREATE TABLE IF NOT EXISTS {table} (
 CREATE INDEX IF NOT EXISTS idx_{table}_subject ON {table}(subject, slot);
 """
 
-COLUMNS = ("id, subject, slot, value, valid_from, valid_until, stated_at, source, run_id, "
-           "basis, basis_digest")
+COLUMNS = ("id, subject, slot, value, valid_from, valid_until, stated_at, restated_at, times, "
+           "source, run_id, basis, basis_digest")
 
 # Whose word outranks whose, when two statements cover the same slot at the same time. The user
 # is the authority on their own life; a checkable source outranks the assistant's inference on
@@ -93,10 +97,17 @@ class Statement:
     valid_from: datetime | None
     valid_until: datetime | None
     stated_at: datetime
+    restated_at: datetime | None
+    times: int
     source: str
     run_id: str | None
     basis: list | None = None
     basis_digest: str | None = None
+
+    @property
+    def last_said(self) -> datetime:
+        """When this was last heard — what "the later one" means when two statements disagree."""
+        return self.restated_at or self.stated_at
 
     @property
     def is_conclusion(self) -> bool:
@@ -169,9 +180,27 @@ class Facts:
     def state(self, subject: str, slot: str, value, *, source: str = "user", valid_from=None,
               valid_until=None, run_id: str | None = None, stated_at=None,
               class_name: str | None = None) -> str:
-        """Record that someone said this. Never replaces an earlier statement — it joins it."""
-        return self._insert(self.table(self._class(subject, class_name), SAID), subject, slot,
-                            value, valid_from, valid_until, _iso(stated_at) or _now(), source,
+        """Record that someone said this. Never replaces an earlier statement — it joins it.
+
+        The same thing said again is not a second statement. A world is told the same fact over
+        and over — a file re-read, an entity re-saved, a person repeating themselves — and if
+        each telling were a row the record would be mostly its own echo. So a repetition moves
+        the moment it was last heard and counts one more telling. `stated_at` still says when it
+        was first said, which is the thing you actually want to know.
+        """
+        table = self.table(self._class(subject, class_name), SAID)
+        when = _iso(stated_at) or _now()
+        again = self.conn.execute(
+            f"SELECT id, times FROM {table} WHERE subject = ? AND slot = ? AND value IS ? "
+            f"AND source = ? AND valid_from IS ? AND valid_until IS ? AND retracted_by IS NULL",
+            (subject, slot, json.dumps(value), source, _iso(valid_from), _iso(valid_until)),
+        ).fetchone()
+        if again:
+            row_id, times = again
+            self.conn.execute(f"UPDATE {table} SET restated_at = ?, times = ? WHERE id = ?",
+                              (when, times + 1, row_id))
+            return f"{table}:{row_id}"
+        return self._insert(table, subject, slot, value, valid_from, valid_until, when, source,
                             run_id, None)
 
     def conclude(self, subject: str, slot: str, value, *, basis: list, run_id: str | None = None,
@@ -294,7 +323,7 @@ class Facts:
             rows = self.conn.execute(
                 f"SELECT {COLUMNS} FROM {table} WHERE {clause} ORDER BY id", args).fetchall()
             out += [_statement(table, row) for row in rows]
-        return sorted(out, key=lambda s: (s.stated_at, s.id))
+        return sorted(out, key=lambda s: (s.last_said, s.id))
 
 
 def _run(conn, script: str) -> None:
@@ -305,11 +334,12 @@ def _run(conn, script: str) -> None:
 
 
 def _statement(table: str, row) -> Statement:
-    (row_id, subject, slot, value, valid_from, valid_until, stated_at, source, run_id,
-     basis, digest) = row
+    (row_id, subject, slot, value, valid_from, valid_until, stated_at, restated_at, times,
+     source, run_id, basis, digest) = row
     return Statement(f"{table}:{row_id}", subject, slot,
                      json.loads(value) if value is not None else None,
-                     _parse(valid_from), _parse(valid_until), _parse(stated_at), source, run_id,
+                     _parse(valid_from), _parse(valid_until), _parse(stated_at),
+                     _parse(restated_at), times, source, run_id,
                      json.loads(basis) if basis else None, digest)
 
 

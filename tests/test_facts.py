@@ -173,6 +173,19 @@ def main() -> int:
     check("and what was said is untouched",
           [s.slot for s in facts.about("t1")] == ["full_name"], str(facts.about("t1")))
 
+    # --- the same thing said again is the same statement, heard again ---
+    facts = Facts(sqlite3.connect(":memory:"))
+    first = facts.state("r1", "email", "ada@example.com", source="user", class_name="Person")
+    again = facts.state("r1", "email", "ada@example.com", source="user")
+    check("saying it twice doesn't make two statements", first == again, f"{first} / {again}")
+    only = facts.about("r1")[0]
+    check("it counts how often it was heard", only.times == 2, str(only.times))
+    check("and remembers when it was first said as well as last", only.restated_at > only.stated_at,
+          f"{only.stated_at} / {only.restated_at}")
+    facts.state("r1", "email", "ada@example.com", source="a-register.example")
+    check("another source saying the same is its own statement, because whose word it is matters",
+          len(facts.about("r1")) == 2, str(facts.about("r1")))
+
     print()
     if failures:
         print(f"{len(failures)} failed: {', '.join(failures)}")

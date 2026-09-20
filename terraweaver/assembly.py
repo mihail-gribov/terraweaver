@@ -117,7 +117,7 @@ def resolve(statements: list, at: datetime | None = None):
     standing = [s for s in statements if s.holds_at(at)]
     if not standing:
         return None, []
-    standing.sort(key=lambda s: (facts_module.trust(s.source), s.stated_at), reverse=True)
+    standing.sort(key=lambda s: (facts_module.trust(s.source), s.last_said), reverse=True)
     best = standing[0]
     rivals = [s for s in standing[1:]
               if _text(s.value) != _text(best.value) and facts_module.trust(s.source) == facts_module.trust(best.source)]
