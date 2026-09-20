@@ -26,6 +26,7 @@ never touched.
     .venv/bin/python scenarios/run.py --baseline s06 s08   # chosen scenarios, baseline mode
     .venv/bin/python scenarios/run.py --port 7015 s06      # own server port, to run several at once
     .venv/bin/python scenarios/run.py --model haiku s06    # another model as the host
+    .venv/bin/python scenarios/run.py --repeat 3 s06       # three attempts, and how steady it was
     .venv/bin/python scenarios/run.py --level hard         # only the scenarios that tell modes apart
 """
 import asyncio
@@ -229,6 +230,10 @@ def main() -> int:
     if "--level" in args:
         level = args.pop(args.index("--level") + 1)
         args.remove("--level")
+    repeat = 1
+    if "--repeat" in args:
+        repeat = int(args.pop(args.index("--repeat") + 1))
+        args.remove("--repeat")
     mode = "baseline" if "--baseline" in args else "world"
     scenarios = [s for s in load_scenarios([a for a in args if not a.startswith("--")])
                  if level is None or getattr(s, "LEVEL", "basic") == level]
@@ -238,12 +243,17 @@ def main() -> int:
     server = start_server(work / "world.db")
     rows = []
     try:
-        for scenario in scenarios:
-            row = run_scenario(scenario, mode, work, out_dir)
-            rows.append(row)
-            print(f"{'PASS' if row['passed'] else 'FAIL'}  {row['name']:28} {mode:8} {MODEL or 'default':7} turns={row.get('turns', 0):<3} "
-                  f"${row.get('cost', 0):.2f} {row.get('seconds', 0)}s"
-                  + (f"  — {row['failure']}" if row["failure"] else ""), flush=True)
+        for attempt in range(1, repeat + 1):
+            for scenario in scenarios:
+                where = out_dir if repeat == 1 else out_dir / f"try{attempt}"
+                where.mkdir(parents=True, exist_ok=True)
+                row = run_scenario(scenario, mode, work, where)
+                row["attempt"] = attempt
+                rows.append(row)
+                print(f"{'PASS' if row['passed'] else 'FAIL'}  {row['name']:28} {mode:8} {MODEL or 'default':7} "
+                      f"{'' if repeat == 1 else f'try{attempt} '}turns={row.get('turns', 0):<3} "
+                      f"${row.get('cost', 0):.2f} {row.get('seconds', 0)}s"
+                      + (f"  — {row['failure']}" if row["failure"] else ""), flush=True)
     finally:
         server.kill()
         # Claude Code keeps per-folder memory under ~/.claude/projects; the baseline folders of
@@ -253,6 +263,18 @@ def main() -> int:
             shutil.rmtree(leftover, ignore_errors=True)
     (out_dir / "summary.json").write_text(json.dumps(rows, indent=2, ensure_ascii=False))
     passed = sum(r["passed"] for r in rows)
+    if repeat > 1:
+        # One run measures nothing, and a total hides which scenario is unsteady. Per scenario:
+        # how many of its attempts passed. Anything between 0 and all of them is the world
+        # letting the host wander — stability is the world's job too.
+        print()
+        shaky = 0
+        for scenario in scenarios:
+            got = [r["passed"] for r in rows if r["name"] == scenario.NAME]
+            mark = "steady" if len(set(got)) == 1 else "UNSTEADY"
+            shaky += mark == "UNSTEADY"
+            print(f"  {sum(got)}/{len(got)}  {scenario.NAME:32} {mark}")
+        print(f"\n{shaky} of {len(scenarios)} scenarios came out differently between attempts")
     print(f"\n{passed}/{len(rows)} passed [{mode}], ${sum(r.get('cost', 0) for r in rows):.2f} "
           f"— {out_dir.relative_to(ROOT)}")
     return 0 if passed == len(rows) else 1
