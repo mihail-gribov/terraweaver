@@ -38,13 +38,15 @@ def main() -> int:
         home = Path(folder)
         (home / "USER.md").write_text(
             "---\nfull_name: Michael Gribov\nemail: mike@example.com\n---\nBuilds TerraWeaver.")
-        (home / "AGENT.md").write_text("---\nname: Tera\n---\nKeeps the world.")
+        (home / "soul.md").write_text("---\nname: Tera\n---\nKeeps the world. Never answers for the user.")
 
         # --- the files describe them, the way personal agents are configured ---
         w = open_world(str(home / "world.db"))
         check("the user is read from their file", w.world.owner.full_name == "Michael Gribov",
               str(w.world.owner.full_name))
         check("the assistant too", w.world.me.name == "Tera", str(w.world.me.name))
+        check("and a soul file says who it is, not what to do",
+              w.world.me.character.startswith("Keeps the world"), str(w.world.me.character))
         check("what the file says below the front matter is kept",
               w.world.owner.notes == "Builds TerraWeaver.", str(w.world.owner.notes))
 

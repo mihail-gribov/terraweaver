@@ -5,8 +5,12 @@ a relationship can point at them, a remark can be about them, and "my dentist" h
 they *are*, though, is not something the world should invent or the host should have to type in:
 it is configuration, and personal agents keep configuration in files next to the work.
 
-    USER.md      who the world belongs to      (or ABOUT_ME.md)
-    AGENT.md     who is keeping it             (or AGENTS.md, CLAUDE.md)
+    USER.md      who the world belongs to      (or ABOUT_ME.md, ABOUT.md)
+    soul.md      who is keeping it             (or SOUL.md, AGENT.md)
+
+`AGENTS.md` and `CLAUDE.md` are deliberately not read: they describe the project and how to work
+in it, not the assistant. A world that read them as "who I am" would file commit conventions as
+someone's character.
 
 Either may have a front matter block of plain `key: value` lines for what belongs in attributes;
 everything after it is kept as the entity's notes.
@@ -36,8 +40,12 @@ from pathlib import Path
 # can sit in a repository that already has AGENTS.md and simply use it.
 FILES = {
     "user": ("USER.md", "ABOUT_ME.md", "ABOUT.md"),
-    "agent": ("AGENT.md", "AGENTS.md", "CLAUDE.md"),
+    "agent": ("soul.md", "SOUL.md", "AGENT.md"),
 }
+
+# Where the part of a file below its front matter belongs. For a person it is a note about them;
+# for the assistant it is what the file is for in the first place — who it is.
+BODY_GOES_TO = {"user": "notes", "agent": "character"}
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS self_files (
@@ -128,8 +136,9 @@ def refresh(world, home: Path) -> list[str]:
                 world.facts.retract(statement.id)
         declared = {a["name"] for a in type(entity)._spec["attributes"] if "derived" not in a}
         stated = {name: value for name, value in fields.items() if name in declared}
-        if body and "notes" in declared:
-            stated["notes"] = body
+        body_slot = BODY_GOES_TO.get(role, "notes")
+        if body and body_slot in declared:
+            stated[body_slot] = body
         for name, value in stated.items():
             world.facts.state(entity.id, name, value, source=source)
         # Until images are built from statements, the file also writes through to the entity;

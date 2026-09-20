@@ -124,8 +124,13 @@ invent its own pair.
 
 What they *are* is configuration, and personal agents keep configuration in files:
 
-    USER.md      who the world belongs to      (or ABOUT_ME.md)
-    AGENT.md     who is keeping it             (or AGENTS.md, CLAUDE.md)
+    USER.md      who the world belongs to      (or ABOUT_ME.md, ABOUT.md)
+    soul.md      who is keeping it             (or SOUL.md, AGENT.md)
+
+`AGENTS.md` and `CLAUDE.md` are deliberately not among them: they describe a project and how to
+work in it, not the assistant. A world that read them as "who I am" would file commit
+conventions as someone's character. For the same reason the body of `soul.md` becomes the
+assistant's character rather than a note about it — that is what the file is for.
 
 Front matter sets attributes, the body is kept as notes, and the world re-reads a file when it
 changes. What a file says is **facts with that file as their source** — reliable, because someone
