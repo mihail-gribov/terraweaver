@@ -42,6 +42,10 @@ def set_write_guard(guard) -> None:
     _WRITE_GUARD = guard
 
 
+def now_utc() -> datetime:
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
 def set_world(world) -> None:
     global _WORLD
     _WORLD = world
@@ -551,7 +555,10 @@ class Entity:
         if overwrite:
             _WRITE_GUARD(self, name, getattr(self, name), value)  # keeps the old value in history
         object.__setattr__(self, name, value)
-        if (_CHANGED is not None and not name.startswith("_") and name not in _MANAGED_ATTRS
+        # When a record holds is data about it like any other, so it is stated too; only the
+        # world's own bookkeeping (id, when we first saw it, when it was last touched) isn't.
+        if (_CHANGED is not None and not name.startswith("_")
+                and name not in ("id", "created_at", "accessed_at")
                 and getattr(self, "id", None) is not None):
             # What is written is also what was said: the image changes here, and the statement
             # behind it goes into the record (facts.py). Loading from storage doesn't come

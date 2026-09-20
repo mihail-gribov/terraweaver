@@ -40,9 +40,12 @@ class NotInWorld(LookupError):
 
 
 class World:
-    def __init__(self, store, classes: dict[str, type]):
+    def __init__(self, store, classes: dict[str, type], specs: dict | None = None):
         self.store = store
         self.classes = classes
+        # What each class declares — how many of a thing a slot holds, and so on. Assembly needs
+        # it to build images; without it every slot is treated as holding one thing.
+        self.specs = specs or {name: cls._spec for name, cls in classes.items()}
         self.resolutions: list[dict] = []
         self.pending: NeedsResolution | None = None
         self.comments = Comments(store, classes)
@@ -312,6 +315,12 @@ class World:
         elif period:
             self.apply_period(outcome, period)
         return outcome
+
+    def rebuild(self, rule=None, at=None) -> dict:
+        """Build every entity again from what was said. See rebuild.py — it is always safe."""
+        from terraweaver import rebuild as rebuilding
+
+        return rebuilding.rebuild(self, rule, at)
 
     def _apply_deferred(self, instance) -> None:
         """Attributes given at construction that live in relations (Person(organization=...)):

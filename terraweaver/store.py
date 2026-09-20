@@ -1,7 +1,9 @@
 """SQLite-backed generic instance store (EAV).
 
-Schema-as-data: an `instances` row per object (id, class_name) and one `values_`
-row per attribute, JSON-encoded. This is deliberate — renaming/adding/removing an
+Schema-as-data: an `instances` row per object (id, class_name) and, per class, a table of its
+own named after it — `Person`, `Organization` — holding one row per attribute, JSON-encoded.
+These are the images: the main data, built from what was said (`facts.py`, `assembly.py`) and
+rebuildable from it at any time. This is deliberate — renaming/adding/removing an
 attribute later is a data operation (update/insert/delete rows), not an ALTER TABLE,
 which is what makes the class-refactoring operations from the spec tractable on top
 of this store. References to other instances are encoded as {"$ref": id} /
@@ -21,12 +23,6 @@ SCHEMA = """
 CREATE TABLE IF NOT EXISTS instances (
     id TEXT PRIMARY KEY,
     class_name TEXT NOT NULL
-);
-CREATE TABLE IF NOT EXISTS values_ (
-    instance_id TEXT NOT NULL,
-    attr TEXT NOT NULL,
-    value TEXT,
-    PRIMARY KEY (instance_id, attr)
 );
 CREATE INDEX IF NOT EXISTS idx_instances_class ON instances(class_name);
 """
@@ -55,6 +51,16 @@ def _decode(raw: str) -> tuple[str, Any]:
     if isinstance(data, dict) and set(data) == {"$refs"}:
         return "refs", data["$refs"]
     return "plain", data
+
+
+VALUES = """
+CREATE TABLE IF NOT EXISTS "{table}" (
+    instance_id TEXT NOT NULL,
+    attr TEXT NOT NULL,
+    value TEXT,
+    PRIMARY KEY (instance_id, attr)
+)
+"""
 
 
 class Store:
@@ -117,14 +123,23 @@ class Store:
                 "INSERT OR REPLACE INTO instances (id, class_name) VALUES (?, ?)",
                 (instance.id, class_name),
             )
+            table = self.values_table(class_name)
             names = [a["name"] for a in instance._spec["attributes"] if "derived" not in a]
             names += [a for a in ontology.MANAGED_VALUE_ATTRS if a not in names]
             for name in names:
                 self.conn.execute(
-                    "INSERT OR REPLACE INTO values_ (instance_id, attr, value) VALUES (?, ?, ?)",
+                    f'INSERT OR REPLACE INTO "{table}" (instance_id, attr, value) VALUES (?, ?, ?)',
                     (instance.id, name, _encode(getattr(instance, name, None))),
                 )
         return instance.id
+
+    def values_table(self, class_name: str) -> str:
+        """The table holding this class's images, made the first time it is needed.
+
+        Not executescript: that commits whatever transaction is open, and a table made in the
+        middle of a run would commit the run with it."""
+        self.conn.execute(VALUES.format(table=class_name))
+        return class_name
 
     def save_all(self, instances) -> None:
         with self.transaction():
@@ -164,7 +179,9 @@ class Store:
 
     def clear_all(self) -> None:
         with self.transaction():
-            self.conn.execute("DELETE FROM values_")
+            for (table,) in self.conn.execute(
+                    "SELECT DISTINCT class_name FROM instances").fetchall():
+                self.conn.execute(f'DELETE FROM "{self.values_table(table)}"')
             self.conn.execute("DELETE FROM instances")
             # Remarks hang off instances by id; a rebuilt world must not inherit old ones.
             for table in ("comments", "name_choices", "value_history", "questions"):
@@ -175,8 +192,7 @@ class Store:
     def clear(self, class_name: str) -> None:
         with self.transaction():
             ids = [r[0] for r in self.conn.execute("SELECT id FROM instances WHERE class_name = ?", (class_name,))]
-            for instance_id in ids:
-                self.conn.execute("DELETE FROM values_ WHERE instance_id = ?", (instance_id,))
+            self.conn.execute(f'DELETE FROM "{self.values_table(class_name)}"')
             self.conn.execute("DELETE FROM instances WHERE class_name = ?", (class_name,))
             for instance_id in ids:
                 self._identity.pop(instance_id, None)
@@ -210,7 +226,8 @@ class Store:
             derived = ontology.derived_names(cls._spec)
             known = {a["name"] for a in cls._spec["attributes"]} | set(ontology.MANAGED_VALUE_ATTRS)
             for attr_name, raw in self.conn.execute(
-                "SELECT attr, value FROM values_ WHERE instance_id = ?", (instance_id,)
+                f'SELECT attr, value FROM "{self.values_table(cls.__name__)}" WHERE instance_id = ?',
+                (instance_id,)
             ):
                 if attr_name in derived or attr_name not in known:
                     continue  # stored by an older version: now computed, or no longer part of the class

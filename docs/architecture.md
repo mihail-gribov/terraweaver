@@ -285,12 +285,31 @@ quiet — repeating it on every contact is noise.
 To go once the migration lands: `history.py` (the statements are the history) and most of
 `questions.py` (a doubt is two live statements about one slot, not a hand-kept record).
 
+## The basic world
+
+Two things, and the world works with nothing else present:
+
+    statements              facts.py      what was said, never changed
+    the entities built      rebuild.py    assembly's answer, written into the image tables
+
+`world.rebuild()` throws the entities away and builds them again from the statements. It is
+always available and always safe, and two properties of it matter more than any feature:
+
+- **the same statements build the same entities.** Rebuild twice and nothing differs.
+- **rebuilding states nothing.** It is a derivation, not a conversation: the record is exactly
+  as it was afterwards.
+
+So a rule can change and the world follows it — the same statements, a stricter rule, two people
+where there was one — and a wrong guess costs a rebuild rather than data.
+
+Everything above this is an improvement: doubts, ticks, growth, procedures, judgements. Each can
+be absent and the world still records, answers and rebuilds.
+
 ## Order of work
 
-1. **Writing through statements.** Every assignment and creation records a statement; images stay
-   as they are. The object model the host sees does not change.
-2. **Rebuilding.** `rebuild()` drops images and replays statements through assembly. Test: two
-   rebuilds are identical.
+1. ~~Writing through statements.~~ Done: every assignment and creation states, under the same
+   object model the host already knows.
+2. ~~Rebuilding.~~ Done: `world.rebuild()`, with both properties tested.
 3. **Delete what became redundant** — `history.py`, then doubts as a view over conflicting
    statements.
 4. **Fixture, export, scenarios** on the new base; `pass^k` before and after, on the same pool.

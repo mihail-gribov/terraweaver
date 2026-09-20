@@ -150,7 +150,7 @@ class WorldRuntime:
         # Asked before the world opens: opening it puts the two parties in, and a world that
         # holds only those two is still an empty one waiting for its fixture.
         empty = self.store.conn.execute("SELECT COUNT(*) FROM instances").fetchone()[0] == 0
-        self.world = World(self.store, self.classes)
+        self.world = World(self.store, self.classes, self.specs)
         # Methods the world wrote for itself hang on the classes like any other (procedures.py).
         self.world.procedures.bind(self.classes)
         onboarding.onboard(self.world, self.home)
