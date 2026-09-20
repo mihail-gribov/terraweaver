@@ -35,7 +35,8 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from terraweaver.runtime import HOST_GUIDE, WorldRuntime, format_result
+from terraweaver.describe import HOST_GUIDE
+from terraweaver.runtime import WorldRuntime, format_result
 
 log = logging.getLogger("terraweaver")
 

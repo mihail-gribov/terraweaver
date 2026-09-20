@@ -19,7 +19,8 @@ from typing import Any
 
 from terraweaver import ontology, sandbox
 from terraweaver.impls import IMPLS
-from terraweaver.ontology import COMMON_MEMBERS, Entity, build_classes, describe_for_prompt, load_specs
+from terraweaver.describe import COMMON_MEMBERS, HOST_GUIDE, describe_for_prompt
+from terraweaver.ontology import Entity, build_classes, load_specs
 from terraweaver.resolution import NeedsResolution
 from terraweaver.session import Session
 from terraweaver.store import Store
@@ -46,51 +47,6 @@ CREATE TABLE IF NOT EXISTS runs (
 );
 """
 
-HOST_GUIDE = """\
-This is the user's personal world: a Python object model backed by storage. You work with it
-by sending Python code to the `run` tool. Print what you need to see — stdout is what you get
-back. Variables persist between `run` calls in this session, so build on earlier results.
-
-In the namespace: every class below, `world`, `owner` (the person this world belongs to), `me`
-(the assistant persona), and `NeedsResolution`.
-
-World variables (listed below, if any) are the few named things every session shares: use
-them as they are instead of looking them up again. Set or change one with
-`world.pin(anna, value, "description")`, remove with `world.unpin(anna, stats)` — name them as
-variables, no quotes needed. Pin only what will
-matter beyond this task, and describe what it is.
-
-Variables are working memory for one task. Starting a new task, call `reset_session` first, so
-nothing from an earlier task — an entity settled for another conversation, a stale query
-result — carries over. After a long pause the session is reset for you. Anything that must
-outlive the task belongs in the world, not in a variable.
-
-Rules the world enforces:
-- Each `run` is atomic: if your code raises, nothing it wrote is kept — including the lines
-  that printed before it failed. The error names what was discarded; send the whole block
-  again, not only the line that failed.
-- What isn't in the world isn't known. An empty result means the information isn't there — say
-  so rather than filling the gap.
-- Before recording what the user tells you, decide from the conversation whether it is about
-  something already in the world or something new, and say so by the call: `Class.get(...)`
-  for an existing one (never creates; NotInWorld if absent), `Class.new(...)` for a new one
-  (asks the user if its twin exists), `Class.ensure(...)` only when you genuinely can't tell.
-  Never construct `Class(...)` directly. Check the [created] / [updated] / [found] lines of
-  each result against what you meant. What has no attribute to go into is attached as a dated
-  remark: `anna.comment("allergic to nuts", when=date(...))`.
-- Which entity the user means is never yours to guess. Look it up with everything the user
-  already told you — `Person.find(full_name="Annie", organization=cloudnine)`, not just the name.
-  If it is still open, you get a NeedsResolution; printing it shows the question and the
-  candidates (`needs.candidates`). Ask the user, then `entity = world.settle(needs, <the entity
-  they meant>)`, or `world.settle(needs, new=True)` if it's someone new. Never answer it
-  yourself — not even with new=True. If the user won't choose, leave it unresolved.
-- Assigning an attribute is your statement and goes through: `anna.email = "..."` when the user
-  says it changed, or when you concluded it. The old value is kept — `anna.history("email")`.
-  A disagreement shows up as a question only when identifying: `Person.ensure(full_name="Ada",
-  organization=dataworks)` with Ada recorded at TechCorp asks whether it changed, the record is
-  right, or it's a different person — `world.settle(needs, <the value that is right>)`, or
-  `new=True` for a different one.
-- Your code can reach the world and plain computation only. """ + sandbox.AVAILABLE + "\n"
 
 
 class WorldView:

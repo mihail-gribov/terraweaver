@@ -1,0 +1,317 @@
+"""What the host reads: the world described in its own words.
+
+Kept apart from the object model on purpose. `ontology.py` decides how an entity behaves; this
+decides how it is explained — and the explanation is the interface a model actually works
+against, so it is edited as carefully as code and belongs where it can be read in one sitting.
+
+    HOST_GUIDE          how the world works: runs, sessions, what it refuses and why
+    COMMON_MEMBERS      what every class shares: the verbs, time, remarks, relations, questions
+    describe_for_prompt the classes themselves, from their specs
+"""
+from typing import Any
+
+from terraweaver import sandbox
+
+
+HOST_GUIDE = """\
+This is the user's personal world: a Python object model backed by storage. You work with it
+by sending Python code to the `run` tool. Print what you need to see — stdout is what you get
+back. Variables persist between `run` calls in this session, so build on earlier results.
+
+In the namespace: every class below, `world`, `owner` (the person this world belongs to), `me`
+(the assistant persona), and `NeedsResolution`.
+
+World variables (listed below, if any) are the few named things every session shares: use
+them as they are instead of looking them up again. Set or change one with
+`world.pin(anna, value, "description")`, remove with `world.unpin(anna, stats)` — name them as
+variables, no quotes needed. Pin only what will
+matter beyond this task, and describe what it is.
+
+Variables are working memory for one task. Starting a new task, call `reset_session` first, so
+nothing from an earlier task — an entity settled for another conversation, a stale query
+result — carries over. After a long pause the session is reset for you. Anything that must
+outlive the task belongs in the world, not in a variable.
+
+Rules the world enforces:
+- Each `run` is atomic: if your code raises, nothing it wrote is kept — including the lines
+  that printed before it failed. The error names what was discarded; send the whole block
+  again, not only the line that failed.
+- What isn't in the world isn't known. An empty result means the information isn't there — say
+  so rather than filling the gap.
+- Before recording what the user tells you, decide from the conversation whether it is about
+  something already in the world or something new, and say so by the call: `Class.get(...)`
+  for an existing one (never creates; NotInWorld if absent), `Class.new(...)` for a new one
+  (asks the user if its twin exists), `Class.ensure(...)` only when you genuinely can't tell.
+  Never construct `Class(...)` directly. Check the [created] / [updated] / [found] lines of
+  each result against what you meant. What has no attribute to go into is attached as a dated
+  remark: `anna.comment("allergic to nuts", when=date(...))`.
+- Which entity the user means is never yours to guess. Look it up with everything the user
+  already told you — `Person.find(full_name="Annie", organization=cloudnine)`, not just the name.
+  If it is still open, you get a NeedsResolution; printing it shows the question and the
+  candidates (`needs.candidates`). Ask the user, then `entity = world.settle(needs, <the entity
+  they meant>)`, or `world.settle(needs, new=True)` if it's someone new. Never answer it
+  yourself — not even with new=True. If the user won't choose, leave it unresolved.
+- Assigning an attribute is your statement and goes through: `anna.email = "..."` when the user
+  says it changed, or when you concluded it. The old value is kept — `anna.history("email")`.
+  A disagreement shows up as a question only when identifying: `Person.ensure(full_name="Ada",
+  organization=dataworks)` with Ada recorded at TechCorp asks whether it changed, the record is
+  right, or it's a different person — `world.settle(needs, <the value that is right>)`, or
+  `new=True` for a different one.
+- Your code can reach the world and plain computation only. """ + sandbox.AVAILABLE + "\n"
+
+
+COMMON_MEMBERS = """\
+Every class below shares these, so they aren't repeated for each one:
+
+    id           — how this entity is known in the world
+    created_at   — when it entered the world
+    accessed_at  — when it was last worked with
+
+    Class.all(limit=50)
+        Entities of that class, the ones you dealt with most recently first. Limited by
+        default, because a personal world keeps growing; pass limit=None for everything.
+
+    Class.find(**attrs)
+        Entities matching every attribute you pass, best match first (ties go to whoever
+        you dealt with most recently). Ordinary attributes match exactly, so this is how
+        you ask real questions of the world:
+            Person.find(organization=acme)      — who works there
+            Vacancy.find(remote=True, status="not_applied")
+            Person.find(email="ada@example.com")
+        Times and numbers take ranges — after(x), before(x), between(a, b) — which compare dates
+        and datetimes safely whatever their time zone (use now() and today() for "now"):
+            Event.find(start_time=after(now()))                               — upcoming
+            Event.find(start_time=between(date(2026, 9, 21), date(2026, 9, 27)))  — that week
+            Vacancy.find(salary_max=after(150000))
+        Emails, phones and URLs compare in their canonical form, whatever way they're written:
+        "+1 (555) 010-2030" finds "+15550102030", "Ada@Example.com" finds "ada@example.com",
+        a company website matches on its domain (https://careers.acme.com/jobs ~ acme.com).
+
+        The result comes back in two parts, and the difference matters:
+            result.main     — entities that actually match
+            result.similar  — entities that merely resemble what you asked for
+            result.matched  — False when nothing actually matched
+        Iterating the result gives everything, best first, so it still works as a list —
+        but `result[0]` may well be a resemblance. When `result.matched` is False, nothing
+        in the world matches: say so, rather than serving the closest thing as the answer.
+        A person's recorded nicknames count as their names, so "Bob" finds Robert.
+
+        A name this entity answers to, with no rival and nothing that disagrees, is them:
+        "Darren" where the world holds one Darren Liu gives you Darren Liu, with an [assumed]
+        line saying so. A question comes back when the world genuinely doesn't know — two people
+        answer to that name, a value you gave disagrees with what's recorded, or the name merely
+        resembles theirs ("Wilma Chen" is not "William Chen"). Then you get a NeedsResolution:
+        it reads like a result that didn't settle (.matched is False, .similar holds the
+        candidates), printing it shows the question, and which one was meant is not yours to
+        decide — ask the user, then world.settle(...).
+
+    Recording what the user tells you starts with a decision only you can make from the
+    conversation: is it about someone/something already in the world, or new? Say so by the
+    call you pick — the world checks the claim instead of deciding silently.
+
+    Class.get(**attrs)
+        "The one we already know." Use everything the user said to pick it out:
+        Person.get(full_name="Annie", organization=cloudnine). Returns that entity, or a
+        NeedsResolution if several fit. Never creates: if nothing matches, it raises NotInWorld
+        — then either the user means someone new (use new) or you misidentified them.
+    Class.new(**attrs)
+        "Someone/something new." Creates it — unless one just like it already exists (same
+        email, same name at the same company, the same event on the same day); then you get
+        a NeedsResolution asking the user whether it's really new.
+    Class.ensure(**attrs)
+        "I can't tell." Finds it or creates it; the attributes are new information, so a value
+        contradicting what's stored comes back as a question. Prefer get or new whenever the
+        conversation tells you which it is.
+
+    After each run the result lists what happened: [created], [updated] with the attributes
+    that changed, [found]. Check it matches what you meant.
+
+    entity.save()
+        Persist that entity and everything it references.
+
+    Relations link two entities and carry their own data (docs: "Relation types" below).
+    Direction is one rule: the subject is the one the label describes, so a.relate(b, kind,
+    label=X) reads "a is b's X". maria.relate(michael, "kin", label="mother") says Maria is
+    Michael's mother; nina.relate(michael, "service", label="dentist") says Nina is Michael's
+    dentist. Read the sentence before you write the call — "my dentist is Nina" puts Nina first,
+    not the owner. From the other end, use the reverse name: michael.relate(greg, "served_by",
+    label="landlord") says Greg is Michael's landlord. Results show each relation as that
+    sentence — check it reads the way you meant. A relation's period
+    reads back under the same names it's written with: rel.starts, rel.until. The label is matched to the type's roles ("mom" -> mother,
+    "older brother" -> sibling), and the world checks each role's limits — a second mother is
+    refused with the alternatives (stepmother). relation.role_of(entity) says what an end is to
+    the other ("child" for Michael). a.how_related(b) walks the relations and names the chain
+    ("sister's husband" -> sibling in law).
+        kevin.relate(b04, "membership", title="vendor logistics lead", starts=date(2026, 1, 15))
+        kevin.relate(darren, "kin", label="older brother")
+        linda.relate(b04, "authority", label="manager")
+        b04.relate(company, "part_of")
+    entity.relations(kind)[i].counterpart is the end that isn't the entity you asked from.
+    relate returns the relation — assign its attributes like any entity's (m.title = "team lead"),
+    comment on it, end it (m.expire()). entity.relations(kind) gives the relations themselves;
+    entity.related(kind) the entities at the other end — also by the reverse name (b04.related(
+    "members")) and along chains (kevin.related("membership") includes the company B04 is part
+    of). What no type fits: a.relate(b, "related", label="godfather", description="…").
+    Person.organization / job_title / relationship read from these relations and can be assigned.
+
+    What the world holds to. It doesn't mind how you write your code — import what you like of
+    what's already here, name things as you please. What it does hold is the data: an attribute
+    with a vocabulary takes one of its words (however you type it — "Meeting" is "meeting"), and
+    anything else is refused with the list; a value declared an email, phone or web address that
+    can't be one is kept and asked about; a relation must satisfy the rules of its type; and a
+    run is all or nothing, so a subgraph is never half-written.
+
+    Assigning an attribute (anna.email = "...") is your statement — the user said so or you
+    concluded it — and it goes through as it is. The old value isn't lost:
+    entity.history("email") lists what it held before and until when.
+
+    Time is one axis for the whole world, and the same words mean the same thing everywhere.
+    Three times are easy to confuse, so keep them apart:
+      when it's true   — the validity period, starts / until. Every entity and every relation
+                         has one. A job that ran March to September, a lease to next June.
+      when it happened — the thing's own time, an ordinary attribute: Event.start_time, a
+                         comment's when. A past meeting and next week's one are both valid
+                         records; find them by that attribute (Event.find(start_time=after(now()))).
+      when we learned  — created_at / recorded_at, the world's bookkeeping. A marriage recorded
+                         today may have started in 2019; you never set this.
+    Writing a period, the same four keywords for entities, relations and comments:
+        Class.ensure(..., starts=date(2026, 10, 1))   — begins later
+        Class.ensure(..., until=date(...) | ttl=timedelta(days=30))
+        kevin.relate(b04, "membership", title="lead", starts=date(2026, 1, 15))
+        entity.keep(starts=..., until=... | ttl=... | permanent=True); entity.expire() ends it
+        now; entity.current() asks whether it holds. Nothing is deleted when a period ends — it
+        becomes history.
+    Reading, the default is now — that's why "who is her partner" doesn't return an ex. One
+    keyword widens any read: any_time=True in Class.all, Class.find, entity.relations,
+    entity.related, entity.comments, world.comments. It adds both ended and not-yet-started
+    ones — the future is not history. When a read hides something, you get a [hint] saying so.
+    entity.timeline(since=None, until=None)
+        Everything dated about one entity or relation, oldest first — when it was recorded, when
+        its period starts and ends, what its attributes were changed to and when, its dated
+        remarks, its relations starting and ending. Each moment has .when and .what. This is the
+        one call for "what happened with this, and when", instead of assembling history(),
+        comments() and relations(any_time=True) by hand.
+    Conflicts are judged by overlapping periods, not by "now": one employer at a time, one
+    mother, one CEO — but divorced in 2020 and married in 2022 contradict nothing.
+
+    Open questions. The world takes what you tell it even when it doesn't add up — the user
+    said it, and their life is not the world's to correct. What doesn't add up is kept as a
+    question about the entity: two current dentists, someone recorded as new next to someone who
+    answers to the same name, anything you noticed yourself.
+
+    An open question never leaves you without an answer. Each one comes with what the world
+    reads meanwhile, and that reading is a rule, the same for every host at every hour: the
+    later statement counts. Lists come in that order, so the first one is the one that counts;
+    identity is the exception — two records are never merged without an answer, you get the one
+    you looked up. So you can always answer: by the standing reading, saying which it is.
+
+    Three moments to put one to the user, and only these — a doubt that doesn't bear on what
+    you're doing stays quiet until one of them:
+      [ask first]     — this run's read depends on it. Ask before answering, or answer by the
+                        standing reading and say so ("as recorded, Nina from October 1").
+      end of a task   — world.questions(here=True) is what this task touched; reset_session
+                        hands you the same list. The user is there and nothing is in flight:
+                        "two things I'd like to check with you".
+      the user offers — world.questions() is everything open, the entities that come up most
+                        often first. Never interrupt a task with these.
+        for q in owner.questions(): print(q.line())
+        q.answer("Nina replaces Rao")    — closes it; recording what follows from it is yours
+        q.drop("asked — it's a different Olga")
+        anna.question("two numbers, which is current?", options=["the mobile", "the old one"],
+                      about="phone")     — about= makes a later read of that attribute say so
+    A question closes itself once its reason is gone: end the old dentist's relation and the
+    question about two dentists goes away without anyone answering it.
+
+    entity.comment(text, when=None, tentative=False, until=None, ttl=None, permanent=False)
+        Attach a dated remark to any entity: whatever matters about it but has no attribute —
+        a friend's allergy, "hiring frozen since March", "might move in spring". `when` is the
+        date it happened or holds (a date or datetime), if known; tentative=True for what isn't
+        certain yet. Say how long it holds: until=date(...), ttl=timedelta(days=7) ("on vacation
+        until Friday", a pickup code), or permanent=True (an allergy). Unsaid, it holds 180 days,
+        a tentative one 30. Prefer a real attribute when one exists; never invent attributes.
+    entity.comments(since=None, until=None, contains=None, any_time=False)
+        That entity's current remarks, newest first; expired ones are history, shown only with
+        any_time=True. Each has .text, .when, .until, .expired, .recorded_at,
+        .tentative, .about, and .forget() (delete for good), .confirm(),
+        .keep(until=... | ttl=... | permanent=True) to change how long it holds.
+    world.comments(since=None, until=None, contains=None, any_time=False)
+        Remarks across the whole world.
+"""
+
+
+def describe_for_prompt(specs: dict[str, dict[str, Any]]) -> str:
+    """Render class specs as compact text for the agent's system prompt.
+
+    Entity classes come first, each with its attributes, methods and the relations it takes part
+    in; then the relation types, each with how it behaves and its own attributes.
+    """
+    from terraweaver.relations import describe_relations
+
+    lines = []
+    entities = {n: s for n, s in specs.items() if "relation" not in s}
+    relation_types = {n: s for n, s in specs.items() if "relation" in s}
+    for name, spec in entities.items():
+        lines.append(f"class {name}:  # {spec.get('description', '')}")
+        lines += _attribute_lines(spec)
+        for method in spec.get("methods", []):
+            lines.append(f"    def {method['signature']}:  # {method.get('description', '')}")
+        if relation_types:
+            lines.append("    relations:  # entity.relate(other, kind, ...), entity.related(kind)")
+            lines += describe_relations(specs, name)
+        lines.append("")
+    if relation_types:
+        lines.append("Relation types — instances linking a subject and an object, with their own attributes and")
+        lines.append("validity period (starts / until), history and comments.")
+        lines.append("")
+        lines.append("Direction, one rule for every type: the subject is the one the label describes.")
+        lines.append("a.relate(b, kind, label=X) reads as the sentence \"a is b's X\" — so the dentist, the")
+        lines.append("manager, the mother stands first. Say it out loud before writing it; each type below")
+        lines.append("shows the sentence its example makes, and results print every relation as that sentence.")
+        lines.append("To say it from the other end, use the reverse name: michael.relate(nina, \"served_by\",")
+        lines.append("label=\"dentist\") records the same relation, read from the client's side.")
+        lines.append("")
+        for name, spec in relation_types.items():
+            rel = spec["relation"]
+            traits = [t for t in ("symmetric", "transitive", "acyclic") if rel.get(t)]
+            if rel.get("functional") == "at_any_time":
+                traits.append("one at a time per subject")
+            if rel.get("inverse_functional") == "at_any_time":
+                traits.append("one at a time per object")
+            if rel.get("transitive_via"):
+                traits.append(f"extends through {rel['transitive_via']}")
+            if rel.get("reverse"):
+                traits.append(f"read from the object's end as '{rel['reverse']}'")
+            arrow = "↔" if rel.get("symmetric") else "→"
+            lines.append(f"relation {name} ('{rel['kind']}'): {' / '.join(rel['from'])} {arrow} "
+                         f"{' / '.join(rel['to'])}  # {spec.get('description', '')}")
+            if traits:
+                lines.append(f"    # {'; '.join(traits)}")
+            if rel.get("example"):
+                lines.append(f"    {rel['example']}   # {rel.get('reads', '')}")
+            if rel.get("roles"):
+                shown = []
+                for r in rel["roles"]:
+                    limit = f" (at most {r['max']})" if r.get("max") else ""
+                    names = ", ".join(r.get("synonyms", [])[:3])
+                    shown.append(f"{r['name']}{limit}" + (f" [{names}]" if names and names != r["name"] else ""))
+                lines.append(f"    # roles — a.relate(b, '{rel['kind']}', label=...) reads 'a is b's label': {'; '.join(shown)}")
+            elif rel.get("labels"):
+                lines.append(f"    # typical labels: {', '.join(rel['labels'][:8])}")
+            lines += [line for line in _attribute_lines(spec) if not line.lstrip().startswith(("subject:", "object:"))]
+            lines.append("")
+    return "\n".join(lines)
+
+
+def _attribute_lines(spec: dict[str, Any]) -> list[str]:
+    lines = []
+    for attr in spec["attributes"]:
+        req = "required" if attr.get("required") else "optional"
+        default = f", default={attr['default']!r}" if "default" in attr else ""
+        if attr.get("derived") == "relation":
+            access = "settable, " if attr.get("settable") else "read-only, "
+            lines.append(f"    {attr['name']}: {attr['type']}  # {access}from relations — {attr.get('description', '')}")
+        elif "derived" in attr:
+            lines.append(f"    {attr['name']}: {attr['type']}  # read-only, from {attr['derived']} — {attr.get('description', '')}")
+        else:
+            lines.append(f"    {attr['name']}: {attr['type']}  # {req}{default} — {attr.get('description', '')}")
+    return lines
