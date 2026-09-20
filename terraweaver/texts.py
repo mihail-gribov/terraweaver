@@ -6,21 +6,24 @@ questions people ask about text are not statement questions. "Where is Lisbon me
 has been said about Ana", "what reads like battery chemistry" all want one list of texts, not a
 walk through every class.
 
-So the texts get their own derived table, the same way periods do: built from the statements by
-a deterministic pass, thrown away and rebuilt at will, holding nothing that isn't said elsewhere.
+So the texts get their own derived tables, the same way periods do: built from the statements
+by a deterministic pass, thrown away and rebuilt at will, holding nothing that isn't said
+elsewhere. Two tables, because a text and the saying of it are different things:
 
-    ref       stable name of this text — subject, slot and the text itself
-    subject   whom it is about
-    slot      which list it belongs to: descriptions, tags, character
-    text      as it was said
-    starts    from                    (null: since it was said)
-    until     to                      (null: still holding)
-    source    who said it: the agent, a named source, or the world itself
+    texts   id, text            one row per distinct text, named from the words themselves
+    said    subject, slot,      who said it of what, and for how long
+            text_id, starts, until, source
+
+Storing the name rather than the words is what makes duplicates disappear: the same sentence
+about two people is one row, one vector, one thing to compare — and when an image is assembled
+from several subjects, their texts merge as a set rather than piling up. Saying the same thing
+twice does not even get this far: `facts.state` sees an identical statement and counts it as
+said again (`times`), which is the record's own rule and not a second one invented here.
 
 Two things come out of it that were awkward before. Keyword search is one query rather than a
-sweep of every entity. And a vector belongs to a text rather than to an entity — `ref` is stable
-across rebuilds, because it is made from the text, so the index survives and an answer can say
-which sentence matched rather than only which person.
+sweep of every entity. And a vector belongs to a text rather than to an entity, so an answer can
+say which sentence matched rather than only which person — and the name survives a rebuild,
+because it is made from the text.
 """
 import hashlib
 
@@ -28,30 +31,35 @@ from terraweaver.store import run_script
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS texts (
-    ref TEXT PRIMARY KEY,
+    id TEXT PRIMARY KEY,         -- made from the text itself, so the same words are one row
+    text TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS said (
     subject TEXT NOT NULL,
     slot TEXT NOT NULL,
-    text TEXT NOT NULL,
+    text_id TEXT NOT NULL,
     starts INTEGER,
     until INTEGER,
     source TEXT
 );
-CREATE INDEX IF NOT EXISTS idx_texts_subject ON texts(subject, slot);
+CREATE INDEX IF NOT EXISTS idx_said_subject ON said(subject, slot);
+CREATE INDEX IF NOT EXISTS idx_said_text ON said(text_id);
 """
 
 
-def name_of(subject: str, slot: str, text: str) -> str:
-    """What this text is called, made from the text: the same text keeps the same name."""
-    return "text:" + hashlib.sha1(f"{subject}|{slot}|{text}".encode()).hexdigest()[:16]
+def name_of(text: str) -> str:
+    """What a text is called: made from the words alone, so the same sentence said about two
+    people is one text with one name — and one vector, and one row to store."""
+    return "text:" + hashlib.sha1(" ".join(str(text).split()).encode()).hexdigest()[:16]
 
 
 def rebuild(world) -> int:
-    """Derive the table again from every statement. Returns how many texts it holds."""
+    """Derive both tables again from every statement. Returns how many sayings there are."""
     from terraweaver import periods, timeutil
 
     conn = world.store.conn
     run_script(conn, SCHEMA)
-    conn.execute("DELETE FROM texts")
+    conn.execute("DELETE FROM said")
     rows = 0
     for slot in periods.over_time(world):
         for statement in world.facts.with_slot(slot):
@@ -59,10 +67,13 @@ def rebuild(world) -> int:
             for one in values:
                 if not isinstance(one, str) or not one.strip():
                     continue
+                said = " ".join(one.split())
+                text_id = name_of(said)
+                conn.execute("INSERT OR IGNORE INTO texts (id, text) VALUES (?, ?)", (text_id, said))
                 conn.execute(
-                    "INSERT OR REPLACE INTO texts (ref, subject, slot, text, starts, until, source) "
-                    "VALUES (?, ?, ?, ?, ?, ?, ?)",
-                    (name_of(statement.subject, slot, one), statement.subject, slot, one,
+                    "INSERT INTO said (subject, slot, text_id, starts, until, source) "
+                    "VALUES (?, ?, ?, ?, ?, ?)",
+                    (statement.subject, slot, text_id,
                      timeutil.to_db(statement.valid_from or statement.stated_at),
                      timeutil.to_db(statement.valid_until), statement.source))
                 rows += 1
@@ -89,20 +100,22 @@ def search(world, words: str | None = None, *, subject: str | None = None, slot:
     conn = world.store.conn
     where, args = ["1 = 1"], []
     if subject:
-        where.append("subject = ?")
+        where.append("said.subject = ?")
         args.append(subject)
     if slot:
-        where.append("slot = ?")
+        where.append("said.slot = ?")
         args.append(slot)
     for word in (words or "").split():
-        where.append("lower(text) LIKE ?")
+        where.append("lower(texts.text) LIKE ?")
         args.append(f"%{word.lower()}%")
     if not any_time:
         moment = timeutil.to_db(at or timeutil.now())
-        where.append("(starts IS NULL OR starts <= ?) AND (until IS NULL OR until > ?)")
+        where.append("(said.starts IS NULL OR said.starts <= ?) "
+                     "AND (said.until IS NULL OR said.until > ?)")
         args += [moment, moment]
     rows = conn.execute(
-        f"SELECT ref, subject, slot, text, starts, until, source FROM texts "
+        f"SELECT said.text_id, said.subject, said.slot, texts.text, said.starts, said.until, "
+        f"said.source FROM said JOIN texts ON texts.id = said.text_id "
         f"WHERE {' AND '.join(where)} LIMIT ?", args + [limit]).fetchall()
     return [{"ref": ref, "subject": subject_id, "slot": slot_name, "text": text,
              "starts": timeutil.from_db(starts), "until": timeutil.from_db(until), "source": source}

@@ -45,7 +45,7 @@ DEFAULT_LIMIT = 50
 
 
 def where(world, cls=None, *, related=None, tagged=None, tagged_all=None, mentions=None,
-          like=None, closeness: float = 0.3, at=None, any_time: bool = False,
+          like=None, how: str = "best", closeness: float = 0.3, at=None, any_time: bool = False,
           limit: int | None = DEFAULT_LIMIT, **attributes) -> list:
     """Everything that answers all of it. Without a class: of any kind. See the module docstring."""
     from terraweaver import relations
@@ -78,11 +78,20 @@ def where(world, cls=None, *, related=None, tagged=None, tagged_all=None, mentio
         found = keep
 
     if like:
-        order = {}
-        for entity, _, score in world.meanings.like(world, like, limit=200):
-            order[entity.id] = max(order.get(entity.id, 0.0), score)
+        # Scored on each one's closest text, not on the average of its texts: `closeness` is an
+        # absolute threshold, and an average lifts everything towards the middle — measured on
+        # six questions, the gap between the right answer and the rest fell from +0.21 to +0.14
+        # and half again as many strangers came in over 0.5. `world.similar()` averages instead,
+        # because "generally like this one" has no line to cross.
+        order, matched = {}, {}
+        for entity, score, said in world.meanings.entities(world, like, limit=200, how=how,
+                                                           any_time=any_time):
+            order[entity.id] = score
+            matched[entity.id] = said
         found = [e for e in found if order.get(e.id, 0.0) >= closeness]
         found.sort(key=lambda e: order.get(e.id, 0.0), reverse=True)
+        for entity in found:  # so an answer can say which sentence it matched on
+            entity.__dict__["_matched"] = (matched.get(entity.id), order.get(entity.id))
 
     return found[:limit] if limit else found
 

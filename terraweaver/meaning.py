@@ -161,15 +161,64 @@ class Meanings:
                 continue
         return out
 
+    def entities(self, world, text: str, limit: int = 5, how: str = "mean",
+                 any_time: bool = False) -> list:
+        """Which entities read like that, best first: (entity, how close, the nearest text).
+
+        An entity is not one text but several, so there are two honest ways to score it and
+        they answer different questions. `how="mean"` takes the average of everything said
+        about it — what is this one *generally* like — and is steadier when the texts all
+        circle the same thing. `how="best"` takes its closest single text — does this one have
+        anything to do with X — and is sharper when they don't: a person who does cell
+        chemistry and keeps bees is not, on average, much like either.
+
+        Either way the nearest text comes back with the score, so an answer can say which
+        sentence it matched on rather than only whose it was.
+        """
+        self.refresh(world)
+        wanted = self.model.embed([text])[0]
+        holding = None if any_time else self._holding(world)
+        vectors: dict = {}
+        for ref, subject, said, raw in self.store.conn.execute(
+                "SELECT ref, subject, text, vector FROM meanings WHERE model = ?", (self.model.name,)):
+            if holding is not None and ref.startswith("text:") and ref not in holding:
+                continue
+            vectors.setdefault(subject, []).append((said, json.loads(raw)))
+        scored = []
+        for subject, texts in vectors.items():
+            best_text, best = max(((said, _close(wanted, vector)) for said, vector in texts),
+                                  key=lambda pair: pair[1])
+            if how == "best":
+                score = best
+            else:
+                middle = _unit([sum(values) / len(texts) for values in zip(*(v for _, v in texts))])
+                score = _close(wanted, middle)
+            scored.append((score, subject, best_text))
+        scored.sort(reverse=True)
+        out = []
+        for score, subject, said in scored[:limit]:
+            try:
+                out.append((self.store.load(subject, world.classes), round(score, 3), said))
+            except KeyError:
+                continue
+        return out
+
     def similar(self, world, entity, limit: int = 5) -> list:
-        """Whatever else reads like what is said about this one."""
-        self.refresh(world)  # before reading: an entity indexed a moment ago is the usual case
+        """Whatever else reads like what is said about this one.
+
+        Scored on the average of everything said about each one, which is the right question
+        here: "who is generally like her" has no threshold to pass, and a person is more than
+        her closest single sentence. Where there *is* a threshold — world.where(like=...) — the
+        closest text is used instead, because an average pulls the irrelevant up over the line
+        (measured: half again as many strangers above 0.5).
+        """
+        self.refresh(world)
         mine = [row[0] for row in self.store.conn.execute(
             "SELECT text FROM meanings WHERE subject = ?", (entity.id,))]
         if not mine:
             return []
-        found = self.like(world, " ".join(mine), limit=limit + 4)
-        return [hit for hit in found if hit[0].id != entity.id][:limit]
+        found = self.entities(world, " ".join(mine), limit=limit + 4, how="mean")
+        return [(other, said, score) for other, score, said in found if other.id != entity.id][:limit]
 
     # --- what there is to index ---
 
