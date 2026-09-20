@@ -43,10 +43,11 @@ Rules the world enforces:
   something already in the world or something new, and say so by the call: `Class.get(...)`
   for an existing one (never creates; NotInWorld if absent), `Class.new(...)` for a new one
   (asks the user if its twin exists), `Class.ensure(...)` only when you genuinely can't tell.
-  The prompt lists class names only. Before writing code that touches a class, call
-  describe_classes(["Person", "Event"]) — attributes with their types, methods, and the
-  relations that class takes part in. Guessing an attribute name costs a turn to undo; asking
-  about three classes costs a few hundred tokens.
+  Three levels of detail, so a task carries only what it uses. The prompt lists class names.
+  describe_classes(["Person", "Event"]) gives their attributes with types, their methods and
+  their relations, one line each. describe_methods(["tag", "repeat", "Event.reschedule"]) says
+  what a particular one does, in full and with examples. Guessing an attribute name costs a turn
+  to undo; asking costs a few hundred tokens.
 
   Never construct `Class(...)` directly. Check the [created] / [updated] / [found] lines of
   each result against what you meant. What has no attribute to go into is attached as a dated
@@ -337,6 +338,86 @@ Every class below shares these, so they aren't repeated for each one:
 """
 
 
+def short(text: str, width: int = 88) -> str:
+    """The first sentence, and not too much of it — enough to choose by, not to work from."""
+    said = " ".join(str(text or "").split())
+    stop = said.find(". ")
+    if stop > 20:
+        said = said[:stop + 1]
+    return said if len(said) <= width else said[:width - 1].rsplit(" ", 1)[0] + "…"
+
+
+def describe_methods(specs: dict[str, dict[str, Any]], names: list[str]) -> str:
+    """Everything about a few methods: the full description, and an example where there is one.
+
+    Three levels, because a task needs all of one and none of the others: the prompt says what
+    classes there are, describe_classes says what a class is made of in one line per member, and
+    this says what a member actually does. Class methods come from the ontology; everything every
+    entity can do comes from the code itself, so there is no second copy of it to go stale.
+    """
+    from terraweaver import ontology, world as world_module
+
+    out, missing = [], []
+    for asked in names:
+        name = str(asked).strip()
+        written = _spec_method(specs, name) or _code_method(ontology.Entity, name) or \
+            _code_method(world_module.World, name)
+        (out.append(written) if written else missing.append(name))
+    if not out:
+        return ("No such method: " + ", ".join(missing) + ".\n\n" + _members_index())
+    text = "\n\n".join(out)
+    if missing:
+        text += "\n\nNot found: " + ", ".join(missing) + ".\n" + _members_index()
+    return text
+
+
+def _spec_method(specs: dict, name: str) -> str | None:
+    """A method a class declares in the ontology — asked for as "Event.reschedule"."""
+    if "." not in name:
+        return None
+    class_name, method_name = name.split(".", 1)
+    spec = next((s for n, s in specs.items() if n.lower() == class_name.lower()), None)
+    for method in (spec or {}).get("methods", []):
+        if method["signature"].split("(")[0] == method_name or method.get("name") == method_name:
+            lines = [f"{class_name}.{method['signature']}", "    " + " ".join(
+                str(method.get("description", "")).split())]
+            if method.get("example"):
+                lines.append("    e.g. " + method["example"])
+            return "\n".join(lines)
+    return None
+
+
+def _code_method(holder, name: str) -> str | None:
+    """One of the things every entity or the world itself can do. Its docstring is the source —
+    written once, next to what it does, so this cannot drift from the truth."""
+    import inspect
+
+    bare = name.split(".")[-1]
+    member = getattr(holder, bare, None)
+    if member is None or not callable(member) or bare.startswith("_"):
+        return None
+    try:
+        signature = str(inspect.signature(member)).replace("self, ", "").replace("(self)", "()")
+    except (TypeError, ValueError):
+        signature = "(...)"
+    where = "entity" if holder.__name__ == "Entity" else "world"
+    body = inspect.getdoc(member) or ""
+    return f"{where}.{bare}{signature}\n" + "\n".join("    " + line for line in body.splitlines())
+
+
+def _members_index() -> str:
+    """What can be asked about, by name — one line, not a listing of every signature."""
+    from terraweaver import ontology, world as world_module
+
+    def named(holder):
+        return sorted(n for n in vars(holder) if not n.startswith("_")
+                      and callable(getattr(holder, n, None)))
+
+    return ("Ask by name — describe_methods([\"tag\", \"Event.reschedule\"]).\n"
+            "  every entity: " + ", ".join(named(ontology.Entity)) + "\n"
+            "  the world:    " + ", ".join(named(world_module.World)))
+
+
 def catalogue(specs: dict[str, dict[str, Any]]) -> str:
     """The classes by name, one line each — what the prompt carries.
 
@@ -385,7 +466,7 @@ def describe_for_prompt(specs: dict[str, dict[str, Any]], only: list[str] | None
         lines.append(f"class {name}:  # {spec.get('description', '')}")
         lines += _attribute_lines(spec)
         for method in spec.get("methods", []):
-            lines.append(f"    def {method['signature']}:  # {method.get('description', '')}")
+            lines.append(f"    def {method['signature']}:  # {short(method.get('description', ''))}")
         if relation_types:
             lines.append("    relations:  # entity.relate(other, kind, ...), entity.related(kind)")
             lines += describe_relations(specs, name)
@@ -450,15 +531,20 @@ def _wrapped(text: str, width: int) -> list[str]:
 
 
 def _attribute_lines(spec: dict[str, Any]) -> list[str]:
+    """One line per attribute: what it is called, what it holds, and a short word on why.
+
+    Short on purpose. A class is read to write one piece of code, and the whole description of
+    every attribute is more than that needs — describe_methods() has the rest."""
     lines = []
     for attr in spec["attributes"]:
         req = "required" if attr.get("required") else "optional"
         default = f", default={attr['default']!r}" if "default" in attr else ""
+        said = short(attr.get("description", ""))
         if attr.get("derived") == "relation":
             access = "settable, " if attr.get("settable") else "read-only, "
-            lines.append(f"    {attr['name']}: {attr['type']}  # {access}from relations — {attr.get('description', '')}")
+            lines.append(f"    {attr['name']}: {attr['type']}  # {access}from relations — {said}")
         elif "derived" in attr:
-            lines.append(f"    {attr['name']}: {attr['type']}  # read-only, from {attr['derived']} — {attr.get('description', '')}")
+            lines.append(f"    {attr['name']}: {attr['type']}  # read-only, from {attr['derived']} — {said}")
         else:
-            lines.append(f"    {attr['name']}: {attr['type']}  # {req}{default} — {attr.get('description', '')}")
+            lines.append(f"    {attr['name']}: {attr['type']}  # {req}{default} — {said}")
     return lines

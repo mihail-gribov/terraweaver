@@ -19,7 +19,8 @@ from typing import Any
 
 from terraweaver import onboarding, ontology, sandbox
 from terraweaver.impls import IMPLS
-from terraweaver.describe import COMMON_MEMBERS, HOST_GUIDE, catalogue, describe_for_prompt
+from terraweaver.describe import (COMMON_MEMBERS, HOST_GUIDE, catalogue, describe_for_prompt,
+                                  describe_methods)
 from terraweaver.ontology import Entity, build_classes, load_specs
 from terraweaver.resolution import NeedsResolution
 from terraweaver.session import Session
@@ -276,9 +277,17 @@ class WorldRuntime:
         if not wanted:
             return ("No such class: " + ", ".join(missing) + ".\n\n" + catalogue(self.specs))
         text = describe_for_prompt(self.specs, only=wanted)
+        text += ('\nWhat any of these does, in full and with examples: '
+                 'describe_methods(["tag", "' + wanted[0] + '.' +
+                 (self.specs[wanted[0]].get("methods") or [{"signature": "x"}])[0]["signature"].split("(")[0]
+                 + '"])')
         if missing:
             text += "\nNot in this world: " + ", ".join(missing) + "."
         return text
+
+    def describe_methods(self, names: list[str]) -> str:
+        """What these methods do, in full, with examples where they help."""
+        return describe_methods(self.specs, names)
 
     def _questions_note(self) -> str:
         """A host starting a task should know there is something the user could settle."""

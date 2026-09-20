@@ -80,6 +80,14 @@ async def describe_classes(names: list[str], ctx: Context) -> str:
 
 
 @server.tool()
+async def describe_methods(names: list[str], ctx: Context) -> str:
+    """What particular methods do, in full and with examples — for the few a task actually uses,
+    e.g. ["tag", "repeat", "Event.reschedule"]. describe_classes lists them in one line each;
+    this explains them."""
+    return runtime.describe_methods(names)
+
+
+@server.tool()
 async def run(code: str, ctx: Context) -> str:
     """Execute Python against the user's world and return its stdout. Variables persist between
     calls in this session. A run that raises keeps nothing it wrote."""
