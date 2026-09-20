@@ -294,6 +294,10 @@ def describe_for_prompt(specs: dict[str, dict[str, Any]]) -> str:
                 lines.append(f"    # {'; '.join(traits)}")
             if rel.get("example"):
                 lines.append(f"    {rel['example']}   # {rel.get('reads', '')}")
+            if rel.get("notes"):
+                # What the shape of the data implies but the world won't infer for you.
+                for line in _wrapped(rel["notes"], 92):
+                    lines.append(f"    # {line}")
             if rel.get("roles"):
                 shown = []
                 for r in rel["roles"]:
@@ -306,6 +310,17 @@ def describe_for_prompt(specs: dict[str, dict[str, Any]]) -> str:
             lines += [line for line in _attribute_lines(spec) if not line.lstrip().startswith(("subject:", "object:"))]
             lines.append("")
     return "\n".join(lines)
+
+
+def _wrapped(text: str, width: int) -> list[str]:
+    out, line = [], ""
+    for word in text.split():
+        if len(line) + len(word) + 1 > width:
+            out.append(line)
+            line = word
+        else:
+            line = f"{line} {word}".strip()
+    return out + ([line] if line else [])
 
 
 def _attribute_lines(spec: dict[str, Any]) -> list[str]:
