@@ -27,6 +27,11 @@ they already use — and the plain ones are this one with a single condition: se
 Everything given narrows; nothing widens. `like` also decides the order, because closeness is the
 only thing here that has a degree; without it the order is the world's usual one, most recently
 worked with first, one kind of thing after another.
+
+One difference from asking about a single entity: `related=` is read strictly here. Asked about
+one thing, the world answers from whichever end has the link and says it corrected you; asked to
+pick out many, it does not — "everyone with a membership" that quietly included the employers
+would leave the direction meaning nothing.
 """
 from datetime import datetime
 
@@ -51,7 +56,7 @@ def where(world, cls=None, *, related=None, tagged=None, tagged_all=None, like=N
         kind, other = related if isinstance(related, (tuple, list)) else (related, None)
         keep = []
         for entity in found:
-            links = relations.relations_of(world, entity, kind, any_time)
+            links = relations.relations_of(world, entity, kind, any_time, strict=True)
             if links and (other is None or any(relations.same(link.other(entity), other)
                                                for link in links)):
                 keep.append(entity)

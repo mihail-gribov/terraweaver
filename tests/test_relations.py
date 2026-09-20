@@ -162,20 +162,28 @@ def main() -> int:
     check("and asking it for 'the related one' points at that name",
           loose is not None and "counterpart" in (loose or ""), str(loose))
 
-    # --- asking from the wrong end is not "there is none" ---
+    # --- asked the wrong way round, answered the right way round, with the correction said ---
     from terraweaver import ontology
 
+    right = owner.relations("served_by")
     with ontology.record_changes() as noted:
-        empty = owner.relations("service")
-    check("the end with no links reads empty", empty == [], str(empty))
+        wrong_way = owner.relations("service")
+    check("the end with nothing on it answers from the end that has it",
+          [r.id for r in wrong_way] == [r.id for r in right], str(wrong_way))
     hint = " ".join(noted.hints)
-    check("but the world says which end has them",
-          "served_by" in hint and "other end" in hint, hint or "(no hint)")
+    check("and the wording is corrected, not left silent",
+          "served_by" in hint and "other way" in hint, hint or "(no hint)")
+    check("what comes back is usable from the end that was asked",
+          wrong_way and wrong_way[0].counterpart is not owner)
     with ontology.record_changes() as quiet:
         owner.relations("served_by")
-    check("and says nothing when the question was asked from the right end",
-          not any("other end" in h for h in quiet.hints), str(quiet.hints))
-    reads = [r.display_name() for r in owner.relations("served_by")]
+    check("nothing is corrected when the question was right to begin with",
+          not any("other way" in h for h in quiet.hints), str(quiet.hints))
+    with ontology.record_changes() as neither:
+        check("and an end with nothing on either side is still empty",
+              Person.new(full_name="Nobody Atall").relations("service") == [])
+    check("with nothing to correct", not any("other way" in h for h in neither.hints))
+    reads = [r.display_name() for r in right]
     check("a relation to the owner reads as English", not any("you's" in r for r in reads),
           str(reads[:2]))
 

@@ -407,8 +407,14 @@ def _reaches(world, name: str, start, target) -> bool:
 
 # --- reading ---
 
-def relations_of(world, entity, kind: str | None = None, history: bool = False) -> list:
-    """The relations `entity` takes part in — of one type (by its name or reverse name) or all."""
+def relations_of(world, entity, kind: str | None = None, history: bool = False,
+                 strict: bool = False) -> list:
+    """The relations `entity` takes part in — of one type (by its name or reverse name) or all.
+
+    `strict=True` turns off answering from the other end. A question asked about one entity is
+    better answered with a correction than with a silence, but a filter over many is not a
+    question: if "everyone with a membership" quietly matched the organizations too, the
+    direction would stop meaning anything at all."""
     if kind is None:
         chosen = [(name, None) for name in relation_classes(world.classes)]
     else:
@@ -432,8 +438,8 @@ def relations_of(world, entity, kind: str | None = None, history: bool = False) 
                 hidden.append(r)
     if hidden:
         _note_hidden(entity, kind, hidden)
-    if kind is not None and not found and not hidden:
-        _note_wrong_end(world, entity, kind, *chosen[0])
+    if kind is not None and not found and not hidden and not strict:
+        found = _from_the_other_end(world, entity, kind, *chosen[0], history=history)
     # The one that was said last comes first, always and for every host. Where two relations
     # contradict each other this is the world's standing reading (questions.py, RULES), so a
     # singular answer — "who is my dentist" — is the same whoever asks and whenever they ask.
@@ -460,23 +466,37 @@ def _note_hidden(entity, kind: str | None, hidden: list) -> None:
                        f"read as they hold now; any_time=True includes them")
 
 
-def _note_wrong_end(world, entity, kind: str, name: str, reverse) -> None:
-    """A link has two ends with two names, and asking from the wrong one reads like "there is
-    none". It isn't: the relation is right there, seen from the other side. Say which word gets
-    it, because an empty list is the one answer a host will not question."""
+def _from_the_other_end(world, entity, kind: str, name: str, reverse, history: bool) -> list:
+    """Asked from the end with nothing on it, answer from the end that has it — and say so.
+
+    A link has two ends with two names, and mixing them up is not a thing only hosts do; people
+    do it constantly ("my dentist" and "I'm her patient" are one fact). Answering an empty list
+    is technically right and practically a lie: the relation is right there, seen from the other
+    side. So the world answers with what it has and corrects the wording, rather than leaving a
+    silence the asker has no reason to question.
+
+    Only ever a fallback: when the end asked about has anything at all, that is the answer, and
+    this never runs. Nothing is guessed — the correction names the word that would have been
+    right, so the next question can be asked properly.
+    """
     rel = spec(world.classes[name])
     if rel.get("symmetric") or not rel.get("reverse"):
-        return
+        return []
     mine = "object" if not reverse else "subject"
-    theirs = [r for r in world.all(name, limit=None, history=True)
-              if same(getattr(r, mine, None), entity)]
+    theirs, later = [], []
+    for r in world.all(name, limit=None, history=True):
+        if not same(getattr(r, mine, None), entity):
+            continue
+        (theirs if (history or r.current()) else later).append(r)
     if not theirs:
-        return
+        return []
     word = rel["kind"] if reverse else rel["reverse"]
     ontology.note_hint(
-        f"{entity.display_name()}: no {kind} relations, but {len(theirs)} read from the other end "
-        f"— {'; '.join(r.display_name() for r in theirs[:3])}. That end is called {word!r}: "
-        f"entity.relations({word!r}) / entity.related({word!r}).")
+        f"{entity.display_name()}: nothing as {kind!r}, so this is the other end — {len(theirs)} "
+        f"read as {word!r} ({'; '.join(r.display_name() for r in theirs[:3])}). You asked which "
+        f"way round it was; it is the other way. Say {word!r} to ask for it directly."
+        + (f" {len(later)} more are outside the period; any_time=True includes them." if later else ""))
+    return theirs
 
 
 def related(world, entity, kind: str, history: bool = False) -> list:

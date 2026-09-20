@@ -281,6 +281,28 @@ def main() -> int:
     check("a rebuilt world starts without old remarks",
           not store.conn.execute("SELECT COUNT(*) FROM comments").fetchone()[0])
 
+    # --- what was written comes back whole, in a process that did not write it ---
+    import tempfile
+    from terraweaver import open_world
+
+    path = Path(tempfile.mkdtemp()) / "reopened.db"
+    first = open_world(str(path))
+    wrote = first.run(
+        'e = Event.new(title="Rent", kind="appointment", status="planned",\n'
+        '              start_time=datetime(2026, 10, 1), until=date(2027, 1, 1))\n'
+        'e.tag("bills")', "host")
+    assert not wrote["error"], wrote["error"]
+    del first
+    again = open_world(str(path))
+    back = again.run('print([(e.title, e.status, e.valid_until) for e in Event.all(limit=None, any_time=True)])',
+                     "host")
+    # Filling an attribute can load a reference, whose queries used to cut the load short — and
+    # what a class keeps last in its table went missing: the title, and the period with it.
+    check("a title survives being read back by another process",
+          "Rent" in (back["output"] or ""), str(back["output"] or back["error"]))
+    check("and so does the period, which is what made this dangerous",
+          "2027" in (back["output"] or ""), str(back["output"] or back["error"]))
+
     print()
     if failures:
         print(f"{len(failures)} failed: {', '.join(failures)}")

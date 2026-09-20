@@ -238,10 +238,16 @@ class Store:
             memo[instance_id] = obj
             derived = ontology.derived_names(cls._spec)
             known = {a["name"] for a in cls._spec["attributes"]} | set(ontology.MANAGED_VALUE_ATTRS)
-            for attr_name, raw in self.conn.execute(
+            # Read every row before setting anything. Filling an attribute can load a
+            # referenced instance, which runs its own queries — including a CREATE TABLE for a
+            # class whose table doesn't exist yet — and an open cursor does not reliably survive
+            # that. It used to cut the loop short, silently dropping whatever came last in the
+            # table: Event.title read back as None while the row said "Rent".
+            rows = self.conn.execute(
                 f'SELECT attr, value FROM "{self.values_table(cls.__name__)}" WHERE instance_id = ?',
                 (instance_id,)
-            ):
+            ).fetchall()
+            for attr_name, raw in rows:
                 if attr_name in derived or attr_name not in known:
                     continue  # stored by an older version: now computed, or no longer part of the class
                 kind, payload = _decode(raw)
