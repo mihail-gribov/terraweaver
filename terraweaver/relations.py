@@ -327,16 +327,25 @@ def _note_same_label(world, name: str, rel: dict, subject, obj, attrs: dict, sta
     ]
     if same_label:
         old = same_label[0]
+        # Name the exact fix, with the date: a replacement that begins in October ends the old
+        # one in October, not today. A host told to ".expire() it" does it today and the world
+        # ends up saying the user had no dentist for ten days.
+        starts = getattr(created, "valid_from", None)
+        if starts is not None and timeutil.as_datetime(starts) > timeutil.now():
+            how = f"old.keep(until={timeutil.show(starts)}) — it ends where the new one begins"
+        else:
+            how = "old.expire() — it ends now, where the new one begins"
         ontology.note_hint(
             f"{obj.display_name()} already has a {label} for that time: {old.display_name()}. "
-            f"Both stand unless you end one — if this replaces it, .expire() it or keep(until=...)."
+            f"Both stand unless you end one — if this replaces it: {how}."
         )
         world.questions.raise_(
             obj, "two_at_once",
             f"two {label}s at once: {old.other(obj).display_name()} and {subject.display_name()}. "
             f"Did the new one replace the old one?",
-            options=[f"{subject.display_name()} replaces them — end the old one", "both stand"],
+            options=[f"{subject.display_name()} replaces them — {how}", "both stand"],
             involves=[old, created],
+            touches=[f"relation:{rel['kind']}", f"label:{label}"],
         )
 
 
@@ -365,6 +374,8 @@ def relations_of(world, entity, kind: str | None = None, history: bool = False) 
         name, reverse = resolve_kind(world.classes, kind)
         chosen = [(name, reverse)]
     found, hidden = [], []
+    for name, _ in chosen:
+        ontology.ask_if_questioned(entity, f"relation:{spec(world.classes[name])['kind']}")
     for name, reverse in chosen:
         symmetric = spec(world.classes[name]).get("symmetric")
         for r in world.all(name, limit=None, history=True):
@@ -380,6 +391,11 @@ def relations_of(world, entity, kind: str | None = None, history: bool = False) 
                 hidden.append(r)
     if hidden:
         _note_hidden(entity, kind, hidden)
+    # The one that was said last comes first, always and for every host. Where two relations
+    # contradict each other this is the world's standing reading (questions.py, RULES), so a
+    # singular answer — "who is my dentist" — is the same whoever asks and whenever they ask.
+    found.sort(key=lambda r: (timeutil.as_datetime(r.valid_from or r.created_at), r.created_at),
+               reverse=True)
     return found
 
 

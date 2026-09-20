@@ -17,6 +17,40 @@ part is the point: a hint is read once, by one host, in one run, and s20 showed 
 happens then — the host read "Michael already has a dentist for that time", answered the user
 correctly, and left the world wrong. A question comes back every time anyone works with Michael.
 
+## There is always one reading
+
+A question that leaves the world ambiguous would be worse than no question at all: the host asks
+"who is my dentist", gets two, and either picks one silently or hands the mess to the user. So
+every open question carries the reading that holds while it is open, and that reading is a
+**rule** — the same for every host, at every hour, without anyone deciding:
+
+| kind | the rule while it is open |
+|---|---|
+| `two_at_once` | **the later statement counts.** Lists come newest-first, so the first one is the one that counts |
+| `maybe_the_same` | **they stay two records.** Nothing is merged without an answer; a lookup returns the one it matched |
+| `noticed` | **the latest value recorded stands** — which is how attributes already work |
+
+Recency decides, except for identity, where recency would quietly merge two people. `q.assumption`
+says it in words and `q.line()` prints the question with it, so a host can always answer — by the
+standing reading, saying which it is: "as recorded, Nina from October 1".
+
+## Three moments to ask, and only three
+
+A question is worth nothing if it is raised at the wrong time. Interrupting a task to ask about a
+dentist is worse than answering by the rule and asking later.
+
+1. **The read depends on it.** `[ask first]` in the result, at the moment the host holds the
+   answer. Raised when a run reads the relation, the attribute or the identity a question hangs
+   over — not for any other read of that entity. Ask before answering, or answer by the standing
+   reading and say which it is.
+2. **The task is over.** `world.questions(here=True)` is what this task actually worked with —
+   both ends of every relation it wrote, not only what it changed. `reset_session` returns the
+   same list, because a host starting a new task is a host that just finished one: the user is
+   there and nothing is in flight. "Two things I'd like to check with you."
+3. **The user offers.** `world.questions()` is everything open, ordered by how often the entity
+   is worked with (`usage.py`) — the person asked about every week comes before the one met once
+   at a conference. The doubt that never comes up never gets asked, and that is correct.
+
 ## What the host sees
 
     [open questions] Michael: two dentists at once: Arun Rao and Nina Patel. Did the new one
@@ -35,11 +69,11 @@ it when the user is around — not in the middle of a task the user is waiting o
 
 ## Where they come from
 
-| kind | raised when | closes itself when |
-|---|---|---|
-| `two_at_once` | a second relation with the same label to the same person, overlapping in time | one of them is ended or removed |
-| `maybe_the_same` | something is recorded as new next to one that answers to the same name | — (only an answer settles it) |
-| `noticed` | the host called `entity.question(...)` | — |
+| kind | raised when | hangs over | closes itself when |
+|---|---|---|---|
+| `two_at_once` | a second relation with the same label to the same person, overlapping in time | that relation kind | one of them is ended or removed |
+| `maybe_the_same` | something is recorded as new next to one that answers to the same name | identity — every lookup that picks it out | — (only an answer settles it) |
+| `noticed` | the host called `entity.question(..., about="phone")` | that attribute or relation | — |
 
 Two rules keep the list from becoming noise:
 

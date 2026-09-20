@@ -25,6 +25,9 @@ class Session:
         self.last_used = time.time()
         # World variables currently injected; they're shared, not this session's own.
         self.world_vars: set[str] = set()
+        # Entities this session has worked with: what "the questions left over from this task"
+        # means when the task is done.
+        self.touched: set[str] = set()
 
         for name, value in (seed or {}).items():
             self.bind(name, value, "pre-loaded data")

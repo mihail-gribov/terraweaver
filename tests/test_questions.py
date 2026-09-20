@@ -69,6 +69,46 @@ def main() -> int:
     dropped = rt.run('anna.questions()[0].drop("asked, it is the mobile")\nprint(anna.questions())', "host")
     check("and drop it when it stops mattering", dropped["output"].strip() == "[]", dropped["output"])
 
+    # --- there is always one reading, even unanswered ---
+    rt = WorldRuntime(":memory:", fixture="job_search")
+    rt.run('rao = Person.new(full_name="Arun Rao")\n'
+           'rao.relate(owner, "service", label="dentist")\n'
+           'nina = Person.new(full_name="Nina Patel")\n'
+           'nina.relate(owner, "service", label="dentist", starts=date(2026, 10, 1))', "host")
+    rule = rt.run('q = owner.questions()[0]\nprint(q.assumption)', "host")
+    check("the standing reading is the later statement", "Nina Patel" in rule["output"], rule["output"])
+    order = rt.run('print([r.subject.full_name for r in owner.relations("served_by", any_time=True)])', "host")
+    check("and reads come in that order, the one that counts first",
+          order["output"].strip().startswith("['Nina Patel'"), order["output"])
+
+    # --- a read that depends on the doubt is told before it answers ---
+    depends = rt.run('print([p.full_name for p in owner.related("served_by")])', "reader")
+    check("a read of the contradicted relation is told to ask first",
+          any("two dentists" in line for line in depends["ask_now"]), str(depends["ask_now"]))
+    check("and isn't repeated in the passive list", not depends["questions"], str(depends["questions"]))
+    quiet = rt.run('print(owner.email)', "reader")
+    check("an unrelated read is left alone", not quiet["ask_now"], str(quiet["ask_now"]))
+
+    # --- what this task touched, offered when the task ends ---
+    mine = rt.run('print(len(world.questions(here=True)))', "host")
+    check("a session can ask what it left open", mine["output"].strip() == "1", mine["output"])
+    fresh = rt.run('print(world.questions(here=True))', "untouched-session")
+    check("a session that touched nothing is offered nothing", fresh["output"].strip() == "[]", fresh["output"])
+    left = rt.reset_session("host")
+    check("ending a task hands the leftovers over", "two dentists" in left, left)
+
+    # --- the ones worth asking come first ---
+    rt.run('anna = Person.get(full_name="Anna Peterson")\n'
+           'anna.question("two numbers on file, which is current?", about="phone")', "host")
+    for _ in range(4):
+        rt.run('Person.get(full_name="Anna Peterson")', "host")
+    order = rt.run('print([q.about.full_name for q in world.questions()])', "host")
+    check("the entity that comes up most often is asked about first",
+          order["output"].strip().startswith("['Anna Peterson'"), order["output"])
+    attr = rt.run('a = Person.get(full_name="Anna Peterson")\nprint(a.phone)', "reader")
+    check("a read of the questioned attribute is told to ask first",
+          any("two numbers" in line for line in attr["ask_now"]), str(attr["ask_now"]))
+
     # --- a question blocks nothing ---
     check("nothing about it raised an error", own["ok"] and dropped["ok"], str(own["error"] or dropped["error"]))
 

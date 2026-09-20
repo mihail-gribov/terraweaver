@@ -89,6 +89,7 @@ class Recording:
         self.assumed: list[str] = []  # identities taken from what the user settled before
         self.hints: list[str] = []  # what the world suggests about a write that went through
         self.questions: list[str] = []  # doubts recorded about an entity, open until the user answers
+        self.ask_now: list[str] = []  # doubts this run's reads actually depend on
 
 
 @contextmanager
@@ -135,6 +136,30 @@ def note_assumed(text: str) -> None:
 def note_hint(text: str) -> None:
     if _CHANGED is not None and text not in _CHANGED.hints:
         _CHANGED.hints.append(text)
+
+
+_OPEN_TOKENS: dict = {}
+
+
+def set_open_tokens(tokens: dict) -> None:
+    """What every open question hangs over, by entity id: {id: {"relation:service": line}}.
+    Refreshed once per run so the checks below cost a dict lookup, not a query."""
+    global _OPEN_TOKENS
+    _OPEN_TOKENS = tokens or {}
+
+
+def ask_if_questioned(entity, token: str) -> None:
+    """A read that depends on something a question hangs over can't be answered cleanly: say so
+    here, while the host is holding the answer, rather than in a list it may never look at."""
+    if not _OPEN_TOKENS:
+        return
+    try:  # never through getattr: this is called from inside __getattribute__
+        entity_id = object.__getattribute__(entity, "id")
+    except AttributeError:
+        return
+    line = _OPEN_TOKENS.get(entity_id, {}).get(token)
+    if line and _CHANGED is not None and line not in _CHANGED.ask_now:
+        _CHANGED.ask_now.append(line)
 
 
 def note_question(text: str) -> None:
@@ -367,10 +392,17 @@ class Entity:
         return current_world().comments.add(self, text, when=when, tentative=tentative, until=until, ttl=ttl,
                                             permanent=permanent)
 
-    def question(self, text: str, options=(), ) -> Any:
+    def question(self, text: str, options=(), about: str | None = None) -> Any:
         """Record something about this entity that doesn't add up and isn't yours to decide —
-        "two phone numbers, which is current?". It stays open until the user answers it."""
-        return current_world().questions.raise_(self, "noticed", text, options=options, by="host")
+        "two phone numbers, which is current?". It stays open until the user answers it.
+        `about` is the attribute or relation it hangs over ("phone", "service"): a later read of
+        that one is told it can't be answered cleanly, instead of quietly returning one side."""
+        touches = []
+        if about:
+            touches = [f"attr:{about}"] if any(a["name"] == about for a in type(self)._spec["attributes"]) \
+                else [f"relation:{about}"]
+        return current_world().questions.raise_(self, "noticed", text, options=options,
+                                                touches=touches, by="host")
 
     def questions(self, include_closed: bool = False) -> list:
         """What's open about this entity. Each has .text, .options, .answer("…"), .drop()."""
@@ -383,9 +415,12 @@ class Entity:
                                            include_expired=include_expired or any_time)
 
     def touch(self) -> None:
-        """Mark that this entity was just worked with."""
+        """Mark that this entity was just worked with — the moment, and one more time in the
+        count that decides whose open questions are worth the user's attention (usage.py)."""
         with trusted_writes():
             self.accessed_at = datetime.now(timezone.utc)
+        current_world().usage.record(self)
+        ask_if_questioned(self, "identity")
 
     def __getattribute__(self, name):
         value = object.__getattribute__(self, name)
@@ -393,6 +428,8 @@ class Entity:
         # is: `report(owner.full_name)` makes no calls yet is perfectly grounded.
         if _TRACK and not name.startswith("_") and not callable(value):
             ACCESS["entity_reads"] += 1
+            if _OPEN_TOKENS and name not in _MANAGED_ATTRS:
+                ask_if_questioned(self, f"attr:{name}")
         return value
 
     def display_name(self) -> str:
@@ -787,14 +824,27 @@ Every class below shares these, so they aren't repeated for each one:
     Open questions. The world takes what you tell it even when it doesn't add up — the user
     said it, and their life is not the world's to correct. What doesn't add up is kept as a
     question about the entity: two current dentists, someone recorded as new next to someone who
-    answers to the same name, anything you noticed yourself. Runs that work with an entity get
-    its open questions back under [open questions]. They block nothing; put them to the user
-    when they're around, and they close.
-        for q in owner.questions(): print(q.text, q.options)
+    answers to the same name, anything you noticed yourself.
+
+    An open question never leaves you without an answer. Each one comes with what the world
+    reads meanwhile, and that reading is a rule, the same for every host at every hour: the
+    later statement counts. Lists come in that order, so the first one is the one that counts;
+    identity is the exception — two records are never merged without an answer, you get the one
+    you looked up. So you can always answer: by the standing reading, saying which it is.
+
+    Three moments to put one to the user, and only these:
+      [ask first]     — this run's read depends on it. Ask before answering, or answer by the
+                        standing reading and say so ("as recorded, Nina from October 1").
+      end of a task   — world.questions(here=True) is what this task touched; reset_session
+                        hands you the same list. The user is there and nothing is in flight:
+                        "two things I'd like to check with you".
+      the user offers — world.questions() is everything open, the entities that come up most
+                        often first. Never interrupt a task with these.
+        for q in owner.questions(): print(q.line())
         q.answer("Nina replaces Rao")    — closes it; recording what follows from it is yours
         q.drop("asked — it's a different Olga")
-        anna.question("two numbers on file, which is current?", options=["the mobile", "the old one"])
-        world.questions()                — everything open, to clear up while the user is here
+        anna.question("two numbers, which is current?", options=["the mobile", "the old one"],
+                      about="phone")     — about= makes a later read of that attribute say so
     A question closes itself once its reason is gone: end the old dentist's relation and the
     question about two dentists goes away without anyone answering it.
 

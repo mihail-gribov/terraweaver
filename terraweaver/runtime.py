@@ -100,10 +100,14 @@ class WorldView:
     over would let host code run raw SQL past every check.
     """
 
-    def __init__(self, world: World, variables: WorldVariables, session_key: str):
+    def __init__(self, world: World, variables: WorldVariables, session_key: str, session=None):
         self._world = world
         self._variables = variables
         self._session_key = session_key
+        self._session = session
+
+    def _touched(self) -> set:
+        return set(getattr(self._session, "touched", set()))
 
     @property
     def owner(self):
@@ -138,9 +142,15 @@ class WorldView:
     def settle(self, needs: NeedsResolution, choice=None, *, new: bool = False):
         return self._world.settle(needs, choice, new=new)
 
-    def questions(self, limit: int = 20):
-        """Everything open across the world — what could be cleared up while the user is here."""
-        return self._world.questions.open_(limit)
+    def questions(self, limit: int = 20, here: bool = False):
+        """Open questions, the ones worth asking first — ordered by how often the entity comes up.
+
+        here=True narrows it to what this task actually worked with: call it when the task is
+        done and the user is still there, and offer them in one go ("two things I'd like to
+        check with you"). Never mid-task.
+        """
+        touched = self._touched() if here else None
+        return self._world.questions.open_(limit, here=touched)
 
     def comments(self, since=None, until=None, contains: str | None = None, limit: int = 50,
                  include_expired: bool = False, any_time: bool = False):
@@ -191,7 +201,7 @@ class WorldRuntime:
         if key not in self.sessions:
             session = Session(self.classes, world=self.world)
             namespace = session.namespace
-            namespace["world"] = WorldView(self.world, self.variables, key)
+            namespace["world"] = WorldView(self.world, self.variables, key, session)
             namespace["NeedsResolution"] = NeedsResolution
             namespace["NotInWorld"] = NotInWorld
             namespace["__builtins__"] = sandbox.BUILTINS
@@ -202,10 +212,23 @@ class WorldRuntime:
         session.last_used = time.time()
         return session
 
-    def reset_session(self, key: str) -> None:
-        """Drop a session's variables: the next call starts with a clean namespace."""
-        self.sessions.pop(key, None)
+    def reset_session(self, key: str) -> str:
+        """Drop a session's variables: the next call starts with a clean namespace.
+
+        Returns what was left open about the entities that task worked with. A task ending is
+        the one moment the world knows of when the host is free and the user is still there —
+        exactly when a question can be put without interrupting anything.
+        """
+        session = self.sessions.pop(key, None)
         self.idle_reset.discard(key)
+        if session is None or not session.touched:
+            return ""
+        left = self.world.questions.open_(limit=3, here=set(session.touched))
+        if not left:
+            return ""
+        lines = [f"    {q.line()}" for q in left]
+        return ("Left open about what that task worked with — if the user is still there, this is "
+                "the moment to ask:\n" + "\n".join(lines))
 
     def reset(self) -> None:
         """Rebuild the world from its fixture and drop every session."""
@@ -262,11 +285,11 @@ class WorldRuntime:
         except SyntaxError as exc:
             return {"ok": False, "output": "", "error": f"not a single Python expression: {exc.msg}",
                     "access": {}, "created": [], "updated": [], "found": [], "comments": [], "assumed": [],
-                    "hints": [], "questions": [], "new_variables": {}, "duration_ms": 0}
+                    "hints": [], "questions": [], "ask_now": [], "new_variables": {}, "duration_ms": 0}
         if not name.isidentifier():
             return {"ok": False, "output": "", "error": f"{name!r} can't be a variable name",
                     "access": {}, "created": [], "updated": [], "found": [], "comments": [], "assumed": [],
-                    "hints": [], "questions": [], "new_variables": {}, "duration_ms": 0}
+                    "hints": [], "questions": [], "ask_now": [], "new_variables": {}, "duration_ms": 0}
         return self.run(f"world.pin({name}, ({expression}), {description!r})", key)
 
     def unset_variables(self, key: str, names: str) -> dict[str, Any]:
@@ -276,7 +299,7 @@ class WorldRuntime:
         if bad:
             return {"ok": False, "output": "", "error": f"not variable names: {', '.join(bad)}",
                     "access": {}, "created": [], "updated": [], "found": [], "comments": [], "assumed": [],
-                    "hints": [], "questions": [], "new_variables": {}, "duration_ms": 0}
+                    "hints": [], "questions": [], "ask_now": [], "new_variables": {}, "duration_ms": 0}
         return self.run(f"world.unpin({', '.join(listed)})" if listed else "pass", key)
 
     def _open_questions(self, recording) -> list[str]:
@@ -284,11 +307,10 @@ class WorldRuntime:
         should be told his two dentists are still unresolved — the hint that raised it was read
         once, in some earlier run, and the doubt outlived it."""
         seen, out = set(), []
-        for entity in list(recording.changed.values()) + list(recording.found.values()):
-            key = getattr(entity, "id", None)
-            if key is None or key in seen:
+        for entity in _entities_of(recording):
+            if entity.id in seen:
                 continue
-            seen.add(key)
+            seen.add(entity.id)
             for question in self.world.questions.of(entity):
                 options = f" [{' / '.join(question.options)}]" if question.options else ""
                 out.append(f"{entity.display_name()}: {question.text}{options}")
@@ -303,7 +325,7 @@ class WorldRuntime:
         rolled_back: list[str] = []
         access: dict[str, int] = {}
         effects = {"created": [], "updated": [], "found": [], "comments": [], "assumed": [], "hints": [],
-                   "questions": []}
+                   "questions": [], "ask_now": []}
         started = time.monotonic()
         # World variables are fresh in every run: entities come from the world as they are now,
         # and one pinned by another session shows up here too.
@@ -313,6 +335,7 @@ class WorldRuntime:
         namespace.update(world_vars)
         session.world_vars = set(world_vars)
         try:
+            ontology.set_open_tokens(self.world.questions.tokens())
             tree = _variables_by_name(sandbox.check(code, protected=set(world_vars)))
             with self.store.transaction():
                 with contextlib.redirect_stdout(stdout), ontology.track_access() as counts, \
@@ -321,7 +344,11 @@ class WorldRuntime:
                 access = dict(counts)
                 self._persist(recording, namespace)
                 effects = _effects(recording, created={id(o) for o in self.store._tx_new_ids})
-                effects["questions"] = _merge_questions(effects["questions"], self._open_questions(recording))
+                session.touched |= {e.id for e in _entities_of(recording)}
+                effects["ask_now"] = list(recording.ask_now)
+                effects["questions"] = [q for q in _merge_questions(effects["questions"],
+                                                                    self._open_questions(recording))
+                                        if not any(q.split(": ", 1)[-1][:50] in line for line in recording.ask_now)]
         except (Exception, sandbox.RunTimeout) as exc:  # noqa: BLE001 - reporting any failure to the host is the point
             error = _host_traceback(exc)
             rolled_back = _discarded(recording)
@@ -512,7 +539,23 @@ def _effects(recording, created: set[int]) -> dict[str, list[str]]:
              if key not in created and not recording.attrs.get(key, set()) - _BOOKKEEPING]
     return {"created": made, "updated": changed, "found": found, "comments": list(recording.remarks),
             "assumed": list(recording.assumed), "hints": list(recording.hints),
-            "questions": list(recording.questions)}
+            "questions": list(recording.questions), "ask_now": list(recording.ask_now)}
+
+
+def _entities_of(recording) -> list:
+    """Everything a run actually worked with — including both ends of a relation it wrote. A
+    relation is about two people; recording one is working with them, and a doubt about either
+    belongs in that run's result."""
+    out = []
+    for entity in list(recording.changed.values()) + list(recording.found.values()):
+        if getattr(entity, "id", None) is None:
+            continue
+        out.append(entity)
+        for end in ("subject", "object"):
+            other = getattr(entity, end, None)
+            if isinstance(other, Entity) and other.id is not None:
+                out.append(other)
+    return out
 
 
 def _merge_questions(raised: list[str], standing: list[str]) -> list[str]:
@@ -557,6 +600,10 @@ def format_result(result: dict) -> str:
     for kind in ("created", "updated", "found", "comments", "assumed", "hints"):
         if result.get(kind):
             parts.append(f"[{kind}] " + "; ".join(result[kind]))
+    if result.get("ask_now"):
+        parts.append("[ask first] " + "; ".join(result["ask_now"])
+                     + " — this run's answer depends on it: put it to the user before answering, "
+                       "or answer by the standing reading above and say so")
     if result.get("questions"):
         parts.append("[open questions] " + "; ".join(result["questions"])
                      + " — put them to the user if they're here; entity.questions() to answer or drop them")

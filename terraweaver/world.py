@@ -11,6 +11,7 @@ from terraweaver import matching, ontology, resolution, timeutil
 from terraweaver.comments import Comments
 from terraweaver.history import ValueHistory
 from terraweaver.questions import Questions
+from terraweaver.usage import Usage
 from terraweaver.resolution import (
     SKILL_KINDS,
     NeedsResolution,
@@ -48,7 +49,8 @@ class World:
         store.conn.executescript(CHOICES_SCHEMA)
         # Every overwrite of a known entity's attribute leaves the old value in history.
         self.history = ValueHistory(store, classes)
-        self.questions = Questions(store, classes)
+        self.usage = Usage(store)
+        self.questions = Questions(store, classes, self.usage)
         ontology.set_write_guard(self._keep_old_value)
         # Lets `Person.find(...)` reach this world without each class carrying a store.
         ontology.set_world(self)

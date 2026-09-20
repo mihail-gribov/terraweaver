@@ -119,9 +119,10 @@ async def reset_session(ctx: Context) -> str:
     """Start a new task with a clean namespace: drops every variable of this session. Call it
     when the user moves on to something new, so nothing from the earlier task carries over."""
     key = _session_key(ctx)
-    runtime.reset_session(key)
+    left_open = runtime.reset_session(key)
     log.info("session %s reset by the host", key)
-    return "Session reset: the namespace is clean. The world itself is unchanged."
+    done = "Session reset: the namespace is clean. The world itself is unchanged."
+    return f"{done}\n\n{left_open}" if left_open else done
 
 
 @server.custom_route("/health", ["GET"])

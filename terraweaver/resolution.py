@@ -165,6 +165,7 @@ def run_skill(needs: NeedsResolution, ask_user: Callable[[str, list[str]], int],
                 f"{'was' if len(needs.candidates) == 1 else 'were'} already there — the same one?",
                 options=["the same one", "different ones"],
                 involves=needs.candidates[:3],
+                touches=["identity"],
             )
         if needs.context.get("period"):
             world.apply_period(settled, needs.context["period"])
