@@ -137,6 +137,8 @@ class WorldRuntime:
         self.store = Store(db_path)
         self.store.conn.executescript(RUNS_SCHEMA)
         self.world = World(self.store, self.classes)
+        # Methods the world wrote for itself hang on the classes like any other (procedures.py).
+        self.world.procedures.bind(self.classes)
         reserved = set(self.classes) | set(sandbox.MODULES) | {
             "world", "owner", "me", "NeedsResolution", "NotInWorld", "print", "report", "run_skill"}
         self.variables = WorldVariables(self.store, self.classes, reserved | set(sandbox.BUILTINS))

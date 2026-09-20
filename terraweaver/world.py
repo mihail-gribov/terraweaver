@@ -10,6 +10,7 @@ from typing import Any
 from terraweaver import matching, ontology, resolution, timeutil
 from terraweaver.comments import Comments
 from terraweaver.history import ValueHistory
+from terraweaver.procedures import Procedures
 from terraweaver.questions import Questions
 from terraweaver.usage import Usage
 from terraweaver.resolution import (
@@ -50,6 +51,7 @@ class World:
         # Every overwrite of a known entity's attribute leaves the old value in history.
         self.history = ValueHistory(store, classes)
         self.usage = Usage(store)
+        self.procedures = Procedures(store)
         self.questions = Questions(store, classes, self.usage)
         ontology.set_write_guard(self._keep_old_value)
         # Lets `Person.find(...)` reach this world without each class carrying a store.

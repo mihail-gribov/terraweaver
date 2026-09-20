@@ -189,12 +189,19 @@ def trusted_writes():
         _TRUSTED = previous
 
 
-def load_specs(ontology_dir: Path) -> dict[str, dict[str, Any]]:
+def load_specs(ontology_dir: Path, grown_dir: Path | None = None) -> dict[str, dict[str, Any]]:
+    """The classes we fixed, plus whatever the world has added to them.
+
+    The core files are read as they are and never written to; additions live beside them and are
+    merged in here (growth.py), so reading ontology/core/ still tells you what a class is."""
+    from terraweaver import growth
+
     specs = {}
     for path in sorted(ontology_dir.glob("*.json")):
         spec = json.loads(path.read_text())
         specs[spec["name"]] = spec
-    return specs
+    grown = growth.load_grown(grown_dir if grown_dir is not None else ontology_dir.parent / "grown")
+    return growth.apply_growth(specs, grown) if grown else specs
 
 
 class Entity:
