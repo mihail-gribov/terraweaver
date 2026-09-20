@@ -162,6 +162,29 @@ def ask_if_questioned(entity, token: str) -> None:
         _CHANGED.ask_now.append(line)
 
 
+_STATING = ("user", None)
+
+
+@contextmanager
+def stating(source: str, run_id: str | None = None):
+    """Whose word the writes inside this block are, and what run they belong to.
+
+    The default is the user: a host assigning an attribute is relaying what it was told. The
+    world's own work says so — `stating("agent", ticket)` — and what it writes then carries the
+    lowest standing and can be taken back in one move."""
+    global _STATING
+    before = _STATING
+    _STATING = (source, run_id)
+    try:
+        yield
+    finally:
+        _STATING = before
+
+
+def stated_by() -> tuple:
+    return _STATING
+
+
 def note_question(text: str) -> None:
     if _CHANGED is not None and text not in _CHANGED.questions:
         _CHANGED.questions.append(text)
@@ -528,6 +551,16 @@ class Entity:
         if overwrite:
             _WRITE_GUARD(self, name, getattr(self, name), value)  # keeps the old value in history
         object.__setattr__(self, name, value)
+        if (_CHANGED is not None and not name.startswith("_") and name not in _MANAGED_ATTRS
+                and getattr(self, "id", None) is not None):
+            # What is written is also what was said: the image changes here, and the statement
+            # behind it goes into the record (facts.py). Loading from storage doesn't come
+            # through here recording, so nothing is re-stated on a read.
+            world = world_if_bound()
+            if world is not None and getattr(world, "facts", None) is not None:
+                source, run_id = stated_by()
+                world.facts.state(self.id, name, _as_statement(value), source=source,
+                                  run_id=run_id, class_name=type(self).__name__)
         if not name.startswith("_"):
             _note_changed(self, name)
 
@@ -577,6 +610,20 @@ def _remark_note(entity) -> str:
     except Exception:  # noqa: BLE001 - a repr must never fail
         return ""
     return f", {count} remark{'s' if count > 1 else ''} (.comments())" if count else ""
+
+
+def _as_statement(value):
+    """A value as the record keeps it: an entity is a reference to its subject, a moment is its
+    own text, everything else is itself."""
+    if isinstance(value, Entity):
+        return {"$subject": value.id}
+    if isinstance(value, list):
+        return [_as_statement(item) for item in value]
+    if isinstance(value, datetime):
+        return value.isoformat()
+    if hasattr(value, "isoformat"):
+        return value.isoformat()
+    return value
 
 
 def _period_text(starts, until) -> str:

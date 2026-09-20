@@ -152,7 +152,8 @@ def _read_into(world, files: "SelfFiles", role: str, entity, path: Path) -> str:
         if body and body_slot in declared:
             stated[body_slot] = body
         for name, value in stated.items():
-            world.facts.state(entity.id, name, value, source=source)
+            world.facts.state(entity.id, name, value, source=source,
+                              class_name=type(entity).__name__)
         # Until images are built from statements, the file also writes through to the entity;
         # when assembly takes over (docs/architecture.md, step 2) this half goes away.
         with ontology.trusted_writes():

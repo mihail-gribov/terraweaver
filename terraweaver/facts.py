@@ -1,34 +1,40 @@
-"""What was said. One table, append-only, and nothing in it is ever changed.
+"""What was said, and what the world worked out. Append-only, and nothing in it is ever changed.
 
-This is the lower of the two layers. Every statement the world ever receives lands here — from
-the user, from the assistant's own conclusion, from a source on the internet — and stays. A
+This is the lower of the two layers. Every statement the world receives lands here — from the
+user, from the assistant's own conclusion, from a source on the internet — and stays. A
 correction is not an edit: it is a later statement, and a retraction is a statement about a
 statement. Nothing is overwritten, so nothing can be lost by being wrong.
 
-    subject      whom it is about        p:0d1f…            (a subject, not yet a person: who is
-                                                             who is decided when images are built)
+One table per class per structure, named after both, so the database reads like the architecture:
+
+    facts_Person        what was said about people
+    reasoning_Person    what the world worked out about them, and what from
+    Person              the images built out of those — the main data, loaded by the class
+
+The first two have the same columns; a row in `reasoning_` is a conclusion and carries its
+basis. So "forget everything you worked out about me" is one operation over one group of tables,
+and "what was I actually told" needs no filter at all. `subjects` says which class a subject
+belongs to, so a statement can be found without knowing where to look.
+
+    subject      whom it is about        7db1463e…
     slot         what about them         full_name | email | kin:mother | same_as
-    value        the value, or a subject
+    value        the value, or a reference to another subject
     valid_from   when it holds from      2026-08-01
     valid_until  when it stops holding   null
     stated_at    when we were told       2026-09-20 10:14
     source       whose word it is        user | agent | companies-house.gov.uk
-    run_id       in which run
-    basis        what it was drawn from  [12, 48, 51]  — only for what the world concluded
-    basis_digest the shape of that basis, so a conclusion knows when it has gone stale
-    retracted_by the statement that took it back
+    run_id       in which run — and, once work is organised into tickets, which ticket
+    basis        what a conclusion was drawn from, with a digest: move the basis and the
+                 conclusion is stale
+    retracted_by what took it back
 
-Most statements are *said*: someone told us. A few are *concluded*: the world read a hundred
-remarks about someone and formed a judgement about their character. Those are statements too —
-lowest in standing, so anything anyone actually says outranks them — but they carry what they
-were drawn from, because a conclusion nobody can check is a rumour, and because when the basis
-changes the conclusion has to be made again. Conclusions are never drawn from conclusions: a
-world that reasons from its own guesses will believe anything by the end of the month.
+Conclusions are never drawn from conclusions: a world that reasons from its own guesses will
+believe anything by the end of the month.
 
-The upper layer (assembly.py) reads this and builds the entities — by rules that can change
-without touching anything here. That is the whole point: change the rule, or learn one more
-fact, and rebuild. Two people who looked like one come apart again, and the facts about each of
-them are exactly where they were.
+The upper layer (assembly.py) reads all of this and builds the entities — by rules that can
+change without touching anything here. That is the point: change the rule, or learn one more
+fact, and rebuild. Two people who looked like one come apart again, and what was said about each
+of them is exactly where it was.
 """
 import hashlib
 import json
@@ -36,24 +42,36 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any
 
-SCHEMA = """
-CREATE TABLE IF NOT EXISTS statements (
+SAID, WORKED_OUT = "facts", "reasoning"
+
+SUBJECTS = """
+CREATE TABLE IF NOT EXISTS subjects (
+    subject TEXT PRIMARY KEY,
+    class_name TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_subjects_class ON subjects(class_name);
+"""
+
+TABLE = """
+CREATE TABLE IF NOT EXISTS {table} (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     subject TEXT NOT NULL,
     slot TEXT NOT NULL,
-    value TEXT,                  -- JSON; a reference is {"$subject": "..."}
+    value TEXT,
     valid_from TEXT,
     valid_until TEXT,
     stated_at TEXT NOT NULL,
     source TEXT NOT NULL,
     run_id TEXT,
-    basis TEXT,                  -- JSON list of statement ids a conclusion was drawn from
-    basis_digest TEXT,           -- what that basis looked like; it changed, the conclusion is stale
-    retracted_by INTEGER
+    basis TEXT,
+    basis_digest TEXT,
+    retracted_by TEXT
 );
-CREATE INDEX IF NOT EXISTS idx_statements_subject ON statements(subject, slot);
-CREATE INDEX IF NOT EXISTS idx_statements_slot ON statements(slot);
+CREATE INDEX IF NOT EXISTS idx_{table}_subject ON {table}(subject, slot);
 """
+
+COLUMNS = ("id, subject, slot, value, valid_from, valid_until, stated_at, source, run_id, "
+           "basis, basis_digest")
 
 # Whose word outranks whose, when two statements cover the same slot at the same time. The user
 # is the authority on their own life; a checkable source outranks the assistant's inference on
@@ -68,7 +86,7 @@ def trust(source: str) -> int:
 
 @dataclass(frozen=True)
 class Statement:
-    id: int
+    id: str              # "facts_Person:17" — which table it is in, and which row
     subject: str
     slot: str
     value: Any
@@ -109,120 +127,195 @@ def reference(subject: str) -> dict:
 class Facts:
     def __init__(self, conn):
         self.conn = conn
-        conn.executescript(SCHEMA)
+        _run(conn, SUBJECTS)
         conn.commit()
+
+    # --- where a statement lives ---
+
+    def table(self, class_name: str, structure: str = SAID) -> str:
+        """`facts_Person`, `reasoning_Person`, made the first time something is written there."""
+        name = f"{structure}_{class_name}"
+        # Made every time, because both shortcuts are wrong. `executescript` would commit
+        # whatever transaction is open — a table made mid-run would commit the run itself. And a
+        # cache of "already made" outlives a rollback that unmade them. IF NOT EXISTS is cheap.
+        _run(self.conn, TABLE.format(table=name))
+        return name
+
+    def tables(self, structure: str | None = None) -> list[str]:
+        """Every statement table that exists, for reads that span classes."""
+        rows = self.conn.execute(
+            "SELECT name FROM sqlite_master WHERE type = 'table' AND "
+            "(name LIKE 'facts_%' OR name LIKE 'reasoning_%') ORDER BY name").fetchall()
+        return [n for (n,) in rows if structure is None or n.startswith(f"{structure}_")]
+
+    def _class(self, subject: str, class_name: str | None) -> str:
+        known = self.class_of(subject)
+        chosen = known or class_name or "Unknown"
+        if not known:
+            self.register(subject, chosen)  # so a statement can be found without a search
+        return chosen
+
+    def register(self, subject: str, class_name: str) -> None:
+        self.conn.execute("INSERT OR IGNORE INTO subjects (subject, class_name) VALUES (?, ?)",
+                          (subject, class_name))
+
+    def class_of(self, subject: str) -> str | None:
+        row = self.conn.execute("SELECT class_name FROM subjects WHERE subject = ?",
+                                (subject,)).fetchone()
+        return row[0] if row else None
 
     # --- writing ---
 
     def state(self, subject: str, slot: str, value, *, source: str = "user", valid_from=None,
-              valid_until=None, run_id: str | None = None, stated_at=None) -> int:
+              valid_until=None, run_id: str | None = None, stated_at=None,
+              class_name: str | None = None) -> str:
         """Record that someone said this. Never replaces an earlier statement — it joins it."""
-        cursor = self.conn.execute(
-            "INSERT INTO statements (subject, slot, value, valid_from, valid_until, stated_at, "
-            "source, run_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            (subject, slot, json.dumps(value), _iso(valid_from), _iso(valid_until),
-             _iso(stated_at) or _now(), source, run_id),
-        )
-        return cursor.lastrowid
+        return self._insert(self.table(self._class(subject, class_name), SAID), subject, slot,
+                            value, valid_from, valid_until, _iso(stated_at) or _now(), source,
+                            run_id, None)
 
     def conclude(self, subject: str, slot: str, value, *, basis: list, run_id: str | None = None,
-                 valid_from=None, valid_until=None) -> int:
+                 valid_from=None, valid_until=None, class_name: str | None = None) -> str:
         """What the world worked out for itself, and what from.
 
         Expensive by nature — many statements, a model, sometimes a search — so it is kept rather
-        than recomputed on every read. `basis` is the statements it was drawn from; when they
-        change, `stale()` says so and the work is due again.
-        """
-        conclusions = [s for s in basis if getattr(s, "is_conclusion", False)]
-        if conclusions:
+        than recomputed on every read. When the basis moves, `stale()` says so and the work is
+        due again."""
+        guesses = [s for s in basis if getattr(s, "is_conclusion", False)]
+        if guesses:
             raise ValueError("a conclusion is drawn from what was said, not from other conclusions "
-                             f"({conclusions[0].slot!r} is one) — otherwise the world ends up "
+                             f"({guesses[0].slot!r} is one) — otherwise the world ends up "
                              f"believing its own guesses")
-        ids = sorted(s.id if isinstance(s, Statement) else int(s) for s in basis)
-        cursor = self.conn.execute(
-            "INSERT INTO statements (subject, slot, value, valid_from, valid_until, stated_at, "
-            "source, run_id, basis, basis_digest) VALUES (?, ?, ?, ?, ?, ?, 'agent', ?, ?, ?)",
-            (subject, slot, json.dumps(value), _iso(valid_from), _iso(valid_until), _now(),
-             run_id, json.dumps(ids), _digest(ids)),
-        )
-        return cursor.lastrowid
+        ids = sorted(s.id if isinstance(s, Statement) else str(s) for s in basis)
+        return self._insert(self.table(self._class(subject, class_name), WORKED_OUT), subject,
+                            slot, value, valid_from, valid_until, _now(), "agent", run_id, ids)
+
+    def retract(self, statement_id: str, by: str | None = None) -> None:
+        """Take a statement back — it was wrong, or the run that made it was undone. It stays in
+        the table: what was said is part of the record even when it is no longer believed."""
+        table, row = _split(statement_id)
+        self.conn.execute(f"UPDATE {table} SET retracted_by = ? WHERE id = ?",
+                          (by or "retracted", row))
+
+    def retract_run(self, run_id: str) -> int:
+        """Undo a whole run — later, a whole ticket. What makes the world's own work reversible
+        without keeping a journal beside it."""
+        undone = 0
+        for table in self.tables():
+            cursor = self.conn.execute(
+                f"UPDATE {table} SET retracted_by = 'run undone' WHERE run_id = ? "
+                f"AND retracted_by IS NULL", (run_id,))
+            undone += cursor.rowcount
+        return undone
+
+    def forget_reasoning(self, subject: str | None = None) -> int:
+        """Take back everything the world worked out, keeping every word it was told.
+
+        The way out of a tangle: an agent that has reasoned itself somewhere strange drops its
+        own conclusions and is back to exactly what it was given."""
+        undone = 0
+        for table in self.tables(WORKED_OUT):
+            where = "retracted_by IS NULL" + (" AND subject = ?" if subject else "")
+            cursor = self.conn.execute(
+                f"UPDATE {table} SET retracted_by = 'forgotten' WHERE {where}",
+                (subject,) if subject else ())
+            undone += cursor.rowcount
+        return undone
+
+    # --- reading ---
+
+    def about(self, subject: str, slot: str | None = None,
+              include_retracted: bool = False) -> list[Statement]:
+        where = "subject = ?" + ("" if slot is None else " AND slot = ?")
+        args = [subject] + ([] if slot is None else [slot])
+        class_name = self.class_of(subject)
+        tables = ([f"{SAID}_{class_name}", f"{WORKED_OUT}_{class_name}"] if class_name
+                  else self.tables())
+        return self._query(where, args, tables, include_retracted)
+
+    def with_slot(self, slot: str) -> list[Statement]:
+        return self._query("slot = ?", [slot], self.tables(), False)
+
+    def subjects(self) -> list[str]:
+        return [row[0] for row in self.conn.execute("SELECT subject FROM subjects ORDER BY subject")]
+
+    def all(self, include_retracted: bool = False) -> list[Statement]:
+        return self._query("1 = 1", [], self.tables(), include_retracted)
 
     def stale(self, statement: Statement) -> bool:
-        """Whether what this conclusion was drawn from still looks the way it did.
-
-        Mechanical on purpose: a conclusion goes stale because its basis moved, not because
-        anyone judged it wrong. What replaces it is work for the agenda."""
+        """Whether what this conclusion was drawn from still looks the way it did. Mechanical on
+        purpose: a conclusion goes stale because its basis moved, not because anyone judged it
+        wrong. What replaces it is work for the agenda."""
         if not statement.is_conclusion:
             return False
-        live = [s.id for s in self.about(statement.subject)]
-        kept = sorted(i for i in statement.basis if i in live)
-        return _digest(kept) != statement.basis_digest
+        live = {s.id for s in self.about(statement.subject)}
+        return _digest(sorted(i for i in statement.basis if i in live)) != statement.basis_digest
+
+    def basis_of(self, statement: Statement) -> list[Statement]:
+        """The statements a conclusion was drawn from — "why do you think that", answerable."""
+        if not statement.is_conclusion or not statement.basis:
+            return []
+        wanted = set(statement.basis)
+        return [s for s in self.about(statement.subject, include_retracted=True) if s.id in wanted]
 
     def why(self, subject: str, slot: str) -> tuple[Statement, list[Statement]] | None:
         """The judgement standing on this slot and what it rests on, or None if nobody worked it
         out. The world hands this over; explaining it is the host's job, because an explanation
         is a sentence to a person and the world doesn't talk to people.
 
-        Later, when work is organised into tickets, the run this was made in will name the ticket
-        that ordered it — `run_id` already carries it — and "why do you think that" will reach
-        back to the task as well as the evidence.
-        """
+        Later, when work is organised into tickets, `run_id` names the ticket that ordered it,
+        and the answer can include what the world was trying to work out."""
         judgements = [s for s in self.about(subject, slot) if s.is_conclusion]
         if not judgements:
             return None
-        latest = judgements[-1]
-        return latest, self.basis_of(latest)
+        return judgements[-1], self.basis_of(judgements[-1])
 
-    def basis_of(self, statement: Statement) -> list[Statement]:
-        """The statements a conclusion was drawn from — "why do you think that", answerable."""
-        if not statement.is_conclusion or not statement.basis:
-            return []
-        marks = ",".join("?" * len(statement.basis))
-        return self._query(f"id IN ({marks})", list(statement.basis))
+    # --- internals ---
 
-    def retract(self, statement_id: int, by: int | None = None) -> None:
-        """Take a statement back — it was wrong, or the run that made it was undone. It stays in
-        the table: what was said is part of the record even when it is no longer believed."""
-        self.conn.execute("UPDATE statements SET retracted_by = ? WHERE id = ?",
-                          (by if by is not None else -1, statement_id))
-
-    def retract_run(self, run_id: str) -> int:
-        """Undo a whole run. This is what makes a run reversible without a separate journal."""
+    def _insert(self, table: str, subject: str, slot: str, value, valid_from, valid_until,
+                stated_at: str, source: str, run_id: str | None, basis: list | None) -> str:
         cursor = self.conn.execute(
-            "UPDATE statements SET retracted_by = -1 WHERE run_id = ? AND retracted_by IS NULL",
-            (run_id,))
-        return cursor.rowcount
+            f"INSERT INTO {table} (subject, slot, value, valid_from, valid_until, stated_at, "
+            f"source, run_id, basis, basis_digest) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (subject, slot, json.dumps(value), _iso(valid_from), _iso(valid_until), stated_at,
+             source, run_id, json.dumps(basis) if basis is not None else None,
+             _digest(basis) if basis is not None else None),
+        )
+        return f"{table}:{cursor.lastrowid}"
 
-    # --- reading ---
+    def _query(self, where: str, args: list, tables: list[str],
+               include_retracted: bool) -> list[Statement]:
+        out = []
+        existing = set(self.tables())
+        for table in tables:
+            if table not in existing:
+                continue
+            clause = where if include_retracted else f"({where}) AND retracted_by IS NULL"
+            rows = self.conn.execute(
+                f"SELECT {COLUMNS} FROM {table} WHERE {clause} ORDER BY id", args).fetchall()
+            out += [_statement(table, row) for row in rows]
+        return sorted(out, key=lambda s: (s.stated_at, s.id))
 
-    def about(self, subject: str, slot: str | None = None, include_retracted: bool = False) -> list[Statement]:
-        where = "subject = ?"
-        args: list = [subject]
-        if slot is not None:
-            where += " AND slot = ?"
-            args.append(slot)
-        if not include_retracted:
-            where += " AND retracted_by IS NULL"
-        return self._query(where, args)
 
-    def with_slot(self, slot: str) -> list[Statement]:
-        return self._query("slot = ? AND retracted_by IS NULL", [slot])
+def _run(conn, script: str) -> None:
+    """Each statement on its own, so nothing here commits an open transaction."""
+    for part in script.strip().split(";"):
+        if part.strip():
+            conn.execute(part)
 
-    def subjects(self) -> list[str]:
-        return [row[0] for row in self.conn.execute(
-            "SELECT DISTINCT subject FROM statements WHERE retracted_by IS NULL ORDER BY subject")]
 
-    def all(self) -> list[Statement]:
-        return self._query("retracted_by IS NULL", [])
+def _statement(table: str, row) -> Statement:
+    (row_id, subject, slot, value, valid_from, valid_until, stated_at, source, run_id,
+     basis, digest) = row
+    return Statement(f"{table}:{row_id}", subject, slot,
+                     json.loads(value) if value is not None else None,
+                     _parse(valid_from), _parse(valid_until), _parse(stated_at), source, run_id,
+                     json.loads(basis) if basis else None, digest)
 
-    def _query(self, where: str, args: list) -> list[Statement]:
-        rows = self.conn.execute(
-            f"SELECT id, subject, slot, value, valid_from, valid_until, stated_at, source, run_id, "
-            f"basis, basis_digest FROM statements WHERE {where} ORDER BY id", args).fetchall()
-        return [Statement(i, subject, slot, json.loads(value) if value is not None else None,
-                          _parse(vf), _parse(vu), _parse(at), source, run,
-                          json.loads(basis) if basis else None, digest)
-                for i, subject, slot, value, vf, vu, at, source, run, basis, digest in rows]
+
+def _split(statement_id: str) -> tuple[str, int]:
+    table, _, row = statement_id.rpartition(":")
+    return table, int(row)
 
 
 def _digest(ids: list) -> str:

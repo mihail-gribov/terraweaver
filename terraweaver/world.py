@@ -345,6 +345,17 @@ class World:
         ontology.note_world_call("world_writes")
         instance = self.classes[class_name](**attrs)
         self.store.save_graph(instance)
+        # Attributes given at construction are set before the entity has an id, so they can't
+        # state themselves on the way in; they are stated here, once it has one.
+        source, run_id = ontology.stated_by()
+        for attr in type(instance)._spec["attributes"]:
+            name = attr["name"]
+            if "derived" in attr or name in ontology.MANAGED_VALUE_ATTRS:
+                continue
+            value = instance.__dict__.get(name)
+            if value is not None and value != []:
+                self.facts.state(instance.id, name, ontology._as_statement(value),
+                                 source=source, run_id=run_id, class_name=class_name)
         self._apply_deferred(instance)
         return instance  # brand new, so created_at and accessed_at already coincide
 

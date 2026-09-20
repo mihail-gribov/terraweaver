@@ -153,6 +153,26 @@ def main() -> int:
     check("and a word from the user replaces it outright",
           image.values["character"] == "warmer than he looks" and not image.judged, str(image.values))
 
+    # --- the tables read like the architecture ---
+    facts = Facts(sqlite3.connect(":memory:"))
+    facts.state("t1", "full_name", "Tam", source="user", class_name="Person")
+    facts.state("t2", "name", "Acme", source="user", class_name="Organization")
+    said = facts.about("t1")
+    facts.conclude("t1", "character", "brisk", basis=said)
+    check("what was said goes in its class's facts table",
+          sorted(facts.tables()) == ["facts_Organization", "facts_Person", "reasoning_Person"],
+          str(facts.tables()))
+    check("and a statement knows which table it is in", facts.about("t2")[0].id.startswith("facts_Organization:"),
+          facts.about("t2")[0].id)
+    check("a subject is registered under its class", facts.class_of("t2") == "Organization",
+          str(facts.class_of("t2")))
+
+    # --- forgetting what the world worked out, keeping every word it was told ---
+    forgotten = facts.forget_reasoning()
+    check("everything worked out can be taken back in one move", forgotten == 1, str(forgotten))
+    check("and what was said is untouched",
+          [s.slot for s in facts.about("t1")] == ["full_name"], str(facts.about("t1")))
+
     print()
     if failures:
         print(f"{len(failures)} failed: {', '.join(failures)}")
