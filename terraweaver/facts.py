@@ -61,10 +61,10 @@ CREATE TABLE IF NOT EXISTS {table} (
     subject TEXT NOT NULL,
     slot TEXT NOT NULL,
     value TEXT,
-    valid_from TEXT,
-    valid_until TEXT,
-    stated_at TEXT NOT NULL,
-    restated_at TEXT,
+    valid_from INTEGER,
+    valid_until INTEGER,
+    stated_at INTEGER NOT NULL,
+    restated_at INTEGER,
     times INTEGER NOT NULL DEFAULT 1,
     source TEXT NOT NULL,
     run_id TEXT,
@@ -147,6 +147,9 @@ class Facts:
         self.conn = conn
         _run(conn, SUBJECTS)
         conn.commit()
+        # A world written before time became a number is brought over on the way in, once. Two
+        # spellings of a moment in one record is the bug this exists to make impossible.
+        migrate_times(conn)
 
     # --- where a statement lives ---
 
@@ -368,17 +371,55 @@ def _digest(ids: list) -> str:
     return hashlib.sha256(",".join(str(i) for i in ids).encode()).hexdigest()[:16]
 
 
-def _now() -> str:
-    return datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
+def _now() -> int:
+    from terraweaver import timeutil
+
+    return timeutil.to_db(timeutil.now())
 
 
-def _iso(value) -> str | None:
-    if value is None:
-        return None
-    if isinstance(value, datetime):
-        return value.isoformat()
-    return datetime(value.year, value.month, value.day).isoformat()
+def _iso(value) -> int | None:
+    """A moment as the record keeps it: microseconds since the epoch (timeutil.to_db)."""
+    from terraweaver import timeutil
+
+    return timeutil.to_db(value)
 
 
-def _parse(raw: str | None) -> datetime | None:
-    return datetime.fromisoformat(raw) if raw else None
+def _parse(raw) -> datetime | None:
+    from terraweaver import timeutil
+
+    return timeutil.from_db(raw)
+
+
+def migrate_times(conn) -> list[str]:
+    """Bring statement tables written in text over to numbers. Returns the tables it rewrote.
+
+    A record is not something to rewrite lightly, and this rewrites nothing about it: the same
+    moments, said in the one way the database can order. Done here, once, rather than by reading
+    both forms forever — two spellings of a moment is exactly the thing that went wrong."""
+    from terraweaver import timeutil
+
+    rows = conn.execute("SELECT name FROM sqlite_master WHERE type = 'table' AND "
+                        "(name LIKE 'facts_%' OR name LIKE 'reasoning_%')").fetchall()
+    moved = []
+    for (table,) in rows:
+        kinds = {r[1]: (r[2] or "").upper() for r in conn.execute(f"PRAGMA table_info({table})")}
+        if kinds.get("stated_at") == "INTEGER":
+            continue
+        from terraweaver.store import run_script
+
+        conn.execute(f"ALTER TABLE {table} RENAME TO {table}_intext")
+        run_script(conn, TABLE.format(table=table))
+        columns = [r[1] for r in conn.execute(f"PRAGMA table_info({table})")]
+        times = ("valid_from", "valid_until", "stated_at", "restated_at")
+        old_rows = conn.execute(f"SELECT {', '.join(columns)} FROM {table}_intext").fetchall()
+        for row in old_rows:
+            values = dict(zip(columns, row))
+            for column in times:
+                values[column] = timeutil.to_db(timeutil.from_db(values.get(column)))
+            conn.execute(f"INSERT INTO {table} ({', '.join(columns)}) VALUES "
+                         f"({', '.join('?' * len(columns))})", [values[c] for c in columns])
+        conn.execute(f"DROP TABLE {table}_intext")
+        moved.append(table)
+    if moved:
+        conn.commit()
+    return moved

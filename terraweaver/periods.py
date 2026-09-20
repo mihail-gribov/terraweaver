@@ -40,8 +40,8 @@ CREATE TABLE IF NOT EXISTS periods (
     subject TEXT NOT NULL,
     nature TEXT NOT NULL,
     value TEXT,
-    starts TEXT,
-    until TEXT,
+    starts INTEGER,
+    until INTEGER,
     every TEXT,
     lasting REAL
 );
@@ -75,11 +75,12 @@ def rebuild(world) -> int:
 
 
 def _insert(world, subject, nature, value, starts, until, every=None, lasting=None) -> None:
+    from terraweaver import timeutil
+
     world.store.conn.execute(
         "INSERT INTO periods (subject, nature, value, starts, until, every, lasting) "
         "VALUES (?, ?, ?, ?, ?, ?, ?)",
-        (subject, nature, value, starts.isoformat() if starts else None,
-         until.isoformat() if until else None, every, lasting))
+        (subject, nature, value, timeutil.to_db(starts), timeutil.to_db(until), every, lasting))
 
 
 def _add_missing_columns(conn) -> None:
@@ -117,7 +118,7 @@ def holding(world, subject: str, nature: str, at: datetime | None = None) -> lis
     """What held for this subject at a moment — the values, without walking the statements."""
     _ready(world)
     when = _moment(at, datetime.utcnow())
-    moment = when.isoformat()
+    moment = _stamp(when)
     rows = world.store.conn.execute(
         "SELECT value FROM periods WHERE subject = ? AND nature = ? AND every IS NULL "
         "AND (starts IS NULL OR starts <= ?) AND (until IS NULL OR until > ?)",
@@ -133,7 +134,7 @@ def carrying(world, nature: str, value: str, at: datetime | None = None) -> list
     """Which subjects held this value at a moment — the question asked from the other end."""
     _ready(world)
     when = _moment(at, datetime.utcnow())
-    moment = when.isoformat()
+    moment = _stamp(when)
     rows = world.store.conn.execute(
         "SELECT DISTINCT subject FROM periods WHERE nature = ? AND value = ? AND every IS NULL "
         "AND (starts IS NULL OR starts <= ?) AND (until IS NULL OR until > ?)",
@@ -207,8 +208,17 @@ def _moment(value, default=None) -> datetime | None:
 
 
 def _ready(world) -> None:
-    run_script(world.store.conn, SCHEMA)
-    _add_missing_columns(world.store.conn)
+    conn = world.store.conn
+    kinds = {r[1]: (r[2] or "").upper() for r in conn.execute("PRAGMA table_info(periods)")}
+    if kinds and kinds.get("starts") != "INTEGER":
+        # Derived, so there is nothing to migrate: throw it away and let it be built again in
+        # the shape that orders correctly.
+        conn.execute("DROP TABLE periods")
+        conn.commit()
+        rebuild(world)
+        return
+    run_script(conn, SCHEMA)
+    _add_missing_columns(conn)
 
 
 def _repeating(world, where: str, args: list) -> list[dict]:
@@ -264,5 +274,13 @@ def _from_statements(world):
         yield subject, nature, value, found
 
 
-def _parse(raw: str | None) -> datetime | None:
-    return datetime.fromisoformat(raw) if raw else None
+def _parse(raw) -> datetime | None:
+    from terraweaver import timeutil
+
+    return timeutil.from_db(raw)
+
+
+def _stamp(value) -> int | None:
+    from terraweaver import timeutil
+
+    return timeutil.to_db(value)

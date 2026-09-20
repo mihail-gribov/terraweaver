@@ -60,6 +60,31 @@ def now() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
+# Time in the database: whole microseconds since the epoch, UTC. SQLite has no date type — the
+# choices are a number or a string, and a string is only ordered correctly while every writer
+# agrees on one spelling. That agreement is a convention, and a convention is exactly what broke
+# here: '2026-09-21T00:00:00' and '2026-09-21T00:00:00+00:00' are the same moment and sort apart,
+# so a period query answered wrongly and said nothing about it. A number cannot be spelled two
+# ways, so the ordering is a property of the storage rather than of everyone's good behaviour.
+EPOCH = datetime(1970, 1, 1)
+
+
+def to_db(value) -> int | None:
+    """A moment as the database keeps it. Dates count as midnight, as they do everywhere here."""
+    if value is None:
+        return None
+    return round((as_datetime(value) - EPOCH).total_seconds() * 1_000_000)
+
+
+def from_db(raw) -> datetime | None:
+    """Back again — reading text too, because rows written before this still say it that way."""
+    if raw is None or raw == "":
+        return None
+    if isinstance(raw, (int, float)):
+        return EPOCH + timedelta(microseconds=int(raw))
+    return as_datetime(datetime.fromisoformat(str(raw)))
+
+
 def in_period(starts, until, moment: datetime) -> bool:
     """Whether [starts, until) covers the moment; a missing bound is open."""
     if starts is not None and as_datetime(starts) > moment:
