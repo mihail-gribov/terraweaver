@@ -226,6 +226,17 @@ Every class below shares these, so they aren't repeated for each one:
                          records; find them by that attribute (Event.find(start_time=after(now()))).
       when we learned  — created_at / recorded_at, the world's bookkeeping. A marriage recorded
                          today may have started in 2019; you never set this.
+    What can be given a period — the same four keywords everywhere, and this is the whole list:
+      an entity      Class.ensure(..., starts=..., until=...) — a listing open for a month, a
+                     project that ran last year; entity.keep(...), entity.expire(), .current()
+      a relation     a.relate(b, kind, starts=..., until=...) — a job, a marriage, a landlord;
+                     rel.keep(...), rel.expire()
+      a tag          anna.tag("apartment-hunt", until=...) — several at once share one period;
+                     anna.untag(...) ends it, and each stretch is kept (anna.spells("tags"))
+      a remark       anna.comment(text, when=..., until=..., ttl=..., permanent=True)
+    Not an attribute value: `anna.email = ...` holds from when you write it, and there is no way
+    yet to say a value held from March to June. Say it in a remark and note the dates there.
+
     Writing a period, the same four keywords for entities, relations and comments:
         Class.ensure(..., starts=date(2026, 10, 1))   — begins later
         Class.ensure(..., until=date(...) | ttl=timedelta(days=30))
