@@ -80,7 +80,7 @@ user.tag("on-call", every="3 weeks", lasting=timedelta(days=7), starts=date(2026
     rows = world.store.conn.execute("SELECT COUNT(*) FROM periods WHERE every IS NOT NULL").fetchone()[0]
     check("a series is one row, not a thousand", rows == 2, f"{rows} cyclic rows")
     check("the rule reads back in words",
-          standup.repeats() == ["every day, from 2026-09-21 09:00, 0.5 hours at a time"],
+          standup.repeats() == ["every day, from 2026-09-21 09:00, 30 minutes at a time"],
           str(standup.repeats()))
     check("the next one is known", standup.next_occurrence() == datetime(2026, 9, 21, 9, 0),
           str(standup.next_occurrence()))

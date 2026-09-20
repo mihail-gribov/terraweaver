@@ -182,10 +182,13 @@ def _length(lasting) -> timedelta | None:
 
 
 def _days(length: timedelta) -> str:
-    days = length.days + (1 if length.seconds else 0)
+    """How long one occurrence runs, in the unit a person would say it in."""
+    if length < timedelta(hours=1):
+        return f"{round(length.total_seconds() / 60)} minutes"
     if length < timedelta(days=1):
         hours = round(length.total_seconds() / 3600, 1)
-        return f"{hours:g} hours"
+        return "an hour" if hours == 1 else f"{hours:g} hours"
+    days = length.days + (1 if length.seconds else 0)
     return "a day" if days == 1 else f"{days} days"
 
 

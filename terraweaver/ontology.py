@@ -308,18 +308,33 @@ class Entity:
         return current_world().get(cls, **attrs)
 
     @classmethod
-    def new(cls, *, starts=None, until=None, ttl=None, permanent: bool = False, **attrs):
+    def new(cls, *, starts=None, until=None, ttl=None, permanent: bool = False,
+            every=None, lasting=None, **attrs):
         """A new entity. If one just like it already exists, the user is asked before creating."""
-        return current_world().new(cls, starts=starts, until=until, ttl=ttl, permanent=permanent, **attrs)
+        made = current_world().new(cls, starts=starts, until=until, ttl=ttl, permanent=permanent,
+                                   **attrs)
+        return _also_repeats(made, every, lasting, starts, until)
 
     @classmethod
-    def ensure(cls, *, starts=None, until=None, ttl=None, permanent: bool = False, **attrs):
+    def ensure(cls, *, starts=None, until=None, ttl=None, permanent: bool = False,
+               every=None, lasting=None, **attrs):
         """Existing or new — for when you genuinely can't tell which."""
-        return current_world().ensure(cls, starts=starts, until=until, ttl=ttl, permanent=permanent, **attrs)
+        found = current_world().ensure(cls, starts=starts, until=until, ttl=ttl,
+                                       permanent=permanent, **attrs)
+        return _also_repeats(found, every, lasting, starts, until)
 
-    def keep(self, *, starts=None, until=None, ttl=None, permanent: bool = False) -> None:
-        """Set when this entity holds: starts=date, until=date / ttl=timedelta, permanent=True."""
-        current_world().set_period(self, starts=starts, until=until, ttl=ttl, permanent=permanent)
+    def keep(self, *, starts=None, until=None, ttl=None, permanent: bool = False,
+             every=None, lasting=None) -> None:
+        """Set when this entity holds: starts=date, until=date / ttl=timedelta, permanent=True.
+
+        `every=` makes it cyclic instead of one-off — see repeat(), which this passes through to."""
+        if starts is not None or until is not None or ttl is not None or permanent:
+            current_world().set_period(self, starts=starts, until=until, ttl=ttl,
+                                       permanent=permanent)
+        elif every is None:
+            current_world().set_period(self)  # says, in one place, what a period needs
+        if every is not None:
+            self.repeat(every=every, lasting=lasting, starts=starts, until=until)
 
     def repeat(self, *, every, lasting=None, starts=None, until=None, tag: str | None = None):
         """Say that this happens again and again: `every="2 weeks"`, `every="month"`, a timedelta.
@@ -419,10 +434,15 @@ class Entity:
             return history(self) if history else []
         return current_world().history.of(self, attr)
 
-    def relate(self, other, kind: str, /, *, starts=None, until=None, ttl=None, permanent: bool = False, **attrs):
-        """Record that this entity stands in relation `kind` to `other`; returns the relation."""
-        return current_world().relate(self, other, kind, starts=starts, until=until, ttl=ttl,
+    def relate(self, other, kind: str, /, *, starts=None, until=None, ttl=None,
+               permanent: bool = False, every=None, lasting=None, **attrs):
+        """Record that this entity stands in relation `kind` to `other`; returns the relation.
+
+        A relation takes a period like anything else, and a cyclic one the same way: a cleaner
+        every other week, a class every Tuesday term-time."""
+        made = current_world().relate(self, other, kind, starts=starts, until=until, ttl=ttl,
                                       permanent=permanent, **attrs)
+        return _also_repeats(made, every, lasting, starts, until)
 
     def relations(self, kind: str | None = None, *, any_time: bool = False, history: bool = False) -> list:
         """The relations this entity takes part in — of one type, or all."""
@@ -925,6 +945,14 @@ def _as_statement(value):
     if hasattr(value, "isoformat"):
         return value.isoformat()
     return value
+
+
+def _also_repeats(made, every, lasting, starts, until):
+    """`every=` is two more period keywords, not a second way of writing: whatever door wrote
+    the period writes the repeat through the same one call."""
+    if every is not None and isinstance(made, Entity):
+        made.repeat(every=every, lasting=lasting, starts=starts, until=until)
+    return made
 
 
 def _period_text(starts, until) -> str:
