@@ -114,6 +114,26 @@ class WorldView:
         touched = self._touched() if here else None
         return self._world.questions.open_(limit, here=touched)
 
+    def tags(self) -> dict:
+        """Every tag in this world: how often it is used, on what, and how it has been written."""
+        return self._world.tags()
+
+    def tagged(self, tag: str) -> list:
+        """Everything carrying this tag, however it was written."""
+        return self._world.tagged(tag)
+
+    def merge_tags(self, into: str, *others: str) -> int:
+        """Make several tags one: everything carrying any of them ends up carrying the first."""
+        return self._world.merge_tags(into, *others)
+
+    def like(self, text: str, limit: int = 5, kind: str | None = None) -> list:
+        """What in this world reads like that — by meaning, not by the words used."""
+        return self._world.like(text, limit, kind)
+
+    def rebuild(self) -> int:
+        """Build every entity again from what was said. Safe, and states nothing."""
+        return len(self._world.rebuild())
+
     def comments(self, since=None, until=None, contains: str | None = None, limit: int = 50,
                  include_expired: bool = False, any_time: bool = False):
         """Dated remarks across every entity, newest first; include_expired=True adds history."""
@@ -131,7 +151,8 @@ class WorldView:
         print(f"[unpinned] {', '.join(names)}")
 
     def __repr__(self):
-        return "<world: all, find, get, new, ensure, settle, comments, pin, unpin, owner, me, pending>"
+        return ("<world: all, find, get, new, ensure, settle, comments, questions, tags, tagged, "
+                "merge_tags, like, rebuild, pin, unpin, owner, me, pending>")
 
 
 class WorldRuntime:
