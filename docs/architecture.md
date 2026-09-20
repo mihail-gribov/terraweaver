@@ -74,6 +74,26 @@ the name it knows, because it is the one that knows "Миша" and "Михаил
 keeps every form it was given, so either will usually find him — but canonicalising is the
 model's job, and the table in the world is only the net underneath.
 
+## Two identities, and why both
+
+An entity carries two: `id`, the image built from statements, and `subject_id`, the identity in
+the record that new words about it attach to. They are the same until two subjects turn out to be
+one person; then the image speaks for both, while everything said from that point lands on one
+subject rather than on the cluster.
+
+That is what makes a wrong identification cheap. Say the world joined two people it shouldn't
+have. Because every statement stayed with the subject it was made about, splitting them puts each
+back where it belongs — including what was said during the time they were joined. Had new words
+been attached to the image, they would have nowhere to go on a split, and the mistake would be
+permanent in exactly the way this architecture exists to avoid.
+
+Three sources, and only three. Everything arriving through the assistant — the person's own words
+and whatever the assistant concluded from them — is one source, `agent`. The world cannot tell
+those apart and does not try: what the assistant passes on is the assistant's responsibility. A
+named source (a file, a register, a site) is checkable and outranked by the person's own account
+of their life. `world` is what this world worked out for itself, the weakest of the three, and it
+lives in the `reasoning_` tables rather than the `facts_` ones.
+
 ## What was said, and what the world worked out
 
 Not every statement is something someone said. Some are what the world concluded: a hundred

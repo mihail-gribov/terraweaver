@@ -24,7 +24,8 @@ belongs to, so a statement can be found without knowing where to look.
     stated_at    when we were first told this          2026-09-20 10:14
     restated_at when it was last said again, and `times` how often — the same thing said twice
                  is one statement that has been heard twice, not two statements
-    source       whose word it is        user | agent | companies-house.gov.uk
+    source       where it came from      agent (through the assistant) | a named source |
+                                         world (what this world worked out for itself)
     run_id       in which run — and, once work is organised into tickets, which ticket
     basis        what a conclusion was drawn from, with a digest: move the basis and the
                  conclusion is stale
@@ -77,10 +78,16 @@ CREATE INDEX IF NOT EXISTS idx_{table}_subject ON {table}(subject, slot);
 COLUMNS = ("id, subject, slot, value, valid_from, valid_until, stated_at, restated_at, times, "
            "source, run_id, basis, basis_digest")
 
-# Whose word outranks whose, when two statements cover the same slot at the same time. The user
-# is the authority on their own life; a checkable source outranks the assistant's inference on
-# matters of form; the assistant's own conclusion is the weakest thing in the world.
-TRUST = {"user": 3, "agent": 1}
+# Where a statement came from, and which wins when two cover the same slot at the same time.
+#
+# There are three, and only three. Everything that arrives through the assistant — the user's own
+# words, and whatever the assistant concluded from them — is one source: `agent`. The world
+# cannot tell those apart and does not try; what the assistant passes on is the assistant's
+# responsibility. A named source is a file, a register, a site: checkable, and outranked by the
+# person's own account of their life. `world` is what this world worked out for itself, the
+# weakest thing here, and it lives in the `reasoning_` tables rather than the `facts_` ones.
+TOLD, WORKED = "agent", "world"
+TRUST = {TOLD: 3, WORKED: 1}
 SOURCE_TRUST = 2  # anything else is a named source: a site, a register, a document
 
 
@@ -177,7 +184,7 @@ class Facts:
 
     # --- writing ---
 
-    def state(self, subject: str, slot: str, value, *, source: str = "user", valid_from=None,
+    def state(self, subject: str, slot: str, value, *, source: str = TOLD, valid_from=None,
               valid_until=None, run_id: str | None = None, stated_at=None,
               class_name: str | None = None) -> str:
         """Record that someone said this. Never replaces an earlier statement — it joins it.
@@ -217,7 +224,7 @@ class Facts:
                              f"believing its own guesses")
         ids = sorted(s.id if isinstance(s, Statement) else str(s) for s in basis)
         return self._insert(self.table(self._class(subject, class_name), WORKED_OUT), subject,
-                            slot, value, valid_from, valid_until, _now(), "agent", run_id, ids)
+                            slot, value, valid_from, valid_until, _now(), WORKED, run_id, ids)
 
     def retract(self, statement_id: str, by: str | None = None) -> None:
         """Take a statement back — it was wrong, or the run that made it was undone. It stays in

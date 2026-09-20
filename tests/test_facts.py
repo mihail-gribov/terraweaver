@@ -30,17 +30,17 @@ def main() -> int:
 
     # Two people the user mentioned on different days, both called Anna. Nothing yet says whether
     # they are one person; the loose rule glues them, which is usually right.
-    facts.state("p1", "full_name", "Anna", source="user")
-    facts.state("p2", "full_name", "Anna", source="user")
+    facts.state("p1", "full_name", "Anna", source="agent")
+    facts.state("p2", "full_name", "Anna", source="agent")
     glued = images_of(facts)
     check("two subjects with the same name come out as one image", len(glued) == 1, str(glued))
 
     # A surname turns up for one of them, and an email for the other. They come apart — and
     # everything each of them said stays with the right one.
-    facts.state("p1", "full_name", "Anna Sullivan", source="user")
-    facts.state("p1", "email", "anna.sullivan@example.com", source="user")
-    facts.state("p2", "full_name", "Anna Peterson", source="user")
-    facts.state("p2", "email", "anna.peterson@example.com", source="user")
+    facts.state("p1", "full_name", "Anna Sullivan", source="agent")
+    facts.state("p1", "email", "anna.sullivan@example.com", source="agent")
+    facts.state("p2", "full_name", "Anna Peterson", source="agent")
+    facts.state("p2", "email", "anna.peterson@example.com", source="agent")
     apart = images_of(facts)
     check("a distinguishing fact splits them on the next rebuild", len(apart) == 2, str(apart))
     names = sorted(image.values.get("full_name") for image in apart.values())
@@ -58,44 +58,45 @@ def main() -> int:
 
     # --- what the user settles outranks any rule ---
     facts = Facts(sqlite3.connect(":memory:"))
-    facts.state("a1", "full_name", "Anna Sullivan", source="user")
-    facts.state("a2", "full_name", "Anna Peterson", source="user")
-    facts.state("a1", assembly.SAME_AS, reference("a2"), source="user")
+    facts.state("a1", "full_name", "Anna Sullivan", source="agent")
+    facts.state("a2", "full_name", "Anna Peterson", source="agent")
+    facts.state("a1", assembly.SAME_AS, reference("a2"), source="agent")
     check("the user saying they are the same holds against the rule",
           len(images_of(facts, rule=lambda x, y: False)) == 1, str(images_of(facts, rule=lambda x, y: False)))
     facts = Facts(sqlite3.connect(":memory:"))
-    facts.state("b1", "full_name", "Anna", source="user")
-    facts.state("b2", "full_name", "Anna", source="user")
-    facts.state("b1", assembly.NOT_SAME_AS, reference("b2"), source="user")
+    facts.state("b1", "full_name", "Anna", source="agent")
+    facts.state("b2", "full_name", "Anna", source="agent")
+    facts.state("b1", assembly.NOT_SAME_AS, reference("b2"), source="agent")
     check("and the user saying they are different survives a rule that would merge them",
           len(images_of(facts, rule=lambda x, y: True)) == 2, str(images_of(facts, rule=lambda x, y: True)))
 
     # --- whose word wins when two statements cover the same slot ---
     facts = Facts(sqlite3.connect(":memory:"))
-    facts.state("c1", "full_name", "Acme", source="agent")
-    facts.state("c1", "name", "Acme Inc", source="agent")
+    facts.state("c1", "full_name", "Acme", source="world")
+    facts.state("c1", "name", "Acme Inc", source="world")
     facts.state("c1", "name", "Acme Corporation Ltd", source="companies-house.gov.uk")
-    facts.state("c1", "email", "hi@acme.test", source="agent")
-    facts.state("c1", "email", "hello@acme.test", source="user")
+    facts.state("c1", "email", "hi@acme.test", source="world")
+    facts.state("c1", "email", "hello@acme.test", source="agent")
     image = list(images_of(facts).values())[0]
-    check("a checkable source outranks the assistant's own conclusion",
+    check("a checkable source outranks what the world worked out itself",
           image.values["name"] == "Acme Corporation Ltd", str(image.values))
-    check("and the user outranks both", image.values["email"] == "hello@acme.test", str(image.values))
-    check("the image says whose word each value is",
-          image.sources["email"] == "user" and image.sources["name"] == "companies-house.gov.uk",
+    check("and what came through the assistant outranks both",
+          image.values["email"] == "hello@acme.test", str(image.values))
+    check("the image says where each value came from",
+          image.sources["email"] == "agent" and image.sources["name"] == "companies-house.gov.uk",
           str(image.sources))
 
     # --- two statements of equal standing are a disagreement, not a silent choice ---
-    facts.state("c1", "email", "other@acme.test", source="user")
+    facts.state("c1", "email", "other@acme.test", source="agent")
     image = list(images_of(facts).values())[0]
     check("the later of two equals is shown", image.values["email"] == "other@acme.test", str(image.values))
     check("and the one it beat is reported, not hidden", image.conflicts.get("email"), str(image.conflicts))
 
     # --- time is part of a statement ---
     facts = Facts(sqlite3.connect(":memory:"))
-    facts.state("d1", "full_name", "Dana", source="user")
-    facts.state("d1", "organization", "TechCorp", source="user", valid_until=date(2026, 9, 1))
-    facts.state("d1", "organization", "DataWorks", source="user", valid_from=date(2026, 9, 1))
+    facts.state("d1", "full_name", "Dana", source="agent")
+    facts.state("d1", "organization", "TechCorp", source="agent", valid_until=date(2026, 9, 1))
+    facts.state("d1", "organization", "DataWorks", source="agent", valid_from=date(2026, 9, 1))
     now = assembly.assemble(facts, at=datetime(2026, 9, 20))
     before = assembly.assemble(facts, at=datetime(2026, 6, 1))
     check("the image shows what holds now",
@@ -105,7 +106,7 @@ def main() -> int:
 
     # --- a run can be taken back ---
     facts = Facts(sqlite3.connect(":memory:"))
-    facts.state("e1", "full_name", "Eve", source="user")
+    facts.state("e1", "full_name", "Eve", source="agent")
     facts.state("e1", "email", "eve@example.com", source="agent", run_id="r-7")
     facts.state("e1", "phone", "+15550000000", source="agent", run_id="r-7")
     undone = facts.retract_run("r-7")
@@ -117,9 +118,9 @@ def main() -> int:
 
     # --- what the world worked out for itself, and what from ---
     facts = Facts(sqlite3.connect(":memory:"))
-    facts.state("p1", "notes", "never asks twice", source="user")
+    facts.state("p1", "notes", "never asks twice", source="agent")
     said = facts.about("p1")
-    facts.state("p1", "notes", "hates small talk", source="user")
+    facts.state("p1", "notes", "hates small talk", source="agent")
     basis = facts.about("p1")
     made = facts.conclude("p1", "character", "keeps a distance, decides fast", basis=basis)
     conclusion = [s for s in facts.about("p1") if s.id == made][0]
@@ -128,7 +129,7 @@ def main() -> int:
           str(facts.basis_of(conclusion)))
     check("and is fresh while that basis stands", not facts.stale(conclusion))
     check("anything anyone said outranks it",
-          assembly.resolve([s for s in facts.about("p1") if s.slot == "notes"])[0].source == "user")
+          assembly.resolve([s for s in facts.about("p1") if s.slot == "notes"])[0].source == "agent")
     facts.retract(basis[-1].id)
     check("when the basis moves it goes stale", facts.stale(conclusion))
     second = None
@@ -139,7 +140,7 @@ def main() -> int:
     check("a conclusion is never drawn from a conclusion", second is not None and "guesses" in second,
           str(second))
     check("and the world can take back everything it concluded",
-          len([s for s in facts.about("p1") if s.source == "agent"]) == 1)
+          len([s for s in facts.about("p1") if s.source == "world"]) == 1)
 
     # --- and a rebuilt image knows which of its values it worked out ---
     image = list(assembly.assemble(facts).values())[0]
@@ -148,15 +149,15 @@ def main() -> int:
     check("and marks it as worked out, not told", image.judged == {"character"}, str(image.judged))
     check("a judgement whose basis has moved is shown as stale", image.stale == {"character"},
           str(image.stale))
-    facts.state("p1", "character", "warmer than he looks", source="user")
+    facts.state("p1", "character", "warmer than he looks", source="agent")
     image = list(assembly.assemble(facts).values())[0]
     check("and a word from the user replaces it outright",
           image.values["character"] == "warmer than he looks" and not image.judged, str(image.values))
 
     # --- the tables read like the architecture ---
     facts = Facts(sqlite3.connect(":memory:"))
-    facts.state("t1", "full_name", "Tam", source="user", class_name="Person")
-    facts.state("t2", "name", "Acme", source="user", class_name="Organization")
+    facts.state("t1", "full_name", "Tam", source="agent", class_name="Person")
+    facts.state("t2", "name", "Acme", source="agent", class_name="Organization")
     said = facts.about("t1")
     facts.conclude("t1", "character", "brisk", basis=said)
     check("what was said goes in its class's facts table",
@@ -175,8 +176,8 @@ def main() -> int:
 
     # --- the same thing said again is the same statement, heard again ---
     facts = Facts(sqlite3.connect(":memory:"))
-    first = facts.state("r1", "email", "ada@example.com", source="user", class_name="Person")
-    again = facts.state("r1", "email", "ada@example.com", source="user")
+    first = facts.state("r1", "email", "ada@example.com", source="agent", class_name="Person")
+    again = facts.state("r1", "email", "ada@example.com", source="agent")
     check("saying it twice doesn't make two statements", first == again, f"{first} / {again}")
     only = facts.about("r1")[0]
     check("it counts how often it was heard", only.times == 2, str(only.times))
@@ -190,10 +191,10 @@ def main() -> int:
     specs = {"Person": {"attributes": [{"name": "email", "type": "list[email]"},
                                        {"name": "organization", "type": "ref:Organization"}]}}
     facts = Facts(sqlite3.connect(":memory:"))
-    facts.state("m1", "email", "ada@work.example", source="user", class_name="Person")
-    facts.state("m1", "email", "ada@home.example", source="user")
-    facts.state("m1", "organization", "TechCorp", source="user")
-    facts.state("m1", "organization", "DataWorks", source="user")
+    facts.state("m1", "email", "ada@work.example", source="agent", class_name="Person")
+    facts.state("m1", "email", "ada@home.example", source="agent")
+    facts.state("m1", "organization", "TechCorp", source="agent")
+    facts.state("m1", "organization", "DataWorks", source="agent")
     image = list(assembly.assemble(facts, specs=specs).values())[0]
     check("two addresses are two addresses, not a quarrel",
           sorted(image.values["email"]) == ["ada@home.example", "ada@work.example"],
@@ -204,7 +205,7 @@ def main() -> int:
     # --- a name has forms, and none of them contradicts the others ---
     facts = Facts(sqlite3.connect(":memory:"))
     for form in ("Michael", "Mike", "Michael Gribov"):
-        facts.state("n1", "full_name", form, source="user", class_name="Person")
+        facts.state("n1", "full_name", form, source="agent", class_name="Person")
     image = list(assembly.assemble(facts).values())[0]
     check("every form of the name is kept", image.names == ["Michael Gribov", "Mike", "Michael"],
           str(image.names))
@@ -214,24 +215,24 @@ def main() -> int:
 
     # --- a name form has to be vouched for, because names decide who is who ---
     facts = Facts(sqlite3.connect(":memory:"))
-    facts.state("s1", "full_name", "Michael Gribov", source="user", class_name="Person")
+    facts.state("s1", "full_name", "Michael Gribov", source="agent", class_name="Person")
     for guess in ("Mike Gribov", "Sota"):
-        facts.state("s1", "full_name", guess, source="agent")
+        facts.state("s1", "full_name", guess, source="world")
     image = list(assembly.assemble(facts).values())[0]
     check("a known form of the name needs nobody's permission", "Mike Gribov" in image.names,
           str(image.names))
     check("a nickname the world invented waits for a word", image.proposed_names == ["Sota"],
           str(image.proposed_names))
-    facts.state("s1", "full_name", "Sota", source="user")
+    facts.state("s1", "full_name", "Sota", source="agent")
     image = list(assembly.assemble(facts).values())[0]
     check("and one word from the user is enough",
           "Sota" in image.names and not image.proposed_names, str(image.names))
 
     # --- and a guessed name takes part in nothing until then ---
     facts = Facts(sqlite3.connect(":memory:"))
-    facts.state("x1", "full_name", "Sasha Orlov", source="user", class_name="Person")
-    facts.state("x2", "full_name", "Sota Ivanov", source="user", class_name="Person")
-    facts.state("x2", "full_name", "Sasha Orlov", source="agent")  # the world thinks they are one
+    facts.state("x1", "full_name", "Sasha Orlov", source="agent", class_name="Person")
+    facts.state("x2", "full_name", "Sota Ivanov", source="agent", class_name="Person")
+    facts.state("x2", "full_name", "Sasha Orlov", source="world")  # the world thinks they are one
     check("a guessed name doesn't merge two people",
           len(assembly.assemble(facts)) == 2, str(assembly.assemble(facts)))
 

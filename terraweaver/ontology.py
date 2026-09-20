@@ -166,16 +166,18 @@ def ask_if_questioned(entity, token: str) -> None:
         _CHANGED.ask_now.append(line)
 
 
-_STATING = ("user", None)
+_STATING = ("agent", None)
 
 
 @contextmanager
 def stating(source: str, run_id: str | None = None):
     """Whose word the writes inside this block are, and what run they belong to.
 
-    The default is the user: a host assigning an attribute is relaying what it was told. The
-    world's own work says so — `stating("agent", ticket)` — and what it writes then carries the
-    lowest standing and can be taken back in one move."""
+    The default is `agent`: everything that arrives through the assistant, whether it was
+    relayed or concluded. The world can't tell those apart and doesn't try — what the assistant
+    passes on is the assistant's responsibility. The world's own work says `stating("world",
+    ticket)`, and what it writes then carries the lowest standing and comes back off in one
+    move."""
     global _STATING
     before = _STATING
     _STATING = (source, run_id)
@@ -431,6 +433,16 @@ class Entity:
         return current_world().comments.add(self, text, when=when if when is not None else starts,
                                             tentative=tentative, until=until, ttl=ttl, permanent=permanent)
 
+    @property
+    def subject_id(self):
+        """This entity's identity in the record — where new statements about it are attached.
+
+        An entity has two: `id`, which is the image built from statements, and this, the subject
+        those statements are about. They are the same until two subjects turn out to be one
+        person, and then the image keeps both while every new word still lands on one of them.
+        """
+        return self.__dict__.get("_subject") or self.id
+
     def why(self, attr: str):
         """What the world worked out for this attribute, and what it rests on — for when the user
         asks why you think so. It comes back as the judgement, the statements behind it, and
@@ -566,7 +578,10 @@ class Entity:
             world = world_if_bound()
             if world is not None and getattr(world, "facts", None) is not None:
                 source, run_id = stated_by()
-                world.facts.state(self.id, name, _as_statement(value), source=source,
+                # Against the subject, not the image: an entity is a cluster of subjects
+                # (assembly.py), and a statement made now must stay with the one it was made
+                # about — otherwise a later split cannot put anything back where it belongs.
+                world.facts.state(self.subject_id, name, _as_statement(value), source=source,
                                   run_id=run_id, class_name=type(self).__name__)
         if not name.startswith("_"):
             _note_changed(self, name)

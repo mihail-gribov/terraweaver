@@ -62,10 +62,58 @@ def same_name(a_facts: list, b_facts: list) -> bool:
             return False
     # Only names someone vouched for: a nickname the world guessed at must not merge two people.
     a_names = [_text(f.value) for f in a_facts
-               if f.slot in matching.NAME_KEYS.values() and f.source != "agent"]
+               if f.slot in matching.NAME_KEYS.values() and f.source != facts_module.WORKED]
     b_names = [_text(f.value) for f in b_facts
-               if f.slot in matching.NAME_KEYS.values() and f.source != "agent"]
-    return any(matching.similarity(a, b) >= matching.PART_CEILING for a in a_names for b in b_names)
+               if f.slot in matching.NAME_KEYS.values() and f.source != facts_module.WORKED]
+    # Both ways round: "Anna" asked against "Anna Sullivan" scores differently from the reverse,
+    # and which of them the host happened to write down first shouldn't decide who someone is.
+    return any(max(matching.similarity(a, b), matching.similarity(b, a)) >= matching.PART_CEILING
+               for a in a_names for b in b_names)
+
+
+@dataclass
+class Unsettled:
+    """Two subjects that might be one person, with what would settle it."""
+
+    subjects: tuple
+    names: tuple
+    missing: list          # what neither of them has, and either would decide it
+
+    def __repr__(self):
+        return (f"<unsettled {self.names[0]!r} / {self.names[1]!r} — "
+                f"would settle it: {', '.join(self.missing)}>")
+
+
+def unsettled(facts, rule: Callable[[list, list], bool] = same_name) -> list[Unsettled]:
+    """Pairs the rules can neither join nor separate, and what would decide them.
+
+    A third outcome, and the useful one to act on. The agent writes about "Anna" and the world
+    already knows two; there is nothing to merge on and nothing to tell them apart by, so the
+    statements sit on a subject of their own and the image is a stranger. What is needed is not a
+    better rule — it is one more fact, and the world knows exactly which: an email, a surname,
+    where she works. Asking for that is a better question than asking which of two rows to pick.
+    """
+    belongs = clusters(facts, rule)
+    by_subject = {s: facts.about(s) for s in facts.subjects()}
+    told_apart = {frozenset((f.subject, f.refers_to)) for f in facts.with_slot(NOT_SAME_AS)
+                  if f.refers_to}
+    out = []
+    for a, b in matching_pairs(by_subject, rule, told_apart):
+        if belongs[a] == belongs[b]:
+            continue  # already one entity: nothing to ask
+        a_names, b_names = _names_of(by_subject[a]), _names_of(by_subject[b])
+        if not a_names or not b_names:
+            continue
+        missing = [slot for slot in DISTINGUISHING
+                   if not any(f.slot == slot for f in by_subject[a])
+                   or not any(f.slot == slot for f in by_subject[b])]
+        out.append(Unsettled((a, b), (a_names[0], b_names[0]), missing or ["a fuller name"]))
+    return out
+
+
+def _names_of(statements: list) -> list:
+    return [_text(f.value) for f in statements
+            if f.slot in matching.NAME_KEYS.values() and f.source != facts_module.WORKED]
 
 
 def clusters(facts, rule: Callable[[list, list], bool] = same_name) -> dict[str, str]:
@@ -90,16 +138,34 @@ def clusters(facts, rule: Callable[[list, list], bool] = same_name) -> dict[str,
     for a, b in told_same:  # what the user settled is not the rule's business
         if a in leader and b in leader:
             union(a, b)
+    # Who could be whom, worked out for everyone before anything is joined. Doing it as we go
+    # would let the order subjects happen to be in decide who someone is: the first Anna would
+    # take the ambiguous mention and the second would never get a look.
+    matches = matching_pairs(by_subject, rule, told_apart)
+    partners: dict = {subject: set() for subject in by_subject}
+    for a, b in matches:
+        partners[a].add(b)
+        partners[b].add(a)
+    for a, b in matches:
+        # One candidate each way is an answer. Two is a question — and merging into either would
+        # be a guess dressed up as a fact. The world knows two Annas; a third mention of "Anna"
+        # belongs to neither until something says which (see `unsettled`).
+        if len(partners[a]) == 1 and len(partners[b]) == 1:
+            union(a, b)
+    return {subject: find(subject) for subject in by_subject}
+
+
+def matching_pairs(by_subject: dict, rule: Callable[[list, list], bool], told_apart: set) -> list:
+    """Every pair the rule would join, before anything is decided about them."""
+    out = []
     subjects = sorted(by_subject)
     for i, a in enumerate(subjects):
         for b in subjects[i + 1:]:
-            if frozenset((a, b)) in told_apart or find(a) == find(b):
-                continue
-            if _kept_apart(told_apart, find, a, b):
+            if frozenset((a, b)) in told_apart:
                 continue
             if rule(by_subject[a], by_subject[b]):
-                union(a, b)
-    return {subject: find(subject) for subject in by_subject}
+                out.append((a, b))
+    return out
 
 
 def _kept_apart(told_apart: set, find: Callable[[str], str], a: str, b: str) -> bool:
@@ -130,13 +196,13 @@ def name_forms(statements: list, at: datetime) -> tuple[list, list]:
     vouched, proposed, seen = [], [], set()
     # Everything someone vouched for first: what the world proposes is judged against those, and
     # judging it against a half-built list would depend on the order statements happened to come.
-    for statement in [s for s in fullest_first if s.source != "agent"] + \
-                     [s for s in fullest_first if s.source == "agent"]:
+    for statement in [s for s in fullest_first if s.source != facts_module.WORKED] + \
+                     [s for s in fullest_first if s.source == facts_module.WORKED]:
         key = " ".join(str(statement.value).lower().split())
         if key in seen:
             continue
         seen.add(key)
-        if statement.source != "agent":
+        if statement.source != facts_module.WORKED:
             vouched.append(statement.value)
         elif any(nameforms.same_name(statement.value, form) for form in vouched):
             # Not a guess about this person: "Mike" is how the language says "Michael", and that
@@ -200,7 +266,7 @@ def assemble(facts, rule: Callable[[list, list], bool] = same_name, at: datetime
                 if image.names:
                     image.values[slot] = image.names[0]
                     image.sources[slot] = next(s.source for s in reversed(statements)
-                                               if s.source != "agent")
+                                               if s.source != facts_module.WORKED)
                 continue
             if holds_many(specs, class_name, slot):
                 # Everything still standing, newest first. Nothing here is a rival to anything.

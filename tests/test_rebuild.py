@@ -62,8 +62,8 @@ def main() -> int:
 
     # --- a rule can change, and the world is rebuilt by it ---
     w2 = open_world()
-    w2.world.facts.state("q1", "full_name", "Anna", source="user", class_name="Person")
-    w2.world.facts.state("q2", "full_name", "Anna", source="user", class_name="Person")
+    w2.world.facts.state("q1", "full_name", "Anna", source="agent", class_name="Person")
+    w2.world.facts.state("q2", "full_name", "Anna", source="agent", class_name="Person")
     w2.world.rebuild()
     check("a loose rule glues two subjects into one entity",
           len([p for p in w2.classes["Person"].all(limit=None) if p.full_name == "Anna"]) == 1,
@@ -72,6 +72,32 @@ def main() -> int:
     check("a strict one builds two, from the same statements",
           len([p for p in w2.classes["Person"].all(limit=None) if p.full_name == "Anna"]) == 2,
           str(w2.classes["Person"].all(limit=None)))
+
+    # --- an entity has two identities: the image, and the subject words attach to ---
+    w3 = open_world()
+    facts = w3.world.facts
+    facts.state("u1", "full_name", "Anna Sullivan", source="agent", class_name="Person")
+    facts.state("u2", "full_name", "Anna Sullivan", source="agent", class_name="Person")
+    facts.state("u2", "notes", "met at the meetup", source="agent")
+    w3.world.rebuild()
+    anna = [p for p in w3.classes["Person"].all(limit=None) if p.full_name == "Anna Sullivan"]
+    check("two subjects saying the same name build one entity", len(anna) == 1, str(anna))
+    check("which knows the subjects it was built from",
+          sorted(anna[0].__dict__["_subjects"]) == ["u1", "u2"], str(anna[0].__dict__.get("_subjects")))
+    check("and what either of them said", anna[0].notes == "met at the meetup", str(anna[0].notes))
+
+    w3.run('anna = Person.get(full_name="Anna Sullivan")\nanna.phone = "+15550000000"', "host")
+    said = [s for s in facts.all() if s.slot == "phone"]
+    check("a new word lands on a subject, not on the image",
+          len(said) == 1 and said[0].subject in ("u1", "u2"), str(said))
+
+    # --- and when the world learns they are two people, each keeps its own ---
+    facts.state("u1", assembly.NOT_SAME_AS, {"$subject": "u2"}, source="agent")
+    w3.world.rebuild()
+    split = [p for p in w3.classes["Person"].all(limit=None) if p.full_name == "Anna Sullivan"]
+    check("they come apart again", len(split) == 2, str(split))
+    check("and what was said about each stays with it",
+          sorted(bool(p.notes) for p in split) == [False, True], str([p.notes for p in split]))
 
     print()
     if failures:

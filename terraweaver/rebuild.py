@@ -35,6 +35,9 @@ def rebuild(world, rule=None, at: datetime | None = None) -> dict:
                 continue
             entity = object.__new__(world.classes[class_name])
             entity.id = image.id
+            # The image is built from these; new words about it attach to the leading one.
+            entity.__dict__["_subject"] = image.id
+            entity.__dict__["_subjects"] = list(image.subjects)
             built[image.id] = entity
         for image in images.values():
             entity = built.get(image.id)
