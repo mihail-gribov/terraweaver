@@ -15,6 +15,8 @@ ontology with a `relation` section that says how the link behaves; the world che
     reverse                the name read from the object's end ("members")
     labels                 what users typically call it; used to point a free Related link,
                            or a relationship label, to the type that fits
+    one_of_a_label         a label names a post one person holds at a time (a dentist, a
+                           manager) — a second one is worth a question; "friend" is not
     free                   Related: no characteristics, label and description required
 
 "At any time" is checked by overlapping validity periods, not by "now": divorced in 2020 and
@@ -337,7 +339,9 @@ def _note_same_label(world, name: str, rel: dict, subject, obj, attrs: dict, sta
     unless someone ends it. Say it; don't decide it — and keep the doubt (questions.py), because
     a hint is read once and this one outlives the run that raised it."""
     label = str(attrs.get("label") or attrs.get("role") or "").strip().lower()
-    if not label or rel.get("functional") == "at_any_time":
+    if not label or rel.get("functional") == "at_any_time" or not rel.get("one_of_a_label"):
+        # Only where a label names a post one person holds — a dentist, a manager. Two friends at
+        # once is not a contradiction, and a world that asks about it teaches people to ignore it.
         return
     same_label = [
         r for r in world.all(name, limit=None, history=True)

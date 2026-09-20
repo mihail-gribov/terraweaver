@@ -40,7 +40,8 @@
     ],
     "example": "linda.relate(kevin, \"authority\", label=\"manager\")",
     "reads": "Linda is Kevin's manager — the one in charge is the subject",
-    "notes": "Often recorded against a body rather than a person: whoever heads a department is linked to the department, not to each of its members. Reading one from the other is a step for whoever is asking."
+    "notes": "Often recorded against a body rather than a person: whoever heads a department is linked to the department, not to each of its members. Reading one from the other is a step for whoever is asking.",
+    "one_of_a_label": true
   },
   "attributes": [
     {

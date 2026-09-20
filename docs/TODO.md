@@ -17,6 +17,17 @@ The world is served over MCP; the host agent writes code against the object mode
 (`docs/procedural-memory.md`), `remember`, `research`, `extend` — builds on this loop, so it
 comes first.
 
+## A change that happened in the past can't be backdated
+
+`person.organization = new_place` ends the old membership *now* and opens the new one *now*. When
+the user says "she moved to Halden in July", there is no way to say so through the derived
+setter: the world records today. Seen in s24, where the answer correctly read "the change is
+recorded as ending today" — which is true and wrong at once.
+
+What it needs: the period to travel with the assignment (`person.set("organization", place,
+starts=date(...))`, or the same through `relate`), and `history("organization")` to read from the
+statements rather than from when the write happened.
+
 ## Judgements: the parts not built yet
 
 The layer itself works — `facts.conclude(...)` with a basis, staleness when the basis moves,

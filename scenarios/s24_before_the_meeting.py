@@ -62,7 +62,8 @@ PROBES = [
     ("Using my world (terraweaver): before I see Sofia tomorrow — where does she work now and what "
      "is she doing there, what did I promise her last time, what's new in her life, and what should "
      "I avoid?",
-     ["Halden", "Kaplan", "son", "Pike"], ["parental leave", "on leave"]),
+     # Saying the leave is over is right; presenting it as where she is now is not.
+     ["Halden", "Kaplan", "son", "Pike"], ["currently on leave", "is on parental leave"]),
     ("Using my world (terraweaver): when did I last see Sofia, and what did we talk about?",
      ["research"], []),
 ]

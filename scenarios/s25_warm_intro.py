@@ -69,7 +69,7 @@ PROBES = [
      "and who should I ask first?",
      ["Tomas", "Lena"], []),
     ("Using my world (terraweaver): is Georg Malm any use for getting into Orbital Freight?",
-     ["left", "no longer", "until 2024", "2024", "former"], []),
+     ["left|no longer|ended|former|2024"], []),
 ]
 
 LEVEL = "hard"
