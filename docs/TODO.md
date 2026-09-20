@@ -17,6 +17,12 @@ The world is served over MCP; the host agent writes code against the object mode
 (`docs/procedural-memory.md`), `remember`, `research`, `extend` — builds on this loop, so it
 comes first.
 
+## Parked: AGENT.md as the person's own growth
+
+`terraweaver/agentfile.py` parses class additions and procedures out of an AGENT.md — the same
+two upper levels the world grows for itself, written by hand instead. Written as a sketch, not
+wired in: the write path comes first. (`USER.md` and `soul.md` are live — see `selves.py`.)
+
 ## From the literature review (docs/related-work.md), in order
 
 1. **A check before the commit.** 20–26% of runs come back as errors and are rolled back whole;
