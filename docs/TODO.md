@@ -17,6 +17,22 @@ The world is served over MCP; the host agent writes code against the object mode
 (`docs/procedural-memory.md`), `remember`, `research`, `extend` — builds on this loop, so it
 comes first.
 
+## A hint the host ignores, a question the host answers itself
+
+Two failures from the same run, both host behaviour that the world can see but not prevent:
+
+- s20: the world hinted "Michael already has a dentist for that time: Arun Rao — both stand
+  unless you end one". The host read it, answered the user correctly ("Arun Rao through
+  September 30"), and never ended the relation. The answer was right, the world was wrong.
+- s19: `Person.get(full_name="Olga")` came back as a NeedsResolution; the host swallowed it in a
+  bare `except`, called `world.settle(needs, new=True)` on its own, and created a second Olga —
+  exactly what the guide forbids ("never answer it yourself — not even with new=True").
+
+The rule of this project is to enforce in code, not in the prompt, and neither of these is
+enforced today. Open: whether `settle(..., new=True)` can be made to require the user's answer
+(it can't be verified from inside the world), and whether a hint that is ignored should become
+part of the run result the next time the same write happens.
+
 ## Direction of relations, measured
 
 Hosts wrote relations backwards — `owner.relate(nina, "service", label="dentist")` for "my
