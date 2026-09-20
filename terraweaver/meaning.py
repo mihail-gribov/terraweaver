@@ -109,6 +109,10 @@ TOP_TEXTS = 3
 # average of the top few is unfair to whoever has fewer texts, and it showed: it put the wrong
 # person first once in six.
 BACKING = 0.35
+# How many texts are looked at at all before they are grouped into entities. Matching against
+# the closest few in the world rather than against everything is what keeps a weak resemblance
+# from becoming an answer just because nothing better was asked for.
+POOL = 50
 
 
 class Meanings:
@@ -197,15 +201,26 @@ class Meanings:
             if holding is not None and ref.startswith("text:") and ref not in holding:
                 continue
             vectors.setdefault(subject, []).append((said, json.loads(raw)))
+        # Only the closest texts in the whole world are considered, not every text there is.
+        # An entity whose best match is mediocre never enters the answer at all, which is where
+        # most of the noise came from — and it is the same work either way, since the texts are
+        # scored before they are grouped.
+        pool = max(POOL, limit * 10)
+        ranked = sorted(((score, subject, said) for subject, texts in vectors.items()
+                         for said, score in ((t, _close(wanted, v)) for t, v in texts)),
+                        reverse=True)[:pool]
+        kept: dict = {}
+        for score, subject, said in ranked:
+            kept.setdefault(subject, []).append((said, score))
         scored = []
-        for subject, texts in vectors.items():
-            each = sorted(((said, _close(wanted, vector)) for said, vector in texts),
-                          key=lambda pair: pair[1], reverse=True)
+        for subject, texts in kept.items():
+            each = texts  # already in order, and already the closest ones in the world
             best_text, best = each[0]
             if how == "best":
                 score = best
             elif how == "mean":
-                middle = _unit([sum(values) / len(texts) for values in zip(*(v for _, v in texts))])
+                mine = [v for said, v in vectors[subject]]
+                middle = _unit([sum(values) / len(mine) for values in zip(*mine)])
                 score = _close(wanted, middle)
             else:  # "all": the closest text decides, the rest of them have a say
                 rest = [score for _, score in each[1:TOP_TEXTS]]
@@ -266,7 +281,7 @@ class Meanings:
             # A slot may hold several tellings — descriptions usually do — and each one is its
             # own text: two people describing someone differently is two things to find them by,
             # not one blurred average.
-            if entity_id and len(row["text"].strip()) > 8:
+            if entity_id and worth_embedding(row["text"]):
                 yield row["ref"], entity_id, row["slot"], row["text"].strip()
         for class_name, cls in world.classes.items():
             names = [a["name"] for a in cls._spec["attributes"]
@@ -277,8 +292,21 @@ class Meanings:
             for entity in world.all(class_name, limit=None, history=True):
                 for name in names:
                     said = getattr(entity, name, None)
-                    if isinstance(said, str) and len(said.strip()) > 8:
+                    if isinstance(said, str) and worth_embedding(said):
                         yield f"{class_name}:{entity.id}:{name}", entity.id, name, said.strip()
+
+
+def worth_embedding(text: str) -> bool:
+    """Whether a text is long enough for a vector to mean anything.
+
+    A word or two carries almost no context, and the model gives it a high score against
+    anything: measured on bge-m3, a one-word text sits at 0.36 against subjects it has nothing
+    to do with, where a ten-word one sits at 0.28. Indexing those spends time on the texts most
+    likely to mislead. They are also the ones that need it least — a tag is found by its name
+    (world.where(tagged=...)) and a short phrase by its words (world.where(mentions=...)).
+    """
+    words = str(text or "").split()
+    return len(words) >= 3 and len(" ".join(words)) >= 12
 
 
 def _digest(text: str) -> str:
