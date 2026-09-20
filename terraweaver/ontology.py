@@ -9,7 +9,7 @@ import json
 from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import wraps
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -321,6 +321,88 @@ class Entity:
         """Set when this entity holds: starts=date, until=date / ttl=timedelta, permanent=True."""
         current_world().set_period(self, starts=starts, until=until, ttl=ttl, permanent=permanent)
 
+    def repeat(self, *, every, lasting=None, starts=None, until=None, tag: str | None = None):
+        """Say that this happens again and again: `every="2 weeks"`, `every="month"`, a timedelta.
+
+        A repeat is a rule, stated once — an anchor (when the first one is, `starts=`), a step,
+        how long each one lasts (`lasting=`, left out for a moment rather than a stretch) and
+        when the series stops (`until=`). It is kept in the same period table as every one-off
+        period, as one cyclic row rather than a thousand rows, and read with the same words:
+        entity.occurrences(...), entity.next_occurrence(), world.where(tagged=..., at=...).
+
+            standup.repeat(every="day", lasting=timedelta(minutes=30))
+            michael.repeat(every="3 weeks", lasting=timedelta(days=7), tag="on-call")
+            visa.repeat(every="5 years")
+        """
+        from terraweaver import periods, recurrence, tags as tagging, timeutil
+
+        step = recurrence.read(every)  # refuses here, where the host can still fix it
+        world = current_world()
+        if self.id is None:
+            world.save(self)
+        anchor = timeutil.check_start(starts) or self._anchor()
+        length = None
+        if lasting is not None:
+            length = lasting.total_seconds() / 86400 if hasattr(lasting, "total_seconds") else float(lasting)
+        source, run_id = stated_by()
+        rule = {"nature": "tags" if tag else "valid",
+                "value": tagging.canonical(tag) if tag else None,
+                "every": str(step), "lasting": length,
+                "anchor": anchor.isoformat(),
+                "ends": timeutil.check_start(until).isoformat() if until is not None else None}
+        world.facts.state(self.subject_id, periods.REPEATS, rule, source=source, run_id=run_id,
+                          class_name=type(self).__name__)
+        periods.rebuild(world)
+        note_hint(f"{self.display_name()}: {recurrence.describe(anchor, step, lasting, timeutil.check_start(until) if until is not None else None)}"
+                  + (f" — tagged {tagging.canonical(tag)}" if tag else ""))
+        return self
+
+    def _anchor(self):
+        """When the first one is, unless the host said: a dated attribute, else when it holds
+        from, else now. A repeat has to start somewhere, and guessing badly is worse than asking,
+        so the guess is only ever something this entity already says about itself."""
+        from terraweaver import timeutil
+
+        for attr in type(self)._spec["attributes"]:
+            if attr["name"] in _MANAGED_ATTRS or attr.get("derived"):
+                continue
+            value = self.__dict__.get(attr["name"])
+            if isinstance(value, datetime):
+                return value
+        return getattr(self, "valid_from", None) or timeutil.now()
+
+    def occurrences(self, since=None, until=None, tag: str | None = None) -> list:
+        """The times this happens inside a window — (starts, ends) pairs, ends None for a moment.
+
+        A rule has no end, so a question about it needs one: `since` defaults to now and `until`
+        to ninety days after that. Ask wider by saying so."""
+        from terraweaver import periods, tags as tagging, timeutil
+
+        world = current_world()
+        start = timeutil.check_start(since) or timeutil.now()
+        stop = timeutil.check_start(until) or (start + timedelta(days=90))
+        found = periods.stretches(world, self.subject_id, "tags" if tag else "valid",
+                                  tagging.canonical(tag) if tag else None, since=start, until=stop)
+        return [(begins, ends) for _, begins, ends in found]
+
+    def next_occurrence(self, after=None, tag: str | None = None):
+        """When the next one is, or None if nothing repeats here (or the series is over)."""
+        from terraweaver import periods, tags as tagging, timeutil
+
+        return periods.next_time(current_world(), self.subject_id, "tags" if tag else "valid",
+                                 tagging.canonical(tag) if tag else None,
+                                 after=timeutil.check_start(after) or timeutil.now())
+
+    def repeats(self) -> list[str]:
+        """What repeats about this one, in words: one line per rule."""
+        from terraweaver import periods, recurrence
+
+        out = []
+        for row in periods.cycles(current_world(), self.subject_id):
+            said = recurrence.describe(row["starts"], row["every"], row["lasting"], row["until"])
+            out.append(f"{row['value']}: {said}" if row["value"] else said)
+        return out
+
     def expire(self, at=None) -> None:
         """It no longer holds from `at` (default: now). It stays in the world as history."""
         from terraweaver import timeutil
@@ -411,6 +493,13 @@ class Entity:
                 moments.append((relation.valid_until, f"{what}: {other.display_name()} — until here"))
         start = timeutil.as_datetime(since) if since is not None else None
         end = timeutil.as_datetime(until) if until is not None else None
+        # What repeats belongs on a timeline as the rule plus the ones inside the window asked
+        # about: a series shown as its first occurrence reads as something that happened once.
+        for said in self.repeats():
+            moments.append((self.created_at, f"repeats — {said}"))
+        if start is not None and end is not None:
+            for begins, ends in self.occurrences(since=start, until=end):
+                moments.append((begins, "one of these" + (f", until {timeutil.show(ends)}" if ends else "")))
         out = []
         for when, what in moments:
             at = timeutil.moment(when)
@@ -476,13 +565,18 @@ class Entity:
         world = world_if_bound()
         return world is None or getattr(world, "facts", None) is None
 
-    def tag(self, *names: str, starts=None, until=None, ttl=None, permanent: bool = False):
-        """Put a tag on, for a while or for good.
+    def tag(self, *names: str, starts=None, until=None, ttl=None, permanent: bool = False,
+            every=None, lasting=None):
+        """Put a tag on, for a while, for good, or every so often.
 
         A tag is often true of something for a season and not after: `q3-push`, `apartment-hunt`,
         `on-loan`. Each one is stated on its own, so it carries a period like anything else in
         this world — and when the period is over it simply stops being one of this thing's tags,
         without anybody deleting anything.
+
+        `every=` makes that period cyclic instead of one-off — on call every third week, closed
+        every August. The rule is stated once and the period table keeps it as one row; see
+        repeat() below, which this passes through to.
         """
         from terraweaver import tags as tagging
 
@@ -500,6 +594,11 @@ class Entity:
         if self.id is None:
             world.save(self)
         for name in names:
+            if every is not None:
+                self.repeat(every=every, lasting=lasting, tag=name,
+                            starts=period.get("valid_from") or starts,
+                            until=period.get("valid_until"))
+                continue
             world.facts.state(self.subject_id, "tags", name, source=source,
                               run_id=run_id, class_name=type(self).__name__,
                               valid_from=period.get("valid_from"),

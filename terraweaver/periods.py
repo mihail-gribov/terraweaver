@@ -15,6 +15,16 @@ stretch, coalesced — the same relation to the statements that images have, and
     value     which one — the tag, the other end of the relation, or nothing for plain validity
     starts    from                   (null: since it was said)
     until     to                     (null: still holding)
+    every     how often it repeats   (null: once — "week", "2 weeks", "month", "quarter", "year")
+    lasting   how long each one is    (null: a moment rather than a stretch), in days
+
+A repeating row is the whole series in one row, not a thousand rows: `starts` and `until` are
+the window the series runs in, `every` is the step, `lasting` is how much of each step it holds
+for. Nothing is expanded into the table, because a rule with no end would fill it forever and a
+table cut off at a horizon answers "no" past that horizon — wrong, and quiet about it. The
+arithmetic is in recurrence.py, and a question that asks about a window gets the occurrences in
+that window (`stretches`), while a question about a moment gets an answer without expanding
+anything at all (`holding`, `carrying`).
 
 What the normalising does, and it is deterministic, so a script does it and nobody argues:
 stretches that overlap or touch become one; a stretch wholly inside another disappears into it.
@@ -31,7 +41,9 @@ CREATE TABLE IF NOT EXISTS periods (
     nature TEXT NOT NULL,
     value TEXT,
     starts TEXT,
-    until TEXT
+    until TEXT,
+    every TEXT,
+    lasting REAL
 );
 CREATE INDEX IF NOT EXISTS idx_periods_subject ON periods(subject, nature);
 CREATE INDEX IF NOT EXISTS idx_periods_value ON periods(nature, value);
@@ -40,21 +52,42 @@ CREATE INDEX IF NOT EXISTS idx_periods_value ON periods(nature, value);
 # Slots whose statements describe a stretch of time rather than a value that simply is.
 OVER_TIME = ("tags",)
 
+# Where a repeat rule is kept in the record: one statement saying what repeats, and how.
+REPEATS = "repeats"
+
 
 def rebuild(world) -> int:
     """Derive the table again from every statement. Returns how many stretches it holds."""
     run_script(world.store.conn, SCHEMA)
+    _add_missing_columns(world.store.conn)
     world.store.conn.execute("DELETE FROM periods")
     rows = 0
     for subject, nature, value, stretches in _from_statements(world):
         for starts, until in coalesce(stretches):
-            world.store.conn.execute(
-                "INSERT INTO periods (subject, nature, value, starts, until) VALUES (?, ?, ?, ?, ?)",
-                (subject, nature, value, starts.isoformat() if starts else None,
-                 until.isoformat() if until else None))
+            _insert(world, subject, nature, value, starts, until)
             rows += 1
+    for rule in _repeat_rules(world):
+        _insert(world, rule["subject"], rule["nature"], rule.get("value"),
+                rule["anchor"], rule.get("ends"), rule["every"], rule.get("lasting"))
+        rows += 1
     world.store.conn.commit()
     return rows
+
+
+def _insert(world, subject, nature, value, starts, until, every=None, lasting=None) -> None:
+    world.store.conn.execute(
+        "INSERT INTO periods (subject, nature, value, starts, until, every, lasting) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (subject, nature, value, starts.isoformat() if starts else None,
+         until.isoformat() if until else None, every, lasting))
+
+
+def _add_missing_columns(conn) -> None:
+    """A world written before repeats existed has the table without them: add, never migrate."""
+    have = {row[1] for row in conn.execute("PRAGMA table_info(periods)")}
+    for column, kind in (("every", "TEXT"), ("lasting", "REAL")):
+        if column not in have:
+            conn.execute(f"ALTER TABLE periods ADD COLUMN {column} {kind}")
 
 
 def coalesce(stretches: list) -> list:
@@ -82,34 +115,135 @@ def coalesce(stretches: list) -> list:
 
 def holding(world, subject: str, nature: str, at: datetime | None = None) -> list[str]:
     """What held for this subject at a moment — the values, without walking the statements."""
-    run_script(world.store.conn, SCHEMA)
-    moment = (at or datetime.utcnow()).isoformat()
+    _ready(world)
+    when = _moment(at, datetime.utcnow())
+    moment = when.isoformat()
     rows = world.store.conn.execute(
-        "SELECT value FROM periods WHERE subject = ? AND nature = ? "
+        "SELECT value FROM periods WHERE subject = ? AND nature = ? AND every IS NULL "
         "AND (starts IS NULL OR starts <= ?) AND (until IS NULL OR until > ?)",
         (subject, nature, moment, moment)).fetchall()
-    return [value for (value,) in rows if value is not None]
+    found = [value for (value,) in rows if value is not None]
+    for row in _repeating(world, "subject = ? AND nature = ?", [subject, nature]):
+        if row["value"] is not None and _covers(row, when) and row["value"] not in found:
+            found.append(row["value"])
+    return found
 
 
 def carrying(world, nature: str, value: str, at: datetime | None = None) -> list[str]:
     """Which subjects held this value at a moment — the question asked from the other end."""
-    run_script(world.store.conn, SCHEMA)
-    moment = (at or datetime.utcnow()).isoformat()
+    _ready(world)
+    when = _moment(at, datetime.utcnow())
+    moment = when.isoformat()
     rows = world.store.conn.execute(
-        "SELECT DISTINCT subject FROM periods WHERE nature = ? AND value = ? "
+        "SELECT DISTINCT subject FROM periods WHERE nature = ? AND value = ? AND every IS NULL "
         "AND (starts IS NULL OR starts <= ?) AND (until IS NULL OR until > ?)",
         (nature, value, moment, moment)).fetchall()
-    return [subject for (subject,) in rows]
+    found = [subject for (subject,) in rows]
+    for row in _repeating(world, "nature = ? AND value = ?", [nature, value]):
+        if _covers(row, when) and row["subject"] not in found:
+            found.append(row["subject"])
+    return found
 
 
-def stretches(world, subject: str, nature: str, value: str | None = None) -> list[tuple]:
-    """Every stretch, coalesced, in order — (value, from, to)."""
-    run_script(world.store.conn, SCHEMA)
+def stretches(world, subject: str, nature: str, value: str | None = None,
+              since: datetime | None = None, until: datetime | None = None) -> list[tuple]:
+    """Every stretch, coalesced, in order — (value, from, to).
+
+    A cyclic row is the one thing here that has to be asked about within a window: `since`/`until`
+    say how far to count its occurrences out. Without a window it stays one row, as it is stored —
+    the rule itself, not its instances.
+    """
+    _ready(world)
     where = "subject = ? AND nature = ?" + (" AND value = ?" if value is not None else "")
     args = [subject, nature] + ([value] if value is not None else [])
     rows = world.store.conn.execute(
-        f"SELECT value, starts, until FROM periods WHERE {where} ORDER BY starts", args).fetchall()
-    return [(value, _parse(starts), _parse(until)) for value, starts, until in rows]
+        f"SELECT value, starts, until, every, lasting FROM periods WHERE {where} "
+        f"ORDER BY starts", args).fetchall()
+    out = []
+    for held, starts, ends, every, lasting in rows:
+        if not every:
+            out.append((held, _parse(starts), _parse(ends)))
+        elif since is None or until is None:  # no window asked about: the rule itself, one row
+            out.append((held, _parse(starts), _parse(ends)))
+        else:
+            from terraweaver import recurrence
+
+            for one_start, one_end in recurrence.occurrences(
+                    _parse(starts), every, _moment(since), _moment(until), lasting, _parse(ends)):
+                out.append((held, one_start, one_end))
+    return sorted(out, key=lambda row: (row[1] or datetime.min, row[2] or datetime.max))
+
+
+def next_time(world, subject: str, nature: str, value: str | None = None,
+              after: datetime | None = None) -> datetime | None:
+    """When the next occurrence of a cyclic row is — the question a repeat exists to answer."""
+    from terraweaver import recurrence
+
+    _ready(world)
+    where = "subject = ? AND nature = ?" + (" AND value = ?" if value is not None else "")
+    args = [subject, nature] + ([value] if value is not None else [])
+    moment = _moment(after, datetime.utcnow())
+    coming = []
+    for row in _repeating(world, where, args):
+        when = recurrence.next_after(row["starts"], row["every"], moment, row["until"])
+        if when is not None:
+            coming.append(when)
+    return min(coming) if coming else None
+
+
+def cycles(world, subject: str | None = None) -> list[dict]:
+    """The cyclic rows: what repeats, how often, and for how long each time."""
+    where, args = ("subject = ?", [subject]) if subject else ("1 = 1", [])
+    return _repeating(world, where, args)
+
+
+def _moment(value, default=None) -> datetime | None:
+    """A date and a datetime are the same question asked twice; the table answers in one."""
+    from terraweaver import timeutil
+
+    if value is None:
+        return default
+    return timeutil.as_datetime(value)
+
+
+def _ready(world) -> None:
+    run_script(world.store.conn, SCHEMA)
+    _add_missing_columns(world.store.conn)
+
+
+def _repeating(world, where: str, args: list) -> list[dict]:
+    """The cyclic rows matching a condition, read as dicts rather than as five positions."""
+    rows = world.store.conn.execute(
+        f"SELECT subject, nature, value, starts, until, every, lasting FROM periods "
+        f"WHERE {where} AND every IS NOT NULL", args).fetchall()
+    return [{"subject": subject, "nature": nature, "value": value, "starts": _parse(starts),
+             "until": _parse(ends), "every": every, "lasting": lasting}
+            for subject, nature, value, starts, ends, every, lasting in rows]
+
+
+def _covers(row: dict, when: datetime) -> bool:
+    from terraweaver import recurrence
+
+    return recurrence.covers(row["starts"], row["every"], row["lasting"], when, row["until"])
+
+
+def _repeat_rules(world) -> list[dict]:
+    """The repeat statements, as rules. One statement, one cyclic row."""
+    from terraweaver import tags as tagging
+
+    out = []
+    for statement in world.facts.with_slot(REPEATS):
+        rule = statement.value
+        if not isinstance(rule, dict) or not rule.get("every"):
+            continue
+        value = rule.get("value")
+        nature = rule.get("nature") or "valid"
+        out.append({"subject": statement.subject, "nature": nature,
+                    "value": tagging.canonical(value) if value and nature == "tags" else value,
+                    "anchor": _parse(rule.get("anchor")) or statement.valid_from or statement.stated_at,
+                    "ends": _parse(rule.get("ends")) or statement.valid_until,
+                    "every": rule["every"], "lasting": rule.get("lasting")})
+    return out
 
 
 def _from_statements(world):

@@ -254,6 +254,19 @@ Every class below shares these, so they aren't repeated for each one:
     Not an attribute value: `anna.email = ...` holds from when you write it, and there is no way
     yet to say a value held from March to June. Say it in a remark and note the dates there.
 
+    A period can be cyclic instead of one-off — a standup every weekday, rent on the first, a
+    rota every third week. Say it once as a rule; nothing is written out occurrence by occurrence:
+        standup.repeat(every="day", lasting=timedelta(minutes=30))
+        one_to_one.repeat(every="2 weeks")          — anchored on its own date (start_time)
+        michael.tag("on-call", every="3 weeks", lasting=timedelta(days=7), starts=date(...))
+      every=   "day", "week", "2 weeks", "month", "quarter", "year", or a timedelta
+      lasting= how long each one runs; left out, it is a moment rather than a stretch
+      starts=  the first one (anchor); until= when the series stops
+    Read it back: entity.next_occurrence(), entity.occurrences(since=..., until=...) — a rule has
+    no end, so a question about it needs a window; entity.repeats() and world.repeats() say what
+    is cyclic in words. A cyclic tag answers as of a moment like any other: whether someone is
+    on call on the 30th is world.where(tagged="on-call", at=date(2026, 9, 30)).
+
     Writing a period, the same four keywords for entities, relations and comments:
         Class.ensure(..., starts=date(2026, 10, 1))   — begins later
         Class.ensure(..., until=date(...) | ttl=timedelta(days=30))

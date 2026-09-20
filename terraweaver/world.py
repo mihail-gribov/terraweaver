@@ -332,6 +332,25 @@ class World:
 
         return selecting.where(self, cls, **conditions)
 
+    def repeats(self) -> list[str]:
+        """Everything cyclic in this world, in words — one line per rule (periods.py)."""
+        from terraweaver import periods, recurrence
+
+        out = []
+        for row in periods.cycles(self):
+            said = recurrence.describe(row["starts"], row["every"], row["lasting"], row["until"])
+            out.append(f"{self._named(row['subject'])}: "
+                       + (f"{row['value']} — " if row["value"] else "") + said)
+        return sorted(out)
+
+    def _named(self, subject: str) -> str:
+        """Whoever a statement is about, as a person would name them rather than as an id."""
+        class_name = self.facts.class_of(subject)
+        for entity in (self.all(class_name, limit=None, any_time=True) if class_name else []):
+            if getattr(entity, "subject_id", None) == subject or entity.id == subject:
+                return f"{class_name} «{entity.display_name()}»"
+        return subject
+
     def tags(self) -> dict:
         """Every tag in this world, with how often it is used and how it has been written."""
         from terraweaver import tags as tagging
