@@ -1,7 +1,8 @@
 DESCRIPTION = """Something that runs through a life for months and touches everything: a move. A flat,
-a landlord, a mover, a school, dates, people who helped. None of it is one kind of thing and no
-relation joins them, so the only way to pull it up later is to have marked it. Whether the host
-reaches for that is the question — nothing in the task says the word."""
+a landlord, a mover, a school, dates. None of it is one kind of thing, and the task never says how
+to keep it together — that is the question. Either answer counts: a project everything hangs off,
+or a tag on each piece. What is checked is that the pieces can be pulled up as one thing months
+later, and that the second turn finds what a date change touches."""
 
 SETUP = """
 lisbon = Place.new(name="Lisbon", city="Lisbon", category="other")
@@ -25,10 +26,15 @@ TURNS = [
 ]
 
 EXPECT = """
-moving = [t for t, entry in world.tags().items() if "mov" in t or "lisbon" in t or "relocat" in t]
-assert moving, f"nothing was marked as belonging together: {list(world.tags())}"
-covered = {type(e).__name__ for tag in moving for e in world.tagged(tag)}
-assert len(covered) >= 2, f"the mark covers only {covered} — a move is not one kind of thing"
+# Either way of keeping it together counts; what matters is that one thing gathers the pieces.
+marked = [t for t, entry in world.tags().items() if "mov" in t or "lisbon" in t or "relocat" in t]
+gathered = {type(e).__name__ for tag in marked for e in world.tagged(tag)}
+for project in Project.all(limit=None):
+    if "mov" in (project.name or "").lower() or "lisbon" in (project.name or "").lower():
+        gathered |= {type(e).__name__ for e in project.related("participation")}
+        gathered |= {type(r.other(project)).__name__ for r in project.relations()}
+assert len(gathered) >= 2, (
+    f"the move isn't gathered anywhere: tags {list(world.tags())}, reached {gathered}")
 """
 
 PROBES = [
@@ -40,4 +46,9 @@ PROBES = [
      ["13"], []),
 ]
 
-LEVEL = "hard"
+# Draft: not in any pool yet. What it set out to observe, it already showed — given a months-long
+# thing and no instruction, the host reaches for a tag on each piece in one run and invents a
+# Project with relations in another, both without being told. What it still needs before it can
+# score anything: a world of its own rather than the job_search fixture underneath (the checks
+# keep catching that world's entities), and probes that accept either shape of answer.
+LEVEL = "draft"

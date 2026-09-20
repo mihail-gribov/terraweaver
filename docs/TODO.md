@@ -17,6 +17,17 @@ The world is served over MCP; the host agent writes code against the object mode
 (`docs/procedural-memory.md`), `remember`, `research`, `extend` — builds on this loop, so it
 comes first.
 
+## A scenario needs its own world, not the fixture underneath
+
+`scenarios/run.py` starts every scenario's server with `--rebuild`, which loads `job_search`, and
+then runs the scenario's SETUP on top. For the small scenarios that is a feature — there is
+already a world to work in. For a scenario about something specific (s26, keeping a move
+together) it means the checks keep tripping over entities nobody in the story ever mentioned: a
+Job search project, an Anna Peterson, a dozen events.
+
+What it wants: a scenario that says `FIXTURE = None` (or names its own), so SETUP builds the only
+world there is. Small change to the runner, and it makes the scenarios that come next honest.
+
 ## Structuring what was written as prose
 
 A remark is what the host writes when the class has no place for something — "allergic to
