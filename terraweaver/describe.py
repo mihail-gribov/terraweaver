@@ -97,6 +97,11 @@ Every class below shares these, so they aren't repeated for each one:
         in the world matches: say so, rather than serving the closest thing as the answer.
         A person's recorded nicknames count as their names, so "Bob" finds Robert.
 
+        Look someone up by the fullest form of the name you know — "Michael Gribov", not "Миша".
+        You are the one who knows that those are one name; the world only knows what it was
+        told, and it keeps every form it was given, so either will usually find him. The full
+        form is what identifies without context, and it is what the world will show back.
+
         A name this entity answers to, with no rival and nothing that disagrees, is them:
         "Darren" where the world holds one Darren Liu gives you Darren Liu, with an [assumed]
         line saying so. A question comes back when the world genuinely doesn't know — two people

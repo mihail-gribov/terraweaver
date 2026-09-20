@@ -212,6 +212,29 @@ def main() -> int:
           str(image.values["full_name"]))
     check("and none of it counts as a disagreement", not image.conflicts, str(image.conflicts))
 
+    # --- a name form has to be vouched for, because names decide who is who ---
+    facts = Facts(sqlite3.connect(":memory:"))
+    facts.state("s1", "full_name", "Michael Gribov", source="user", class_name="Person")
+    for guess in ("Mike Gribov", "Sota"):
+        facts.state("s1", "full_name", guess, source="agent")
+    image = list(assembly.assemble(facts).values())[0]
+    check("a known form of the name needs nobody's permission", "Mike Gribov" in image.names,
+          str(image.names))
+    check("a nickname the world invented waits for a word", image.proposed_names == ["Sota"],
+          str(image.proposed_names))
+    facts.state("s1", "full_name", "Sota", source="user")
+    image = list(assembly.assemble(facts).values())[0]
+    check("and one word from the user is enough",
+          "Sota" in image.names and not image.proposed_names, str(image.names))
+
+    # --- and a guessed name takes part in nothing until then ---
+    facts = Facts(sqlite3.connect(":memory:"))
+    facts.state("x1", "full_name", "Sasha Orlov", source="user", class_name="Person")
+    facts.state("x2", "full_name", "Sota Ivanov", source="user", class_name="Person")
+    facts.state("x2", "full_name", "Sasha Orlov", source="agent")  # the world thinks they are one
+    check("a guessed name doesn't merge two people",
+          len(assembly.assemble(facts)) == 2, str(assembly.assemble(facts)))
+
     print()
     if failures:
         print(f"{len(failures)} failed: {', '.join(failures)}")

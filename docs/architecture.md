@@ -56,11 +56,23 @@ there can be at once.** Two email addresses are two addresses; two employers at 
 a disagreement. The class says which by declaring the slot a list or not, so the assembler never
 has to guess — and never reports a second phone number as a quarrel.
 
-Names are the case where this matters most. A person is called Michael, and Mike, and Michael
+Names are the case where this matters most, and the one place the world is deliberately strict. A person is called Michael, and Mike, and Michael
 Gribov, and none of those contradicts the others: they are forms of one name. So they are
 collected rather than resolved — `image.names` holds every form, fullest first, and the fullest
 is the one shown, because it is the one that identifies without context. A nickname stops being
 a second-class "alias" and is simply another thing the person is called.
+
+But a name is not an ordinary value: names decide who is who, so a form counts only if someone
+vouched for it. The user said it, or a source did — then it is a name. What the world worked out
+for itself waits in `proposed_names` and takes part in nothing, because "Sota is probably that
+Sasha" would merge two people on the next rebuild and be very hard to unpick. The exception is
+knowledge about language rather than about the person: "Mike" is how English says "Michael", and
+that holds for everyone called Michael (`nameforms.py`), so it needs nobody's permission.
+
+The host carries the language side of this: it is asked to look people up by the fullest form of
+the name it knows, because it is the one that knows "Миша" and "Михаил" are one name. The world
+keeps every form it was given, so either will usually find him — but canonicalising is the
+model's job, and the table in the world is only the net underneath.
 
 ## What was said, and what the world worked out
 

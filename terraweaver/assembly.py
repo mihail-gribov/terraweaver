@@ -21,7 +21,7 @@ from datetime import datetime
 from typing import Any, Callable
 
 from terraweaver import facts as facts_module
-from terraweaver import matching
+from terraweaver import matching, nameforms
 
 SAME_AS, NOT_SAME_AS = "same_as", "not_same_as"
 
@@ -36,7 +36,8 @@ class Image:
 
     id: str                      # the leading subject of the cluster: stable while it holds
     subjects: list[str]          # every subject this image was assembled from
-    names: list = field(default_factory=list)   # every form of the name, fullest first
+    names: list = field(default_factory=list)    # forms someone vouched for, fullest first
+    proposed_names: list = field(default_factory=list)  # forms only the world itself has offered
     values: dict[str, Any] = field(default_factory=dict)
     sources: dict[str, str] = field(default_factory=dict)   # slot -> whose word it is
     conflicts: dict[str, list] = field(default_factory=dict)  # slot -> statements left standing
@@ -59,8 +60,11 @@ def same_name(a_facts: list, b_facts: list) -> bool:
         b_values = {_text(f.value) for f in b_facts if f.slot == slot}
         if a_values and b_values and not (a_values & b_values):
             return False
-    a_names = [_text(f.value) for f in a_facts if f.slot in matching.NAME_KEYS.values()]
-    b_names = [_text(f.value) for f in b_facts if f.slot in matching.NAME_KEYS.values()]
+    # Only names someone vouched for: a nickname the world guessed at must not merge two people.
+    a_names = [_text(f.value) for f in a_facts
+               if f.slot in matching.NAME_KEYS.values() and f.source != "agent"]
+    b_names = [_text(f.value) for f in b_facts
+               if f.slot in matching.NAME_KEYS.values() and f.source != "agent"]
     return any(matching.similarity(a, b) >= matching.PART_CEILING for a in a_names for b in b_names)
 
 
@@ -107,22 +111,40 @@ def _kept_apart(told_apart: set, find: Callable[[str], str], a: str, b: str) -> 
     return False
 
 
-def name_forms(statements: list, at: datetime) -> list:
-    """Every form of a name that still holds, fullest first.
+def name_forms(statements: list, at: datetime) -> tuple[list, list]:
+    """(the forms someone vouched for, the forms only the world has offered) — fullest first.
 
     A person is called several things — Michael, Mike, Michael Gribov — and none of them
-    contradicts the others. They are forms of one name, so they are collected rather than
-    resolved, and the fullest is the one to show: it is the one that identifies without
-    context. Ties go to what was said most recently."""
+    contradicts the others. They are forms of one name, collected rather than resolved, and the
+    fullest is the one to show: it identifies without context.
+
+    But a name is not an ordinary value: names decide who is who. A nickname the world merely
+    guessed at — "Sota is probably that Sasha" — would quietly glue two people together on the
+    next rebuild and be very hard to unpick afterwards. So a form counts as a name only if
+    someone vouched for it: the user said it, or a source did. What the world worked out for
+    itself waits in `proposed_names` until a word confirms it, and takes part in nothing.
+    """
     standing = [s for s in statements if s.holds_at(at) and isinstance(s.value, str)]
-    forms, seen = [], set()
-    for statement in sorted(standing, key=lambda s: (len(str(s.value).split()), s.last_said),
-                            reverse=True):
+    fullest_first = sorted(standing, key=lambda s: (len(str(s.value).split()), s.last_said),
+                           reverse=True)
+    vouched, proposed, seen = [], [], set()
+    # Everything someone vouched for first: what the world proposes is judged against those, and
+    # judging it against a half-built list would depend on the order statements happened to come.
+    for statement in [s for s in fullest_first if s.source != "agent"] + \
+                     [s for s in fullest_first if s.source == "agent"]:
         key = " ".join(str(statement.value).lower().split())
-        if key not in seen:
-            seen.add(key)
-            forms.append(statement.value)
-    return forms
+        if key in seen:
+            continue
+        seen.add(key)
+        if statement.source != "agent":
+            vouched.append(statement.value)
+        elif any(nameforms.same_name(statement.value, form) for form in vouched):
+            # Not a guess about this person: "Mike" is how the language says "Michael", and that
+            # holds for everyone called Michael (nameforms.py). No one needs to confirm it.
+            vouched.append(statement.value)
+        else:
+            proposed.append(statement.value)
+    return vouched, proposed
 
 
 def holds_many(specs: dict | None, class_name: str | None, slot: str) -> bool:
@@ -174,10 +196,11 @@ def assemble(facts, rule: Callable[[list, list], bool] = same_name, at: datetime
         name_slot = matching.NAME_KEYS.get(class_name or "")
         for slot, statements in by_slot.items():
             if slot == name_slot:
-                image.names = name_forms(statements, at or datetime.utcnow())
+                image.names, image.proposed_names = name_forms(statements, at or datetime.utcnow())
                 if image.names:
                     image.values[slot] = image.names[0]
-                    image.sources[slot] = statements[-1].source
+                    image.sources[slot] = next(s.source for s in reversed(statements)
+                                               if s.source != "agent")
                 continue
             if holds_many(specs, class_name, slot):
                 # Everything still standing, newest first. Nothing here is a rival to anything.
