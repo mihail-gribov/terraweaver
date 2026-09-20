@@ -17,7 +17,7 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from terraweaver import ontology, sandbox, selves
+from terraweaver import onboarding, ontology, sandbox
 from terraweaver.impls import IMPLS
 from terraweaver.describe import COMMON_MEMBERS, HOST_GUIDE, describe_for_prompt
 from terraweaver.ontology import Entity, build_classes, load_specs
@@ -153,13 +153,13 @@ class WorldRuntime:
         self.world = World(self.store, self.classes)
         # Methods the world wrote for itself hang on the classes like any other (procedures.py).
         self.world.procedures.bind(self.classes)
-        selves.refresh(self.world, self.home)
+        onboarding.onboard(self.world, self.home)
         reserved = set(self.classes) | set(sandbox.MODULES) | {
             "world", "owner", "me", "NeedsResolution", "NotInWorld", "print", "report", "run_skill"}
         self.variables = WorldVariables(self.store, self.classes, reserved | set(sandbox.BUILTINS))
         if fixture and (rebuild or empty):
             self.reset()
-            selves.refresh(self.world, self.home)  # the fixture's pair reads its files too
+            onboarding.onboard(self.world, self.home)  # the fixture's pair reads its files too
         self.sessions: dict[str, Session] = {}
         # Keys whose session was dropped for idleness; the next result says so once.
         self.idle_reset: set[str] = set()

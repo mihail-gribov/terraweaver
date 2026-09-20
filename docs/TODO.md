@@ -17,6 +17,17 @@ The world is served over MCP; the host agent writes code against the object mode
 (`docs/procedural-memory.md`), `remember`, `research`, `extend` — builds on this loop, so it
 comes first.
 
+## Onboarding: what belongs in it beyond the two parties
+
+`terraweaver/onboarding.py` is the named step that brings a world up from the files beside it.
+It runs on every open, not once. Today it reads `USER.md` / `soul.md` into the two parties
+(`selves.py`) and nothing else. What belongs there:
+
+- class additions and procedures from `AGENT.md` (the parked sketch below);
+- the first conversation — a world with nothing in it asking for the few things that make the
+  rest useful, rather than waiting to be told;
+- importing what already exists (contacts, a calendar) as statements from those sources.
+
 ## Parked: AGENT.md as the person's own growth
 
 `terraweaver/agentfile.py` parses class additions and procedures out of an AGENT.md — the same
