@@ -122,6 +122,14 @@ class WorldView:
         """Everything carrying this tag, however it was written."""
         return self._world.tagged(tag)
 
+    def untag(self, tag: str, among: list | None = None) -> int:
+        """Take a tag off everything, or off the ones given — the other half of tagging."""
+        return self._world.untag(tag, among)
+
+    def tagged_all(self, *tags_wanted: str) -> list:
+        """Everything carrying every one of these tags: one tag gathers, two pick out."""
+        return self._world.tagged_all(*tags_wanted)
+
     def merge_tags(self, into: str, *others: str) -> int:
         """Make several tags one: everything carrying any of them ends up carrying the first."""
         return self._world.merge_tags(into, *others)
@@ -152,7 +160,7 @@ class WorldView:
 
     def __repr__(self):
         return ("<world: all, find, get, new, ensure, settle, comments, questions, tags, tagged, "
-                "merge_tags, like, rebuild, pin, unpin, owner, me, pending>")
+                "tagged_all, merge_tags, untag, like, rebuild, pin, unpin, owner, me, pending>")
 
 
 class WorldRuntime:

@@ -27,6 +27,10 @@ since spring needs no review, and one that gained eleven members last week does.
 recorded is how many things a tag covered when it was last looked at; when that number has moved
 enough, the tag comes back on the list. New information is what makes a judgement stale, not time.
 
+**It does what it is told.** Merging two words into one, taking a tag off everything, picking
+out what carries several at once — those are operations, and the world performs them as ordinary
+writes: stated, reversible, visible in the record.
+
 **It does not tidy them.** Whether `job-search` and `work` are the same idea, whether a tag that
 covers forty things should be split, whether one nobody has used since March should go — those
 are judgements about what this person means by a word, and they belong to the model, on the
@@ -209,6 +213,38 @@ def merge(world, into: str, *others: str) -> int:
         world.store.conn.execute("DELETE FROM tag_reviews WHERE tag = ?", (tag,))
     reviewed(world, keep)
     return changed
+
+
+def remove(world, tag: str, *, among: list | None = None) -> int:
+    """Take a tag off everything, or off the ones given. The other half of tagging.
+
+    A tag put on in March stops meaning anything by September, or was a mistake to begin with.
+    Taking it off is an ordinary write — stated, reversible, visible — and it is done because
+    somebody said so, never because the world decided the tag had gone stale.
+    """
+    run_script(world.store.conn, SCHEMA)
+    gone = canonical(tag)
+    changed = 0
+    for entity in (among if among is not None else tagged(world, gone)):
+        kept = [t for t in tags_of(entity) if canonical(t) != gone]
+        if len(kept) != len(tags_of(entity)):
+            entity.tags = kept
+            world.save(entity)
+            changed += 1
+    world.store.conn.execute("DELETE FROM tag_reviews WHERE tag = ?", (gone,))
+    return changed
+
+
+def all_of(world, *wanted: str) -> list:
+    """Everything carrying every one of these tags — the narrowing that makes tags useful.
+
+    One tag gathers; two pick out. "Everyone from the conference who is also in Berlin" is the
+    question a person actually asks, and it is an intersection, not a search."""
+    if not wanted:
+        return []
+    sets = [{e.id: e for e in tagged(world, tag)} for tag in wanted]
+    shared = set.intersection(*(set(group) for group in sets)) if sets else set()
+    return [sets[0][entity_id] for entity_id in shared]
 
 
 def suggest(world, entity, limit: int = 3) -> list[tuple[str, float]]:

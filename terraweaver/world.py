@@ -343,6 +343,18 @@ class World:
 
         return tagging.merge(self, into, *others)
 
+    def untag(self, tag: str, among: list | None = None) -> int:
+        """Take a tag off everything, or off the ones given."""
+        from terraweaver import tags as tagging
+
+        return tagging.remove(self, tag, among=among)
+
+    def tagged_all(self, *tags_wanted: str) -> list:
+        """Everything carrying every one of these tags."""
+        from terraweaver import tags as tagging
+
+        return tagging.all_of(self, *tags_wanted)
+
     def rebuild(self, rule=None, at=None) -> dict:
         """Build every entity again from what was said. See rebuild.py — it is always safe."""
         from terraweaver import rebuild as rebuilding

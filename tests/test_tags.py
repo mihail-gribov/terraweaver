@@ -69,6 +69,23 @@ def main() -> int:
     check("a tag is suggested from what reads like it", "batteries" in suggested, str(suggested))
     check("suggesting applies nothing", not lars.tags, str(lars.tags))
 
+    # --- one tag gathers, two pick out, and taking one off is the other half ---
+    w2 = open_world()
+    w2.run('Person.new(full_name="Ana Borg", tags=["berlin", "conference-2026"])\n'
+           'Person.new(full_name="Ben Cruz", tags=["berlin"])\n'
+           'Person.new(full_name="Cara Dahl", tags=["conference-2026"])', "host")
+    check("two tags narrow to what carries both",
+          [p.full_name for p in w2.world.tagged_all("Berlin", "conference-2026")] == ["Ana Borg"],
+          str(w2.world.tagged_all("Berlin", "conference-2026")))
+    check("a tag can be taken off everything", w2.world.untag("berlin") == 2)
+    check("and then it is gone", "berlin" not in w2.world.tags(), str(list(w2.world.tags())))
+    check("while what it was on is otherwise untouched",
+          [p.full_name for p in w2.world.tagged("conference-2026")] == ["Cara Dahl", "Ana Borg"] or
+          sorted(p.full_name for p in w2.world.tagged("conference-2026")) == ["Ana Borg", "Cara Dahl"],
+          str(w2.world.tagged("conference-2026")))
+    check("and the record still knows it was there",
+          any("berlin" in (s.value or []) for s in w2.world.facts.all() if s.slot == "tags"))
+
     # --- what a tag means is nobody's business here ---
     check("tags that read alike are reported, not merged",
           all(isinstance(pair, tuple) for pair in tagging.look_alike(w.world)))

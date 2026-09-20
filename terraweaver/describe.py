@@ -168,8 +168,10 @@ Every class below shares these, so they aren't repeated for each one:
     "job search" and "Job-Search" are the same tag however they were typed (what you typed stays
     in the record):
         world.tagged("berlin")        — everything carrying it, whatever the spelling
+        world.tagged_all("berlin", "conference")  — everything carrying both: one gathers, two pick out
         world.tags()                  — every tag, how often used, how it has been written
         world.merge_tags("job-search", "jobsearch")   — two words for one idea, when you know it
+        world.untag("q3-push")        — take one off everything, when it has stopped meaning anything
         anna.suggest_tags()           — tags worth considering, from whatever reads like her
     Suggesting applies nothing and merging is yours to decide: what a tag means is what the user
     means by the word, and the world only counts and points.
