@@ -114,6 +114,10 @@ class WorldView:
         touched = self._touched() if here else None
         return self._world.questions.open_(limit, here=touched)
 
+    def where(self, cls=None, **conditions) -> list:
+        """Attributes, links, tags and meaning in one ask; without a class, things of any kind."""
+        return self._world.where(cls, **conditions)
+
     def tags(self) -> dict:
         """Every tag in this world: how often it is used, on what, and how it has been written."""
         return self._world.tags()
@@ -159,7 +163,7 @@ class WorldView:
         print(f"[unpinned] {', '.join(names)}")
 
     def __repr__(self):
-        return ("<world: all, find, get, new, ensure, settle, comments, questions, tags, tagged, "
+        return ("<world: all, find, where, get, new, ensure, settle, comments, questions, tags, tagged, "
                 "tagged_all, merge_tags, untag, like, rebuild, pin, unpin, owner, me, pending>")
 
 

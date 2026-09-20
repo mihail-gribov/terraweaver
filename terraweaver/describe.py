@@ -111,6 +111,23 @@ Every class below shares these, so they aren't repeated for each one:
         candidates), printing it shows the question, and which one was meant is not yours to
         decide — ask the user, then world.settle(...).
 
+    world.where(...) is the one way of asking, and the plain searches are it with a single
+    condition — world.where(tagged="move") is the tag search, world.where(like="cell chemistry")
+    is the meaning search. Everything given narrows; nothing widens:
+        world.where(Person, organization=acme,          — attributes, as in find()
+                    related=("membership", acme),        — a link, named from either end
+                    tagged="berlin",                     — a tag, as it held at `at`
+                    like="cell chemistry",               — what is said about them reads like this
+                    at=date(2026, 6, 1), limit=20)
+    The class is optional, and that is the point of it: leave it out and the answer is of any
+    kind. Most real things in a life are not one kind of thing — everything to do with a move is
+    a flat, a landlord, a moving firm and four dates — so ask for the thing, not for each kind:
+        world.where(tagged="move")                       — the move, all of it
+        world.where(related=("participation", project))  — everything hanging off one thing
+    A relation name is read in its own direction: related="service" is who provides one,
+    related="served_by" is who receives one. `like` also sets the order, since closeness is the
+    only thing here with a degree.
+
     Recording what the user tells you starts with a decision only you can make from the
     conversation: is it about someone/something already in the world, or new? Say so by the
     call you pick — the world checks the claim instead of deciding silently.

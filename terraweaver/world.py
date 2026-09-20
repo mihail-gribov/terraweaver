@@ -325,6 +325,13 @@ class World:
         nothing. Useful where the world is deliberately unstructured — remarks, notes."""
         return self.meanings.like(self, text, limit, kind)
 
+    def where(self, cls=None, **conditions) -> list:
+        """Everything answering all the conditions at once, of any kind unless a class is
+        named — attributes, a link, tags and meaning in one ask (selecting.py)."""
+        from terraweaver import selecting
+
+        return selecting.where(self, cls, **conditions)
+
     def tags(self) -> dict:
         """Every tag in this world, with how often it is used and how it has been written."""
         from terraweaver import tags as tagging
@@ -332,10 +339,10 @@ class World:
         return tagging.vocabulary(self)
 
     def tagged(self, tag: str, at=None, any_time: bool = False) -> list:
-        """Everything carrying this tag now — or at a moment, or ever."""
-        from terraweaver import tags as tagging
+        """Everything carrying this tag now — or at a moment, or ever.
 
-        return tagging.tagged(self, tag, at, any_time)
+        `where` with one condition, and written as one so the two can never answer differently."""
+        return self.where(tagged=tag, at=at, any_time=any_time, limit=None)
 
     def merge_tags(self, into: str, *others: str) -> int:
         """Make several tags one: everything carrying any of them ends up carrying the first."""
@@ -351,9 +358,7 @@ class World:
 
     def tagged_all(self, *tags_wanted: str) -> list:
         """Everything carrying every one of these tags."""
-        from terraweaver import tags as tagging
-
-        return tagging.all_of(self, *tags_wanted)
+        return self.where(tagged_all=list(tags_wanted), limit=None)
 
     def rebuild(self, rule=None, at=None) -> dict:
         """Build every entity again from what was said. See rebuild.py — it is always safe."""
