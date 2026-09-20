@@ -888,7 +888,8 @@ Every class below shares these, so they aren't repeated for each one:
     identity is the exception — two records are never merged without an answer, you get the one
     you looked up. So you can always answer: by the standing reading, saying which it is.
 
-    Three moments to put one to the user, and only these:
+    Three moments to put one to the user, and only these — a doubt that doesn't bear on what
+    you're doing stays quiet until one of them:
       [ask first]     — this run's read depends on it. Ask before answering, or answer by the
                         standing reading and say so ("as recorded, Nina from October 1").
       end of a task   — world.questions(here=True) is what this task touched; reset_session

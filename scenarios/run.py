@@ -216,6 +216,24 @@ def start_server(db: Path) -> subprocess.Popen:
     raise RuntimeError("the scenario world server didn't start")
 
 
+def pass_hat_k(per_scenario: list[list[bool]], k: int) -> float:
+    """pass^k, the way tau-bench defines it: for c successes out of n attempts, the chance that
+    k attempts drawn without replacement all succeeded, averaged over scenarios.
+
+    Not (c/n)**k — that shortcut is biased. A single run's number is an artifact of one draw
+    ("AI Agents That Matter", arXiv:2407.01502); this is the number to report instead.
+    """
+    from math import comb
+
+    shares = []
+    for got in per_scenario:
+        n, c = len(got), sum(got)
+        if n < k:
+            continue
+        shares.append(comb(c, k) / comb(n, k) if c >= k else 0.0)
+    return sum(shares) / len(shares) if shares else 0.0
+
+
 def main() -> int:
     global PORT, URL, MODEL
     args = sys.argv[1:]
@@ -275,6 +293,10 @@ def main() -> int:
             shaky += mark == "UNSTEADY"
             print(f"  {sum(got)}/{len(got)}  {scenario.NAME:32} {mark}")
         print(f"\n{shaky} of {len(scenarios)} scenarios came out differently between attempts")
+        per_scenario = [[r["passed"] for r in rows if r["name"] == s.NAME] for s in scenarios]
+        marks = " · ".join(f"pass^{k} {pass_hat_k(per_scenario, k):.0%}" for k in range(1, repeat + 1))
+        print(f"{marks}  (pass^k: the chance that k attempts of a scenario all succeed — "
+              f"tau-bench, arXiv:2406.12045)")
     print(f"\n{passed}/{len(rows)} passed [{mode}], ${sum(r.get('cost', 0) for r in rows):.2f} "
           f"— {out_dir.relative_to(ROOT)}")
     return 0 if passed == len(rows) else 1

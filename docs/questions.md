@@ -57,7 +57,9 @@ A question is worth nothing if it is raised at the wrong time. Interrupting a ta
 dentist is worse than answering by the rule and asking later.
 
 1. **The read depends on it.** `[ask first]` in the result, at the moment the host holds the
-   answer. Raised when a run reads the relation, the attribute or the identity a question hangs
+   answer. Only then — a doubt about an entity a run merely touches stays quiet, because
+   repeating it on every contact is noise, and the criterion in the literature is relevance to
+   the answer at hand (query-driven repair, `docs/related-work.md`). Raised when a run reads the relation, the attribute or the identity a question hangs
    over — not for any other read of that entity. Ask before answering, or answer by the standing
    reading and say which it is.
 2. **The task is over.** `world.questions(here=True)` is what this task actually worked with —
@@ -83,6 +85,10 @@ it when the user is around — not in the middle of a task the user is waiting o
     q.drop("asked — it's a different Olga")
     anna.question("two numbers on file, which is current?")   # one the host noticed
     world.questions()                 # everything open, across the world
+
+Most of this is a known mechanism under another name — inconsistency-tolerant query answering,
+prioritized repairing, deferred entity resolution, truth maintenance. `docs/related-work.md` maps
+each piece to its established name and to what that literature does better than we do.
 
 ## Where they come from
 

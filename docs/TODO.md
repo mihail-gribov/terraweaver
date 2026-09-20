@@ -17,6 +17,24 @@ The world is served over MCP; the host agent writes code against the object mode
 (`docs/procedural-memory.md`), `remember`, `research`, `extend` — builds on this loop, so it
 comes first.
 
+## From the literature review (docs/related-work.md), in order
+
+1. **A check before the commit.** 20–26% of runs come back as errors and are rolled back whole;
+   each is a fork where two attempts of the same task diverge. SWE-agent's ablations put +3pp on
+   exactly this: validate the write, report the violation, don't let the run die on line one.
+   Savepoints — keeping the good statements of a run that failed late — belong in the same
+   discussion, against the atomicity rule set deliberately.
+2. **A proposed `same_as` instead of a duplicate.** When an agent answers its own identity
+   question, record a link with provenance "agent", ranked below a user-confirmed one, rather
+   than a second person. Merge is a derived artifact, never a destructive edit: keep the source
+   records, keep the link table, compute the survivor — then un-merging is deleting a link.
+3. **Rank doubts by what the answer changes**, not by how often the entity is touched:
+   P(it flips an answer) × consequence × future reads − cost of asking. Access count is only the
+   third factor.
+4. **Report pass^k** (done for the runner) and audit our own EXPECT blocks the way the Agentic
+   Benchmark Checklist says to — a check that reads a question object rather than a result fails
+   for the wrong reason, which has already happened here once.
+
 ## A hint the host ignores, a question the host answers itself
 
 Partly addressed: contradictions are now kept as open questions on the entity

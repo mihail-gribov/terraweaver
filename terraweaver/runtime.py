@@ -302,20 +302,6 @@ class WorldRuntime:
                     "hints": [], "questions": [], "ask_now": [], "new_variables": {}, "duration_ms": 0}
         return self.run(f"world.unpin({', '.join(listed)})" if listed else "pass", key)
 
-    def _open_questions(self, recording) -> list[str]:
-        """What is open about the entities this run worked with. A host that touches Michael
-        should be told his two dentists are still unresolved — the hint that raised it was read
-        once, in some earlier run, and the doubt outlived it."""
-        seen, out = set(), []
-        for entity in _entities_of(recording):
-            if entity.id in seen:
-                continue
-            seen.add(entity.id)
-            for question in self.world.questions.of(entity):
-                options = f" [{' / '.join(question.options)}]" if question.options else ""
-                out.append(f"{entity.display_name()}: {question.text}{options}")
-        return out[:5]
-
     def run(self, code: str, key: str) -> dict[str, Any]:
         session = self.session(key)
         namespace = session.namespace
@@ -345,9 +331,12 @@ class WorldRuntime:
                 self._persist(recording, namespace)
                 effects = _effects(recording, created={id(o) for o in self.store._tx_new_ids})
                 session.touched |= {e.id for e in _entities_of(recording)}
+                # Only what this run raised. Repeating every doubt about every entity a run
+                # happens to touch is noise: the literature's criterion is relevance to the
+                # answer at hand (query-driven repair) and the task boundary, and both are
+                # covered — [ask first] below, and the batch reset_session hands back.
                 effects["ask_now"] = list(recording.ask_now)
-                effects["questions"] = [q for q in _merge_questions(effects["questions"],
-                                                                    self._open_questions(recording))
+                effects["questions"] = [q for q in effects["questions"]
                                         if not any(q.split(": ", 1)[-1][:50] in line for line in recording.ask_now)]
         except (Exception, sandbox.RunTimeout) as exc:  # noqa: BLE001 - reporting any failure to the host is the point
             error = _host_traceback(exc)

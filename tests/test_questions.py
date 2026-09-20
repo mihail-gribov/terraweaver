@@ -31,10 +31,13 @@ def main() -> int:
     check("and the doubt is recorded", any("two dentists" in q for q in first["questions"]),
           str(first["questions"]))
 
-    # --- it outlives the run, and the session ---
-    later = rt.run('m = Person.get(full_name="Michael")', "another-host")
-    check("another host working with the entity is told", any("two dentists" in q for q in later["questions"]),
-          str(later["questions"]))
+    # --- it outlives the run and the session, and surfaces where it bears on the answer ---
+    quiet_touch = rt.run('m = Person.get(full_name="Michael")', "another-host")
+    check("merely touching the entity is not interrupted with it",
+          not quiet_touch["questions"] and not quiet_touch["ask_now"], str(quiet_touch["questions"]))
+    later = rt.run('print([p.full_name for p in owner.related("served_by")])', "another-host")
+    check("a read that depends on it is told, in another session",
+          any("two dentists" in line for line in later["ask_now"]), str(later["ask_now"]))
     check("the answers that would settle it come with it",
           "both stand" in format_result(later), format_result(later))
 
