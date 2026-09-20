@@ -115,6 +115,44 @@ def main() -> int:
     check("and what it stated is still in the record, marked",
           len(facts.about("e1", include_retracted=True)) == 3, str(facts.about("e1", include_retracted=True)))
 
+    # --- what the world worked out for itself, and what from ---
+    facts = Facts(sqlite3.connect(":memory:"))
+    facts.state("p1", "notes", "never asks twice", source="user")
+    said = facts.about("p1")
+    facts.state("p1", "notes", "hates small talk", source="user")
+    basis = facts.about("p1")
+    made = facts.conclude("p1", "character", "keeps a distance, decides fast", basis=basis)
+    conclusion = [s for s in facts.about("p1") if s.id == made][0]
+    check("a conclusion carries what it was drawn from",
+          [s.value for s in facts.basis_of(conclusion)] == ["never asks twice", "hates small talk"],
+          str(facts.basis_of(conclusion)))
+    check("and is fresh while that basis stands", not facts.stale(conclusion))
+    check("anything anyone said outranks it",
+          assembly.resolve([s for s in facts.about("p1") if s.slot == "notes"])[0].source == "user")
+    facts.retract(basis[-1].id)
+    check("when the basis moves it goes stale", facts.stale(conclusion))
+    second = None
+    try:
+        facts.conclude("p1", "character", "again", basis=[conclusion])
+    except ValueError as exc:
+        second = str(exc)
+    check("a conclusion is never drawn from a conclusion", second is not None and "guesses" in second,
+          str(second))
+    check("and the world can take back everything it concluded",
+          len([s for s in facts.about("p1") if s.source == "agent"]) == 1)
+
+    # --- and a rebuilt image knows which of its values it worked out ---
+    image = list(assembly.assemble(facts).values())[0]
+    check("the image takes the judgement where nobody stated the slot",
+          image.values.get("character") == "keeps a distance, decides fast", str(image.values))
+    check("and marks it as worked out, not told", image.judged == {"character"}, str(image.judged))
+    check("a judgement whose basis has moved is shown as stale", image.stale == {"character"},
+          str(image.stale))
+    facts.state("p1", "character", "warmer than he looks", source="user")
+    image = list(assembly.assemble(facts).values())[0]
+    check("and a word from the user replaces it outright",
+          image.values["character"] == "warmer than he looks" and not image.judged, str(image.values))
+
     print()
     if failures:
         print(f"{len(failures)} failed: {', '.join(failures)}")

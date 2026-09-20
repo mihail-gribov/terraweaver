@@ -39,6 +39,8 @@ class Image:
     values: dict[str, Any] = field(default_factory=dict)
     sources: dict[str, str] = field(default_factory=dict)   # slot -> whose word it is
     conflicts: dict[str, list] = field(default_factory=dict)  # slot -> statements left standing
+    judged: set = field(default_factory=set)    # slots the world worked out rather than was told
+    stale: set = field(default_factory=set)     # judgements whose basis has moved since
 
     def __repr__(self):
         name = self.values.get("full_name") or self.values.get("name") or self.id
@@ -104,20 +106,22 @@ def _kept_apart(told_apart: set, find: Callable[[str], str], a: str, b: str) -> 
     return False
 
 
-def resolve(statements: list, at: datetime | None = None) -> tuple[Any, str, list]:
+def resolve(statements: list, at: datetime | None = None):
     """Which statement about one slot the image shows: the most trusted, then the latest.
 
-    Returns the value, whose word it is, and anything else still standing — a disagreement isn't
-    hidden, it is reported, and that is where an open question comes from."""
+    Returns that statement and anything else still standing — a disagreement isn't hidden, it is
+    reported, and that is where an open question comes from. A slot nobody ever states directly,
+    like someone's character, is filled by what the world worked out; a slot someone did state is
+    filled by them, because a conclusion is the weakest thing in the world."""
     at = at or datetime.utcnow()
     standing = [s for s in statements if s.holds_at(at)]
     if not standing:
-        return None, "", []
+        return None, []
     standing.sort(key=lambda s: (facts_module.trust(s.source), s.stated_at), reverse=True)
     best = standing[0]
     rivals = [s for s in standing[1:]
               if _text(s.value) != _text(best.value) and facts_module.trust(s.source) == facts_module.trust(best.source)]
-    return best.value, best.source, rivals
+    return best, rivals
 
 
 def assemble(facts, rule: Callable[[list, list], bool] = same_name, at: datetime | None = None) -> dict[str, Image]:
@@ -136,11 +140,18 @@ def assemble(facts, rule: Callable[[list, list], bool] = same_name, at: datetime
                     continue
                 by_slot.setdefault(statement.slot, []).append(statement)
         for slot, statements in by_slot.items():
-            value, source, rivals = resolve(statements, at)
-            if value is None:
+            best, rivals = resolve(statements, at)
+            if best is None or best.value is None:
                 continue
+            value = best.value
             image.values[slot] = belongs.get(value.get("$subject")) if _is_ref(value) else value
-            image.sources[slot] = source
+            image.sources[slot] = best.source
+            if best.is_conclusion:
+                # The image says which values were worked out rather than told, so an answer can
+                # be phrased as what it is — and a judgement whose basis has moved says so.
+                image.judged.add(slot)
+                if facts.stale(best):
+                    image.stale.add(slot)
             if rivals:
                 image.conflicts[slot] = rivals
     return images

@@ -51,6 +51,51 @@ The literature calls these inconsistency-tolerant query answering, prioritized r
 deferred entity resolution and bitemporality — `docs/related-work.md` maps each piece to its name
 and to what that work does better than we do.
 
+## What was said, and what the world worked out
+
+Not every statement is something someone said. Some are what the world concluded: a hundred
+remarks about a person read together into a judgement about their character. Those are expensive
+— many statements, a model, sometimes a search, several passes — so they are *kept*, not computed
+on every read. That is what separates them from the assembly rules, which are cheap and run
+whenever anyone asks.
+
+A conclusion is a statement like any other, with two things added: **what it was drawn from**,
+and a digest of that basis. From this follows everything that keeps the layer honest:
+
+- **lowest standing.** The assistant's conclusion loses to anything anyone actually said, by the
+  ordinary resolution rule. No special case needed.
+- **"why do you think that" is answerable** — `basis_of()` returns the statements, not a retelling.
+- **staleness is mechanical.** The basis moved, the conclusion is stale; re-deriving it is work
+  for the agenda, not a judgement call.
+- **never drawn from other conclusions.** Refused at the API. A world that reasons from its own
+  guesses will believe anything by the end of the month.
+- **removable wholesale.** Retract everything with source `agent`, rebuild, and the world is
+  back to exactly what it was told — the primitive an agent needs to untangle itself.
+
+Rebuilding an image uses both kinds. Numbers, words and vocabulary values are taken as they were
+stated; where a slot has only judgements — someone's character, say — the image takes those, and
+marks them: `image.judged` says which values were worked out rather than told, `image.stale` says
+which of those are due to be worked out again. A host can then answer as what it is — "as I read
+it" rather than "you told me" — and one sentence from the user replaces the judgement outright.
+
+## Three structures of classes
+
+    ontology/core/        ours, fixed           what there is
+    ontology/grown/       the world's additions what turned out to be missing
+    ontology/judgements/  forms of conclusion   what the world knows how to work out
+
+The third declares the *shape* of a judgement rather than a fact: what it attaches to
+(`about: Person`), what it is drawn from, what fields the result has, and what work produces it.
+Its instances are conclusions, so they carry a basis and go stale; in an entity's image they sit
+where any other value would — `person.character` is a derived instance, built by expensive work
+and shown like anything else.
+
+| structure | author | how it is checked | how it comes off |
+|---|---|---|---|
+| core | us | tests, our own reading | it doesn't — it is the ground |
+| grown | the world | regression and `pass^k` | delete the file, rebuild |
+| judgements | the world, in our shape | the basis is visible, staleness is mechanical | retract the conclusions, rebuild |
+
 ## Three levels of change
 
 A world that improves itself changes at three levels. They differ in how freely they change,
