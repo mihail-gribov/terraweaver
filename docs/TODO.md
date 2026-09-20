@@ -19,6 +19,10 @@ comes first.
 
 ## A hint the host ignores, a question the host answers itself
 
+Partly addressed: contradictions are now kept as open questions on the entity
+(`docs/questions.md`), so a doubt outlives the run that noticed it and comes back every time
+anyone works with that entity. What is still open is below.
+
 Two failures from the same run, both host behaviour that the world can see but not prevent:
 
 - s20: the world hinted "Michael already has a dentist for that time: Arun Rao — both stand
@@ -29,9 +33,10 @@ Two failures from the same run, both host behaviour that the world can see but n
   exactly what the guide forbids ("never answer it yourself — not even with new=True").
 
 The rule of this project is to enforce in code, not in the prompt, and neither of these is
-enforced today. Open: whether `settle(..., new=True)` can be made to require the user's answer
-(it can't be verified from inside the world), and whether a hint that is ignored should become
-part of the run result the next time the same write happens.
+enforced today. A question keeps the doubt alive (s20's two dentists, s19's second Olga), but it
+still doesn't make the host act. Open: whether `settle(..., new=True)` can require the user's
+answer at all — the world never sees the conversation, so it can't be verified from inside — and
+whether an open question should reach the user another way than through the host that ignored it.
 
 ## Direction of relations, measured
 

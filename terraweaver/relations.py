@@ -273,10 +273,10 @@ def relate(world, a, b, kind: str, period: dict, attrs: dict):
         _check_roles(world, name, cls, subject, obj, attrs["role"], start, end)
     if rel.get("acyclic") and _reaches(world, name, obj, subject):
         raise ValueError(f"{name} can't form a cycle: {obj.display_name()} already leads to {subject.display_name()}")
-    _note_same_label(world, name, rel, obj, attrs, start, end)
     created = world.create(name, {"subject": subject, "object": obj, **attrs})
     if period:
         world.apply_period(created, period)
+    _note_same_label(world, name, rel, subject, obj, attrs, start, end, created)
     return created
 
 
@@ -312,22 +312,31 @@ def _check_functional(world, name, rel, subject, obj, start, end, attrs) -> None
                 )
 
 
-def _note_same_label(world, name: str, rel: dict, obj, attrs: dict, start, end) -> None:
+def _note_same_label(world, name: str, rel: dict, subject, obj, attrs: dict, start, end, created) -> None:
     """Two dentists at once is allowed — people do have two doctors — but "the new dentist
     instead of the old one" is what the user usually means, and the old one stays current
-    unless someone ends it. Say it; don't decide it."""
+    unless someone ends it. Say it; don't decide it — and keep the doubt (questions.py), because
+    a hint is read once and this one outlives the run that raised it."""
     label = str(attrs.get("label") or attrs.get("role") or "").strip().lower()
     if not label or rel.get("functional") == "at_any_time":
         return
     same_label = [
         r for r in world.all(name, limit=None, history=True)
-        if same(r.object, obj) and _overlaps(r, start, end)
+        if same(r.object, obj) and not same(r, created) and _overlaps(r, start, end)
         and str(getattr(r, "label", None) or getattr(r, "role", None) or "").strip().lower() == label
     ]
     if same_label:
+        old = same_label[0]
         ontology.note_hint(
-            f"{obj.display_name()} already has a {label} for that time: {same_label[0].display_name()}. "
+            f"{obj.display_name()} already has a {label} for that time: {old.display_name()}. "
             f"Both stand unless you end one — if this replaces it, .expire() it or keep(until=...)."
+        )
+        world.questions.raise_(
+            obj, "two_at_once",
+            f"two {label}s at once: {old.other(obj).display_name()} and {subject.display_name()}. "
+            f"Did the new one replace the old one?",
+            options=[f"{subject.display_name()} replaces them — end the old one", "both stand"],
+            involves=[old, created],
         )
 
 

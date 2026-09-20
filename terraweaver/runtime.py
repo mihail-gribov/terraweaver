@@ -138,6 +138,10 @@ class WorldView:
     def settle(self, needs: NeedsResolution, choice=None, *, new: bool = False):
         return self._world.settle(needs, choice, new=new)
 
+    def questions(self, limit: int = 20):
+        """Everything open across the world — what could be cleared up while the user is here."""
+        return self._world.questions.open_(limit)
+
     def comments(self, since=None, until=None, contains: str | None = None, limit: int = 50,
                  include_expired: bool = False, any_time: bool = False):
         """Dated remarks across every entity, newest first; include_expired=True adds history."""
@@ -224,8 +228,20 @@ class WorldRuntime:
             COMMON_MEMBERS,
             describe_for_prompt(self.specs),
             self.variables.describe(),
+            self._questions_note(),
             session.describe_for_prompt(),
         ])
+
+    def _questions_note(self) -> str:
+        """A host starting a task should know there is something the user could settle."""
+        open_ = self.world.questions.open_(limit=3)
+        if not open_:
+            return ""
+        total = len(self.world.questions.open_(limit=1000))
+        lines = [f"\nOpen questions about this world ({total}) — put them to the user when they're here, "
+                 f"not in the middle of a task; world.questions() for all of them:"]
+        lines += [f"    {q.about.display_name()}: {q.text}" for q in open_]
+        return "\n".join(lines) + "\n"
 
     def list_variables(self, key: str) -> str:
         """World variables with their meaning, then this session's own variables with their age."""
@@ -245,10 +261,12 @@ class WorldRuntime:
             ast.parse(expression, mode="eval")
         except SyntaxError as exc:
             return {"ok": False, "output": "", "error": f"not a single Python expression: {exc.msg}",
-                    "access": {}, "created": [], "updated": [], "found": [], "comments": [], "assumed": [], "hints": [], "new_variables": {}, "duration_ms": 0}
+                    "access": {}, "created": [], "updated": [], "found": [], "comments": [], "assumed": [],
+                    "hints": [], "questions": [], "new_variables": {}, "duration_ms": 0}
         if not name.isidentifier():
             return {"ok": False, "output": "", "error": f"{name!r} can't be a variable name",
-                    "access": {}, "created": [], "updated": [], "found": [], "comments": [], "assumed": [], "hints": [], "new_variables": {}, "duration_ms": 0}
+                    "access": {}, "created": [], "updated": [], "found": [], "comments": [], "assumed": [],
+                    "hints": [], "questions": [], "new_variables": {}, "duration_ms": 0}
         return self.run(f"world.pin({name}, ({expression}), {description!r})", key)
 
     def unset_variables(self, key: str, names: str) -> dict[str, Any]:
@@ -257,8 +275,24 @@ class WorldRuntime:
         bad = [n for n in listed if not n.isidentifier()]
         if bad:
             return {"ok": False, "output": "", "error": f"not variable names: {', '.join(bad)}",
-                    "access": {}, "created": [], "updated": [], "found": [], "comments": [], "assumed": [], "hints": [], "new_variables": {}, "duration_ms": 0}
+                    "access": {}, "created": [], "updated": [], "found": [], "comments": [], "assumed": [],
+                    "hints": [], "questions": [], "new_variables": {}, "duration_ms": 0}
         return self.run(f"world.unpin({', '.join(listed)})" if listed else "pass", key)
+
+    def _open_questions(self, recording) -> list[str]:
+        """What is open about the entities this run worked with. A host that touches Michael
+        should be told his two dentists are still unresolved — the hint that raised it was read
+        once, in some earlier run, and the doubt outlived it."""
+        seen, out = set(), []
+        for entity in list(recording.changed.values()) + list(recording.found.values()):
+            key = getattr(entity, "id", None)
+            if key is None or key in seen:
+                continue
+            seen.add(key)
+            for question in self.world.questions.of(entity):
+                options = f" [{' / '.join(question.options)}]" if question.options else ""
+                out.append(f"{entity.display_name()}: {question.text}{options}")
+        return out[:5]
 
     def run(self, code: str, key: str) -> dict[str, Any]:
         session = self.session(key)
@@ -268,7 +302,8 @@ class WorldRuntime:
         recording = None
         rolled_back: list[str] = []
         access: dict[str, int] = {}
-        effects = {"created": [], "updated": [], "found": [], "comments": [], "assumed": [], "hints": []}
+        effects = {"created": [], "updated": [], "found": [], "comments": [], "assumed": [], "hints": [],
+                   "questions": []}
         started = time.monotonic()
         # World variables are fresh in every run: entities come from the world as they are now,
         # and one pinned by another session shows up here too.
@@ -286,6 +321,7 @@ class WorldRuntime:
                 access = dict(counts)
                 self._persist(recording, namespace)
                 effects = _effects(recording, created={id(o) for o in self.store._tx_new_ids})
+                effects["questions"] = _merge_questions(effects["questions"], self._open_questions(recording))
         except (Exception, sandbox.RunTimeout) as exc:  # noqa: BLE001 - reporting any failure to the host is the point
             error = _host_traceback(exc)
             rolled_back = _discarded(recording)
@@ -334,6 +370,11 @@ class WorldRuntime:
         out["comments"] = [
             {"about": plain(c.about), "text": c.text, "when": plain(c.when), "tentative": c.tentative}
             for c in self.world.comments.search(limit=10_000, include_expired=True)
+        ]
+        out["questions"] = [
+            {"about": plain(q.about), "text": q.text, "kind": q.kind, "options": q.options,
+             "raised_at": plain(q.raised_at)}
+            for q in self.world.questions.open_(limit=10_000)
         ]
         return out
 
@@ -412,7 +453,8 @@ class WorldRuntime:
                 result["output"],
                 result["error"],
                 json.dumps(result["access"]),
-                json.dumps({k: result[k] for k in ("created", "updated", "found", "comments", "assumed", "hints")}, ensure_ascii=False),
+                json.dumps({k: result[k] for k in ("created", "updated", "found", "comments", "assumed", "hints",
+                                                   "questions")}, ensure_ascii=False),
                 result["duration_ms"],
             ),
         )
@@ -469,7 +511,20 @@ def _effects(recording, created: set[int]) -> dict[str, list[str]]:
     found = [name(e) for key, e in recording.found.items()
              if key not in created and not recording.attrs.get(key, set()) - _BOOKKEEPING]
     return {"created": made, "updated": changed, "found": found, "comments": list(recording.remarks),
-            "assumed": list(recording.assumed), "hints": list(recording.hints)}
+            "assumed": list(recording.assumed), "hints": list(recording.hints),
+            "questions": list(recording.questions)}
+
+
+def _merge_questions(raised: list[str], standing: list[str]) -> list[str]:
+    """One line per open question: what this run raised, plus what was already open about the
+    entities it worked with."""
+    out, seen = [], set()
+    for line in list(raised) + list(standing):
+        key = line.split(": ", 1)[-1][:60]
+        if key not in seen:
+            seen.add(key)
+            out.append(line)
+    return out[:5]
 
 
 def _discarded(recording) -> list[str]:
@@ -502,6 +557,9 @@ def format_result(result: dict) -> str:
     for kind in ("created", "updated", "found", "comments", "assumed", "hints"):
         if result.get(kind):
             parts.append(f"[{kind}] " + "; ".join(result[kind]))
+    if result.get("questions"):
+        parts.append("[open questions] " + "; ".join(result["questions"])
+                     + " — put them to the user if they're here; entity.questions() to answer or drop them")
     if result["new_variables"]:
         parts.append("[new variables] " + "; ".join(f"{k}: {v}" for k, v in result["new_variables"].items()))
     return "\n".join(parts)

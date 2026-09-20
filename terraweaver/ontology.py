@@ -88,6 +88,7 @@ class Recording:
         self.remarks: list[str] = []  # comments added, forgotten or confirmed, as the host should read them
         self.assumed: list[str] = []  # identities taken from what the user settled before
         self.hints: list[str] = []  # what the world suggests about a write that went through
+        self.questions: list[str] = []  # doubts recorded about an entity, open until the user answers
 
 
 @contextmanager
@@ -134,6 +135,11 @@ def note_assumed(text: str) -> None:
 def note_hint(text: str) -> None:
     if _CHANGED is not None and text not in _CHANGED.hints:
         _CHANGED.hints.append(text)
+
+
+def note_question(text: str) -> None:
+    if _CHANGED is not None and text not in _CHANGED.questions:
+        _CHANGED.questions.append(text)
 
 
 def note_remark(text: str) -> None:
@@ -360,6 +366,15 @@ class Entity:
         """Attach a dated remark to this entity — for what its attributes have no place for."""
         return current_world().comments.add(self, text, when=when, tentative=tentative, until=until, ttl=ttl,
                                             permanent=permanent)
+
+    def question(self, text: str, options=(), ) -> Any:
+        """Record something about this entity that doesn't add up and isn't yours to decide —
+        "two phone numbers, which is current?". It stays open until the user answers it."""
+        return current_world().questions.raise_(self, "noticed", text, options=options, by="host")
+
+    def questions(self, include_closed: bool = False) -> list:
+        """What's open about this entity. Each has .text, .options, .answer("…"), .drop()."""
+        return current_world().questions.of(self, include_closed=include_closed)
 
     def comments(self, since=None, until=None, contains: str | None = None, include_expired: bool = False,
                  any_time: bool = False) -> list:
@@ -768,6 +783,20 @@ Every class below shares these, so they aren't repeated for each one:
         comments() and relations(any_time=True) by hand.
     Conflicts are judged by overlapping periods, not by "now": one employer at a time, one
     mother, one CEO — but divorced in 2020 and married in 2022 contradict nothing.
+
+    Open questions. The world takes what you tell it even when it doesn't add up — the user
+    said it, and their life is not the world's to correct. What doesn't add up is kept as a
+    question about the entity: two current dentists, someone recorded as new next to someone who
+    answers to the same name, anything you noticed yourself. Runs that work with an entity get
+    its open questions back under [open questions]. They block nothing; put them to the user
+    when they're around, and they close.
+        for q in owner.questions(): print(q.text, q.options)
+        q.answer("Nina replaces Rao")    — closes it; recording what follows from it is yours
+        q.drop("asked — it's a different Olga")
+        anna.question("two numbers on file, which is current?", options=["the mobile", "the old one"])
+        world.questions()                — everything open, to clear up while the user is here
+    A question closes itself once its reason is gone: end the old dentist's relation and the
+    question about two dentists goes away without anyone answering it.
 
     entity.comment(text, when=None, tentative=False, until=None, ttl=None, permanent=False)
         Attach a dated remark to any entity: whatever matters about it but has no attribute —

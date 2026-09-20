@@ -156,6 +156,16 @@ def run_skill(needs: NeedsResolution, ask_user: Callable[[str, list[str]], int],
         else:
             settled = world.create(needs.context["class_name"], needs.context["incoming"])
             world.remember_choice(needs, None)
+            # "Someone new" next to someone who answers to the same name is the answer the world
+            # can't check: it never sees the conversation, and a host that skipped asking leaves
+            # a second Olga behind. The record stands; the doubt is kept (questions.py).
+            world.questions.raise_(
+                settled, "maybe_the_same",
+                f"recorded as new, though {', '.join(c.display_name() for c in needs.candidates[:3])} "
+                f"{'was' if len(needs.candidates) == 1 else 'were'} already there — the same one?",
+                options=["the same one", "different ones"],
+                involves=needs.candidates[:3],
+            )
         if needs.context.get("period"):
             world.apply_period(settled, needs.context["period"])
         return settled
