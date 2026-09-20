@@ -255,7 +255,7 @@ class Entity:
         # When it entered the world, and when it was last worked with. Together these are
         # what makes the world a context: who and what the conversation has been about
         # lately, rather than an undifferentiated pile of entities.
-        now = datetime.now(timezone.utc)
+        now = datetime.now(timezone.utc).replace(tzinfo=None)  # one form of time: see timeutil
         self.created_at = kwargs.pop("created_at", None) or now
         self.accessed_at = kwargs.pop("accessed_at", None) or now
         # When it holds in the world: [valid_from, valid_until). None on either side is open —
@@ -753,7 +753,7 @@ class Entity:
         """Mark that this entity was just worked with — the moment, and one more time in the
         count that decides whose open questions are worth the user's attention (usage.py)."""
         with trusted_writes():
-            self.accessed_at = datetime.now(timezone.utc)
+            self.accessed_at = datetime.now(timezone.utc).replace(tzinfo=None)
         current_world().usage.record(self)
         ask_if_questioned(self, "identity")
 
@@ -825,6 +825,11 @@ class Entity:
                 # gone — and it goes through the same door, which is what keeps periods honest.
                 self._set_tags(value)
                 return
+            # One form of time, whatever came in. A world that keeps some times with a zone and
+            # some without cannot compare its own records — and the host, holding a literal
+            # datetime(2026, 10, 1), finds that out mid-task.
+            if isinstance(value, datetime) and value.tzinfo is not None:
+                value = value.astimezone(timezone.utc).replace(tzinfo=None)
             # Stored as given, only without stray whitespace; comparisons use the kind's normalize.
             if isinstance(value, str):
                 value = value.strip()

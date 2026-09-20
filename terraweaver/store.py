@@ -14,7 +14,7 @@ import json
 import sqlite3
 import uuid
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from terraweaver import ontology
@@ -252,7 +252,12 @@ class Store:
                     continue  # stored by an older version: now computed, or no longer part of the class
                 kind, payload = _decode(raw)
                 if kind == "dt":
-                    setattr(obj, attr_name, datetime.fromisoformat(payload))
+                    # Rows written before the world settled on one form of time carry a zone;
+                    # they come back in the same form as everything else.
+                    when = datetime.fromisoformat(payload)
+                    setattr(obj, attr_name,
+                            when.astimezone(timezone.utc).replace(tzinfo=None)
+                            if when.tzinfo is not None else when)
                 elif kind == "ref":
                     setattr(obj, attr_name, self._load(payload, classes, memo))
                 elif kind == "refs":

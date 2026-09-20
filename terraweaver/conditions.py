@@ -63,8 +63,12 @@ def between(start, end) -> Condition:
 
 
 def now() -> datetime:
-    """The current moment, time-zone aware, so it compares safely with stored times."""
-    return datetime.now(timezone.utc)
+    """The current moment, in the one form this world keeps time in: UTC, without a tzinfo.
+
+    Every stored time is that form, so `now()` is comparable with all of them — and with a
+    plain `datetime(2026, 10, 1)` a host writes by hand, which is the comparison that used to
+    raise "can't compare offset-naive and offset-aware datetimes" in the middle of a task."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 def today() -> date:
