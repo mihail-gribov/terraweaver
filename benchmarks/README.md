@@ -62,3 +62,25 @@ commit — and `self_reported: true`, which is what it is until somebody else re
 - Recording is done by the host agent, so a bad run can be the host's fault rather than the
   world's — the transcripts are kept for exactly that reason.
 - The judge is Haiku unless said otherwise, and a cheap judge is a real source of noise.
+
+## What the first runs already showed (2026-09-21, oracle, Haiku, 2 knowledge-update questions)
+
+Three findings, in the order they appeared — the first two were ours, the third is the world's:
+
+1. **The host answered out of Claude Code's own memory.** Working in the shared temp dir, it
+   inherited `~/.claude/projects/-tmp*/memory` from earlier scenario runs and answered a
+   benchmark question with somebody else's life. Fixed: a folder per question, and the folder's
+   memory is dropped after the run.
+2. **"What you have recorded" is ambiguous to a host that has memory of its own.** It read
+   `memory/MEMORY.md`, found nothing, and said it did not know — without ever calling the world.
+   Fixed the way the scenario runner already does it: the prompt names the world (`Using my
+   world (the terraweaver tools):`) or the folder, per mode, and in world mode file tools are
+   disallowed outright.
+3. **A changing preference went in as prose, so nothing superseded it.** Asked for the BBQ sauce
+   the person is *currently* obsessed with, the world answered with the first one mentioned: the
+   host had put both into `Person.descriptions` and a comment rather than into anything with a
+   value that can change. Supersession cannot work on free text. This is the `Preference` gap in
+   docs/TODO.md, now with a benchmark question attached to it.
+
+The third one is the reason to run benchmarks at all: it is a real defect, found by an outside
+question, in the exact place our own scenarios were not looking.

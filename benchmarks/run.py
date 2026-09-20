@@ -46,17 +46,18 @@ ANSWER = """\
 Today is {when}. Answer this question from what you have recorded about me, and nothing else: \
 {question}
 
-Answer in one or two sentences. If what you have recorded does not answer it, say that you \
-don't know rather than guessing."""
+Look through what you recorded before you decide — search it, don't answer from memory of this \
+conversation. Answer in one or two sentences. If, after looking, nothing you recorded answers \
+it, say that you don't know rather than guessing."""
 
 
 def one(instance, mode: str, model: str, port: int, out_dir: Path, judge_model: str) -> dict:
     """One question end to end: an empty world, its history written in, then the question."""
     work = Path(tempfile.mkdtemp(prefix=f"tw-bench-{instance.id}-"))
     log = out_dir / f"{instance.id}.{mode}.jsonl"
-    server = totals = None
+    server = agent = None
+    totals = {"turns": 0, "cost": 0.0, "seconds": 0.0}
     try:
-        totals = {"turns": 0, "cost": 0.0, "seconds": 0.0}
         if mode == "world":
             server = hosting.start_server(work / "world.db", port)
         agent = (hosting.World if mode == "world" else hosting.Baseline)(work, instance.id, port)
@@ -82,10 +83,12 @@ def one(instance, mode: str, model: str, port: int, out_dir: Path, judge_model: 
     except Exception as trouble:  # one question failing is data, not a reason to lose the run
         return {"id": instance.id, "kind": instance.kind, "mode": mode, "correct": False,
                 "how": "error", "answer": f"{type(trouble).__name__}: {trouble}",
-                **(totals or {})}
+                **{k: round(v, 2) for k, v in totals.items()}}
     finally:
         if server:
             hosting.stop(server)
+        if agent:
+            hosting.forget_folder_memory(agent.cwd)
 
 
 def pass_hat_k(per_question: list[list[bool]], k: int) -> float:

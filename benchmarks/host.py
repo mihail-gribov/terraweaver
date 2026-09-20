@@ -36,6 +36,11 @@ class World:
 
     def __init__(self, work: Path, tag: str, port: int):
         self.work, self.tag, self.port, self.count = work, tag, port, 0
+        # A folder of its own, never the shared temp dir: Claude Code keeps per-folder memory
+        # under ~/.claude/projects, and a run in /tmp inherits whatever earlier runs left there.
+        # The first smoke run answered out of a scenario's leftovers, which is not a benchmark.
+        self.here = work / f"host-{tag}"
+        self.here.mkdir(parents=True, exist_ok=True)
 
     def conversation(self) -> list[str]:
         self.count += 1
@@ -44,9 +49,16 @@ class World:
             "type": "http", "url": f"http://127.0.0.1:{self.port}/mcp",
             "headers": {"x-terraweaver-session": f"{self.tag}-{self.count}"}}}}))
         return ["--mcp-config", str(config), "--strict-mcp-config",
-                "--allowedTools", "mcp__terraweaver__*"]
+                "--allowedTools", "mcp__terraweaver__*",
+                # Without this the host reads and writes files, and in the first smoke run it
+                # answered out of Claude Code's own per-folder memory instead of the world.
+                "--disallowedTools", "Read Write Edit Bash Glob Grep WebFetch WebSearch NotebookEdit"]
 
-    cwd = property(lambda self: Path(tempfile.gettempdir()))
+    cwd = property(lambda self: self.here)
+
+    @staticmethod
+    def phrase(message: str) -> str:
+        return "Using my world (the terraweaver tools): " + message
 
 
 class Baseline:
@@ -64,11 +76,15 @@ class Baseline:
 
     cwd = property(lambda self: self.folder)
 
+    @staticmethod
+    def phrase(message: str) -> str:
+        return "Using my personal data in this folder: " + message
+
 
 def ask(host, prompt: str, flags: list[str], resume: str | None, log: Path,
         model: str | None, timeout: int = 1200) -> dict:
     """One Claude Code turn. Returns its final text, session id, turns and cost."""
-    cmd = ["claude", "-p", prompt, *flags, "--output-format", "stream-json", "--verbose"]
+    cmd = ["claude", "-p", host.phrase(prompt), *flags, "--output-format", "stream-json", "--verbose"]
     if model:
         cmd += ["--model", model]
     if resume:
@@ -119,6 +135,19 @@ def start_server(db: Path, port: int) -> subprocess.Popen:
             time.sleep(0.5)
     server.kill()
     raise RuntimeError(f"world server on {port} didn't answer in a minute")
+
+
+def forget_folder_memory(folder: Path) -> None:
+    """Drop the per-folder memory Claude Code kept for a run's working directory.
+
+    Without this the next run starts with the last one's notes about somebody else's life, and
+    the benchmark measures contamination.
+    """
+    import shutil
+
+    slug = "-" + str(folder).strip("/").replace("/", "-")
+    for leftover in (Path.home() / ".claude" / "projects").glob(f"{slug}*"):
+        shutil.rmtree(leftover, ignore_errors=True)
 
 
 def stop(server: subprocess.Popen) -> None:
