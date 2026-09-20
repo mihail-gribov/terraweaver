@@ -9,3 +9,4 @@ worlds/*.db
 .terraweaver-token
 data/memops/raw/
 var/
+var/
