@@ -214,3 +214,45 @@ choice while the focus is on reading — not because it's understood.
 Related: creating an entity still bypasses the consistency layer entirely. `Person(...)`
 direct construction is allowed, so deduplication can be avoided at creation the same way it
 used to be avoidable on attribute writes.
+
+## A design pool: scenarios that guard the ideas, not the model
+
+The unit suites check that a mechanism is arithmetic. They cannot check that it earns its place.
+A design scenario does: the task is what a person would actually say, nothing in it explains how
+to store anything, and the mechanism is the only cheap way to get the answers right. If the
+mechanism rots — or stops being reachable from the host's side, which has happened twice — every
+probe in its scenario goes wrong at once. Run them as their own pool: `--level design`.
+
+Written: `s27_standing_things` (cyclic periods).
+
+Wanted, one per idea we've committed to:
+- tags with periods — something true for a season, asked about after the season
+- `where` with no class — a question about a thing that is not one kind of thing (s26 is a draft
+  of this; it needs its own fixture instead of the job-search one)
+- the two-stage record — "those were two different people after all", and nothing is lost
+- questions — a contradiction taken, remembered, and raised when the entity is next touched
+- direction — a relation written from the wrong end, and the world saying so
+- identity — a name that is a form of another name, merged; a namesake, not merged
+
+## Known limits of repeats
+
+- No weekday rule: "every weekday" has no form here. `every="week"` anchored on a Tuesday is the
+  way to say "every Tuesday"; five rules is the way to say "every weekday", which is silly.
+  Whether to grow the vocabulary (RFC 5545 has BYDAY) or leave it is an open question — the
+  parser stays small on purpose.
+- No exceptions to a rule: "every other Tuesday, except the one in August". The record is
+  append-only, so a skip would be its own statement subtracted by the derivation; nothing does
+  that yet.
+- A cyclic entity's repr says nothing about repeating. `entity.repeats()` and the write receipt
+  do, and `world.repeats()` lists them, but a host printing an Event sees only the anchor and
+  may read a series as a one-off. Fixing it means a query per repr, so it waits for a per-run
+  cache.
+
+## Half-open periods are invisible
+
+s20 fails this way twice over: told "from October 1 my dentist is Patel instead of Rao", the host
+ends Rao on September 30 and starts Patel on October 1, leaving a day with no dentist. Periods
+here are half-open — [from, until) — so the handover is "until October 1", and nothing says so
+where the host is looking. Worth a check in code rather than a line in the guide: for a relation
+type with `one_of_a_label`, when one ends and another of the same label starts within a day or
+two but not at the same moment, say that there is a gap (or an overlap) and what closes it.
