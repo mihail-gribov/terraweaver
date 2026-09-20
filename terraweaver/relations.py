@@ -43,6 +43,22 @@ class Relation(Entity):
         whose = "your" if right.lower() in ("you", "yourself") else f"{right}'s"
         return f"{left} is {whose} {what} ({kind})"
 
+    def both_ways(self) -> str:
+        """The link said from each end. A reversed relation is caught here or not at all: the
+        host wrote "Kevin reports to Tom" and what went in was "Kevin is Tom's manager", and the
+        only moment it can still fix that cheaply is while it is holding the user's words."""
+        rel = type(self)._spec["relation"]
+        subject, obj = getattr(self, "subject", None), getattr(self, "object", None)
+        said = self.display_name()
+        if rel.get("symmetric") or not isinstance(subject, Entity) or not isinstance(obj, Entity):
+            return said
+        word = str(self.__dict__.get("role") or self.__dict__.get("label") or "").strip().lower()
+        for role in rel.get("roles", []):
+            if word == role["name"] or word in [s.lower() for s in role.get("synonyms", [])]:
+                if role.get("inverse"):
+                    return f"{said} — so {obj.display_name()} is {subject.display_name()}'s {role['inverse']}"
+        return said
+
     @property
     def counterpart(self):
         """The end that isn't the one you asked from — set when the relation came out of

@@ -529,10 +529,15 @@ def _effects(recording, created: set[int]) -> dict[str, list[str]]:
     def name(entity) -> str:
         return f"{type(entity).__name__} «{entity.display_name()}»"
 
+    def written(entity) -> str:
+        """A relation is read back from both ends the one time it is written — see both_ways."""
+        reading = entity.both_ways() if hasattr(entity, "both_ways") else entity.display_name()
+        return f"{type(entity).__name__} «{reading}»"
+
     made, changed = [], []
     for key, entity in recording.changed.items():
         if key in created:
-            made.append(name(entity))
+            made.append(written(entity))
             continue
         attrs = sorted(recording.attrs.get(key, set()) - _BOOKKEEPING)
         if attrs:
