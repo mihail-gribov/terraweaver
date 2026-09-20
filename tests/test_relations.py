@@ -162,6 +162,23 @@ def main() -> int:
     check("and asking it for 'the related one' points at that name",
           loose is not None and "counterpart" in (loose or ""), str(loose))
 
+    # --- asking from the wrong end is not "there is none" ---
+    from terraweaver import ontology
+
+    with ontology.record_changes() as noted:
+        empty = owner.relations("service")
+    check("the end with no links reads empty", empty == [], str(empty))
+    hint = " ".join(noted.hints)
+    check("but the world says which end has them",
+          "served_by" in hint and "other end" in hint, hint or "(no hint)")
+    with ontology.record_changes() as quiet:
+        owner.relations("served_by")
+    check("and says nothing when the question was asked from the right end",
+          not any("other end" in h for h in quiet.hints), str(quiet.hints))
+    reads = [r.display_name() for r in owner.relations("served_by")]
+    check("a relation to the owner reads as English", not any("you's" in r for r in reads),
+          str(reads[:2]))
+
     # --- an unanswered question is not an entity to link ---
     asked = Person.new(full_name="Darren")  # resembles Darren Liu: a question, not a person
     linked = refused(lambda: owner.relate(asked, "social", label="friend"))

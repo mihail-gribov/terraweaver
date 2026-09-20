@@ -39,7 +39,9 @@ class Relation(Entity):
         what = self.__dict__.get("label") or (self.__dict__.get("role") or "").replace("_", " ") or kind
         left = subject.display_name() if isinstance(subject, Entity) else "?"
         right = obj.display_name() if isinstance(obj, Entity) else "?"
-        return f"{left} is {right}'s {what} ({kind})"
+        # "you's dentist" is nobody's English: the owner reads as a person being spoken to.
+        whose = "your" if right.lower() in ("you", "yourself") else f"{right}'s"
+        return f"{left} is {whose} {what} ({kind})"
 
     @property
     def counterpart(self):
@@ -414,6 +416,8 @@ def relations_of(world, entity, kind: str | None = None, history: bool = False) 
                 hidden.append(r)
     if hidden:
         _note_hidden(entity, kind, hidden)
+    if kind is not None and not found and not hidden:
+        _note_wrong_end(world, entity, kind, *chosen[0])
     # The one that was said last comes first, always and for every host. Where two relations
     # contradict each other this is the world's standing reading (questions.py, RULES), so a
     # singular answer — "who is my dentist" — is the same whoever asks and whenever they ask.
@@ -438,6 +442,25 @@ def _note_hidden(entity, kind: str | None, hidden: list) -> None:
     what = f"{kind} relations" if kind else "relations"
     ontology.note_hint(f"{entity.display_name()}: {' and '.join(parts)} — not shown, because {what} "
                        f"read as they hold now; any_time=True includes them")
+
+
+def _note_wrong_end(world, entity, kind: str, name: str, reverse) -> None:
+    """A link has two ends with two names, and asking from the wrong one reads like "there is
+    none". It isn't: the relation is right there, seen from the other side. Say which word gets
+    it, because an empty list is the one answer a host will not question."""
+    rel = spec(world.classes[name])
+    if rel.get("symmetric") or not rel.get("reverse"):
+        return
+    mine = "object" if not reverse else "subject"
+    theirs = [r for r in world.all(name, limit=None, history=True)
+              if same(getattr(r, mine, None), entity)]
+    if not theirs:
+        return
+    word = rel["kind"] if reverse else rel["reverse"]
+    ontology.note_hint(
+        f"{entity.display_name()}: no {kind} relations, but {len(theirs)} read from the other end "
+        f"— {'; '.join(r.display_name() for r in theirs[:3])}. That end is called {word!r}: "
+        f"entity.relations({word!r}) / entity.related({word!r}).")
 
 
 def related(world, entity, kind: str, history: bool = False) -> list:
