@@ -142,7 +142,7 @@ allowed.
 ## Time
 
 Relations have the same lifetime as instances: `starts` / `until` / `ttl`; ordinary reads show
-current relations, `history=True` shows all. A relation that ends isn't deleted — it becomes
+current relations, `any_time=True` shows all. A relation that ends isn't deleted — it becomes
 history ("former manager" is an Authority with `until`; a job change closes the old Membership
 and opens a new one); `forget` is a separate operation. Attributes of a relation keep their
 history like any entity's (`membership.history("role")`). Transitivity is evaluated at a moment:
@@ -193,3 +193,28 @@ world, not silently accepted.
    relations; fixture migrated.
 4. Re-run the MemOps relational scenarios (s16, s17) and compare with the run before the change:
    world 3/4 (Haiku failed s17), baseline 4/4.
+
+## Direction, and what the world says about it
+
+Direction is the one thing hosts got wrong repeatedly — `owner.relate(nina, "service",
+label="dentist")` for "my dentist is Nina" records that Michael is Nina's dentist. The answer is
+convention plus feedback, not a second API:
+
+- one rule, stated once in the world description: **the subject is the one the label describes**,
+  so `a.relate(b, kind, label=X)` reads "a is b's X";
+- every relation type carries an `example` and the sentence it `reads` as, printed with the type;
+- every result prints a relation as that sentence, so a reversed write is visible immediately;
+- the reverse name says it from the other end: `michael.relate(nina, "served_by", label="dentist")`.
+
+Three more things the world says rather than decides:
+
+- a label that belongs to another type is refused with a pointer — "wife" under `kin` says it is
+  a `partner` relation, because recording it as kin loses every check Partner would do;
+- a current read that hid an ended or not-yet-started relation adds a `[hint]` naming what it hid
+  (see `docs/time.md`);
+- a second relation with the same label to the same person, overlapping in time, is hinted at —
+  two dentists at once is allowed, but "the new dentist instead of the old one" is usually meant,
+  and the old one stays current until someone ends it.
+
+If runs still come out reversed, the fallback is a role-first call (`nina.relate_as("dentist",
+of=owner)`, `owner.who("dentist")`), where direction can't be got wrong because it isn't expressed.

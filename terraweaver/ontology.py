@@ -7,6 +7,7 @@ that raises NotImplementedError, so gaps fail loudly instead of silently no-op-i
 """
 import json
 from contextlib import contextmanager
+from dataclasses import dataclass
 from functools import wraps
 from datetime import datetime, timezone
 from pathlib import Path
@@ -220,18 +221,19 @@ class Entity:
     # --- what every class in the world can do ---
 
     @classmethod
-    def all(cls, limit: int | None = 50, *, history: bool = False) -> list:
-        """Entities of this class, most recently worked with first."""
-        return current_world().all(cls, limit=limit, history=history)
+    def all(cls, limit: int | None = 50, *, any_time: bool = False, history: bool = False) -> list:
+        """Entities of this class, most recently worked with first — the ones that hold now;
+        any_time=True adds those whose period has ended or hasn't started."""
+        return current_world().all(cls, limit=limit, history=history or any_time)
 
     @classmethod
-    def find(cls, *, history: bool = False, **attrs):
+    def find(cls, *, any_time: bool = False, history: bool = False, **attrs):
         """Entities of this class matching the attributes, best match first.
 
         A by-name lookup that isn't a certain match returns a NeedsResolution rather than
         ranked guesses — picking one would be deciding who was meant.
         """
-        return current_world().find(cls, history=history, **attrs)
+        return current_world().find(cls, history=history or any_time, **attrs)
 
     @classmethod
     def get(cls, **attrs):
@@ -268,16 +270,16 @@ class Entity:
             return history(self) if history else []
         return current_world().history.of(self, attr)
 
-    def relate(self, other, kind: str, *, starts=None, until=None, ttl=None, permanent: bool = False, **attrs):
+    def relate(self, other, kind: str, /, *, starts=None, until=None, ttl=None, permanent: bool = False, **attrs):
         """Record that this entity stands in relation `kind` to `other`; returns the relation."""
         return current_world().relate(self, other, kind, starts=starts, until=until, ttl=ttl,
                                       permanent=permanent, **attrs)
 
-    def relations(self, kind: str | None = None, *, history: bool = False) -> list:
+    def relations(self, kind: str | None = None, *, any_time: bool = False, history: bool = False) -> list:
         """The relations this entity takes part in — of one type, or all."""
         from terraweaver import relations
 
-        return relations.relations_of(current_world(), self, kind, history)
+        return relations.relations_of(current_world(), self, kind, history or any_time)
 
     def how_related(self, other, max_hops: int = 3) -> str | None:
         """How `other` is connected to this entity, in words: "Mark Stone is Michael's sibling in
@@ -286,21 +288,64 @@ class Entity:
 
         return relations.how_related(current_world(), self, other, max_hops)
 
-    def related(self, kind: str, *, history: bool = False) -> list:
+    def related(self, kind: str, *, any_time: bool = False, history: bool = False) -> list:
         """The entities at the other end of relations of `kind` (and the rest of a chain)."""
         from terraweaver import relations
 
-        return relations.related(current_world(), self, kind, history)
+        return relations.related(current_world(), self, kind, history or any_time)
 
     @property
     def starts(self):
         """When it begins to hold (None: since it was recorded) — as given with starts=."""
-        return getattr(self, "valid_from", None)
+        from terraweaver import timeutil
+
+        return timeutil.moment(getattr(self, "valid_from", None))
 
     @property
     def until(self):
         """When it stops holding (None: no end) — as given with until= / ttl=."""
-        return getattr(self, "valid_until", None)
+        from terraweaver import timeutil
+
+        return timeutil.moment(getattr(self, "valid_until", None))
+
+    def timeline(self, since=None, until=None) -> list:
+        """Everything dated about this entity, oldest first: when it was recorded, when its
+        period starts and ends, what its attributes were changed to and when, its dated remarks,
+        and its relations starting and ending. One way to ask "what happened with this, and when"."""
+        from terraweaver import relations, timeutil
+
+        world = current_world()
+        spec = type(self)._spec
+        moments = [(self.created_at, f"recorded as {type(self).__name__} «{self.display_name()}»")]
+        if getattr(self, "valid_from", None):
+            moments.append((self.valid_from, "holds from here"))
+        if getattr(self, "valid_until", None):
+            moments.append((self.valid_until, "stops holding here"))
+        for attr in spec["attributes"]:
+            if "derived" in attr:
+                continue
+            value = getattr(self, attr["name"], None)
+            if isinstance(value, datetime) and attr["name"] not in _MANAGED_ATTRS:
+                moments.append((value, f"{attr['name']}"))
+            for past in (world.history.of(self, attr["name"]) if attr["name"] not in _MANAGED_ATTRS else []):
+                if past.until is not None:
+                    moments.append((past.until, f"{attr['name']} was {_brief(past.value)} until here"))
+        for comment in self.comments(any_time=True):
+            moments.append((comment.when or comment.recorded_at, f"remark: {comment.text}"))
+        for relation in (relations.relations_of(world, self, None, True) if not isinstance(self, Relation_base()) else []):
+            other = relation.other(self)
+            what = relation.role_of(other) or type(relation)._spec["relation"]["kind"]
+            moments.append((relation.valid_from or relation.created_at, f"{what}: {other.display_name()} — from here"))
+            if relation.valid_until:
+                moments.append((relation.valid_until, f"{what}: {other.display_name()} — until here"))
+        start = timeutil.as_datetime(since) if since is not None else None
+        end = timeutil.as_datetime(until) if until is not None else None
+        out = []
+        for when, what in moments:
+            at = timeutil.moment(when)
+            if (start is None or at >= start) and (end is None or at <= end):
+                out.append(Moment(at, what))
+        return sorted(out, key=lambda m: m.when)
 
     def current(self) -> bool:
         """Whether this entity holds now."""
@@ -316,10 +361,11 @@ class Entity:
         return current_world().comments.add(self, text, when=when, tentative=tentative, until=until, ttl=ttl,
                                             permanent=permanent)
 
-    def comments(self, since=None, until=None, contains: str | None = None, include_expired: bool = False) -> list:
+    def comments(self, since=None, until=None, contains: str | None = None, include_expired: bool = False,
+                 any_time: bool = False) -> list:
         """This entity's current remarks, newest first; include_expired=True adds the history."""
         return current_world().comments.of(self, since=since, until=until, contains=contains,
-                                           include_expired=include_expired)
+                                           include_expired=include_expired or any_time)
 
     def touch(self) -> None:
         """Mark that this entity was just worked with."""
@@ -352,7 +398,7 @@ class Entity:
             f"{a['name']}={_brief(getattr(self, a['name'], None))}" for a in type(self)._spec["attributes"]
         )
         period = _period_text(getattr(self, "valid_from", None), getattr(self, "valid_until", None))
-        return f"{type(self).__name__}(id={self.id!r}, {fields}{period})"
+        return f"{type(self).__name__}(id={self.id!r}, {fields}{period}{_remark_note(self)})"
 
     def __eq__(self, other):
         if type(other) is not type(self):
@@ -401,6 +447,35 @@ class Entity:
         object.__setattr__(self, name, value)
         if not name.startswith("_"):
             _note_changed(self, name)
+
+
+@dataclass
+class Moment:
+    """One dated thing in an entity's timeline."""
+
+    when: datetime
+    what: str
+
+    def __repr__(self):
+        from terraweaver import timeutil
+
+        return f"<{timeutil.show(self.when)} — {self.what}>"
+
+
+def Relation_base():
+    from terraweaver.relations import Relation
+
+    return Relation
+
+
+def _remark_note(entity) -> str:
+    """Relations and entities carry remarks that attributes don't show. Reading one and seeing
+    only fields is how "rent: not recorded" gets answered over a comment that says $2,100."""
+    try:
+        count = len(entity.comments())
+    except Exception:  # noqa: BLE001 - a repr must never fail
+        return ""
+    return f", {count} remark{'s' if count > 1 else ''} (.comments())" if count else ""
 
 
 def _period_text(starts, until) -> str:
@@ -638,10 +713,13 @@ Every class below shares these, so they aren't repeated for each one:
         Persist that entity and everything it references.
 
     Relations link two entities and carry their own data (docs: "Relation types" below).
-    a.relate(b, kind, label=X) reads "a is b's X": maria.relate(michael, "kin", label="mother")
-    says Maria is Michael's mother. From the other end, use the reverse name:
-    michael.relate(greg, "served_by", label="landlord") says Greg is Michael's landlord. Results
-    show each relation as that sentence — check it reads the way you meant. A relation's period
+    Direction is one rule: the subject is the one the label describes, so a.relate(b, kind,
+    label=X) reads "a is b's X". maria.relate(michael, "kin", label="mother") says Maria is
+    Michael's mother; nina.relate(michael, "service", label="dentist") says Nina is Michael's
+    dentist. Read the sentence before you write the call — "my dentist is Nina" puts Nina first,
+    not the owner. From the other end, use the reverse name: michael.relate(greg, "served_by",
+    label="landlord") says Greg is Michael's landlord. Results show each relation as that
+    sentence — check it reads the way you meant. A relation's period
     reads back under the same names it's written with: rel.starts, rel.until. The label is matched to the type's roles ("mom" -> mother,
     "older brother" -> sibling), and the world checks each role's limits — a second mother is
     refused with the alternatives (stepmother). relation.role_of(entity) says what an end is to
@@ -662,15 +740,34 @@ Every class below shares these, so they aren't repeated for each one:
     concluded it — and it goes through as it is. The old value isn't lost:
     entity.history("email") lists what it held before and until when.
 
-    When a record holds. An entity holds from when it's recorded and for good, unless told
-    otherwise: Class.ensure(..., starts=date(...)) for what begins later (a job from October),
-    until=date(...) / ttl=timedelta(...) for what ends (a listing open for a month). Nothing is
-    deleted when its period ends — it becomes history. entity.keep(starts=..., until=... |
-    ttl=... | permanent=True) changes the period, entity.expire() ends it now,
-    entity.current() asks whether it holds. Reads show what holds now; history=True in
-    Class.all / Class.find includes ended and not-yet-started ones.
-    This is not an event's own time: a past meeting and next week's one both hold — find them
-    by their start_time like any attribute.
+    Time is one axis for the whole world, and the same words mean the same thing everywhere.
+    Three times are easy to confuse, so keep them apart:
+      when it's true   — the validity period, starts / until. Every entity and every relation
+                         has one. A job that ran March to September, a lease to next June.
+      when it happened — the thing's own time, an ordinary attribute: Event.start_time, a
+                         comment's when. A past meeting and next week's one are both valid
+                         records; find them by that attribute (Event.find(start_time=after(now()))).
+      when we learned  — created_at / recorded_at, the world's bookkeeping. A marriage recorded
+                         today may have started in 2019; you never set this.
+    Writing a period, the same four keywords for entities, relations and comments:
+        Class.ensure(..., starts=date(2026, 10, 1))   — begins later
+        Class.ensure(..., until=date(...) | ttl=timedelta(days=30))
+        kevin.relate(b04, "membership", title="lead", starts=date(2026, 1, 15))
+        entity.keep(starts=..., until=... | ttl=... | permanent=True); entity.expire() ends it
+        now; entity.current() asks whether it holds. Nothing is deleted when a period ends — it
+        becomes history.
+    Reading, the default is now — that's why "who is her partner" doesn't return an ex. One
+    keyword widens any read: any_time=True in Class.all, Class.find, entity.relations,
+    entity.related, entity.comments, world.comments. It adds both ended and not-yet-started
+    ones — the future is not history. When a read hides something, you get a [hint] saying so.
+    entity.timeline(since=None, until=None)
+        Everything dated about one entity or relation, oldest first — when it was recorded, when
+        its period starts and ends, what its attributes were changed to and when, its dated
+        remarks, its relations starting and ending. Each moment has .when and .what. This is the
+        one call for "what happened with this, and when", instead of assembling history(),
+        comments() and relations(any_time=True) by hand.
+    Conflicts are judged by overlapping periods, not by "now": one employer at a time, one
+    mother, one CEO — but divorced in 2020 and married in 2022 contradict nothing.
 
     entity.comment(text, when=None, tentative=False, until=None, ttl=None, permanent=False)
         Attach a dated remark to any entity: whatever matters about it but has no attribute —
@@ -679,12 +776,12 @@ Every class below shares these, so they aren't repeated for each one:
         certain yet. Say how long it holds: until=date(...), ttl=timedelta(days=7) ("on vacation
         until Friday", a pickup code), or permanent=True (an allergy). Unsaid, it holds 180 days,
         a tentative one 30. Prefer a real attribute when one exists; never invent attributes.
-    entity.comments(since=None, until=None, contains=None, include_expired=False)
+    entity.comments(since=None, until=None, contains=None, any_time=False)
         That entity's current remarks, newest first; expired ones are history, shown only with
-        include_expired=True. Each has .text, .when, .until, .expired, .recorded_at,
+        any_time=True. Each has .text, .when, .until, .expired, .recorded_at,
         .tentative, .about, and .forget() (delete for good), .confirm(),
         .keep(until=... | ttl=... | permanent=True) to change how long it holds.
-    world.comments(since=None, until=None, contains=None, include_expired=False)
+    world.comments(since=None, until=None, contains=None, any_time=False)
         Remarks across the whole world.
 """
 
@@ -711,7 +808,14 @@ def describe_for_prompt(specs: dict[str, dict[str, Any]]) -> str:
         lines.append("")
     if relation_types:
         lines.append("Relation types — instances linking a subject and an object, with their own attributes and")
-        lines.append("validity period (starts / until), history and comments:")
+        lines.append("validity period (starts / until), history and comments.")
+        lines.append("")
+        lines.append("Direction, one rule for every type: the subject is the one the label describes.")
+        lines.append("a.relate(b, kind, label=X) reads as the sentence \"a is b's X\" — so the dentist, the")
+        lines.append("manager, the mother stands first. Say it out loud before writing it; each type below")
+        lines.append("shows the sentence its example makes, and results print every relation as that sentence.")
+        lines.append("To say it from the other end, use the reverse name: michael.relate(nina, \"served_by\",")
+        lines.append("label=\"dentist\") records the same relation, read from the client's side.")
         lines.append("")
         for name, spec in relation_types.items():
             rel = spec["relation"]
@@ -729,6 +833,8 @@ def describe_for_prompt(specs: dict[str, dict[str, Any]]) -> str:
                          f"{' / '.join(rel['to'])}  # {spec.get('description', '')}")
             if traits:
                 lines.append(f"    # {'; '.join(traits)}")
+            if rel.get("example"):
+                lines.append(f"    {rel['example']}   # {rel.get('reads', '')}")
             if rel.get("roles"):
                 shown = []
                 for r in rel["roles"]:

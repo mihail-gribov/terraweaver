@@ -16,11 +16,11 @@ TURNS = [
 
 EXPECT = """
 rao = Person.get(email="rao@smilecare.example")
-ending = [r for r in rao.relations("service", history=True) if r.object == owner]
+ending = [r for r in rao.relations("service", any_time=True) if r.object == owner]
 assert ending and ending[0].valid_until is not None and ending[0].valid_until.date() == date(2026, 10, 1), "Dr. Rao isn't recorded as ending on October 1"
 patel = [p for p in Person.all(limit=None) if "patel" in p.full_name.lower()]
 assert len(patel) == 1, "Dr. Patel not recorded once"
-starting = [r for r in patel[0].relations("service", history=True) if r.object == owner]
+starting = [r for r in patel[0].relations("service", any_time=True) if r.object == owner]
 assert starting and starting[0].valid_from is not None and starting[0].valid_from.date() == date(2026, 10, 1), "Dr. Patel isn't recorded as starting on October 1"
 greg = [p for p in Person.all(limit=None) if "greg" in p.full_name.lower()]
 assert greg and any(r.object == owner for r in greg[0].relations("service")), "the landlord isn't recorded as serving the owner"

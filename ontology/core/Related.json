@@ -10,7 +10,9 @@
       "any"
     ],
     "free": true,
-    "labels": []
+    "labels": [],
+    "example": "ring.relate(grandmother, \"related\", label=\"inherited from\", description=\"passed down in 2019\")",
+    "reads": "the ring is what Michael inherited from his grandmother"
   },
   "attributes": [
     {

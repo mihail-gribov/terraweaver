@@ -113,7 +113,8 @@ class Comments:
                  _encode_date(ends), int(default)),
             )
         ontology.note_remark(f"added on {entity.display_name()}: {text.strip()}")
-        return Comment(cursor.lastrowid, entity, text.strip(), when, recorded, bool(tentative), ends, self)
+        return Comment(cursor.lastrowid, entity, text.strip(), timeutil.moment(when), recorded,
+                       bool(tentative), timeutil.moment(ends), self)
 
     def set_end(self, comment: Comment, until=None, ttl=None, permanent: bool = False):
         explicit = timeutil.period_end(until, ttl, permanent, base=_now())
@@ -126,16 +127,16 @@ class Comments:
         return explicit
 
     def of(self, entity, since=None, until=None, contains: str | None = None,
-           include_expired: bool = False) -> list[Comment]:
+           include_expired: bool = False, any_time: bool = False) -> list[Comment]:
         """An entity's comments, newest first (by when it happened, else when recorded)."""
         if entity.id is None:
             return []
-        return self._query("entity_id = ?", (entity.id,), since, until, contains, include_expired)
+        return self._query("entity_id = ?", (entity.id,), since, until, contains, include_expired or any_time)
 
     def search(self, since=None, until=None, contains: str | None = None, limit: int = 50,
-               include_expired: bool = False) -> list[Comment]:
+               include_expired: bool = False, any_time: bool = False) -> list[Comment]:
         """Comments across the whole world."""
-        return self._query("1 = 1", (), since, until, contains, include_expired)[:limit]
+        return self._query("1 = 1", (), since, until, contains, include_expired or any_time)[:limit]
 
     def forget(self, comment: Comment) -> None:
         ontology.note_world_call("world_writes")
@@ -182,7 +183,8 @@ class Comments:
                 entity = self.store.load(entity_id, self.classes)
             except KeyError:
                 continue
-            out.append((key, Comment(cid, entity, text, when, datetime.fromisoformat(recorded), bool(tentative), ends, self)))
+            out.append((key, Comment(cid, entity, text, timeutil.moment(when), datetime.fromisoformat(recorded),
+                                     bool(tentative), timeutil.moment(ends), self)))
         out.sort(key=lambda pair: pair[0], reverse=True)
         return [comment for _, comment in out]
 

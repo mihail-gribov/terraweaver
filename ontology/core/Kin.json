@@ -248,7 +248,9 @@
         ],
         "gives": "sibling_in_law"
       }
-    ]
+    ],
+    "example": "maria.relate(michael, \"kin\", label=\"mother\")",
+    "reads": "Maria is Michael's mother"
   },
   "attributes": [
     {

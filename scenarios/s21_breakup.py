@@ -19,7 +19,7 @@ darren = Person.get(email="darren@example.com")
 now_ = [p.full_name for p in darren.related("partner")]
 assert now_ == ["Emma Lind"], f"current partner(s): {now_}"
 naomi = Person.get(email="naomi@example.com")
-assert naomi in darren.related("partner", history=True), "the relationship with Naomi was deleted instead of ended"
+assert naomi in darren.related("partner", any_time=True), "the relationship with Naomi was deleted instead of ended"
 """
 
 PROBES = [

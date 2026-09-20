@@ -18,7 +18,9 @@
       "organizer",
       "speaker",
       "member"
-    ]
+    ],
+    "example": "michael.relate(summit, \"participation\", label=\"speaker\")",
+    "reads": "Michael takes part in the summit as a speaker"
   },
   "attributes": [
     {

@@ -37,7 +37,9 @@
           "lead"
         ]
       }
-    ]
+    ],
+    "example": "linda.relate(kevin, \"authority\", label=\"manager\")",
+    "reads": "Linda is Kevin's manager — the one in charge is the subject"
   },
   "attributes": [
     {

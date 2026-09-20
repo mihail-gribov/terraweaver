@@ -17,6 +17,16 @@ The world is served over MCP; the host agent writes code against the object mode
 (`docs/procedural-memory.md`), `remember`, `research`, `extend` — builds on this loop, so it
 comes first.
 
+## Direction of relations, measured
+
+Hosts wrote relations backwards — `owner.relate(nina, "service", label="dentist")` for "my
+dentist is Nina". The answer so far is convention, not a new API: one rule stated once (the
+subject is the one the label describes), an example per relation type in the world description
+showing the sentence it makes, and every result printing a relation as that sentence. If runs
+still come out reversed, the fallback is a role-first call — `nina.relate_as("dentist",
+of=owner)` and `owner.who("dentist")` — where direction can't be got wrong because it isn't
+expressed.
+
 ## Close the `Preference` gap
 
 A fact is stored as `predicate` + free-text `value` — "wants" / "зарплату от 150000". Nothing

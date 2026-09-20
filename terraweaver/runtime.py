@@ -66,7 +66,9 @@ result — carries over. After a long pause the session is reset for you. Anythi
 outlive the task belongs in the world, not in a variable.
 
 Rules the world enforces:
-- Each `run` is atomic: if your code raises, nothing it wrote is kept. Fix it and run again.
+- Each `run` is atomic: if your code raises, nothing it wrote is kept — including the lines
+  that printed before it failed. The error names what was discarded; send the whole block
+  again, not only the line that failed.
 - What isn't in the world isn't known. An empty result means the information isn't there — say
   so rather than filling the gap.
 - Before recording what the user tells you, decide from the conversation whether it is about
@@ -118,11 +120,11 @@ class WorldView:
         """The NeedsResolution that the last refused write left behind, if any."""
         return self._world.pending
 
-    def all(self, cls, limit: int | None = World.DEFAULT_LIMIT, *, history: bool = False):
-        return self._world.all(cls, limit=limit, history=history)
+    def all(self, cls, limit: int | None = World.DEFAULT_LIMIT, *, any_time: bool = False, history: bool = False):
+        return self._world.all(cls, limit=limit, history=history or any_time)
 
-    def find(self, cls, *, history: bool = False, **attrs):
-        return self._world.find(cls, history=history, **attrs)
+    def find(self, cls, *, any_time: bool = False, history: bool = False, **attrs):
+        return self._world.find(cls, history=history or any_time, **attrs)
 
     def get(self, cls, **attrs):
         return self._world.get(cls, **attrs)
@@ -137,10 +139,10 @@ class WorldView:
         return self._world.settle(needs, choice, new=new)
 
     def comments(self, since=None, until=None, contains: str | None = None, limit: int = 50,
-                 include_expired: bool = False):
+                 include_expired: bool = False, any_time: bool = False):
         """Dated remarks across every entity, newest first; include_expired=True adds history."""
         return self._world.comments.search(since=since, until=until, contains=contains, limit=limit,
-                                           include_expired=include_expired)
+                                           include_expired=include_expired or any_time)
 
     def pin(self, name: str, value, description: str) -> None:
         """Keep a named value for every session: an entity (by id), entities, or plain data."""
@@ -263,6 +265,8 @@ class WorldRuntime:
         namespace = session.namespace
         stdout = io.StringIO()
         error = None
+        recording = None
+        rolled_back: list[str] = []
         access: dict[str, int] = {}
         effects = {"created": [], "updated": [], "found": [], "comments": [], "assumed": [], "hints": []}
         started = time.monotonic()
@@ -284,6 +288,7 @@ class WorldRuntime:
                 effects = _effects(recording, created={id(o) for o in self.store._tx_new_ids})
         except (Exception, sandbox.RunTimeout) as exc:  # noqa: BLE001 - reporting any failure to the host is the point
             error = _host_traceback(exc)
+            rolled_back = _discarded(recording)
             self._refresh(namespace)
         new_names = session.sync()
         result = {
@@ -291,6 +296,7 @@ class WorldRuntime:
             "ok": error is None,
             "output": _truncate(stdout.getvalue()),
             "error": error,
+            "rolled_back": rolled_back,
             "access": access,
             **effects,
             "new_variables": {name: session.variables[name]["description"] for name in new_names},
@@ -466,6 +472,22 @@ def _effects(recording, created: set[int]) -> dict[str, list[str]]:
             "assumed": list(recording.assumed), "hints": list(recording.hints)}
 
 
+def _discarded(recording) -> list[str]:
+    """What a failed run had written before it failed — rolled back with the rest of it. Named
+    here because a host that saw those lines print tends to assume they stuck and move on."""
+    if recording is None:
+        return []
+    names = []
+    for key, entity in recording.changed.items():
+        if not recording.attrs.get(key, set()) - _BOOKKEEPING:
+            continue  # only touched, nothing of its own was written
+        try:
+            names.append(f"{type(entity).__name__} «{entity.display_name()}»")
+        except Exception:  # noqa: BLE001 - a half-built entity is exactly what this is about
+            names.append(type(entity).__name__)
+    return names
+
+
 def format_result(result: dict) -> str:
     """A run's result as the text a host reads."""
     parts = []
@@ -473,7 +495,10 @@ def format_result(result: dict) -> str:
         parts.append("[session was reset after a long pause — earlier variables are gone]")
     parts.append(result["output"] or "(no output)")
     if result["error"]:
-        parts.append(f"[error — nothing from this run was kept]\n{result['error']}")
+        undone = result.get("rolled_back") or []
+        lost = f" — {', '.join(undone[:5])} " + ("were" if len(undone) > 1 else "was") + " discarded" if undone else ""
+        parts.append(f"[error — nothing from this run was kept{lost}. A run is all or nothing: "
+                     f"send the whole block again, not only the line that failed]\n{result['error']}")
     for kind in ("created", "updated", "found", "comments", "assumed", "hints"):
         if result.get(kind):
             parts.append(f"[{kind}] " + "; ".join(result[kind]))

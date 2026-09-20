@@ -39,6 +39,14 @@ class Relation(Entity):
         right = obj.display_name() if isinstance(obj, Entity) else "?"
         return f"{left} is {right}'s {what} ({kind})"
 
+    def related(self, kind=None, **kw):
+        """A relation has two ends and they have names — asking it for "the related one" is the
+        question it can't answer, so say which end you mean."""
+        raise TypeError(
+            "a relation links two ends: rel.subject, rel.object, or rel.other(entity) for the end "
+            "that isn't the one you asked from. rel.role_of(entity) says what an end is to the other."
+        )
+
     def other(self, entity):
         """The end of this relation that isn't `entity`."""
         return self.object if same(self.subject, entity) else self.subject
@@ -81,6 +89,33 @@ def resolve_kind(classes: dict[str, type], kind: str) -> tuple[str, bool]:
         rel = spec(cls)
         known.append(rel["kind"] + (f" / {rel['reverse']}" if rel.get("reverse") else ""))
     raise ValueError(f"no relation type {kind!r}; the types are: {', '.join(known)}")
+
+
+def _check_label_fits(world, name: str, cls, rel: dict, attrs: dict) -> None:
+    """A label is a user's word, but some words are another type's business: "husband" is a
+    partner, not kin. Recording it under the wrong type loses every check that type would do,
+    so the world refuses and says where it belongs."""
+    label = str(attrs.get("label") or "").strip()
+    if not label or rel.get("free"):
+        return
+    if label.lower() in [l.lower() for l in rel.get("labels", [])] or match_role(cls, label):
+        return
+    fitting = type_for_label(world.classes, label) or role_type(world.classes, label)
+    if fitting and fitting != name:
+        other = spec(world.classes[fitting])
+        raise ValueError(
+            f"'{label}' is a {other['kind']} relation, not {rel['kind']}: "
+            f"a.relate(b, '{other['kind']}', label='{label}'). "
+            f"{other['kind']} knows how that link behaves — {fitting} checks apply."
+        )
+
+
+def role_type(classes: dict[str, type], label: str) -> str | None:
+    """The relation type one of whose roles this label names ("mom" -> Kin)."""
+    for name, cls in relation_classes(classes).items():
+        if spec(cls).get("roles") and match_role(cls, label):
+            return name
+    return None
 
 
 def type_for_label(classes: dict[str, type], label: str) -> str | None:
@@ -155,8 +190,12 @@ def _fits(entity, allowed: list[str]) -> bool:
 
 
 def _overlaps(rel, start, end) -> bool:
-    """Whether a relation's validity period overlaps [start, end); None is open."""
-    r_start, r_end = getattr(rel, "valid_from", None), getattr(rel, "valid_until", None)
+    """Whether a relation's validity period overlaps [start, end); None is open.
+
+    A relation with no start holds from when it was recorded — it doesn't reach back forever,
+    so a marriage entered today is no obstacle to recording one that ran 2010 to 2015."""
+    r_start = getattr(rel, "valid_from", None) or getattr(rel, "created_at", None)
+    r_end = getattr(rel, "valid_until", None)
     if r_end is not None and start is not None and timeutil.as_datetime(r_end) <= start:
         return False
     if end is not None and r_start is not None and timeutil.as_datetime(r_start) >= end:
@@ -183,6 +222,7 @@ def relate(world, a, b, kind: str, period: dict, attrs: dict):
         raise ValueError(f"{name} links two of the same kind: {type(subject).__name__} and {type(obj).__name__} differ")
     if rel.get("irreflexive", True) and same(subject, obj):
         raise ValueError(f"{subject.display_name()} can't be in a {name} relation with itself")
+    _check_label_fits(world, name, cls, rel, attrs)
     if rel.get("free"):
         missing = [k for k in ("label", "description") if not str(attrs.get(k) or "").strip()]
         if missing:
@@ -233,6 +273,7 @@ def relate(world, a, b, kind: str, period: dict, attrs: dict):
         _check_roles(world, name, cls, subject, obj, attrs["role"], start, end)
     if rel.get("acyclic") and _reaches(world, name, obj, subject):
         raise ValueError(f"{name} can't form a cycle: {obj.display_name()} already leads to {subject.display_name()}")
+    _note_same_label(world, name, rel, obj, attrs, start, end)
     created = world.create(name, {"subject": subject, "object": obj, **attrs})
     if period:
         world.apply_period(created, period)
@@ -271,6 +312,25 @@ def _check_functional(world, name, rel, subject, obj, start, end, attrs) -> None
                 )
 
 
+def _note_same_label(world, name: str, rel: dict, obj, attrs: dict, start, end) -> None:
+    """Two dentists at once is allowed — people do have two doctors — but "the new dentist
+    instead of the old one" is what the user usually means, and the old one stays current
+    unless someone ends it. Say it; don't decide it."""
+    label = str(attrs.get("label") or attrs.get("role") or "").strip().lower()
+    if not label or rel.get("functional") == "at_any_time":
+        return
+    same_label = [
+        r for r in world.all(name, limit=None, history=True)
+        if same(r.object, obj) and _overlaps(r, start, end)
+        and str(getattr(r, "label", None) or getattr(r, "role", None) or "").strip().lower() == label
+    ]
+    if same_label:
+        ontology.note_hint(
+            f"{obj.display_name()} already has a {label} for that time: {same_label[0].display_name()}. "
+            f"Both stand unless you end one — if this replaces it, .expire() it or keep(until=...)."
+        )
+
+
 def _reaches(world, name: str, start, target) -> bool:
     """Whether following `name` forward from `start` arrives at `target`."""
     seen, frontier = set(), [start]
@@ -295,17 +355,39 @@ def relations_of(world, entity, kind: str | None = None, history: bool = False) 
     else:
         name, reverse = resolve_kind(world.classes, kind)
         chosen = [(name, reverse)]
-    found = []
+    found, hidden = [], []
     for name, reverse in chosen:
         symmetric = spec(world.classes[name]).get("symmetric")
-        for r in world.all(name, limit=None, history=history):
+        for r in world.all(name, limit=None, history=True):
             if symmetric or reverse is None:
                 hit = same(r.subject, entity) or same(r.object, entity)
             else:
                 hit = same(r.object, entity) if reverse else same(r.subject, entity)
-            if hit:
+            if not hit:
+                continue
+            if history or r.current():
                 found.append(r)
+            else:
+                hidden.append(r)
+    if hidden:
+        _note_hidden(entity, kind, hidden)
     return found
+
+
+def _note_hidden(entity, kind: str | None, hidden: list) -> None:
+    """Reads show what holds now. When that silence hides something — a relation that ended, or
+    one that starts later — say so, or "she has no partner" gets answered about an ex."""
+    now = timeutil.now()
+    over = [r for r in hidden if r.valid_until and timeutil.as_datetime(r.valid_until) <= now]
+    ahead = [r for r in hidden if r not in over]
+    parts = []
+    if over:
+        parts.append(f"{len(over)} that ended ({'; '.join(r.display_name() for r in over[:3])})")
+    if ahead:
+        parts.append(f"{len(ahead)} that start later ({'; '.join(r.display_name() for r in ahead[:3])})")
+    what = f"{kind} relations" if kind else "relations"
+    ontology.note_hint(f"{entity.display_name()}: {' and '.join(parts)} — not shown, because {what} "
+                       f"read as they hold now; any_time=True includes them")
 
 
 def related(world, entity, kind: str, history: bool = False) -> list:

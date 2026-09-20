@@ -84,7 +84,7 @@ class World:
 
     DEFAULT_LIMIT = 50
 
-    def all(self, cls, limit: int | None = DEFAULT_LIMIT, history: bool = False) -> list:
+    def all(self, cls, limit: int | None = DEFAULT_LIMIT, history: bool = False, any_time: bool = False) -> list:
         """Entities of a class, most recently worked with first.
 
         Limited by default: a personal world grows without bound, and an unbounded dump is
@@ -93,18 +93,18 @@ class World:
         access times alone. Otherwise one listing would flatten the very signal the ordering
         is built on.
 
-        Only what holds now — history=True gives everything, ended and not yet started too.
+        Only what holds now — any_time=True gives everything, ended and not yet started too.
         """
         ontology.note_world_call("world_queries")
         instances = self.store.load_all(self._name(cls), self.classes)
-        if not history:
+        if not (history or any_time):
             moment = timeutil.now()
             instances = [e for e in instances if timeutil.in_period(
                 getattr(e, "valid_from", None), getattr(e, "valid_until", None), moment)]
         instances.sort(key=lambda e: e.accessed_at, reverse=True)
         return instances[:limit] if limit else instances
 
-    def find(self, cls, history: bool = False, **attrs):
+    def find(self, cls, history: bool = False, any_time: bool = False, **attrs):
         """Entities matching the given attributes, split into matches and resemblances.
 
         A lookup *by name* that isn't settled returns a NeedsResolution instead: several
@@ -115,7 +115,7 @@ class World:
         """
         ontology.note_world_call("world_queries")
         class_name = self._name(cls)
-        scored = matching.score_candidates(self.all(cls, limit=None, history=history),
+        scored = matching.score_candidates(self.all(cls, limit=None, history=history or any_time),
                                            class_name, attrs, filter_others=True)
         # Relevance first; between equally good matches, whoever was dealt with most recently.
         scored.sort(key=lambda pair: (-pair[1], -pair[0].accessed_at.timestamp()))
@@ -243,7 +243,7 @@ class World:
         for name in sorted(deferred, key=lambda n: relations.APPLY_ORDER.index(n) if n in relations.APPLY_ORDER else 99):
             setattr(instance, name, deferred[name])
 
-    def relate(self, a, b, kind: str, starts=None, until=None, ttl=None, permanent: bool = False, **attrs):
+    def relate(self, a, b, kind: str, /, starts=None, until=None, ttl=None, permanent: bool = False, **attrs):
         from terraweaver import relations
 
         ontology.note_world_call("world_writes")

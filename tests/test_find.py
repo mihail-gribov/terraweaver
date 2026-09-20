@@ -11,6 +11,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from terraweaver import matching
 from terraweaver.impls import IMPLS
 from terraweaver.ontology import build_classes, load_specs
 from terraweaver.resolution import NeedsResolution
@@ -126,6 +127,11 @@ def main() -> int:
     world._determined(remote[-1])
     check("ties go to the most recently handled",
           Vacancy.find(remote=True).main[0].id == remote[-1].id)
+
+    # --- a title is how a name is said, not part of it: "Dr. Rao" is Arun Rao ---
+    check("a name given with a title still resembles the person",
+          matching.similarity("Dr. Rao", "Arun Rao") >= matching.PLAUSIBLE,
+          str(matching.similarity("Dr. Rao", "Arun Rao")))
 
     print()
     if failures:

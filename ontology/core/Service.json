@@ -31,7 +31,9 @@
         "inverse": "client",
         "synonyms": []
       }
-    ]
+    ],
+    "example": "nina.relate(michael, \"service\", label=\"dentist\")",
+    "reads": "Nina is Michael's dentist — the provider is the subject, the client the object"
   },
   "attributes": [
     {

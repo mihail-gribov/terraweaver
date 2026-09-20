@@ -58,7 +58,9 @@
           "old classmate"
         ]
       }
-    ]
+    ],
+    "example": "priya.relate(michael, \"social\", label=\"friend\")",
+    "reads": "Priya is Michael's friend"
   },
   "attributes": [
     {

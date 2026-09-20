@@ -27,11 +27,11 @@ TURNS = [
 EXPECT = """
 b04 = Organization.get(name="Supply Chain Operations")
 assert [o.name for o in b04.related("part_of")][:1] == ["Meridian Corp"], "B04 moved already — the reorg starts in March"
-future = [r for r in b04.relations("part_of", history=True) if r.object.name == "Logistics"]
+future = [r for r in b04.relations("part_of", any_time=True) if r.object.name == "Logistics"]
 assert future and future[0].valid_from is not None and future[0].valid_from.date() == date(2027, 3, 1), "B04 → Logistics from March 1 not recorded"
 tom = Person.get(email="treyes@meridian.example")
 kevin = Person.get(email="kchen@meridian.example")
-later = [r for r in tom.relations("authority", history=True) if r.object == kevin]
+later = [r for r in tom.relations("authority", any_time=True) if r.object == kevin]
 assert later and later[0].valid_from is not None and later[0].valid_from.date() == date(2027, 3, 1), "Tom over Kevin from March 1 not recorded"
 """
 

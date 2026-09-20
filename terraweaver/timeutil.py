@@ -7,6 +7,49 @@ UTC, and all of them become naive UTC so they compare without surprises.
 from datetime import date, datetime, timedelta, timezone
 
 
+class Moment(datetime):
+    """A moment the world hands back — a datetime that also compares with a plain date.
+
+    Hosts mix the two constantly: `rel.starts >= today()` is the obvious thing to write and
+    Python raises on it, costing a run and a retry every time. Here a date is read as its
+    midnight, the way the rest of the world reads it.
+    """
+
+    def _both(self, other):
+        if isinstance(other, datetime) or not isinstance(other, date):
+            return other
+        return datetime(other.year, other.month, other.day)
+
+    def __eq__(self, other):
+        return datetime.__eq__(self, self._both(other))
+
+    def __ne__(self, other):
+        return datetime.__ne__(self, self._both(other))
+
+    def __lt__(self, other):
+        return datetime.__lt__(self, self._both(other))
+
+    def __le__(self, other):
+        return datetime.__le__(self, self._both(other))
+
+    def __gt__(self, other):
+        return datetime.__gt__(self, self._both(other))
+
+    def __ge__(self, other):
+        return datetime.__ge__(self, self._both(other))
+
+    __hash__ = datetime.__hash__
+
+
+def moment(value):
+    """The same instant, comparable with dates as well as datetimes."""
+    if value is None or isinstance(value, Moment):
+        return value
+    value = as_datetime(value)
+    return Moment(value.year, value.month, value.day, value.hour, value.minute,
+                  value.second, value.microsecond)
+
+
 def as_datetime(value: date | datetime) -> datetime:
     if not isinstance(value, datetime):
         value = datetime(value.year, value.month, value.day)

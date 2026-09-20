@@ -7,7 +7,7 @@ SETUP = ""
 TURNS = ["Using my world (terraweaver): when is my interview with QuantumLeap?"]
 
 EXPECT = """
-assert len(Event.all(limit=None, history=True)) == 3, "events were added or removed"
+assert len(Event.all(limit=None, any_time=True)) == 3, "events were added or removed"
 call = Event.get(title="Call with Alan about QuantumLeap")
 assert call.kind == "call", f"the call became a {call.kind}"
 """

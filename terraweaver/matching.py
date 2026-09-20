@@ -55,6 +55,16 @@ def normalize(text: str | None) -> str:
     return " ".join(text.strip().lower().split())
 
 
+# A title is how a name is said, not part of it: "Dr. Rao" is Arun Rao, and a lookup that
+# insists on the word "dr" finds nobody.
+TITLES = {"dr", "mr", "mrs", "ms", "mx", "miss", "prof", "professor", "sir", "madam", "rev", "fr"}
+
+
+def drop_titles(text: str) -> str:
+    kept = [part for part in text.split() if part.strip(".,") not in TITLES]
+    return " ".join(kept) if kept else text
+
+
 def similarity(a: str | None, b: str | None, by_parts: bool = True) -> float:
     """How alike two names are, comparing whole strings and individual parts.
 
@@ -63,7 +73,7 @@ def similarity(a: str | None, b: str | None, by_parts: bool = True) -> float:
     by the name actually used would come back empty and the agent would report that nobody
     like that exists. Comparing "anna" to the part "anna" gives what it should.
     """
-    a_norm, b_norm = normalize(a), normalize(b)
+    a_norm, b_norm = drop_titles(normalize(a)), drop_titles(normalize(b))
     if not a_norm or not b_norm:
         return 0.0
     whole = SequenceMatcher(None, a_norm, b_norm).ratio()
