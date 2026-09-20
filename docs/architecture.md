@@ -311,6 +311,29 @@ The work of reaching out is deferred and belongs to the agenda (`docs/ideas-rese
 ticket, one at a time, on a budget — not something that happens in the middle of answering
 someone.
 
+## Finding by meaning
+
+Most of a world is structured and needs no help. Some of it is deliberately prose — a remark
+about someone, a note on an idea — because the host writes a remark exactly when the class has
+no place for the thing. There, matching words finds nothing: "who works on batteries" misses
+"does cell chemistry at a startup".
+
+So there is an index over what was said, by meaning (`meaning.py`), with the local model where
+one is served and a deterministic stand-in where none is, so every path works offline. Three
+things about it are settled:
+
+- **it is an index, not a source.** It states nothing, outranks nothing, never reaches an image.
+  Change the model and it is rebuilt; the world is exactly as it was — the same relation to the
+  record that images have to statements.
+- **it suggests, it does not decide.** Above all it takes no part in identity. "Anna Petrova" and
+  "Anna Sokolova" sit close together in any embedding, and who someone is is settled by names
+  people vouched for and facts that disagree.
+- **it is used where it is good.** Retrieval, and finding what is plainly the same thing said
+  twice. Grouping remarks by topic was tried and measured: on real remarks, one topic spreads
+  0.46–0.61 while different topics sit at 0.49. There is no threshold, so that job is not done
+  this way — naming the kind of a remark is a judgement, and it belongs to the model
+  (`docs/TODO.md`).
+
 ## What can be taken away
 
 The world has to work without its upper floors, and each of them has to come off without

@@ -11,6 +11,7 @@ from terraweaver import matching, ontology, resolution, timeutil
 from terraweaver.comments import Comments
 from terraweaver.history import ValueHistory
 from terraweaver.facts import Facts
+from terraweaver.meaning import Meanings
 from terraweaver.procedures import Procedures
 from terraweaver.questions import Questions
 from terraweaver.usage import Usage
@@ -57,6 +58,7 @@ class World:
         self.facts = Facts(store.conn)
         self.usage = Usage(store)
         self.procedures = Procedures(store)
+        self.meanings = Meanings(store)
         self.questions = Questions(store, classes, self.usage)
         ontology.set_write_guard(self._keep_old_value)
         # Lets `Person.find(...)` reach this world without each class carrying a store.
@@ -315,6 +317,13 @@ class World:
         elif period:
             self.apply_period(outcome, period)
         return outcome
+
+    def like(self, text: str, limit: int = 5, kind: str | None = None) -> list:
+        """What in this world reads like that — by meaning, not by the words used.
+
+        Candidates, not answers: it is an index over what was said (meaning.py), and it settles
+        nothing. Useful where the world is deliberately unstructured — remarks, notes."""
+        return self.meanings.like(self, text, limit, kind)
 
     def rebuild(self, rule=None, at=None) -> dict:
         """Build every entity again from what was said. See rebuild.py — it is always safe."""

@@ -41,6 +41,11 @@ CREATE INDEX IF NOT EXISTS idx_tick_runs_job ON tick_runs(job, at);
 # fills the list with fifty duplicates has made the list worthless.
 NEW_QUESTIONS_PER_TICK = 3
 
+# How close two remarks must read before they are plainly the same thing said twice. High on
+# purpose: measured on real remarks, anything below about 0.7 mixes topics rather than matching
+# them, and a loose threshold here would fill the record with noise.
+ALIKE = 0.78
+
 
 @dataclass
 class Job:
@@ -122,6 +127,48 @@ def _links_without_rules(world) -> str | None:
     return f"links used often but with no rules of their own: {described}"
 
 
+def _remarks_said_twice(world) -> str | None:
+    """The same remark recorded about several people, or about one person twice.
+
+    What this job is *not*: grouping remarks by topic, so that "allergic to peanuts", "can't eat
+    nuts" and "no shellfish" together propose a dietary attribute. That was tried and measured,
+    and the measurement said no — in a multilingual embedding, short remarks about one topic sit
+    0.46–0.61 apart while remarks about different topics sit at 0.49. There is no threshold that
+    separates them, and a schema proposal built on that would be noise.
+
+    Naming the *kind* of a remark is a judgement — work for the model, kept once per remark and
+    then counted (docs/TODO.md). Embeddings do what they are good at here: finding what is
+    plainly the same thing said twice, which is worth knowing on its own.
+    """
+    import json
+
+    world.meanings.refresh(world)
+    rows = [(subject, text, json.loads(vector)) for subject, text, vector in
+            world.store.conn.execute(
+                "SELECT subject, text, vector FROM meanings WHERE kind = 'comment' AND model = ?",
+                (world.meanings.model.name,))]
+    if len(rows) < 4:
+        return None
+    groups: list = []
+    for subject, text, vector in rows:
+        for group in groups:
+            if _alike(vector, group[0][2]) >= ALIKE:
+                group.append((subject, text, vector))
+                break
+        else:
+            groups.append([(subject, text, vector)])
+    worth = [(len(group), group[0][1]) for group in groups if len(group) > 1]
+    worth.sort(reverse=True)
+    if not worth:
+        return None
+    described = "; ".join(f"{count}x \"{text[:44]}\"" for count, text in worth[:3])
+    return f"the same remark recorded more than once — {described}"
+
+
+def _alike(one: list, other: list) -> float:
+    return sum(a * b for a, b in zip(one, other))
+
+
 def _unused_attributes(world) -> str | None:
     """What the class offers and nobody fills. Not removed — counted: a schema grows and shrinks
     on evidence, and this is where the evidence accumulates (docs/schema-growth.md)."""
@@ -161,6 +208,8 @@ JOBS = [
         "count what the classes offer and nobody fills"),
     Job("loose-links", timedelta(days=3), _links_without_rules,
         "find links used often that no type has rules for"),
+    Job("said-twice", timedelta(days=3), _remarks_said_twice,
+        "find the same remark recorded more than once"),
 ]
 
 

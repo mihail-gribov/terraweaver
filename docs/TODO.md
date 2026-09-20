@@ -17,6 +17,25 @@ The world is served over MCP; the host agent writes code against the object mode
 (`docs/procedural-memory.md`), `remember`, `research`, `extend` — builds on this loop, so it
 comes first.
 
+## Structuring what was written as prose
+
+A remark is what the host writes when the class has no place for something — "allergic to
+peanuts", "her son started school", "prefers mornings". The world should read those, notice when
+the same *sort* of fact keeps coming back, and propose the attribute that is missing; then the
+remarks can be read into it instead of sitting as prose.
+
+The obvious way does not work, and it was measured rather than assumed: clustering short remarks
+by embedding similarity. In bge-m3, remarks on one topic sit 0.46–0.61 apart while remarks on
+different topics sit at 0.49 — no threshold separates them, and a schema proposal built on that
+would be noise. Embeddings stay where they are good: retrieval, and finding what is plainly the
+same thing said twice (`ticks.py`, *said-twice*).
+
+What should do it instead: **the model names the kind** of each remark — "dietary", "family",
+"work", "preference" — once per remark, kept with it like any judgement, with its basis. Then
+counting kinds is arithmetic, and a kind that recurs across enough people is an attribute
+proposal with real evidence behind it. That is the agenda's work, and it wants the judgement
+layer (`facts.conclude`) rather than a new mechanism.
+
 ## Research for one thing: "find out more about this"
 
 The person says "I'm interested in a BMW X5, 2026". The world records the thing and then goes and

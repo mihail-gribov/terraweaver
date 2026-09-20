@@ -334,10 +334,9 @@ class Facts:
 
 
 def _run(conn, script: str) -> None:
-    """Each statement on its own, so nothing here commits an open transaction."""
-    for part in script.strip().split(";"):
-        if part.strip():
-            conn.execute(part)
+    from terraweaver.store import run_script
+
+    run_script(conn, script)
 
 
 def _statement(table: str, row) -> Statement:

@@ -468,6 +468,11 @@ class Entity:
 
         return graph.reaches(current_world(), self, kind, up)
 
+    def similar(self, limit: int = 5) -> list:
+        """Whatever else in the world reads like what is said about this one. Candidates only —
+        nothing here decides who someone is."""
+        return current_world().meanings.similar(current_world(), self, limit)
+
     def why(self, attr: str):
         """What the world worked out for this attribute, and what it rests on — for when the user
         asks why you think so. It comes back as the judgement, the statements behind it, and

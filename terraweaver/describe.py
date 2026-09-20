@@ -153,6 +153,12 @@ Every class below shares these, so they aren't repeated for each one:
         linda.relate(b04, "authority", label="manager")
         b04.relate(company, "part_of")
     entity.relations(kind)[i].counterpart is the end that isn't the entity you asked from.
+    Finding by meaning, for what is written as prose rather than filled in:
+        world.like("works on batteries")   — remarks and notes that read like that, closest first
+        person.similar()                   — whoever else reads like what is said about them
+    It searches, it doesn't decide: what comes back are candidates with how close they read, and
+    nothing about who someone is follows from it.
+
     Walking the graph, for when the answer is a chain rather than a field. The world does the
     walking; what a chain means is yours to say:
         a.path_to(b)          how these two are connected, step by step — None if nothing does

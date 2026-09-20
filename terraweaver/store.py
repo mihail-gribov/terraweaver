@@ -63,6 +63,19 @@ CREATE TABLE IF NOT EXISTS "{table}" (
 """
 
 
+def run_script(conn, script: str) -> None:
+    """Run a schema script one statement at a time, ignoring comments.
+
+    Not `executescript`: that commits whatever transaction is open, and a table made in the
+    middle of a run would commit the run with it. And not a plain split on ";" either — a
+    semicolon inside a `--` comment cuts a statement in half, which is a bug you find once and
+    then never want to find again."""
+    lines = [line.split("--")[0] for line in script.splitlines()]
+    for statement in "\n".join(lines).split(";"):
+        if statement.strip():
+            conn.execute(statement)
+
+
 class Store:
     def __init__(self, path: str = "terraweaver.db"):
         self.conn = sqlite3.connect(path)
