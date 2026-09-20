@@ -34,10 +34,16 @@ class Session:
         if world is not None:
             self.namespace["world"] = world
             # Every conversation has these two, so they're always to hand.
-            if world.me is not None:
-                self.bind("me", world.me, "you — the assistant")
-            if world.owner is not None:
-                self.bind("owner", world.owner, "the person you're talking to")
+            # The two parties are in every namespace under the same names, always. They are not
+            # variables the host set and can lose: reset_session puts them back, and nothing may
+            # rebind them. `me` and `owner` are the older names for the same two.
+            for name, value, what in (("agent", world.me, "you — the assistant keeping this world"),
+                                      ("me", world.me, "you — the assistant"),
+                                      ("user", world.owner, "the person this world belongs to"),
+                                      ("owner", world.owner, "the person this world belongs to")):
+                if value is not None:
+                    self.bind(name, value, what)
+                    self.preset.add(name)
 
     def bind(self, name: str, value: Any, kind: str) -> None:
         self.namespace[name] = value

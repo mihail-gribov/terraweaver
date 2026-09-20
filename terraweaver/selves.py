@@ -5,8 +5,13 @@ a relationship can point at them, a remark can be about them, and "my dentist" h
 they *are*, though, is not something the world should invent or the host should have to type in:
 it is configuration, and personal agents keep configuration in files next to the work.
 
-    USER.md      who the world belongs to      (or ABOUT_ME.md, ABOUT.md)
-    soul.md      who is keeping it             (or SOUL.md, AGENT.md)
+    USER.md, ABOUT_ME.md, ABOUT.md     who the world belongs to
+    soul.md, SOUL.md, AGENT.md         who is keeping it
+
+Every one of them that exists is read, not just the first: a person may keep their character in
+soul.md and their working setup in AGENT.md, and both say something about the same entity. Each
+file states what it says under its own name, and the ordinary rules build one image out of all
+of them — the same way conversation and a register do.
 
 `AGENTS.md` and `CLAUDE.md` are deliberately not read: they describe the project and how to work
 in it, not the assistant. A world that read them as "who I am" would file commit conventions as
@@ -36,8 +41,8 @@ import hashlib
 import re
 from pathlib import Path
 
-# Where each party may be described, in the order tried. The first that exists wins, so a world
-# can sit in a repository that already has AGENTS.md and simply use it.
+# Where each party may be described. All of them are read; later files in the list state later,
+# so where two disagree about the same slot the further one down wins.
 FILES = {
     "user": ("USER.md", "ABOUT_ME.md", "ABOUT.md"),
     "agent": ("soul.md", "SOUL.md", "AGENT.md"),
@@ -49,10 +54,11 @@ BODY_GOES_TO = {"user": "notes", "agent": "character"}
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS self_files (
-    role TEXT PRIMARY KEY,
+    role TEXT NOT NULL,
     path TEXT NOT NULL,
     digest TEXT NOT NULL,
-    read_at TEXT NOT NULL
+    read_at TEXT NOT NULL,
+    PRIMARY KEY (role, path)
 );
 """
 
@@ -73,12 +79,9 @@ def parse(text: str) -> tuple[dict, str]:
     return fields, match.group(2).strip()
 
 
-def find(home: Path, role: str) -> Path | None:
-    for name in FILES[role]:
-        candidate = home / name
-        if candidate.exists():
-            return candidate
-    return None
+def find(home: Path, role: str) -> list[Path]:
+    """Every file that describes this party, in the order they are read."""
+    return [home / name for name in FILES[role] if (home / name).exists()]
 
 
 def digest(path: Path) -> str:
@@ -94,8 +97,8 @@ class SelfFiles:
 
     def changed(self, role: str, path: Path) -> bool:
         row = self.store.conn.execute(
-            "SELECT path, digest FROM self_files WHERE role = ?", (role,)).fetchone()
-        return row is None or row[0] != str(path) or row[1] != digest(path)
+            "SELECT digest FROM self_files WHERE role = ? AND path = ?", (role, str(path))).fetchone()
+        return row is None or row[0] != digest(path)
 
     def remember(self, role: str, path: Path) -> None:
         from datetime import datetime, timezone
@@ -124,9 +127,18 @@ def refresh(world, home: Path) -> list[str]:
     files = SelfFiles(world.store)
     read = []
     for role, entity in (("user", world.owner), ("agent", world.me)):
-        path = find(Path(home), role)
-        if path is None or entity is None or not files.changed(role, path):
-            continue
+        for path in find(Path(home), role):
+            if entity is None or not files.changed(role, path):
+                continue
+            read.append(_read_into(world, files, role, entity, path))
+    return [line for line in read if line]
+
+
+def _read_into(world, files: "SelfFiles", role: str, entity, path: Path) -> str:
+    """Retract what this file said before, state what it says now, and remember its shape."""
+    from terraweaver import ontology
+
+    if True:
         fields, body = parse(path.read_text())
         source = path.name
         said_before = set()
@@ -150,5 +162,4 @@ def refresh(world, home: Path) -> list[str]:
                 setattr(entity, name, value)
         world.save(entity)
         files.remember(role, path)
-        read.append(f"{role} from {path.name}")
-    return read
+        return f"{role} from {path.name}"

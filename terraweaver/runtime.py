@@ -49,6 +49,12 @@ CREATE TABLE IF NOT EXISTS runs (
 
 
 
+# Names that mean the same two entities in every session, and that host code may read but never
+# rebind: losing "who you are" and "whose world this is" halfway through a task is not something
+# a host should be able to do to itself.
+ALWAYS = frozenset({"user", "agent", "owner", "me"})
+
+
 class WorldView:
     """What host code sees as `world`: the operations, not the machinery.
 
@@ -289,7 +295,7 @@ class WorldRuntime:
         session.world_vars = set(world_vars)
         try:
             ontology.set_open_tokens(self.world.questions.tokens())
-            tree = _variables_by_name(sandbox.check(code, protected=set(world_vars)))
+            tree = _variables_by_name(sandbox.check(code, protected=set(world_vars) | ALWAYS, always=ALWAYS))
             with self.store.transaction():
                 with contextlib.redirect_stdout(stdout), ontology.track_access() as counts, \
                         ontology.record_changes() as recording, sandbox.time_limit():

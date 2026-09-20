@@ -77,6 +77,18 @@ def main() -> int:
               len(third.world.facts.about("person:user", include_retracted=True)) == before,
               str(len(third.world.facts.about("person:user", include_retracted=True))))
 
+    # --- both are in every namespace, under names that can't be taken ---
+    w = open_world(fixture="job_search")
+    seen = w.run('print(user.full_name, agent.name, owner is user, me is agent)', "host")
+    check("both are in the namespace under permanent names",
+          seen["output"].strip() == "Michael Tera True True", seen["output"] or str(seen["error"]))
+    taken = w.run('user = 5', "host")
+    check("and neither can be rebound", not taken["ok"] and "pick another name" in str(taken["error"]),
+          str(taken["error"]))
+    w.reset_session("host")
+    after = w.run('print(user.full_name)', "host")
+    check("a new task still has them", after["output"].strip() == "Michael", after["output"])
+
     print()
     if failures:
         print(f"{len(failures)} failed: {', '.join(failures)}")

@@ -93,7 +93,7 @@ def _bind(bindings: list, node: ast.AST) -> Any:
     return out
 
 
-def check(code: str, protected: set[str] = frozenset()) -> ast.AST:
+def check(code: str, protected: set[str] = frozenset(), always: set[str] = frozenset()) -> ast.AST:
     """Parse and vet host code. Raises SandboxViolation, or SyntaxError for broken code.
 
     What may be refused is what touches the data: writing where the world keeps its own state,
@@ -105,6 +105,11 @@ def check(code: str, protected: set[str] = frozenset()) -> ast.AST:
     tree = ast.fix_missing_locations(_ImportsAlreadyHere().visit(ast.parse(code, "<run>")))
     for node in ast.walk(tree):
         if isinstance(node, ast.Name) and isinstance(node.ctx, (ast.Store, ast.Del)) and node.id in protected:
+            if node.id in always:
+                raise SandboxViolation(
+                    f"'{node.id}' is one of the two this world is between and is in every namespace; "
+                    f"pick another name for a local variable"
+                )
             raise SandboxViolation(
                 f"'{node.id}' is a world variable; change it with world.pin({node.id}, value, "
                 f"\"description\") or pick another name for a local variable"
