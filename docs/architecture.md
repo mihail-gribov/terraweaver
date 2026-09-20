@@ -115,6 +115,38 @@ Two separations make the agenda trustworthy:
   into the `run_id` of every statement it produces, so any fact the world wrote by itself traces
   back to the work that produced it — and is undone with it.
 
+## The two parties, and where they come from
+
+Every world holds both of the people it is between — the person it belongs to and the assistant
+keeping it — under fixed ids, created when the world opens, and neither is the host's to replace.
+Without them there is no "me" and no "you" to hang a relationship on, and every fixture had to
+invent its own pair.
+
+What they *are* is configuration, and personal agents keep configuration in files:
+
+    USER.md      who the world belongs to      (or ABOUT_ME.md)
+    AGENT.md     who is keeping it             (or AGENTS.md, CLAUDE.md)
+
+Front matter sets attributes, the body is kept as notes, and the world re-reads a file when it
+changes. What a file says is **facts with that file as their source** — reliable, because someone
+wrote them deliberately, but not a separate kind of truth: they join what conversation and
+sources said about the same two entities and are resolved into one image by the ordinary rules.
+A line taken out of the file is a statement retracted, not a value deleted. Something the user
+says in conversation outranks the file, which is right — the file is last year's intention, the
+sentence is this morning's.
+
+## Opening a world
+
+    from terraweaver import open_world
+
+    w = open_world()                      # empty, in memory
+    w = open_world(fixture="job_search")  # with something in it
+    w = open_world("var/mine.db")         # on disk, with its USER.md and AGENT.md beside it
+
+One line, because most worlds are opened to test something, and ceremony is the whole cost. The
+files are looked for next to the world, so a world carried on a stick carries its configuration
+with it.
+
 ## What can be taken away
 
 The world has to work without its upper floors, and each of them has to come off without

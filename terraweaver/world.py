@@ -10,6 +10,7 @@ from typing import Any
 from terraweaver import matching, ontology, resolution, timeutil
 from terraweaver.comments import Comments
 from terraweaver.history import ValueHistory
+from terraweaver.facts import Facts
 from terraweaver.procedures import Procedures
 from terraweaver.questions import Questions
 from terraweaver.usage import Usage
@@ -50,12 +51,43 @@ class World:
         store.conn.executescript(CHOICES_SCHEMA)
         # Every overwrite of a known entity's attribute leaves the old value in history.
         self.history = ValueHistory(store, classes)
+        self.facts = Facts(store.conn)
         self.usage = Usage(store)
         self.procedures = Procedures(store)
         self.questions = Questions(store, classes, self.usage)
         ontology.set_write_guard(self._keep_old_value)
         # Lets `Person.find(...)` reach this world without each class carrying a store.
         ontology.set_world(self)
+        self.ensure_selves()
+
+    # Fixed ids, so the two of them are the same rows in every world and can be found without
+    # searching by name — and so nothing else can quietly take their place.
+    USER_ID, AGENT_ID = "person:user", "agent:self"
+
+    def ensure_selves(self) -> None:
+        """Every world is between two parties, so every world holds both — the person it is
+        about and the assistant keeping it. A world without them has no "me" and no "you" to
+        anchor a relationship to, and every fixture had to remember to invent them."""
+        if "Person" not in self.classes or "Agent" not in self.classes:
+            return
+        with ontology.not_recording():
+            try:
+                agent = self.store.load(self.AGENT_ID, self.classes)
+            except KeyError:
+                agent = None
+            if agent is None and self.store.load_all("Agent", self.classes):
+                return  # a fixture made its own pair; leave them be
+            if agent is None:
+                person = self.classes["Person"](full_name="you")
+                person.id = self.USER_ID
+                self.store.save(person)
+                agent = self.classes["Agent"](name="assistant", owner=person)
+                agent.id = self.AGENT_ID
+                self.store.save(agent)
+
+    def is_protected(self, entity) -> bool:
+        """The two parties are not the host's to remove or replace."""
+        return getattr(entity, "id", None) in (self.USER_ID, self.AGENT_ID)
 
     def _keep_old_value(self, instance, attr: str, existing, incoming) -> None:
         """An assignment is the host's statement and isn't questioned; what it replaces is kept.

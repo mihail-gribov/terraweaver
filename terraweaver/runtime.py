@@ -17,7 +17,7 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from terraweaver import ontology, sandbox
+from terraweaver import ontology, sandbox, selves
 from terraweaver.impls import IMPLS
 from terraweaver.describe import COMMON_MEMBERS, HOST_GUIDE, describe_for_prompt
 from terraweaver.ontology import Entity, build_classes, load_specs
@@ -129,22 +129,31 @@ class WorldView:
 
 
 class WorldRuntime:
-    def __init__(self, db_path: str, fixture: str | None = None, rebuild: bool = False):
+    def __init__(self, db_path: str, fixture: str | None = None, rebuild: bool = False,
+                 ontology_dir: Path | None = None, home: Path | None = None):
         self.db_path = db_path
         self.fixture = fixture
-        self.specs = load_specs(ONTOLOGY_DIR)
+        # Where the two parties are described (selves.py). Next to the world by default, so a
+        # world carried on a stick carries its configuration with it.
+        self.home = Path(home) if home is not None else (
+            Path(db_path).parent if db_path != ":memory:" else Path.cwd())
+        self.specs = load_specs(ontology_dir or ONTOLOGY_DIR)
         self.classes = build_classes(self.specs, IMPLS)
         self.store = Store(db_path)
         self.store.conn.executescript(RUNS_SCHEMA)
+        # Asked before the world opens: opening it puts the two parties in, and a world that
+        # holds only those two is still an empty one waiting for its fixture.
+        empty = self.store.conn.execute("SELECT COUNT(*) FROM instances").fetchone()[0] == 0
         self.world = World(self.store, self.classes)
         # Methods the world wrote for itself hang on the classes like any other (procedures.py).
         self.world.procedures.bind(self.classes)
+        selves.refresh(self.world, self.home)
         reserved = set(self.classes) | set(sandbox.MODULES) | {
             "world", "owner", "me", "NeedsResolution", "NotInWorld", "print", "report", "run_skill"}
         self.variables = WorldVariables(self.store, self.classes, reserved | set(sandbox.BUILTINS))
-        empty = self.store.conn.execute("SELECT COUNT(*) FROM instances").fetchone()[0] == 0
         if fixture and (rebuild or empty):
             self.reset()
+            selves.refresh(self.world, self.home)  # the fixture's pair reads its files too
         self.sessions: dict[str, Session] = {}
         # Keys whose session was dropped for idleness; the next result says so once.
         self.idle_reset: set[str] = set()

@@ -13,6 +13,8 @@ the most openings" has a single right answer.
 """
 from datetime import datetime, timedelta, timezone
 
+from terraweaver.world import World
+
 COMPANY_DATA = [
     # (name, industry, city, aliases) — companies get called by short and spelled-out names
     ("TechCorp", "Software", "San Francisco", ["TC", "Tech Corp"]),
@@ -128,9 +130,11 @@ def build(classes: dict[str, type], store) -> None:
 
     store.clear("Agent")
     Person = classes["Person"]
-    owner = Person(id="person:owner", **OWNER)
+    # Every world already holds the two parties under fixed ids (world.ensure_selves); a fixture
+    # fills them in rather than inventing a second pair.
+    owner = Person(id=World.USER_ID, **OWNER)
     store.save(owner)
-    store.save_graph(classes["Agent"](id="agent:me", owner=owner, **AGENT))
+    store.save_graph(classes["Agent"](id=World.AGENT_ID, owner=owner, **AGENT))
 
     # Where people work and what they are to the owner are relations, not fields: a job carries
     # a role and dates, and "former manager" is an Authority that ended.
