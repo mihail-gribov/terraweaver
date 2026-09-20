@@ -278,6 +278,33 @@ The same measurement runs the other way round, and that is the more valuable hal
 wrote by hand that this world's data breaks is either a wrong rule or a bad record, and both are
 worth somebody's attention.
 
+## When the world doesn't know the word
+
+A person says "she's my doula", "he's at Quantinuum", "we met at YC". The world may have no idea
+what any of those are, and guessing is how a world fills itself with nonsense. So it can look
+them up — that is the third way a doubt gets settled (a rule, the user, a checkable source), and
+the one that costs nobody's attention.
+
+What it may look up, and what it may never:
+
+- **Kinds of thing, and public facts about public things.** What a doula is, and therefore what
+  kind of link it is. Whether Quantinuum is a company and what it does. The registered name
+  behind a trading name; a city; a job title's usual shape. These are questions about the world,
+  the answers are checkable, and asking them reveals nothing.
+- **Never the person, and never through their data.** Not "who is Sofia Bergmann", not an email
+  address, not a phone number, not what someone said. A search is a sentence sent to a stranger:
+  whatever goes into it has left this world for good. The rule is simple enough to hold: the
+  search terms are concepts and public entities, never anything the person told us in confidence.
+
+What comes back is a statement like any other, with the source it came from — a named source,
+which outranks what the assistant worked out for itself and is outranked by the person's own
+account of their life. It carries its URL, so it can be checked; it can be retracted, so a bad
+source can be undone; and it goes stale like anything else.
+
+The work of reaching out is deferred and belongs to the agenda (`docs/ideas-research.md`): a
+ticket, one at a time, on a budget — not something that happens in the middle of answering
+someone.
+
 ## What can be taken away
 
 The world has to work without its upper floors, and each of them has to come off without

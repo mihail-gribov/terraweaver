@@ -69,3 +69,15 @@ the user's, and no source may settle it.
 The same split applies to structures, not only values: what attributes a kind of thing usually
 has, what a relation of this sort is normally called. The world may refine its own shapes
 against common practice; it may not invent facts about the person.
+
+
+## The boundary, stated once
+
+Search is for **kinds of thing and public entities**: what a doula is, whether Quantinuum is a
+company, the registered name behind a trading name, how a city is spelled. It is never for the
+person or their circle — not a name, not an address, not a sentence they said. A query is a
+sentence handed to a stranger, and nothing that goes into one comes back.
+
+This is what makes search safe to use at all: everything it can be asked is a question about the
+world, and the answers are exactly the kind that need no one's permission and can be checked by
+anyone. Everything else is settled by the person, or not at all.
