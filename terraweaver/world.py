@@ -325,6 +325,18 @@ class World:
         nothing. Useful where the world is deliberately unstructured — remarks, notes."""
         return self.meanings.like(self, text, limit, kind)
 
+    def tags(self) -> dict:
+        """Every tag in this world, with how often it is used and how it has been written."""
+        from terraweaver import tags as tagging
+
+        return tagging.vocabulary(self)
+
+    def tagged(self, tag: str) -> list:
+        """Everything carrying this tag, however it was written."""
+        from terraweaver import tags as tagging
+
+        return tagging.tagged(self, tag)
+
     def rebuild(self, rule=None, at=None) -> dict:
         """Build every entity again from what was said. See rebuild.py — it is always safe."""
         from terraweaver import rebuild as rebuilding

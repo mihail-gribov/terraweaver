@@ -153,6 +153,14 @@ Every class below shares these, so they aren't repeated for each one:
         linda.relate(b04, "authority", label="manager")
         b04.relate(company, "part_of")
     entity.relations(kind)[i].counterpart is the end that isn't the entity you asked from.
+    Tags are the loosest way to put things together, for when they belong with each other and no
+    relation says how: anna.tags = ["job-search", "berlin"]. Compared in one form, so "job search"
+    and "Job-Search" are one tag however they were typed:
+        world.tagged("berlin")   — everything carrying it, whatever the spelling
+        world.tags()             — every tag, how often it is used, how it has been written
+    Use one when no attribute and no relation fits. What a tag ought to mean, and whether two of
+    them are one idea, is not settled here — the world counts them and says which have moved.
+
     Finding by meaning, for what is written as prose rather than filled in:
         world.like("works on batteries")   — remarks and notes that read like that, closest first
         person.similar()                   — whoever else reads like what is said about them

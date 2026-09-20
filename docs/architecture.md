@@ -311,6 +311,24 @@ The work of reaching out is deferred and belongs to the agenda (`docs/ideas-rese
 ticket, one at a time, on a budget — not something that happens in the middle of answering
 someone.
 
+## Tags
+
+The loosest way to tie things together, and the first thing in any world to rot. A tag costs
+nothing to add, which is its virtue and its problem: a month in there are `job-search`, `job
+search`, `jobsearch` and `work`, and none of them finds the others.
+
+The world does three things and refuses a fourth. It **holds them to one shape**, so a tag typed
+three ways is one tag — data uniformity, which is its business. It **counts them**, keeping every
+spelling, because the spellings are the thing worth reviewing. It **says which are worth another
+look**, and that is driven by new material rather than by a calendar: what is recorded is how much
+a tag covered when someone last considered it, and when that has grown by half again, the tag
+comes back on the list. New information is what makes a judgement stale, not time.
+
+What it refuses is tidying them. Whether `job-search` and `work` are one idea, whether a tag
+covering forty things has become two, whether one nobody has used since March should go — those
+are judgements about what a person means by a word. The world measures and points; the model
+proposes, on the agenda; somebody decides.
+
 ## Finding by meaning
 
 Most of a world is structured and needs no help. Some of it is deliberately prose — a remark

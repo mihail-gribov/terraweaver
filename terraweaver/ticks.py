@@ -169,6 +169,27 @@ def _alike(one: list, other: list) -> float:
     return sum(a * b for a, b in zip(one, other))
 
 
+def _tags_worth_reviewing(world) -> str | None:
+    """Tags that have grown since anyone last considered them, and tags written several ways.
+
+    A tag is the loosest thing in the world and the first to rot: `job-search`, `job search` and
+    `work` end up as three categories that don't find each other. What the review means — are
+    these one idea, has this one drifted, should that one be split — is the model's judgement on
+    the agenda. This says where to look, from what changed."""
+    from terraweaver import tags as tagging
+
+    due = tagging.due_for_review(world)
+    ways = tagging.written_several_ways(world)
+    lines = []
+    if due:
+        lines.append("grown since last looked at: " +
+                     "; ".join(f"{tag} ({now} now, {before} then)" for tag, now, before in due[:3]))
+    if ways:
+        lines.append("written several ways: " +
+                     "; ".join(f"{tag} as {', '.join(spellings)}" for tag, spellings in ways[:3]))
+    return " | ".join(lines) if lines else None
+
+
 def _unused_attributes(world) -> str | None:
     """What the class offers and nobody fills. Not removed — counted: a schema grows and shrinks
     on evidence, and this is where the evidence accumulates (docs/schema-growth.md)."""
@@ -208,6 +229,8 @@ JOBS = [
         "count what the classes offer and nobody fills"),
     Job("loose-links", timedelta(days=3), _links_without_rules,
         "find links used often that no type has rules for"),
+    Job("tags", timedelta(days=2), _tags_worth_reviewing,
+        "say which tags have moved enough to be worth another look"),
     Job("said-twice", timedelta(days=3), _remarks_said_twice,
         "find the same remark recorded more than once"),
 ]
