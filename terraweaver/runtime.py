@@ -353,6 +353,13 @@ class WorldRuntime:
                 for attr in cls._spec["attributes"]:
                     if "derived" not in attr:
                         row[attr["name"]] = plain(getattr(entity, attr["name"], None))
+                # When a record holds is part of it. Leaving it out made an export that couldn't
+                # answer "who changed jobs this year" — and made every comparison against it a
+                # comparison against less than the world knows.
+                for when in ("valid_from", "valid_until", "created_at"):
+                    value = getattr(entity, when, None)
+                    if value is not None:
+                        row[when] = plain(value)
                 rows.append(row)
             if rows:
                 out[name] = rows

@@ -94,6 +94,34 @@ def _spot_duplicates(world) -> str | None:
     return f"asked about {len(raised)} possible duplicate(s)" if raised else None
 
 
+def _links_without_rules(world) -> str | None:
+    """Links the world keeps making but has no rules for.
+
+    A `related` link is the world admitting it has no type for something: "godfather", "landlord's
+    agent", "my physio". When the same label keeps coming back, that is a kind of link this life
+    actually contains, and it is worth knowing how it behaves — is there one of them at a time,
+    does it read the same from both ends, can it form a cycle? Those are the properties every
+    other type declares, and declaring them is what lets the world check anything at all.
+
+    Finding the candidates is deterministic and cheap, so it happens here. Working out the
+    properties is not: it needs the model and a look at how the label is used, which is work for
+    the agenda (docs/architecture.md) and is stated as a proposal, never applied silently.
+    """
+    if "Related" not in world.classes:
+        return None
+    seen: dict = {}
+    for link in world.all("Related", limit=None, history=True):
+        label = str(getattr(link, "label", "") or "").strip().lower()
+        if label:
+            seen.setdefault(label, []).append(link)
+    recurring = {label: links for label, links in seen.items() if len(links) >= 3}
+    if not recurring:
+        return None
+    described = "; ".join(f"{label} ({len(links)}x)" for label, links in
+                          sorted(recurring.items(), key=lambda pair: -len(pair[1]))[:5])
+    return f"links used often but with no rules of their own: {described}"
+
+
 def _unused_attributes(world) -> str | None:
     """What the class offers and nobody fills. Not removed — counted: a schema grows and shrinks
     on evidence, and this is where the evidence accumulates (docs/schema-growth.md)."""
@@ -131,6 +159,8 @@ JOBS = [
         "ask about records that look like one person"),
     Job("idle-attributes", timedelta(days=7), _unused_attributes,
         "count what the classes offer and nobody fills"),
+    Job("loose-links", timedelta(days=3), _links_without_rules,
+        "find links used often that no type has rules for"),
 ]
 
 

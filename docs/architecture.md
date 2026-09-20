@@ -240,6 +240,44 @@ One line, because most worlds are opened to test something, and ceremony is the 
 files are looked for next to the world, so a world carried on a stick carries its configuration
 with it.
 
+## The first thing the world does for itself: giving a new link its rules
+
+This is the shape every self-improvement takes, and it is worth following once in full.
+
+A link appears that no type covers — the host records it as `related` with a label, because that
+is what `related` is for: the world admitting it has no rules for this. Nothing happens yet; one
+godfather is an event, not a pattern.
+
+The same label comes back a third time. A tick notices (`ticks.py`, *loose-links*) and states a
+task. From there the questions are in order, and each has a different answer-giver:
+
+1. **Do we already have this?** "My physio" is a `service`; "my brother-in-law" is `kin`. The
+   world can check the labels and roles every type declares; where that is silent, the model
+   knows. If it is an existing type, the answer is not a new type — it is pointing the label at
+   the one that fits, which is a change to that type's labels.
+2. **If it is genuinely new, what is it like?** The formal properties, the same ones every core
+   type declares: one at a time per person, reads the same from both ends, never a cycle, and
+   what roles it has with what limits. Two things answer this together —
+   - **the world in general**, which the model knows: a person has one mother, a company one
+     chief executive. This is knowledge about life, not about this person, so it is kept once and
+     used for everyone;
+   - **this world's own data** (`properties.py`), which measures what the links have ever done:
+     how often there was a chance to break a rule, and whether it was ever broken. Rarity is not
+     evidence — three mothers in the world says nothing about how many a person has; eleven
+     people with several relatives and never two mothers says something.
+3. **Does setting it break anything?** A property is a check, and a check can refuse what is
+   already recorded. `properties.findings()` answers this directly: it lists the rules a type
+   declares that this world's own data breaks. A proposed property that would put existing data
+   in violation is not applied — it becomes a question about the data instead.
+
+Only then is the type written, into `ontology/grown/` with its `because`, and the world starts
+checking the new link the way it checks the old ones. Which is the point: the world does not get
+cleverer by knowing more, it gets stricter by knowing what holds.
+
+The same measurement runs the other way round, and that is the more valuable half: a rule we
+wrote by hand that this world's data breaks is either a wrong rule or a bad record, and both are
+worth somebody's attention.
+
 ## What can be taken away
 
 The world has to work without its upper floors, and each of them has to come off without

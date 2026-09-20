@@ -17,6 +17,15 @@ The world is served over MCP; the host agent writes code against the object mode
 (`docs/procedural-memory.md`), `remember`, `research`, `extend` — builds on this loop, so it
 comes first.
 
+## Giving a new link its rules: the parts not built
+
+The chain is described in `docs/architecture.md`. What exists: the trigger (`ticks.py`,
+*loose-links* — a `related` label used three times or more) and the evidence
+(`properties.py` — what the links have ever done, and which declared rules the data breaks).
+What is missing is the middle: a ticket that asks whether the type already exists, brings the
+model's general knowledge to bear on its properties, checks that setting them breaks nothing,
+and writes `ontology/grown/`. That is the agenda's first real job.
+
 ## A change that happened in the past can't be backdated
 
 `person.organization = new_place` ends the old membership *now* and opens the new one *now*. When
