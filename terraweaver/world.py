@@ -332,6 +332,13 @@ class World:
 
         return selecting.where(self, cls, **conditions)
 
+    def texts(self, words: str | None = None, *, slot: str | None = None, at=None,
+              any_time: bool = False, limit: int = 200) -> list[dict]:
+        """Everything said in words, searched literally — every word must appear (texts.py)."""
+        from terraweaver import texts as texts_module
+
+        return texts_module.search(self, words, slot=slot, at=at, any_time=any_time, limit=limit)
+
     def repeats(self) -> list[str]:
         """Everything cyclic in this world, in words — one line per rule (periods.py)."""
         from terraweaver import periods, recurrence

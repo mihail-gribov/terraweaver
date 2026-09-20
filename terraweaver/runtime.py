@@ -119,6 +119,10 @@ class WorldView:
         """Attributes, links, tags and meaning in one ask; without a class, things of any kind."""
         return self._world.where(cls, **conditions)
 
+    def texts(self, words: str | None = None, **kw) -> list[dict]:
+        """Everything said in words about anything, searched by the words themselves."""
+        return self._world.texts(words, **kw)
+
     def repeats(self) -> list[str]:
         """Everything in this world that happens again and again, in words."""
         return self._world.repeats()
@@ -168,7 +172,7 @@ class WorldView:
         print(f"[unpinned] {', '.join(names)}")
 
     def __repr__(self):
-        return ("<world: all, find, where, get, new, ensure, settle, comments, questions, repeats, tags, tagged, "
+        return ("<world: all, find, where, get, new, ensure, settle, comments, questions, repeats, texts, tags, tagged, "
                 "tagged_all, merge_tags, untag, like, rebuild, pin, unpin, owner, me, pending>")
 
 

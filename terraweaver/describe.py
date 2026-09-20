@@ -262,6 +262,14 @@ Every class below shares these, so they aren't repeated for each one:
                      lists the stretches. `anna.descriptions = [...]` means "these are the
                      ones now" and goes through the same door.
       a remark       anna.comment(text, when=..., until=..., ttl=..., permanent=True)
+    Searching words, two ways, and they are not the same question:
+        world.where(mentions="lisbon flat")   — literally: every word appears, case ignored,
+                                                nothing stemmed, same answer every time
+        world.where(like="a shop selling bread")  — by meaning, which is a judgement
+        world.texts("lisbon", slot="descriptions")  — the texts themselves, not their entities
+    Everything said in words lives in one derived table (texts.py), so both of these are one
+    query, and each text carries its own meaning rather than the entity carrying an average.
+
     A slot typed list[text] holds several free texts, each stated on its own and each able to
     hold for a time — that is what descriptions are, and what any "several things said about
     this" attribute should be. A slot typed list[enum[a, b, c]] is the same, drawn from a fixed

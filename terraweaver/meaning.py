@@ -131,14 +131,25 @@ class Meanings:
 
     # --- asking ---
 
-    def like(self, world, text: str, limit: int = 5, kind: str | None = None) -> list:
-        """What in this world reads like that, best first: (entity, the text, how close)."""
+    def like(self, world, text: str, limit: int = 5, kind: str | None = None,
+             any_time: bool = False) -> list:
+        """What in this world reads like that, best first: (entity, the text, how close).
+
+        Reads as everything else does — what holds now. A description that was ended is still
+        indexed, because it was said and the record keeps it, but it does not answer until
+        any_time=True asks for it. Otherwise "what reads like a bakery" would keep returning a
+        shop that closed, with nothing in the answer to say so.
+        """
         self.refresh(world)
         wanted = self.model.embed([text])[0]
+        holding = None if any_time else self._holding(world)
         scored = []
-        for subject, row_kind, said, raw in self.store.conn.execute(
-                "SELECT subject, kind, text, vector FROM meanings WHERE model = ?", (self.model.name,)):
+        for ref, subject, row_kind, said, raw in self.store.conn.execute(
+                "SELECT ref, subject, kind, text, vector FROM meanings WHERE model = ?",
+                (self.model.name,)):
             if kind and row_kind != kind:
+                continue
+            if holding is not None and ref.startswith("text:") and ref not in holding:
                 continue
             scored.append((_close(wanted, json.loads(raw)), subject, said))
         scored.sort(reverse=True)
@@ -162,26 +173,45 @@ class Meanings:
 
     # --- what there is to index ---
 
+    def _holding(self, world) -> set:
+        """The names of the texts that hold right now — what an ordinary read may answer with."""
+        from terraweaver import texts as texts_module
+
+        return {row["ref"] for row in texts_module.search(world, limit=20000)}
+
     def _texts(self, world):
         for comment in world.comments.search(limit=5000, any_time=True):
             if comment.about is not None and comment.text:
                 yield f"comment:{comment.id}", comment.about.id, "comment", comment.text
+        # Lists of texts come from the texts table, where each one has a name made from the
+        # text itself. That name survives a rebuild and survives its neighbours being removed,
+        # so a vector is re-made when the text changes and not when the list shifts around.
+        from terraweaver import ontology, texts as texts_module
+
+        whose = {}
+        for class_name, cls in world.classes.items():
+            if not ontology.dated_lists(cls._spec):
+                continue
+            for entity in world.all(class_name, limit=None, history=True):
+                whose[getattr(entity, "subject_id", None) or entity.id] = entity.id
+        for row in texts_module.search(world, any_time=True, limit=20000):
+            entity_id = whose.get(row["subject"])
+            # A slot may hold several tellings — descriptions usually do — and each one is its
+            # own text: two people describing someone differently is two things to find them by,
+            # not one blurred average.
+            if entity_id and len(row["text"].strip()) > 8:
+                yield row["ref"], entity_id, row["slot"], row["text"].strip()
         for class_name, cls in world.classes.items():
             names = [a["name"] for a in cls._spec["attributes"]
-                     if a["name"] in TEXT_ATTRIBUTES and "derived" not in a]
+                     if a["name"] in TEXT_ATTRIBUTES and "derived" not in a
+                     and a["name"] not in ontology.dated_lists(cls._spec)]
             if not names:
                 continue
             for entity in world.all(class_name, limit=None, history=True):
                 for name in names:
                     said = getattr(entity, name, None)
-                    # A slot may hold several tellings — descriptions usually do — and each one
-                    # is its own text: two people describing someone differently is two things
-                    # to find them by, not one blurred average.
-                    for i, telling in enumerate(said if isinstance(said, list) else [said]):
-                        if isinstance(telling, str) and len(telling.strip()) > 8:
-                            ref = f"{class_name}:{entity.id}:{name}"
-                            yield (f"{ref}:{i}" if isinstance(said, list) else ref,
-                                   entity.id, name, telling.strip())
+                    if isinstance(said, str) and len(said.strip()) > 8:
+                        yield f"{class_name}:{entity.id}:{name}", entity.id, name, said.strip()
 
 
 def _digest(text: str) -> str:

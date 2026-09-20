@@ -14,6 +14,7 @@ and some Events. Nothing here could ask that, because every way of asking starte
 class. So the class is optional, and leaving it out means "whatever kind of thing it is":
 
     world.where(tagged="move")                      — the move, all of it, whatever kind
+    world.where(mentions="lisbon flat")             — those words, exactly, in anything said
     world.where(related=("participation", project))  — everything hanging off one thing
     world.where(Person, organization=acme,           — attributes, as in find()
                 related=("membership", acme),        — a link, in either direction
@@ -23,6 +24,11 @@ class. So the class is optional, and leaving it out means "whatever kind of thin
 So this is not a query language. It is the same calls, gathered into one, with the same words
 they already use — and the plain ones are this one with a single condition: searching by tag is
 `where(tagged=...)`, searching by meaning is `where(like=...)`.
+
+Two ways of searching words, on purpose. `mentions=` is literal: every word must appear, case
+ignored, nothing stemmed, and the same question always gives the same answer. `like=` is by
+meaning, and is a judgement — it finds what a different wording says. Use the first when you
+know the word the user used, the second when you don't.
 
 Everything given narrows; nothing widens. `like` also decides the order, because closeness is the
 only thing here that has a degree; without it the order is the world's usual one, most recently
@@ -38,8 +44,8 @@ from datetime import datetime
 DEFAULT_LIMIT = 50
 
 
-def where(world, cls=None, *, related=None, tagged=None, tagged_all=None, like=None,
-          closeness: float = 0.3, at=None, any_time: bool = False,
+def where(world, cls=None, *, related=None, tagged=None, tagged_all=None, mentions=None,
+          like=None, closeness: float = 0.3, at=None, any_time: bool = False,
           limit: int | None = DEFAULT_LIMIT, **attributes) -> list:
     """Everything that answers all of it. Without a class: of any kind. See the module docstring."""
     from terraweaver import relations
@@ -51,6 +57,15 @@ def where(world, cls=None, *, related=None, tagged=None, tagged_all=None, like=N
 
     if wanted_tags:
         found = [e for e in found if _carries(world, e, wanted_tags, at, any_time)]
+
+    if mentions:
+        from terraweaver import texts
+
+        hits = texts.mentioning(world, mentions, at=at, any_time=any_time)
+        words = [w.lower() for w in str(mentions).split()]
+        found = [e for e in found
+                 if (getattr(e, "subject_id", None) or e.id) in hits
+                 or all(w in e.display_name().lower() for w in words)]
 
     if related is not None:
         kind, other = related if isinstance(related, (tuple, list)) else (related, None)
