@@ -23,6 +23,7 @@ import math
 import re
 import signal
 import statistics
+from typing import Any
 from contextlib import contextmanager
 from types import SimpleNamespace
 
@@ -47,12 +48,61 @@ _SAFE_DUNDERS = {"__name__", "__qualname__", "__doc__"}
 _FORMAT_FIELD_ATTR = re.compile(r"\{[^}]*[.\[]")
 
 
+class _ImportsAlreadyHere(ast.NodeTransformer):
+    """`from datetime import date` asks for something already in the namespace.
+
+    Refusing it protects nothing — it is how the host writes code, not what it does to the data —
+    and it was the single biggest cause of failed runs: 63 of 368 across saved scenarios. Every
+    one of those cost a whole run, and a rolled-back run is where two attempts at the same task
+    start to diverge. So an import of what is already here is granted, not refused: the name is
+    bound to the thing the world already provides. Anything else is still refused.
+    """
+
+    def visit_Import(self, node: ast.Import) -> Any:
+        for alias in node.names:
+            if alias.name.split(".")[0] not in MODULES:
+                return node  # left for check() to refuse, with the message that says what's here
+        bindings = [(alias.asname, alias.name.split(".")[0]) for alias in node.names if alias.asname]
+        return _bind(bindings, node)
+
+    def visit_ImportFrom(self, node: ast.ImportFrom) -> Any:
+        module = (node.module or "").split(".")[0]
+        bindings = []
+        for alias in node.names:
+            name, bound = alias.name, alias.asname or alias.name
+            if name in MODULES:  # already a name of its own: datetime, date, timedelta…
+                if bound != name:
+                    bindings.append((bound, name))
+                continue
+            if module in MODULES and hasattr(MODULES[module], name):
+                bindings.append((bound, f"{module}.{name}"))
+                continue
+            return node
+        return _bind(bindings, node)
+
+
+def _bind(bindings: list, node: ast.AST) -> Any:
+    """Assignments standing in for an import: `defaultdict = collections.defaultdict`."""
+    if not bindings:
+        return ast.copy_location(ast.Pass(), node)
+    out = []
+    for name, source in bindings:
+        value = ast.parse(source, mode="eval").body
+        assign = ast.Assign(targets=[ast.Name(id=name, ctx=ast.Store())], value=value)
+        out.append(ast.copy_location(ast.fix_missing_locations(assign), node))
+    return out
+
+
 def check(code: str, protected: set[str] = frozenset()) -> ast.AST:
     """Parse and vet host code. Raises SandboxViolation, or SyntaxError for broken code.
 
+    What may be refused is what touches the data: writing where the world keeps its own state,
+    reaching past the object model, running longer than a host should. How the host writes its
+    code is its own business.
+
     `protected` names can be read but not rebound — world variables change only via world.pin.
     """
-    tree = ast.parse(code, "<run>")
+    tree = ast.fix_missing_locations(_ImportsAlreadyHere().visit(ast.parse(code, "<run>")))
     for node in ast.walk(tree):
         if isinstance(node, ast.Name) and isinstance(node.ctx, (ast.Store, ast.Del)) and node.id in protected:
             raise SandboxViolation(
@@ -64,7 +114,10 @@ def check(code: str, protected: set[str] = frozenset()) -> ast.AST:
         if isinstance(node, ast.arg) and node.arg in protected:
             raise SandboxViolation(f"'{node.arg}' is a world variable; pick another parameter name")
         if isinstance(node, (ast.Import, ast.ImportFrom)):
-            raise SandboxViolation("imports aren't available: everything you can use is already in the namespace")
+            raise SandboxViolation(
+                "that import isn't available — " + AVAILABLE.split(". No files")[0].lower() +
+                ". Importing one of those is fine; it's already bound for you."
+            )
         if isinstance(node, ast.Attribute) and node.attr not in _SAFE_DUNDERS and (
                 node.attr.startswith("_") or node.attr in _FORBIDDEN_ATTRS):
             raise SandboxViolation(f"attribute '{node.attr}' is not accessible")

@@ -198,6 +198,22 @@ class FindResult(list):
     def matched(self) -> bool:
         return bool(self.main)
 
+    def __getattr__(self, name: str):
+        # `Person.find(...).full_name` — the host took the search for the person it found. A bare
+        # AttributeError on 'list' says nothing; this says which entity it meant to reach.
+        if name.startswith("_"):
+            raise AttributeError(name)
+        if len(self.main) == 1:
+            where = f"result.main[0].{name}"
+        elif self.main:
+            where = f"one of result.main ({len(self.main)} matched), e.g. result.main[0].{name}"
+        elif self.similar:
+            where = (f"nothing matched; {len(self.similar)} merely resemble it (result.similar) — "
+                     f"say so rather than serving the closest one")
+        else:
+            where = "nothing in the world matches — say so, don't fill the gap"
+        raise AttributeError(f"a search result has no {name!r}: it's the matches, not the entity. Use {where}.")
+
     def __repr__(self):
         if not self.main:
             return f"FindResult(no exact match; {len(self.similar)} similar: {list.__repr__(self.similar)})"

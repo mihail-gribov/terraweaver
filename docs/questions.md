@@ -34,6 +34,23 @@ Recency decides, except for identity, where recency would quietly merge two peop
 says it in words and `q.line()` prints the question with it, so a host can always answer — by the
 standing reading, saying which it is: "as recorded, Nina from October 1".
 
+## Who can answer
+
+Not every doubt is the user's to settle, and the world shouldn't spend their attention on the
+ones that aren't. Three things can close a question, and they are not interchangeable:
+
+- **a rule of the world** — the doubt stopped holding, or normalisation decided it. Closes
+  itself, nobody is asked.
+- **the user, through the host** — whose life this is. Anything about who someone is, what they
+  meant, what they want. `q.answer("Nina replaces Rao")`.
+- **an accepted norm or a source that can be checked** — a company's registered name, a domain,
+  a city, the standard form of a title. `q.answer("Acme Corp Ltd", by="companies-house.gov.uk")`.
+  What settled it is kept with the answer, so a later reader can weigh it.
+
+The world may ask the host to check something with the user; it may equally settle a matter of
+form from a reliable source instead of asking. Reaching those sources is the deferred work in
+`docs/ideas-research.md`; the record keeps room for it now so it isn't bolted on later.
+
 ## Three moments to ask, and only three
 
 A question is worth nothing if it is raised at the wrong time. Interrupting a task to ask about a

@@ -54,3 +54,18 @@ Only the world can do these — a host exists only while a conversation lasts.
   to use Project + tagged Ideas, and the candidates ended up unlinked from the project.
 
 Suggested order when this becomes work: research → jobs → watch → deep research support.
+
+
+## Settling questions from sources, not only from the user
+
+Open questions (`docs/questions.md`) can be closed by three things: a rule, the user, or a
+source that can be checked. The third is this document's job. A doubt about a matter of form —
+a company's registered name, a domain that belongs to it, the standard spelling of a city, the
+usual shape of a job title — is not the user's to settle: the world can look it up against an
+accepted norm and close it with `q.answer(value, by="<the source>")`, keeping where the answer
+came from. A doubt about whose life it is — which Olga, whether the dentist changed — is always
+the user's, and no source may settle it.
+
+The same split applies to structures, not only values: what attributes a kind of thing usually
+has, what a relation of this sort is normally called. The world may refine its own shapes
+against common practice; it may not invent facts about the person.

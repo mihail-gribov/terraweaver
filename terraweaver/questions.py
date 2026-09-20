@@ -38,7 +38,8 @@ CREATE TABLE IF NOT EXISTS questions (
     touches TEXT,                -- JSON list of what the doubt hangs over: relation:<kind>, attr:<name>, identity
     raised_at TEXT NOT NULL,
     raised_by TEXT NOT NULL,     -- 'world' or 'host'
-    answer TEXT,                 -- what the user said
+    answer TEXT,                 -- what settled it, in words
+    answered_by TEXT,            -- 'user', or where it came from: a rule, a source, its url
     closed_at TEXT,
     closed_as TEXT               -- answered | settled_itself | dropped
 );
@@ -46,7 +47,7 @@ CREATE INDEX IF NOT EXISTS idx_questions_entity ON questions(entity_id, closed_a
 """
 
 _COLUMNS = ("id, entity_id, kind, text, options, involves, touches, raised_at, raised_by, "
-            "answer, closed_as")
+            "answer, answered_by, closed_as")
 
 
 @dataclass
@@ -63,6 +64,7 @@ class Question:
     raised_at: datetime
     raised_by: str
     answer_text: str | None = None
+    answered_by: str | None = None
     closed_as: str | None = None
     _book: "Questions" = field(repr=False, compare=False, default=None)
 
@@ -78,10 +80,16 @@ class Question:
         rule = RULES.get(self.kind)
         return rule(self) if rule else "the latest thing recorded stands"
 
-    def answer(self, said: str) -> None:
-        """What the user said. Closes the question; recording what follows from it is yours."""
-        self._book.close(self, "answered", said)
-        self.answer_text, self.closed_as = said, "answered"
+    def answer(self, said: str, by: str = "user") -> None:
+        """What settles it. Closes the question; recording what follows from it is yours.
+
+        `by` says where the answer came from — the user (the default), or a source that can be
+        checked: "companies house", "https://…". A doubt about a fact the world could look up
+        against an accepted norm doesn't need the user's attention; a doubt about whose life it
+        is always does. What settled it is kept, so a later reader can weigh it.
+        """
+        self._book.close(self, "answered", said, by)
+        self.answer_text, self.answered_by, self.closed_as = said, by, "answered"
 
     def drop(self, why: str = "") -> None:
         """It doesn't matter after all — the user isn't going to be asked this."""
@@ -111,6 +119,8 @@ class Questions:
         columns = {row[1] for row in store.conn.execute("PRAGMA table_info(questions)")}
         if "touches" not in columns:  # a table made before questions knew what they hang over
             store.conn.execute("ALTER TABLE questions ADD COLUMN touches TEXT")
+        if "answered_by" not in columns:
+            store.conn.execute("ALTER TABLE questions ADD COLUMN answered_by TEXT")
         store.conn.commit()
 
     # --- writing ---
@@ -144,11 +154,11 @@ class Questions:
         return self._load_row(self.store.conn.execute(
             f"SELECT {_COLUMNS} FROM questions WHERE id = ?", (cursor.lastrowid,)).fetchone())
 
-    def close(self, question: Question, how: str, said: str | None = None) -> None:
+    def close(self, question: Question, how: str, said: str | None = None, by: str | None = None) -> None:
         ontology.note_world_call("world_writes")
         self.store.conn.execute(
-            "UPDATE questions SET closed_at = ?, closed_as = ?, answer = ? WHERE id = ?",
-            (datetime.now(timezone.utc).isoformat(), how, said, question.id),
+            "UPDATE questions SET closed_at = ?, closed_as = ?, answer = ?, answered_by = ? WHERE id = ?",
+            (datetime.now(timezone.utc).isoformat(), how, said, by, question.id),
         )
 
     # --- reading ---
@@ -206,7 +216,8 @@ class Questions:
     def _load_row(self, row) -> Question | None:
         if row is None:
             return None
-        qid, entity_id, kind, text, options, involves, touches, raised_at, by, answer, closed_as = row
+        (qid, entity_id, kind, text, options, involves, touches, raised_at, by, answer,
+         answered_by, closed_as) = row
         try:
             about = self.store.load(entity_id, self.classes)
         except KeyError:  # the entity is gone; so is the question
@@ -220,7 +231,7 @@ class Questions:
                 continue
         return Question(qid, about, kind, text, json.loads(options or "[]"), others,
                         json.loads(touches or "[]"), datetime.fromisoformat(raised_at), by,
-                        answer, closed_as, self)
+                        answer, answered_by, closed_as, self)
 
     def _still_stands(self, question: Question) -> bool:
         """Whether the reason for the question is still there. A host-raised one always is —

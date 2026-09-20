@@ -109,6 +109,36 @@ def main() -> int:
     check("a read of the questioned attribute is told to ask first",
           any("two numbers" in line for line in attr["ask_now"]), str(attr["ask_now"]))
 
+    # --- an answer keeps where it came from ---
+    sourced = rt.run('a = Person.get(full_name="Anna Peterson")\n'
+                     'a.question("is DataWorks its registered name?", about="organization")\n'
+                     'q = a.questions()[0]\n'
+                     'q.answer("DataWorks Ltd", by="companies-house.gov.uk")\n'
+                     'past = a.questions(include_closed=True)[-1]\n'
+                     'print(past.answer_text, "|", past.answered_by)', "host")
+    check("a question can be settled by a source, not only by the user",
+          sourced["output"].strip() == "DataWorks Ltd | companies-house.gov.uk",
+          str(sourced["error"]) or sourced["output"])
+
+    # --- the world doesn't fight how the host writes code ---
+    styled = rt.run('from datetime import date, timedelta\n'
+                    'from collections import Counter\n'
+                    'print(date(2026, 1, 1), timedelta(days=1), Counter("aab")["a"])', "host")
+    check("an import of what is already provided is granted, not refused",
+          styled["ok"] and styled["output"].startswith("2026-01-01"), str(styled["error"]))
+    refused_import = rt.run('import os', "host")
+    check("an import of something the world doesn't provide is still refused",
+          not refused_import["ok"] and "isn't available" in str(refused_import["error"]),
+          str(refused_import["error"]))
+
+    # --- a world structure misused teaches its shape ---
+    misused = rt.run('print(Person.find(full_name="Ada").full_name)', "host")
+    check("a search result mistaken for the entity says where to reach it",
+          "result.main[0].full_name" in str(misused["error"]), str(misused["error"]))
+    asked = rt.run('print(Person.find(full_name="Annie").full_name)', "host")
+    check("a question mistaken for the entity says what settles it",
+          "world.settle" in str(asked["error"]), str(asked["error"]))
+
     # --- a question blocks nothing ---
     check("nothing about it raised an error", own["ok"] and dropped["ok"], str(own["error"] or dropped["error"]))
 

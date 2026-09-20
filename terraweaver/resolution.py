@@ -69,6 +69,18 @@ class NeedsResolution:
     def __bool__(self) -> bool:
         return True  # it is something, and it must not read as "nothing came back"
 
+    def __getattr__(self, name: str):
+        # Reached only for attributes this object doesn't have — usually an entity's, because
+        # the host is treating the question as the answer. Say what it is and what settles it,
+        # so the next run is the right one rather than the same mistake.
+        if name.startswith("_"):
+            raise AttributeError(name)
+        raise AttributeError(
+            f"a question has no {name!r}: this is {self.reason}, not the entity. Print it to see "
+            f"the candidates (.similar), ask the user, then world.settle(<this>, <the one they "
+            f"meant>) — or new=True if it's a new one."
+        )
+
     def __repr__(self):
         return f"NeedsResolution(skill={self.skill!r}, reason={self.reason!r}, options={self.options!r})"
 
