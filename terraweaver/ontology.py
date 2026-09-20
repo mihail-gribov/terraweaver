@@ -736,9 +736,11 @@ Every class below shares these, so they aren't repeated for each one:
         in the world matches: say so, rather than serving the closest thing as the answer.
         A person's recorded nicknames count as their names, so "Bob" finds Robert.
 
-        Looking someone up by name gives a NeedsResolution instead of a result whenever it
-        isn't settled — several people answer to that name, or nothing matches it exactly
-        and only resemblances turned up. Which of them was meant is not yours to decide.
+        One candidate and nothing that disagrees with it is not an ambiguity: it's them.
+        "Darren" where the world holds one Darren Liu gives you Darren Liu, with an [assumed]
+        line saying so. A question comes back only when the world genuinely doesn't know — two
+        people answer to that name, or something you gave disagrees with what's recorded. Then
+        you get a NeedsResolution, and which of them was meant is not yours to decide.
 
     Recording what the user tells you starts with a decision only you can make from the
     conversation: is it about someone/something already in the world, or new? Say so by the

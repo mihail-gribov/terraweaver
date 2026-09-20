@@ -134,10 +134,36 @@ class World:
             chosen = self._remembered(class_name, attrs, certain or similar)
             if chosen is not None:
                 return matching.FindResult([chosen], [inst for inst, _ in scored if inst is not chosen])
+            only = self._only_match(class_name, attrs, certain or similar)
+            if only is not None:
+                return matching.FindResult([only], [inst for inst, _ in scored if inst is not only])
             needs = ambiguous_identity(class_name, attrs, certain or similar, exact=bool(certain))
             self.pending = needs
             return needs
         return matching.FindResult(certain, similar)
+
+    def _only_match(self, class_name: str, attrs: dict, candidates: list):
+        """One candidate, and nothing that disagrees with it, is not an ambiguity — it's them.
+
+        "Darren" when the world holds one Darren Liu and no other Darren is far likelier to be
+        him than a question worth the user's time. Asking cost hosts three to six turns and, on
+        one run, produced a second Olga. So the rule: no contradiction, same one. A contradiction
+        is a second candidate, or a value that disagrees with what's recorded — either of those
+        and the question stands, because then the world genuinely doesn't know.
+        """
+        if len(candidates) != 1:
+            return None
+        entity = candidates[0]
+        name_key = matching.NAME_KEYS.get(class_name)
+        rest = {k: v for k, v in attrs.items() if k != name_key}
+        if matching.contradictions(entity, rest):
+            return None
+        asked = attrs.get(name_key)
+        if isinstance(asked, str) and matching.normalize(asked) != matching.normalize(
+                getattr(entity, name_key, None) or ""):
+            ontology.note_assumed(f"{asked} = {entity.display_name()} — the only one in the world "
+                                  f"who answers to that, and nothing said disagrees with them")
+        return self._determined(entity)
 
     def resolve_reference(self, cls, **attrs):
         """Identify the entity a task refers to, before any code runs.
@@ -176,6 +202,10 @@ class World:
             ontology.note_found(entity)
             return entity
         if result.main or result.similar:
+            only = self._only_match(class_name, attrs, result.main or result.similar)
+            if only is not None:
+                ontology.note_found(only)
+                return only
             needs = ambiguous_identity(class_name, attrs, result.main or result.similar, exact=bool(result.main))
             self.pending = needs
             return needs
@@ -228,6 +258,8 @@ class World:
             outcome = self._apply_or_flag(self._determined(chosen), attrs)
         elif len(certain) > 1:
             outcome = ambiguous_identity(class_name, attrs, certain)
+        elif scored and (only := self._only_match(class_name, attrs, [inst for inst, _ in scored])) is not None:
+            outcome = self._apply_or_flag(only, attrs)
         elif scored:
             outcome = ambiguous_identity(class_name, attrs, [inst for inst, _ in scored])
         else:

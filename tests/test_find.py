@@ -67,15 +67,21 @@ def main() -> int:
     check("shared alias asks", isinstance(result, NeedsResolution) and len(result.candidates) == 2, f"got {result!r}")
     check("shared alias says several match", isinstance(result, NeedsResolution) and "equally well" in result.reason)
 
+    # One resemblance and nothing that disagrees with it is not an ambiguity: it's them.
+    # Asking here cost hosts whole turns and, once, produced a second Olga.
     result = Person.find(full_name="Ada Lovelase")
-    check("an unrecorded misspelling asks", isinstance(result, NeedsResolution), f"got {result!r}")
-    check("and says nothing matches exactly",
-          isinstance(result, NeedsResolution) and "merely resemble" in result.reason)
+    check("a misspelling with one candidate and no disagreement is them",
+          not isinstance(result, NeedsResolution) and names(result.main) == ["Ada Lovelace"], f"got {result!r}")
 
-    # "Robert" is his first name but not one of his recorded names ("Bob" is), so matching
-    # one part of "Robert Wolfe" can only ever be a resemblance.
+    # "Robert" is his first name but not one of his recorded names ("Bob" is) — still the only
+    # person in this world it can mean.
     result = Person.find(full_name="Robert")
-    check("bare first name is not certainty", isinstance(result, NeedsResolution), f"got {result!r}")
+    check("a bare first name with one candidate is them",
+          not isinstance(result, NeedsResolution) and names(result.main) == ["Robert Wolfe"], f"got {result!r}")
+
+    # Something that disagrees brings the question back: then the world really doesn't know.
+    result = Person.get(full_name="Ada Lovelase", email="someone.else@example.com")
+    check("a value that disagrees makes it a question again", isinstance(result, NeedsResolution), f"got {result!r}")
 
     # --- match and resemblance are kept apart ---
     result = Person.find(full_name="Ann")
@@ -112,7 +118,8 @@ def main() -> int:
     # --- companies get the same treatment as people ---
     check("company alias matches", names(Organization.find(name="Data Works").main) == ["DataWorks"])
     check("company short form matches", names(Organization.find(name="DW").main) == ["DataWorks"])
-    check("company resemblance asks", isinstance(Organization.find(name="Data"), NeedsResolution))
+    check("a company resemblance with one candidate is it",
+          names(Organization.find(name="Data").main) == ["DataWorks"])
 
     # --- searching is not working with anything ---
     ada = Person.find(email="ada@example.com").main[0]
