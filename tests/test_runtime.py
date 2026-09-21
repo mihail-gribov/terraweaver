@@ -108,6 +108,16 @@ def main() -> int:
     check("and what is waiting on the answer is said again every run",
           any("waiting on the answer" in q for q in nagged["questions"]), str(nagged["questions"]))
 
+    listing = WorldRuntime(str(Path(tempfile.mkdtemp()) / "listing.db"), fixture="job_search", rebuild=True)
+    listing.run('needs = Person.ensure(full_name="Annie")', "one")
+    showed = listing.run('annies = Person.find(full_name="Annie")\n'
+                         'for annie in annies.candidates:\n    print(annie.full_name)', "one")
+    check("listing the candidates for the user teaches nothing, even a run later",
+          showed["assumed"] == [], str(showed["assumed"]))
+    picked = listing.run('chosen = Person.get(full_name="Anna Sullivan")\nprint(chosen.job_title)', "one")
+    check("and picking one of them is still the answer, said once",
+          len([a for a in picked["assumed"] if "Anna Sullivan" in a]) == 1, str(picked["assumed"]))
+
     loop = WorldRuntime(str(Path(tempfile.mkdtemp()) / "loop.db"), fixture="job_search", rebuild=True)
     asking = loop.run('annie = Person.find(full_name="Annie")\n'
                       'for p in annie.similar[:3]:\n    print(p.full_name)', "one")

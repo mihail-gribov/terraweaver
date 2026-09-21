@@ -311,8 +311,15 @@ class WorldRuntime:
         assumed in silence, so a wrong reading costs one sentence to correct.
         """
         said: list[str] = []
+        told: set = set()
         fresh = [value for name, value in session.namespace.items()
                  if before.get(name) != id(value)]
+        # A run that raised an ambiguity of its own is still asking, not answering — even when
+        # the question it would settle was raised earlier. This is how the wrong Anna got
+        # learned: the host listed the candidates for the user in a later run, and the loop
+        # left the last of them bound.
+        if any(isinstance(one, NeedsResolution) and one.candidates for one in fresh):
+            return said
         touched = {e.id for e in _entities_of(recording) if getattr(e, "id", None)}
         touched |= _entity_ids(fresh)
         if not touched:
@@ -326,11 +333,18 @@ class WorldRuntime:
             if any(value is one for one in fresh):
                 continue
             chosen = [c for c in value.candidates if getattr(c, "id", None) in touched]
-            if len(chosen) != 1:
+            # More than one of them, ever, and the host was looking rather than choosing.
+            seen = set(value.context.setdefault("seen", [])) | {c.id for c in chosen}
+            value.context["seen"] = sorted(seen)
+            if len(chosen) != 1 or len(seen) != 1:
                 continue
             name = self.world.remember_choice(value, chosen[0])
             if name:
                 value.context["learned"] = chosen[0].id
+                line = f"{name!r} -> {chosen[0].id}"
+                if line in told:      # two questions about one name is still one answer
+                    continue
+                told.add(line)
                 # Straight onto this run's record rather than through note_assumed: by the time
                 # a run's effects are gathered the recording context is closed, and a note made
                 # then goes nowhere. Learning in silence is the one thing this must not do.
