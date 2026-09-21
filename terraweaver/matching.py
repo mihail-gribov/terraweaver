@@ -43,6 +43,27 @@ DISTINGUISHING_KEYS = {
     "Event": ["start_time"],
 }
 
+
+def register_identity(class_name: str, *, name_keys: list[str], strong_keys=(),
+                      part_match: bool = False, distinguishing=()) -> None:
+    """How a class defined while the world is running is identified.
+
+    Everything here is per class and was hand-tuned for the classes we gave: which attribute
+    holds the name, which values identify on their own (an email, a phone), whether part of a
+    name counts ("Darren" for Darren Liu), what tells two of them apart. A class the host
+    defines appears in none of these tables, so nothing ever looks like a twin and the world
+    quietly fills with duplicates of one thing. This is where a definition says how its own
+    identity works — required at definition time, for exactly that reason.
+    """
+    if name_keys:
+        NAME_KEYS[class_name] = name_keys[0]
+    if strong_keys:
+        STRONG_KEYS[class_name] = list(strong_keys)
+    if part_match:
+        PART_MATCH_CLASSES.add(class_name)
+    if distinguishing:
+        DISTINGUISHING_KEYS[class_name] = list(distinguishing)
+
 CERTAIN = 0.95  # at/above this, treat as the same entity without asking
 PART_CEILING = 0.9  # a match on part of a name is never certainty — see similarity()
 PLAUSIBLE = 0.6  # between PLAUSIBLE and CERTAIN, it's uncertain — ask the user

@@ -1395,8 +1395,34 @@ def with_common_slots(spec: dict[str, Any]) -> dict[str, Any]:
 def build_classes(specs: dict[str, dict[str, Any]], impls: dict[tuple[str, str], Any] | None = None) -> dict[str, type]:
     impls = impls or {}
     classes: dict[str, type] = {}
-    specs = {name: with_common_slots(spec) for name, spec in specs.items()}
     for name, spec in specs.items():
+        define_class(classes, spec, name=name, impls=impls)
+    return classes
+
+
+def define_class(classes: dict[str, type], spec: dict[str, Any], name: str | None = None,
+                 impls: dict[tuple[str, str], Any] | None = None) -> type:
+    """Build one class from its spec and register it in `classes`. Returns the class.
+
+    The same call for a class and for a relation type — a relation section in the spec is what
+    makes it one — so a type defined while the world is running is the same kind of thing as one
+    given at the start, with the same attributes, periods, history and checks. Storage needs no
+    warning: every class's table is made the first time something is written to it.
+
+    An identity is registered here too, from the spec's `identified_by`, because identification
+    is per class and a class nobody hand-tuned has none: without it `new()` never sees a twin
+    and the world fills with duplicates of the same thing.
+    """
+    from terraweaver import matching
+
+    impls = impls or {}
+    name = name or spec["name"]
+    spec = with_common_slots({**spec, "name": name})
+    if spec.get("identified_by"):
+        wanted = spec["identified_by"]
+        wanted = wanted if isinstance(wanted, dict) else {"name_keys": list(wanted)}
+        matching.register_identity(name, **wanted)
+    if True:
         namespace = {
             "__doc__": spec.get("description", ""),
             "_spec": spec,
@@ -1432,4 +1458,4 @@ def build_classes(specs: dict[str, dict[str, Any]], impls: dict[tuple[str, str],
         # Everything shared comes from Entity; a generated class carries only its own
         # spec and methods.
         classes[name] = type(name, (base,), namespace)
-    return classes
+        return classes[name]

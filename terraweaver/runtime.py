@@ -175,13 +175,32 @@ class WorldView:
         self._variables.unpin(*names)
         print(f"[unpinned] {', '.join(names)}")
 
+    def __getattr__(self, name):
+        """Calls a mode added (world.extras), and a useful refusal when there is no such call."""
+        if name.startswith("_"):
+            raise AttributeError(name)
+        extra = self._world.extras.get(name)
+        if extra is not None:
+            return extra
+        from terraweaver import ontology
+
+        known = [n for n in dir(type(self)) if not n.startswith("_")] + list(self._world.extras)
+        near = ontology.did_you_mean(name, known)
+        raise AttributeError(
+            f"the world has no {name!r}" + (f" — did you mean {near!r}? " if near else ". ")
+            + f"It can: {', '.join(sorted(known))}.")
+
     def __repr__(self):
-        return ("<world: all, find, where, get, new, ensure, settle, described, questions, happening, repeats, texts, tags, tagged, "
-                "tagged_all, merge_tags, untag, like, rebuild, pin, unpin, owner, me, pending>")
+        core = ("all, find, where, get, new, ensure, settle, described, questions, happening, "
+                "repeats, texts, tags, tagged, tagged_all, merge_tags, untag, like, rebuild, "
+                "pin, unpin, owner, me, pending")
+        extra = ", ".join(sorted(self._world.extras))
+        return f"<world: {core}" + (f" | this world also: {extra}>" if extra else ">")
 
 
 class WorldRuntime:
-    def __init__(self, db_path: str, fixture: str | None = None, rebuild: bool = False,
+    def __init__(self, db_path: str, fixture: str | None = None, rebuild: bool = False, *,
+                 specs: dict | None = None, selves: bool = True,
                  ontology_dir: Path | None = None, home: Path | None = None):
         self.db_path = db_path
         self.fixture = fixture
@@ -189,14 +208,17 @@ class WorldRuntime:
         # world carried on a stick carries its configuration with it.
         self.home = Path(home) if home is not None else (
             Path(db_path).parent if db_path != ":memory:" else Path.cwd())
-        self.specs = load_specs(ontology_dir or ONTOLOGY_DIR)
+        # specs={} is a world with no vocabulary at all: whoever uses it defines its classes as
+        # it goes (ontology.define_class). Everything else — statements, periods, history,
+        # identity, tags, rebuild — works the same, because none of it knows what a Person is.
+        self.specs = load_specs(ontology_dir or ONTOLOGY_DIR) if specs is None else dict(specs)
         self.classes = build_classes(self.specs, IMPLS)
         self.store = Store(db_path)
         self.store.conn.executescript(RUNS_SCHEMA)
         # Asked before the world opens: opening it puts the two parties in, and a world that
         # holds only those two is still an empty one waiting for its fixture.
         empty = self.store.conn.execute("SELECT COUNT(*) FROM instances").fetchone()[0] == 0
-        self.world = World(self.store, self.classes, self.specs)
+        self.world = World(self.store, self.classes, self.specs, selves=selves)
         # Methods the world wrote for itself hang on the classes like any other (procedures.py).
         self.world.procedures.bind(self.classes)
         onboarding.onboard(self.world, self.home)

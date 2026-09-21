@@ -41,13 +41,19 @@ class NotInWorld(LookupError):
 
 
 class World:
-    def __init__(self, store, classes: dict[str, type], specs: dict | None = None):
+    def __init__(self, store, classes: dict[str, type], specs: dict | None = None, *,
+                 selves: bool = True):
         self.store = store
         self.classes = classes
         # What each class declares — how many of a thing a slot holds, and so on. Assembly needs
         # it to build images; without it every slot is treated as holding one thing.
         self.specs = specs or {name: cls._spec for name, cls in classes.items()}
         self.resolutions: list[dict] = []
+        # Host-facing calls a mode adds on top of the core — an experiment that lets the host
+        # define its own classes needs `define(...)` where nothing in the core offers one. Kept
+        # in a named place rather than bolted onto the facade, so what is ours and what a mode
+        # brought is always distinguishable, and so `world` still lists everything it can do.
+        self.extras: dict[str, Any] = {}
         self.pending: NeedsResolution | None = None
         self.comments = Comments(store, classes)
         # Who the user meant by a name, once they said so. The next "Annie" is that Annie —
@@ -63,7 +69,10 @@ class World:
         ontology.set_write_guard(self._keep_old_value)
         # Lets `Person.find(...)` reach this world without each class carrying a store.
         ontology.set_world(self)
-        self.ensure_selves()
+        # A world with no classes has no Person to be the owner and no Agent to keep it. It is
+        # not broken, it is empty: whoever fills it names those two itself.
+        if selves:
+            self.ensure_selves()
 
     # Fixed ids, so the two of them are the same rows in every world and can be found without
     # searching by name — and so nothing else can quietly take their place.
