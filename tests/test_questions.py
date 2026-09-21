@@ -129,6 +129,13 @@ def main() -> int:
                     'print(date(2026, 1, 1), timedelta(days=1), Counter("aab")["a"])', "host")
     check("an import of what is already provided is granted, not refused",
           styled["ok"] and styled["output"].startswith("2026-01-01"), str(styled["error"]))
+    habit = rt.run('from datetime import datetime, timedelta\n'
+                   'import datetime\n'
+                   'from datetime import time\n'
+                   'print(datetime.datetime(2026, 10, 1), time(9, 15), timedelta(days=1))', "host")
+    check("an import of what is already here is simply not needed",
+          habit["ok"] and "2026-10-01" in habit["output"] and "09:15" in habit["output"],
+          str(habit["error"]) or habit["output"])
     refused_import = rt.run('import os', "host")
     check("an import of something the world doesn't provide is still refused",
           not refused_import["ok"] and "isn't available" in str(refused_import["error"]),

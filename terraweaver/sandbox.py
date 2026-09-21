@@ -93,6 +93,38 @@ def _bind(bindings: list, node: ast.AST) -> Any:
     return out
 
 
+class _ImportsAlreadyHere(ast.NodeTransformer):
+    """Drop an import that asks for what the namespace already holds.
+
+    `from datetime import datetime, timedelta` is a habit, not a request — it was written 55
+    times in one pool, and each one cost the statement it stood in. Nothing is imported and
+    nothing is hidden: the names were already bound, so the line is simply not needed. An
+    import of anything else is still refused, because that is about what the code may reach.
+    """
+
+    def visit_Import(self, node):
+        wanted = [alias.asname or alias.name.split(".")[0] for alias in node.names]
+        return None if all(name in MODULES for name in wanted) else node
+
+    def visit_ImportFrom(self, node):
+        holder = MODULES.get(node.module)
+        if holder is None:
+            return node
+        binds = []
+        for alias in node.names:
+            if not hasattr(holder, alias.name) and alias.name not in MODULES:
+                return node      # something this world doesn't have: refused in the walk below
+            if (alias.asname or alias.name) in MODULES and not alias.asname:
+                continue         # already bound under that very name
+            # `from datetime import time` asks for something real that simply isn't bound yet:
+            # bind it rather than refuse the line.
+            source = ast.Attribute(value=ast.Name(id=node.module, ctx=ast.Load()),
+                                   attr=alias.name, ctx=ast.Load())
+            binds.append(ast.Assign(targets=[ast.Name(id=alias.asname or alias.name,
+                                                      ctx=ast.Store())], value=source))
+        return [ast.copy_location(ast.fix_missing_locations(b), node) for b in binds] or None
+
+
 def check(code: str, protected: set[str] = frozenset(), always: set[str] = frozenset()) -> ast.AST:
     """Parse and vet host code. Raises SandboxViolation, or SyntaxError for broken code.
 
@@ -171,6 +203,20 @@ BUILTINS = {name: getattr(builtins, name) for name in _ALLOWED_BUILTINS}
 BUILTINS.update(getattr=_getattr, hasattr=_hasattr, setattr=_setattr)
 
 
+class _Dt(_datetime.datetime):
+    """`datetime` as hosts reach for it: the class, and also the module they expect around it.
+
+    `datetime(2026, 10, 1)` is what the world's own examples use, and `datetime.datetime(...)`
+    is what a host writes out of habit after `import datetime`. Both work here, so neither
+    costs a statement."""
+
+    datetime = _datetime.datetime
+    date = _datetime.date
+    time = _datetime.time
+    timedelta = _datetime.timedelta
+    timezone = _datetime.timezone
+
+
 def _only(module, *names) -> SimpleNamespace:
     return SimpleNamespace(**{name: getattr(module, name) for name in names})
 
@@ -186,7 +232,7 @@ MODULES = {
     "collections": _only(collections, "Counter", "defaultdict", "OrderedDict", "namedtuple", "deque"),
     "itertools": _only(itertools, "chain", "groupby", "islice", "combinations", "permutations",
                        "product", "accumulate", "count"),
-    "datetime": _datetime.datetime,
+    "datetime": _Dt,
     "date": _datetime.date,
     "timedelta": _datetime.timedelta,
     "timezone": _datetime.timezone,

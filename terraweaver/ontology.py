@@ -840,7 +840,8 @@ class Entity:
         # Times come back comparable with dates. `event.start_time >= today()` is the obvious
         # thing to write, and a plain datetime raises on it — one discarded run each time, for
         # nothing. Moment is a datetime, so everything else about it is unchanged.
-        if type(value) is datetime and not name.startswith("_"):
+        if isinstance(value, datetime) and type(value).__name__ not in ("Moment",) \
+                and not name.startswith("_"):
             from terraweaver import timeutil
 
             return timeutil.moment(value)
