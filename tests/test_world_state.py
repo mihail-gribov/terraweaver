@@ -259,6 +259,17 @@ def main() -> int:
     check("settling the one it did ask about returns that person",
           world.settle(nameless, petr) is petr)
 
+    # --- a question in the middle of a batch holds its link instead of killing the run ---
+    held = Person.new(full_name="Pete Ivanson")           # same name, nothing to tell them apart
+    acme = Organization.ensure(name="Held Links Ltd")
+    held.relate(acme, "membership", title="advisor")      # would have raised and discarded it all
+    alongside = Person.new(full_name="Quinn Ivers", email="quinn@x.org")
+    check("the rest of the batch survives a question", isinstance(alongside, Person))
+    settled = world.settle(held, petr)
+    check("and the held link is made once the question is answered",
+          any(r.other(settled) is acme for r in settled.relations("membership")),
+          str([r.display_name() for r in settled.relations("membership")]))
+
     # --- who the user meant by a name is remembered ---
     annie = Person.find(full_name="Annie")
     sullivan = Person.get(email="anna.sullivan@example.com")

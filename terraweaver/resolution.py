@@ -8,6 +8,7 @@ user, so an ambiguity is settled by the person who actually knows, not by infere
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
+from terraweaver import ontology
 from terraweaver.ontology import Entity
 
 # What kind of episode each skill represents, for tagging the transcript.
@@ -68,6 +69,22 @@ class NeedsResolution:
 
     def __bool__(self) -> bool:
         return True  # it is something, and it must not read as "nothing came back"
+
+    def relate(self, other, kind: str, /, **attrs):
+        """A link to something that is still a question: held, not refused.
+
+        Refusing raised, and a raise discards the whole run — so one unanswerable person in a
+        list of four took the other three down with her, including the ones nothing was wrong
+        with. The link is kept here instead and made the moment the question is settled; until
+        then it exists nowhere, which is the truth. Whoever answers gets it for free.
+        """
+        self.context.setdefault("held_links", []).append((other, kind, attrs))
+        ontology.note_hint(
+            f"{self.reason.split(' — ')[0]}: this {kind} link is held until that is settled — "
+            f"world.settle(<this question>, <the one they meant>) makes it, or new=True does. "
+            f"Nothing else in this run is affected."
+        )
+        return None
 
     def __getattr__(self, name: str):
         # Reached only for attributes this object doesn't have — usually an entity's, because
@@ -171,6 +188,12 @@ def contradicting_value(instance, attr: str, existing_value, incoming_value) -> 
     )
 
 
+def _make_held_links(world, needs: NeedsResolution, entity) -> None:
+    """The links that were waiting on this answer, made now that there is one to hang them on."""
+    for other, kind, attrs in needs.context.pop("held_links", []):
+        world.relate(entity, other, kind, **dict(attrs))
+
+
 def run_skill(needs: NeedsResolution, ask_user: Callable[[str, list[str]], int], world) -> Any:
     """Run the named skill: put the question to the user and apply their answer.
 
@@ -190,9 +213,11 @@ def run_skill(needs: NeedsResolution, ask_user: Callable[[str, list[str]], int],
         if choice < len(needs.candidates):
             settled = world.apply_attrs(needs.candidates[choice], needs.context["incoming"])
             world.remember_choice(needs, settled)
+            _make_held_links(world, needs, settled)
         else:
             settled = world.create(needs.context["class_name"], needs.context["incoming"])
             world.remember_choice(needs, None)
+            _make_held_links(world, needs, settled)
             # "Someone new" next to someone who answers to the same name is the answer the world
             # can't check: it never sees the conversation, and a host that skipped asking leaves
             # a second Olga behind. The record stands; the doubt is kept (questions.py).
