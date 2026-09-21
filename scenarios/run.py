@@ -196,7 +196,14 @@ def run_scenario(scenario, mode: str, work: Path, out_dir: Path) -> dict:
     if mode == "world":
         ok, text = asyncio.run(world_run(scenario.EXPECT))
         if not ok:
-            failures.append("expected state not reached: " + text.strip().splitlines()[-1])
+            # The last line of a run result is bookkeeping — [new variables], [created] — and
+            # taking it threw away the very sentence the check wrote to explain itself. Report
+            # what broke, and keep the state after it as context.
+            lines = [line for line in text.strip().splitlines() if line.strip()]
+            why = next((line for line in reversed(lines) if not line.lstrip().startswith("[")),
+                       lines[-1] if lines else "")
+            state = next((line for line in reversed(lines) if line.lstrip().startswith("[new variables]")), "")
+            failures.append("expected state not reached: " + why + (f"  ({state})" if state else ""))
     (out_dir / f"{scenario.NAME}.{mode}.answer.txt").write_text(answer)
     return {"name": scenario.NAME, "mode": mode, "passed": not failures, "failure": "; ".join(failures) or None,
             "turns": totals["turns"], "cost": round(totals["cost"], 2), "seconds": round(totals["seconds"])}
