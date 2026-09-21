@@ -159,6 +159,50 @@ stops being homeless. The end state we should expect is not a heap of host-inven
 a core set that has grown a few attributes and a few methods it did not ship with — and a short
 list of genuinely new classes that earned their place.
 
+## Experiment zero: a world with no classes at all
+
+Before the open class is added *beside* our own, there is a sharper and more interesting run:
+take the classes away entirely and watch what a host builds from nothing.
+
+The question it answers is one nobody in this project has an honest opinion about. We chose
+`Person`, `Organization`, `Place`, `Event`, `Project`, `Idea`, `Preference`, `Vacancy` by
+thinking about a life and arguing about it. A host given the same material and no vocabulary
+will choose something. Whether that something resembles ours is worth knowing before we spend
+five weeks defending ours — and if it does resemble ours, that is the strongest argument for the
+core set we could possibly get, because it will have been arrived at twice, independently.
+
+**The setup.** A world with an empty ontology: no core classes, nothing but the mechanism —
+define a class with a description, declare attributes, define a relation type with its
+cardinality and whether it is functional in time, and the two discovery calls. The world still
+does everything else it does: statements with sources, periods, history, identity questions,
+tags, meaning, rebuild. Only the vocabulary is missing. Two things must be given, because
+nothing can be said without them: `user` and `agent` — and even they can be given as instances
+of classes the host is free to name.
+
+**The material.** Two corpora, because they ask different things of a vocabulary. The 455
+FactConsolidation facts, which are open-domain and adversarial — they change under you. And a
+personal history from LongMemEval, which is what the product is actually for.
+
+**What we watch** (all of it comes out of the world's own tables, no extra instrumentation):
+
+- how many classes it defines, and for what — the list itself is the finding;
+- how much of it is the same idea twice (`Company` and `Organisation`), and whether that changes
+  once `classes_like` exists;
+- whether the vocabulary converges: classes defined in the last five batches versus the first
+  five;
+- what it declares functional in time, which is the property supersession rests on;
+- how it handles a thing that is a person — does something like `Person` appear, and does it
+  carry a name the way ours does;
+- and then the same 20 FactConsolidation questions, so that "what it invented" has a number
+  attached: core classes scored 12/20, and this run says whether a self-built vocabulary does
+  better or worse at answering with the value that holds now.
+
+**What would count as a result.** Not a higher score. A vocabulary that converges, reuses, and
+declares functionality is a working ontology however strange it looks; one that keeps branching
+and never reuses is a heap, and then discovery and promotion are not optional extras but the
+whole mechanism. Either way we learn what the fixed class set is actually buying us, which is a
+question we have been answering by assertion.
+
 ## Order of work
 
 1. The open class: definition with a description, declared attributes, the identifying attribute,
