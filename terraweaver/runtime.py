@@ -417,6 +417,7 @@ class WorldRuntime:
         standing: list[str] = []
         unrecorded: list[str] = []
         ran_before: dict = {}
+        marked_block = ""
         # World variables are fresh in every run: entities come from the world as they are now,
         # and one pinned by another session shows up here too.
         world_vars = self.variables.load()
@@ -474,6 +475,7 @@ class WorldRuntime:
             self._refresh(namespace)
             standing, unrecorded = _what_survived(namespace, session)
             ran_before = _ran_before(code, exc, wrote=True)
+            marked_block = _block_as_it_stands(code, exc, error)
             # A failed run is discarded, but an answer to the world's own question is not the
             # host's write and did not fail: the host really did work with one of the candidates
             # before its next line broke. Rolling that back meant the user answered "which
@@ -494,6 +496,7 @@ class WorldRuntime:
             "standing": standing,
             "unrecorded": unrecorded,
             "ran_before": ran_before,
+            "block": marked_block,
             "new_variables": {name: session.variables[name]["description"] for name in new_names},
             "duration_ms": int((time.monotonic() - started) * 1000),
         }
@@ -751,7 +754,31 @@ def _merge_questions(raised: list[str], standing: list[str]) -> list[str]:
     return out[:5]
 
 
-MAX_ECHO = 18   # lines of a failed block worth handing back; beyond that, say how many
+MAX_ECHO = 18    # lines of a failed block worth handing back; beyond that, say how many
+MAX_BLOCK = 60   # past this, handing the whole block back costs more than it saves
+
+
+def _block_as_it_stands(code: str, exc: BaseException, reason: str) -> str:
+    """The block handed back the way it now stands: done, stopped, not run.
+
+    Describing the cut in words still leaves the host to reconstruct its own code. This gives
+    it back in the shape it was written in — the lines that are done as plain code (to read,
+    not to re-run), the one that raised commented with why, and everything after it commented
+    out because it never happened. What comes next is written under it, in the next message.
+    """
+    frames = [f for f in traceback.extract_tb(exc.__traceback__) if f.filename == "<run>"]
+    lines = code.splitlines()
+    if not frames or not lines:
+        return ""
+    where = frames[-1].lineno or 0
+    if not 0 < where <= len(lines) or len(lines) > MAX_BLOCK:
+        return ""
+    why = reason.strip().splitlines()[-1][:160]
+    out = ["# --- done and kept, do not send again ---"] + lines[:where - 1]
+    out.append(f"# !! stopped here — {why}")
+    out += [("# " + line) if line.strip() else line for line in lines[where - 1:]]
+    out.append("# --- from here on, nothing ran: fix and carry on below ---")
+    return "\n".join(out)
 
 
 def _ran_before(code: str, exc: BaseException, wrote: bool) -> dict:
@@ -846,9 +873,11 @@ def format_result(result: dict) -> str:
             told.append("[not in the world] " + ", ".join(result["unrecorded"])
                         + " — this one was being made when the line failed, so it was undone:"
                         " make it again if you still want it")
-        told.append("Carry on from the line below; what ran before it is in the world and its "
-                    "variables are still bound. Send it again only if you want it done twice.")
-        parts.append("\n".join(told) + f"\n{result['error']}")
+        told.append("Your block as it now stands — the done part is there to read, not to send "
+                    "again; write the continuation under it:")
+        parts.append("\n".join(told) + "\n" + (result.get("block") or result["error"]))
+        if result.get("block"):
+            parts.append(result["error"])
     for kind in ("created", "updated", "found", "comments", "assumed", "hints"):
         if result.get(kind):
             parts.append(f"[{kind}] " + "; ".join(result[kind]))

@@ -80,8 +80,13 @@ def main() -> int:
           "2 line(s) before it are done" in cut["error"] and "2 after it never ran" in cut["error"],
           cut["error"])
 
-    check("and a failed run tells the host to carry on rather than resend",
-          "Carry on from the line below" in format_result(still), format_result(still))
+    shown_still = format_result(still)
+    check("and a failed run hands the block back as it stands",
+          "# --- done and kept, do not send again ---" in shown_still
+          and "# !! stopped here" in shown_still, shown_still)
+    check("with what never ran commented out",
+          "# note = \"for later\"" in shown_still or "# raise RuntimeError" in shown_still,
+          shown_still)
     undone = rt.run('print(len([p for p in Person.all(limit=None) if p.full_name == "Never Made"]))', "host")
     check("and the statement that raised left nothing of its own", undone["output"].strip() == "0",
           undone["output"])
