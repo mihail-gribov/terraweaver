@@ -252,8 +252,12 @@ def main() -> int:
     petr = Person.new(full_name="Pete Ivanson", email="pete@x.org")
     check("new creates", isinstance(petr, Person) and petr.id is not None)
     twin = Person.new(full_name="Pete Ivanson", email="pete@x.org")
-    check("new asks before creating a twin", getattr(twin, "skill", None) == "resolve_ambiguity")
-    check("settling the twin as the same one returns it", world.settle(twin, petr) is petr)
+    check("the same address is the same person, without asking", twin is petr)
+    nameless = Person.new(full_name="Pete Ivanson")
+    check("but the same name and nothing to go on still asks",
+          getattr(nameless, "skill", None) == "resolve_ambiguity")
+    check("settling the one it did ask about returns that person",
+          world.settle(nameless, petr) is petr)
 
     # --- who the user meant by a name is remembered ---
     annie = Person.find(full_name="Annie")

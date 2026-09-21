@@ -59,7 +59,12 @@ def main() -> int:
     check("a company website matches on its domain",
           Organization.find(website="https://careers.techcorp.com/jobs").main == [techcorp])
     twin = Person.new(full_name="Ada L", email="Ada@Example.com")
-    check("an email written differently still reveals a twin", getattr(twin, "skill", None) == "resolve_ambiguity")
+    # An address nobody else has is not a resemblance. The same rule identification uses
+    # everywhere here: one candidate, nothing that disagrees, no question — and what the host
+    # called them is kept as another name they answer to.
+    check("an email written differently is the same person, not a question", twin is ada)
+    check("and the name it was given is kept as one of theirs",
+          any(a.lower() == "ada l" for a in (ada.aliases or [])), str(ada.aliases))
 
     # --- one word for one thing, however it was typed ---
     event = classes["Event"].new(title="Sync", kind="Meeting", start_time=datetime(2026, 10, 1, 10, 0))

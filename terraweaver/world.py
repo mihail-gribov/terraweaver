@@ -211,6 +211,35 @@ class World:
                                   f"who answers to that, and nothing said disagrees with them")
         return self._determined(entity)
 
+    def _same_by_strong_key(self, class_name: str, attrs: dict, twins: list):
+        """An address nobody else has is not a resemblance — it is them.
+
+        `Person.new(full_name="Kate Johnson", email="KJohnson@NASA.gov")` next to a recorded
+        Katherine Johnson at kjohnson@nasa.gov is one person written two ways, and asking about
+        it spends the user's attention on something the data already answers. The rule is the
+        same one identification uses everywhere here (`_only_match`): one candidate, nothing
+        that disagrees, no question. What the host called them is kept as another name they
+        answer to, so the next lookup by either finds them.
+        """
+        name_key = matching.NAME_KEYS.get(class_name)
+        rest = {k: v for k, v in attrs.items() if k != name_key}
+        same = [one for one in twins if matching.strong_key_match(one, class_name, attrs)]
+        if len(same) != 1 or matching.contradictions(same[0], rest):
+            return None
+        entity = self._determined(same[0])
+        asked = attrs.get(name_key)
+        key = next(k for k in matching.STRONG_KEYS.get(class_name, []) if attrs.get(k))
+        if isinstance(asked, str) and matching.normalize(asked) != matching.normalize(
+                getattr(entity, name_key, None) or ""):
+            forms = list(getattr(entity, matching.ALIAS_KEY, None) or [])
+            if any(a["name"] == matching.ALIAS_KEY for a in type(entity)._spec["attributes"]) \
+                    and not any(matching.normalize(a) == matching.normalize(asked) for a in forms):
+                setattr(entity, matching.ALIAS_KEY, forms + [asked])
+            ontology.note_assumed(
+                f"{asked} is {entity.display_name()} — the same {key}, and nothing said "
+                f"disagrees. Recorded as another name they answer to; say so if they are two people")
+        return entity
+
     def resolve_reference(self, cls, **attrs):
         """Identify the entity a task refers to, before any code runs.
 
@@ -276,6 +305,12 @@ class World:
         resembling = ([inst for inst, score in scored if score >= matching.PART_CEILING]
                       if class_name in matching.PART_MATCH_CLASSES else [])
         twins = [inst for inst, score in scored if score >= matching.CERTAIN] or resembling
+        if twins and (known := self._same_by_strong_key(class_name, attrs, twins)) is not None:
+            outcome = self._apply_or_flag(known, {k: v for k, v in attrs.items()
+                                                  if k != matching.NAME_KEYS.get(class_name)})
+            if period and not isinstance(outcome, NeedsResolution):
+                self.apply_period(outcome, period)
+            return outcome
         if twins:
             needs = looks_existing(class_name, attrs, twins)
             needs.context["period"] = period
