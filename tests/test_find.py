@@ -208,6 +208,26 @@ def main() -> int:
           "no attribute 'zzzz'" in nothing_close and "did you mean" not in nothing_close,
           nothing_close or "(no refusal)")
 
+    # --- a result with exactly one match answers as that one, and says so ---
+    from terraweaver import ontology as _ont
+
+    with _ont.record_changes() as one_match:
+        got = Person.find(full_name="Ada Lovelace")
+        check("a search result with one match reads as that one", got.full_name == "Ada Lovelace",
+              str(got))
+        check("through .main as well", got.main.email == "ada@example.com")
+    check("and says where the answer came from",
+          any("read from the one match" in line for line in one_match.assumed), str(one_match.assumed))
+
+    several = Person.find(full_name="Annie")
+    told = ""
+    try:
+        several.similar.full_name
+    except AttributeError as exc:
+        told = str(exc)
+    check("with several it refuses and says which one to name",
+          "one of them" in told and "result.similar[0]" in told, told or "(no refusal)")
+
     print()
     if failures:
         print(f"{len(failures)} failed: {', '.join(failures)}")

@@ -176,9 +176,15 @@ def score_candidates(existing_instances: list, class_name: str, attrs: dict, fil
 
 
 class Matches(list):
-    """The matches themselves. A list — but one that says what it is when mistaken for a single
-    entity, because `result.main.full_name` is the shape hosts reach for and a bare
-    'list has no attribute' tells them nothing."""
+    """The matches themselves. A list — but `result.main.full_name` is the shape hosts reach
+    for, and a bare 'list has no attribute' tells them nothing.
+
+    With exactly one match there is nothing to choose between, so the attribute is read from it
+    and the reading is announced: one match, one answer, the caveat said. With none or several
+    it refuses and says where to look — reading "the" name of three people would be a guess, and
+    reading one out of nothing would be an invention. Discarding the run over a shape the world
+    could resolve was the commonest way a host lost its work (four of eight failing scenarios in
+    one pool)."""
 
     def __init__(self, items, which: str):
         super().__init__(items)
@@ -188,11 +194,14 @@ class Matches(list):
         if name.startswith("_"):
             raise AttributeError(name)
         if len(self) == 1:
-            where = f"result.{self._which}[0].{name}"
-        elif self:
-            where = f"one of them ({len(self)} here), e.g. result.{self._which}[0].{name}"
-        else:
-            where = "there are none — say so rather than filling the gap"
+            from terraweaver import ontology
+
+            ontology.note_assumed(
+                f"result.{name} read from the one match ({self[0].display_name()}) — "
+                f"a search result is a list, and result.{self._which}[0] is that one")
+            return getattr(self[0], name)
+        where = (f"one of them ({len(self)} here), e.g. result.{self._which}[0].{name}" if self
+                 else "there are none — say so rather than filling the gap")
         raise AttributeError(f"these are the matches, not one entity: no {name!r} on a list. Use {where}.")
 
 
@@ -225,8 +234,8 @@ class FindResult(list):
         if name.startswith("_"):
             raise AttributeError(name)
         if len(self.main) == 1:
-            where = f"result.main[0].{name}"
-        elif self.main:
+            return getattr(self.main, name)   # one match, one answer, the caveat said there
+        if self.main:
             where = f"one of result.main ({len(self.main)} matched), e.g. result.main[0].{name}"
         elif self.similar:
             where = (f"nothing matched; {len(self.similar)} merely resemble it (result.similar) — "

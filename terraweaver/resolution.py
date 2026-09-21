@@ -55,11 +55,17 @@ class NeedsResolution:
 
     @property
     def main(self) -> list:
-        return []
+        from terraweaver.matching import Matches
+
+        return Matches([], "main")
 
     @property
     def similar(self) -> list:
-        return list(self.candidates)
+        from terraweaver.matching import Matches
+
+        # A list that says what it is when it is mistaken for an entity: the same courtesy a
+        # search result gives, since a question is what a search returns when it can't settle.
+        return Matches(list(self.candidates), "similar")
 
     def __len__(self) -> int:
         return 0

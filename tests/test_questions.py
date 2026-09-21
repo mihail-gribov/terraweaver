@@ -134,10 +134,15 @@ def main() -> int:
           not refused_import["ok"] and "isn't available" in str(refused_import["error"]),
           str(refused_import["error"]))
 
-    # --- a world structure misused teaches its shape ---
+    # --- a world structure misused answers where it can, teaches where it can't ---
     misused = rt.run('print(Person.find(full_name="Ada").full_name)', "host")
-    check("a search result mistaken for the entity says where to reach it",
-          "result.main[0].full_name" in str(misused["error"]), str(misused["error"]))
+    check("a search result with one match answers as that one",
+          misused["ok"] and "Ada Lovelace" in misused["output"], str(misused["error"]))
+    check("and says the answer came from the one match",
+          any("read from the one match" in line for line in misused["assumed"]), str(misused["assumed"]))
+    crowd = rt.run('print(Person.find(full_name="Anna").similar.full_name)', "host")
+    check("with several it says which one to name",
+          "result.similar[0].full_name" in str(crowd["error"]), str(crowd["error"]))
     asked = rt.run('print(Person.find(full_name="Annie").full_name)', "host")
     check("a question mistaken for the entity says what settles it",
           "world.settle" in str(asked["error"]), str(asked["error"]))
