@@ -31,7 +31,7 @@ stretches that overlap or touch become one; a stretch wholly inside another disa
 Rebuild it whenever: `periods.rebuild(world)` throws the table away and derives it again, and
 nothing about the world changes.
 """
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from terraweaver.store import run_script
 
@@ -201,6 +201,44 @@ def next_time(world, subject: str, nature: str, value: str | None = None,
         if when is not None:
             coming.append(when)
     return min(coming) if coming else None
+
+
+def happening(world, since=None, until=None, limit: int = 200) -> list[tuple]:
+    """What falls in a window, one-offs and repeats together — (when, entity, what it is).
+
+    The question a diary is for, and the one thing a date query on an attribute cannot answer:
+    a weekly standup has one `start_time`, the day it started, so "what is on after New Year"
+    finds nothing however many times it will happen by then. Here the rules are counted out
+    into the window asked about and sorted in with everything else.
+    """
+    from terraweaver import recurrence, timeutil
+
+    start = _moment(since, timeutil.now())
+    stop = _moment(until, start + timedelta(days=90))
+    out = []
+    named = {}
+    for class_name, cls in getattr(world, "classes", {}).items():
+        dated = [a["name"] for a in cls._spec["attributes"]
+                 if a.get("type") == "datetime" and "derived" not in a
+                 and a["name"] not in ("created_at", "accessed_at", "valid_from", "valid_until")]
+        if not dated:
+            continue
+        for entity in world.all(class_name, limit=None, any_time=True):
+            named[getattr(entity, "subject_id", None) or entity.id] = entity
+            for slot in dated[:1]:  # the first dated attribute is the thing's own time
+                when = getattr(entity, slot, None)
+                if isinstance(when, datetime) and start <= when <= stop:
+                    out.append((when, entity, entity.display_name()))
+    for rule in cycles(world):
+        entity = named.get(rule["subject"])
+        if entity is None:
+            continue
+        for begins, _ in recurrence.occurrences(rule["starts"], rule["every"], start, stop,
+                                                rule["lasting"], rule["until"]):
+            what = f"{entity.display_name()} — {rule['value']}" if rule["value"] else entity.display_name()
+            if not any(when == begins and other is entity for when, other, _ in out):
+                out.append((begins, entity, what))
+    return sorted(out, key=lambda row: row[0])[:limit]
 
 
 def cycles(world, subject: str | None = None) -> list[dict]:

@@ -285,3 +285,21 @@ never holds more than one is an ordinary attribute. The world can see all three 
 alone — count the distinct texts, count how often each recurs, count how many hold at once — and
 propose the change rather than make it. Nothing does this yet; properties.py does the equivalent
 for relations, and is the model to follow.
+
+## One word, two meanings: Event.participants
+
+`Event.participants` is a plain `list[ref:Person]` attribute, and `participants` is also the
+reverse name of the `Participation` relation. They know nothing about each other:
+`Event.new(..., participants=[nils])` fills the attribute, `event.related("participants")` reads
+the relation, and a host that writes one and reads the other gets an empty list and believes it.
+That cost s27 a probe: told to find 1:1s with Nils, the host filtered `event.related("participants")`,
+found nothing, and answered "no 1:1 meetings are scheduled" about a world that had one.
+
+The world already solves this elsewhere and the fix is to follow it: `Person.organization` is
+declared `derived: relation` with a setter that records a Membership (`relations.DERIVED`). The
+same for `participants` — derived from Participation, settable, `add_participant` going through
+it — leaves one meaning per word. Knock-on: fixtures and scenarios that pass `participants=[...]`
+at construction, `impls.add_participant`, and the APPLY_ORDER for derived attributes given to
+`new()`.
+
+Worth doing with the comments/descriptions merge, since both are "two mechanisms for one thing".

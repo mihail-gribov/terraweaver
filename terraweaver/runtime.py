@@ -123,6 +123,10 @@ class WorldView:
         """Everything said in words about anything, searched by the words themselves."""
         return self._world.texts(words, **kw)
 
+    def happening(self, since=None, until=None, limit: int = 200) -> list[tuple]:
+        """What is on between two moments: (when, the thing, what it is), repeats counted out."""
+        return self._world.happening(since, until, limit)
+
     def repeats(self) -> list[str]:
         """Everything in this world that happens again and again, in words."""
         return self._world.repeats()
@@ -172,7 +176,7 @@ class WorldView:
         print(f"[unpinned] {', '.join(names)}")
 
     def __repr__(self):
-        return ("<world: all, find, where, get, new, ensure, settle, comments, questions, repeats, texts, tags, tagged, "
+        return ("<world: all, find, where, get, new, ensure, settle, comments, questions, happening, repeats, texts, tags, tagged, "
                 "tagged_all, merge_tags, untag, like, rebuild, pin, unpin, owner, me, pending>")
 
 

@@ -86,15 +86,15 @@ def where(world, cls=None, *, related=None, tagged=None, tagged_all=None, mentio
         # how="mean" are still there. Short texts are why this matters: a one-word text scores
         # 0.36 against things it has nothing to do with, where a ten-word one scores 0.28, so
         # letting a single tag carry an entity into an answer is exactly the wrong bet.
-        order, matched = {}, {}
-        for entity, score, said in world.meanings.entities(world, like, limit=200, how=how,
-                                                           any_time=any_time):
+        order = {}
+        for entity, score, _ in world.meanings.entities(world, like, limit=200, how=how,
+                                                        any_time=any_time):
             order[entity.id] = score
-            matched[entity.id] = said
         found = [e for e in found if order.get(e.id, 0.0) >= closeness]
         found.sort(key=lambda e: order.get(e.id, 0.0), reverse=True)
-        for entity in found:  # so an answer can say which sentence it matched on
-            entity.__dict__["_matched"] = (matched.get(entity.id), order.get(entity.id))
+        # Which sentence matched is worth knowing, but an underscore attribute is not a way to
+        # tell anyone: the host cannot read one. It asks world.like(text) for that, which returns
+        # the text with the score.
 
     return found[:limit] if limit else found
 

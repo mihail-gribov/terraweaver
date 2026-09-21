@@ -287,6 +287,11 @@ Every class below shares these, so they aren't repeated for each one:
       every=   "day", "week", "2 weeks", "month", "quarter", "year", or a timedelta
       lasting= how long each one runs; left out, it is a moment rather than a stretch
       starts=  the first one (anchor); until= when the series stops
+    world.happening(since, until) answers "what is on between these two dates" for the whole
+    world, counting repeats out into that window. Use it rather than a date query on an
+    attribute: a weekly standup has one start_time — the day it started — so
+    Event.find(start_time=after(new_year)) finds nothing, however many times it will happen.
+
     Read it back: entity.next_occurrence(), entity.occurrences(since=..., until=...) — a rule has
     no end, so a question about it needs a window; entity.repeats() and world.repeats() say what
     is cyclic in words. A cyclic tag answers as of a moment like any other: whether someone is

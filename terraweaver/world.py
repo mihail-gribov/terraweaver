@@ -339,6 +339,12 @@ class World:
 
         return texts_module.search(self, words, slot=slot, at=at, any_time=any_time, limit=limit)
 
+    def happening(self, since=None, until=None, limit: int = 200) -> list[tuple]:
+        """What falls between two moments — one-off and recurring alike (periods.py)."""
+        from terraweaver import periods
+
+        return periods.happening(self, since, until, limit)
+
     def repeats(self) -> list[str]:
         """Everything cyclic in this world, in words — one line per rule (periods.py)."""
         from terraweaver import periods, recurrence
