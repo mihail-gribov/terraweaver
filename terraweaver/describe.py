@@ -177,14 +177,28 @@ Every class below shares these, so they aren't repeated for each one:
         linda.relate(b04, "authority", label="manager")
         b04.relate(company, "part_of")
     entity.relations(kind)[i].counterpart is the end that isn't the entity you asked from.
-    descriptions — every class has them: how this one has been described, in whoever's words.
-    Several are normal and none replaces another, because people describe the same thing
-    differently and each telling is worth keeping:
-        anna.descriptions = anna.descriptions + ["quiet, precise, hates being rushed"]
-    They are what fuzzy searching runs on (world.like below), so a description written down is a
-    way of finding someone later by something you can't name as an attribute. A description may
-    be the user's words or something publicly known — a company's own account of itself, what a
-    place is — and the record keeps whose telling each one was, so the two never blur.
+    descriptions — every class has them, relations included, and the type is list[text]: not one
+    paragraph but many texts, each said on its own and each able to hold for a time. This is
+    where anything said in words about a thing goes; none of them replaces another, because
+    people describe the same thing differently and each telling is worth keeping.
+        anna.describe("quiet, precise, hates being rushed")
+        anna.describe("hiring freeze since March", when=date(2026, 3, 1))  — when it happened
+        anna.describe("might move in spring", tentative=True, ttl=timedelta(days=60))
+        anna.descriptions                 — the texts that hold for her now, as plain strings
+        anna.described(contains="move")   — the same with when, how long, and whether tentative
+        anna.drop("descriptions", "...")  — this one stops holding; the record keeps that it did
+        anna.spells("descriptions")       — every stretch each text has held, in order
+        world.described(contains="lease") — across everything, newest first
+        anna.descriptions = [...]         — "these are the ones now": what is new is said, what
+                                            is no longer named stops holding
+    `describe` is `add("descriptions", ...)` plus three things only a remark needs: when it
+    happened (as distinct from when the text starts to hold), that it may be tentative, and an
+    end by default (180 days, 30 for a tentative one) so notes go stale on their own.
+    Descriptions are what both searches run on — the words themselves (world.where(mentions=...))
+    and the meaning (world.where(like=...)) — so a description written down is how you find
+    someone later by something no attribute can hold. It may be the user's words or something
+    publicly known — a company's own account of itself, what a place is — and the record keeps
+    whose telling each one was, so the two never blur.
 
     tags — every class has them. A tie too vague to formalise — everything about the move, everyone from that
     conference, what matters this month. A relation type has to say what the tie *is*; a tag only
