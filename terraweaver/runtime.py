@@ -414,6 +414,8 @@ class WorldRuntime:
         effects = {"created": [], "updated": [], "found": [], "comments": [], "assumed": [], "hints": [],
                    "questions": [], "ask_now": []}
         started = time.monotonic()
+        standing: list[str] = []
+        unrecorded: list[str] = []
         # World variables are fresh in every run: entities come from the world as they are now,
         # and one pinned by another session shows up here too.
         world_vars = self.variables.load()
@@ -451,6 +453,7 @@ class WorldRuntime:
             error = _host_traceback(exc)
             rolled_back = _discarded(recording)
             self._refresh(namespace)
+            standing, unrecorded = _what_survived(namespace, session)
             # A failed run is discarded, but an answer to the world's own question is not the
             # host's write and did not fail: the host really did work with one of the candidates
             # before its next line broke. Rolling that back meant the user answered "which
@@ -468,6 +471,8 @@ class WorldRuntime:
             "rolled_back": rolled_back,
             "access": access,
             **effects,
+            "standing": standing,
+            "unrecorded": unrecorded,
             "new_variables": {name: session.variables[name]["description"] for name in new_names},
             "duration_ms": int((time.monotonic() - started) * 1000),
         }
@@ -725,6 +730,26 @@ def _merge_questions(raised: list[str], standing: list[str]) -> list[str]:
     return out[:5]
 
 
+def _what_survived(namespace: dict, session) -> tuple[list[str], list[str]]:
+    """After a failure: which variables are still worth something, and which only look it.
+
+    A run is rolled back, but the namespace is not — the lookups, the dates, the strings a host
+    computed before the failure are all still bound, and telling it to "send the whole block
+    again" throws away work it does not have to redo. The one trap is an entity created in the
+    rolled-back run: the variable still holds the object, and the object is no longer in the
+    world (its id was taken back), so saying which names those are matters more than the rest.
+    """
+    standing, unrecorded = [], []
+    for name, value in namespace.items():
+        if name.startswith("_") or name in getattr(session, "preset", set()) or callable(value):
+            continue
+        if isinstance(value, Entity):
+            (unrecorded if getattr(value, "id", None) is None else standing).append(name)
+        elif isinstance(value, (str, int, float, bool, list, tuple, dict, set)) or hasattr(value, "matches"):
+            standing.append(name)
+    return standing[:12], unrecorded[:12]
+
+
 def _discarded(recording) -> list[str]:
     """What a failed run had written before it failed — rolled back with the rest of it. Named
     here because a host that saw those lines print tends to assume they stuck and move on."""
@@ -750,8 +775,17 @@ def format_result(result: dict) -> str:
     if result["error"]:
         undone = result.get("rolled_back") or []
         lost = f" — {', '.join(undone[:5])} " + ("were" if len(undone) > 1 else "was") + " discarded" if undone else ""
-        parts.append(f"[error — nothing from this run was kept{lost}. A run is all or nothing: "
-                     f"send the whole block again, not only the line that failed]\n{result['error']}")
+        told = [f"[error — nothing this run wrote was kept{lost}]"]
+        # What it doesn't have to redo. The writes are gone; the variables are not, and a host
+        # told to "send the whole block again" repeats lookups it already has in hand.
+        if result.get("standing"):
+            told.append("[still bound] " + ", ".join(result["standing"])
+                        + " — these survived, so send again only what the failure stopped")
+        if result.get("unrecorded"):
+            told.append("[not in the world] " + ", ".join(result["unrecorded"])
+                        + " — the variable still holds it, but its creation was rolled back:"
+                        " record it again before anything is linked to it")
+        parts.append("\n".join(told) + f"\n{result['error']}")
     for kind in ("created", "updated", "found", "comments", "assumed", "hints"):
         if result.get(kind):
             parts.append(f"[{kind}] " + "; ".join(result[kind]))

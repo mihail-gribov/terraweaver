@@ -34,9 +34,12 @@ result — carries over. After a long pause the session is reset for you. Anythi
 outlive the task belongs in the world, not in a variable.
 
 Rules the world enforces:
-- Each `run` is atomic: if your code raises, nothing it wrote is kept — including the lines
-  that printed before it failed. The error names what was discarded; send the whole block
-  again, not only the line that failed.
+- Each `run` is atomic: if your code raises, nothing it *wrote* is kept — including the lines
+  that printed before it failed. Your variables are not rolled back, though: the result says
+  which are [still bound], so send again only what the failure stopped, not the lookups you
+  already have. One thing to watch: an entity created in the failed run is [not in the world]
+  — the variable still holds it, its record was taken back, and it must be recorded again
+  before anything is linked to it.
 - What isn't in the world isn't known. An empty result means the information isn't there — say
   so rather than filling the gap.
 - Before recording what the user tells you, decide from the conversation whether it is about

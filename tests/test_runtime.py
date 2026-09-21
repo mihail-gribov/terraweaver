@@ -63,7 +63,17 @@ def main() -> int:
                     'raise RuntimeError("later line fails")', "host")
     shown = format_result(broken)
     check("the rollback names what was discarded", "Mark Stone" in shown, shown)
-    check("and says the whole block has to be sent again", "send the whole block again" in shown, shown)
+    check("and says the entity it made is not in the world any more",
+          "[not in the world] mark" in shown, shown)
+    kept = rt.run('print(type(mark).__name__, mark.id)', "host")
+    check("the variable itself survives the rollback, holding an unrecorded entity",
+          kept["output"].strip() == "Person None", str(kept["output"] or kept["error"]))
+    still = rt.run('org = Organization.get(name="FinEdge")\n'
+                   'note = "for later"\n'
+                   'raise RuntimeError("stop")', "host")
+    check("and a failed run says which variables it does not have to redo",
+          "[still bound]" in format_result(still) and "org" in format_result(still),
+          format_result(still))
     gone = rt.run('print(len([p for p in Person.all(limit=None) if p.full_name == "Mark Stone"]))', "host")
     check("nothing from it was kept", gone["output"].strip() == "0", gone["output"])
 
