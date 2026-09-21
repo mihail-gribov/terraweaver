@@ -295,9 +295,14 @@ class World:
             self.pending = needs
             return needs
         described = ", ".join(f"{k}={v.display_name() if isinstance(v, ontology.Entity) else v}" for k, v in attrs.items())
+        # The same three ways on that an empty search result names (matching.FindResult), in the
+        # same words, because it is the same situation reached by a different door.
         raise NotInWorld(
-            f"no {class_name} with {described} in the world. If the user is telling you about a new "
-            f"one, record it with {class_name}.new(...); if you meant an existing one, look it up differently."
+            f"no {class_name} with {described} in the world. Either what you asked needs changing "
+            f"— a fuller name, another attribute, any_time=True for something ended — or there is "
+            f"no such {class_name} here yet: if the user is telling you about it, record it with "
+            f"{class_name}.new(...); if they are asking about it, say it isn't there rather than "
+            f"filling the gap. {class_name}.find(...) shows what merely resembles it."
         )
 
     def new(self, cls, starts=None, until=None, ttl=None, permanent: bool = False, **attrs):
