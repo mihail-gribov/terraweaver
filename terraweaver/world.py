@@ -158,7 +158,7 @@ class World:
         """
         ontology.note_world_call("world_queries")
         class_name = self._name(cls)
-        self._check_attrs(class_name, attrs)
+        attrs = self._check_attrs(class_name, attrs)
         scored = matching.score_candidates(self.all(cls, limit=None, history=history or any_time),
                                            class_name, attrs, filter_others=True)
         # Relevance first; between equally good matches, whoever was dealt with most recently.
@@ -409,9 +409,23 @@ class World:
         spec = self.specs.get(class_name) or self.classes[class_name]._spec
         known = {a["name"] for a in spec["attributes"]}
         unknown = [name for name in attrs if name not in known]
-        if unknown:
+        if not unknown:
+            return attrs
+        calls_it = matching.NAME_KEYS.get(class_name)
+        synonyms = {w: calls_it for w in ("name", "title", "label", "full_name")} if calls_it else {}
+        left = []
+        for given in unknown:
+            meant = ontology.did_you_mean(given, sorted(known), synonyms)
+            # Answering the question they meant, with the correction said, saves the turn a
+            # refusal costs — and a read can be checked, so there is nothing to undo.
+            if meant and meant not in attrs:
+                attrs[ontology.take_as(f"{class_name}.find/.get", given, meant)] = attrs.pop(given)
+            else:
+                left.append(given)
+        if left:
             raise TypeError(ontology._construction_problem(
-                class_name, spec, [], dict.fromkeys(unknown), call=".find/.get(...)"))
+                class_name, spec, [], dict.fromkeys(left), call=".find/.get(...)"))
+        return attrs
 
     def _named(self, subject: str) -> str:
         """Whoever a statement is about, as a person would name them rather than as an id."""

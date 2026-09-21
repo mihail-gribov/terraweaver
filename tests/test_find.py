@@ -169,8 +169,8 @@ def main() -> int:
             typo = ""
         except TypeError as exc:
             typo = str(exc)
-    check("looking up by an attribute the class lacks says so",
-          "no attribute 'full_name'" in typo and "did you mean 'name'" in typo, typo or "(no error)")
+    check("looking up by an attribute the class lacks answers the question it meant",
+          typo == "", "refused instead: " + typo)
 
     # --- when there is no answer, say what was probably meant (docs/architecture.md) ---
     def refusal(action):
@@ -180,21 +180,33 @@ def main() -> int:
         except (TypeError, ValueError, AttributeError) as exc:
             return str(exc)
 
+    from terraweaver import ontology
+
     ada = Person.get(email="ada@example.com")
-    cases = [
-        (lambda: Organization.find(full_name="TechCorp"), "did you mean 'name'"),
-        (lambda: setattr(ada, "fullname", "x"), "did you mean 'full_name'"),
-        (lambda: ada.add("descrptions", "note"), "did you mean 'descriptions'"),
-        (lambda: ada.relate(Organization.get(name="TechCorp"), "memberships"), "did you mean 'membership'"),
-    ]
-    for action, wanted in cases:
-        said = refusal(action)
-        check(f"a near miss is named: {wanted}", wanted in said, said or "(no refusal)")
-    check("and the same question twice gets the same answer",
-          refusal(lambda: Organization.find(full_name="TechCorp"))
-          == refusal(lambda: Organization.find(full_name="TechCorp")))
-    check("nothing close enough is simply refused, not guessed at",
-          "did you mean" not in refusal(lambda: Organization.find(zzzz="x")))
+    # One close word and no other: answer the question they meant, and say what was read as
+    # what. A refusal here costs the host a turn to learn something the world already knew.
+    with ontology.record_changes() as spoke:
+        found = Organization.find(full_name="TechCorp")
+    check("a near-miss attribute answers the question it meant",
+          found.main and found.main[0].name == "TechCorp", str(found))
+    check("and the caveat is said out loud",
+          any("'full_name' taken as 'name'" in line for line in spoke.assumed), str(spoke.assumed))
+
+    with ontology.record_changes() as written:
+        ada.add("descrptions", "keeps bees at the weekend")
+    check("a near-miss slot is written where it was meant",
+          "keeps bees at the weekend" in (ada.descriptions or []), str(ada.descriptions))
+    check("with the caveat", any("taken as 'descriptions'" in line for line in written.assumed))
+
+    check("the same question twice reads the same way",
+          ontology.did_you_mean("full_name", ["name", "aliases"])
+          == ontology.did_you_mean("full_name", ["name", "aliases"]) == "name")
+    check("and nothing close enough is refused rather than guessed at",
+          ontology.did_you_mean("zzzz", ["name", "aliases"]) is None)
+    nothing_close = refusal(lambda: Organization.find(zzzz="x"))
+    check("a refusal still names what the class does have",
+          "no attribute 'zzzz'" in nothing_close and "did you mean" not in nothing_close,
+          nothing_close or "(no refusal)")
 
     print()
     if failures:

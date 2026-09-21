@@ -512,6 +512,15 @@ and a test can hold it to that. Places that use it: an attribute set or given to
 an attribute looked up by, a relation type, a value outside a vocabulary, a list of texts
 written into. Each of them used to answer with silence, an empty list, or a bare refusal.
 
+And where the correction is unambiguous, the world does not refuse at all: it answers the
+question that was meant and says what it read as what. `Organization.find(full_name="CloudNine")`
+comes back with CloudNine and an `[assumed]` line saying `'full_name' taken as 'name'`. A refusal
+there costs the host a turn to learn something the world already knew, and the turn it spends is
+paid by the person waiting. The line between the two is not confidence but ambiguity: one close
+word and no other is applied; two candidates, or none, is refused. Reads carry no risk in this;
+writes are announced the same way and are as easy to correct, because the host reads the answer
+before it speaks.
+
 The same rule shapes refusals that are correct but useless. "One at a time — end that one first
 (its `.expire()`…)" is sound advice and the wrong advice for a move announced ahead of time:
 `.expire()` ends it today, the new one starts in March, and the host loops. A refusal names the

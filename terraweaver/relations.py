@@ -123,9 +123,9 @@ def resolve_kind(classes: dict[str, type], kind: str) -> tuple[str, bool]:
         known.append(rel["kind"] + (f" / {rel['reverse']}" if rel.get("reverse") else ""))
     words = [w.strip() for line in known for w in line.split(" / ")]
     near = ontology.did_you_mean(wanted, words)
-    raise ValueError(f"no relation type {kind!r}"
-                     + (f" — did you mean {near!r}? " if near else "; ")
-                     + f"the types are: {', '.join(known)}")
+    if near:
+        return resolve_kind(classes, ontology.take_as("relation type", kind, near))
+    raise ValueError(f"no relation type {kind!r}; the types are: {', '.join(known)}")
 
 
 def _check_label_fits(world, name: str, cls, rel: dict, attrs: dict) -> None:

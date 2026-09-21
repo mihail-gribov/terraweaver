@@ -265,6 +265,17 @@ class Entity:
         self.valid_until = kwargs.pop("valid_until", None)
         class_name = type(self).__name__
         missing = []
+        # Every declared name, derived ones included: `organization=` is a real word for a
+        # Person, and treating it as unknown once "corrected" it to `location`.
+        spec_attrs = [a["name"] for a in type(self)._spec["attributes"]]
+        for given in [k for k in list(kwargs) if k not in spec_attrs]:
+            from terraweaver import matching
+
+            calls_it = matching.NAME_KEYS.get(class_name)
+            synonyms = {w: calls_it for w in ("name", "title", "label", "full_name")} if calls_it else {}
+            meant = did_you_mean(given, spec_attrs, synonyms)
+            if meant and meant not in kwargs:
+                kwargs[take_as(f"{class_name}(...)", given, meant)] = kwargs.pop(given)
         for attr in type(self)._spec["attributes"]:
             name = attr["name"]
             if "derived" in attr:
@@ -611,7 +622,7 @@ class Entity:
             acme.add("descriptions", "hiring freeze", starts=date(2026, 3, 1))
             mike.add("tags", "on-call", every="3 weeks", lasting=timedelta(days=7))
         """
-        _check_slot(self, slot)
+        slot = _check_slot(self, slot) or slot
         tidy = _texts_as(slot)
         if self._no_world():
             with trusted_writes(), not_recording():
@@ -643,7 +654,7 @@ class Entity:
 
     def drop(self, slot: str, *texts: str):
         """Take a text out of a dated list: it stops holding now, and the record keeps that it did."""
-        _check_slot(self, slot)
+        slot = _check_slot(self, slot) or slot
         tidy = _texts_as(slot)
         if self._no_world():
             gone = set(tidy(texts))
@@ -852,6 +863,9 @@ class Entity:
             # a write that looked fine and never happened.
             if declared is None:
                 near = did_you_mean(name, [a["name"] for a in spec["attributes"]])
+                if near:
+                    setattr(self, take_as(class_name, name, near), value)
+                    return
                 raise AttributeError(
                     f"{class_name} has no attribute '{name}'"
                     + (f" — did you mean '{near}'? " if near else ". ")
@@ -864,7 +878,7 @@ class Entity:
                     object.__setattr__(self, name, value)  # the property's setter records it
                     return
                 raise TypeError(_derived_message(class_name, declared))
-            _check_type(class_name, spec, name, value)
+            value = _check_type(class_name, spec, name, value) or value
             if (isinstance(value, list) and getattr(self, "id", None) is not None
                     and not _TRUSTED and name in dated_lists(spec)):
                 # One way in, whichever way it is written. `anna.tags = [...]` and
@@ -1049,6 +1063,19 @@ def did_you_mean(word: str, options, extra: dict | None = None) -> str | None:
     return swap if swap in names else None
 
 
+def take_as(what: str, given: str, meant: str) -> str:
+    """Say that the world read one word as another, and get on with the answer.
+
+    A refusal costs the host a turn to learn something the world already knew. Where the
+    correction is unambiguous — one close word and no other — it is applied and announced
+    instead: the answer arrives with the caveat attached, which is what the host would have
+    written on the second try anyway. Ambiguity is still refused; this never guesses between two.
+    """
+    note_assumed(f"{what}: {given!r} taken as {meant!r} — the nearest thing to it here, and "
+                 f"nothing else is close; say so if you meant something else")
+    return meant
+
+
 def _construction_problem(class_name: str, spec: dict, missing: list, unexpected: dict,
                           call: str = "(...)") -> str:
     """What is wrong with this call, all of it, with the likely word for each slip."""
@@ -1080,6 +1107,8 @@ def _check_slot(entity, slot: str) -> None:
     if slot in lists:
         return
     near = did_you_mean(slot, lists)
+    if near:
+        return take_as(type(entity).__name__, slot, near)
     raise AttributeError(
         f"{type(entity).__name__} has no list of texts called {slot!r}"
         + (f" — did you mean {near!r}? " if near else ". ")
@@ -1166,6 +1195,8 @@ def _check_type(class_name: str, spec: dict[str, Any], attr_name: str, value) ->
         match = next((v for v in allowed if v.lower() == value.strip().lower()), None)
         if match is None:
             near = did_you_mean(value, allowed)
+            if near:
+                return take_as(f"{class_name}.{attr_name}", value, near)
             raise ValueError(
                 f"{class_name}.{attr_name} is one of: {', '.join(allowed)} — {value!r} is none of them"
                 + (f"; did you mean {near!r}? " if near else ". ")
