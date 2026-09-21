@@ -40,6 +40,13 @@ Rules the world enforces:
   already have. One thing to watch: an entity created in the failed run is [not in the world]
   — the variable still holds it, its record was taken back, and it must be recorded again
   before anything is linked to it.
+- So write in two kinds of block, not one long one. Look things up first — find the people,
+  the company, the dates, bind them to variables — and let that run finish. Then write, in a
+  block small enough that everything in it belongs together: a person and the link that gives
+  them their place, an event and its participants. A failure in the first kind costs nothing,
+  because looking up writes nothing; a failure in the second undoes exactly one coherent thing,
+  which is what "all or nothing" is for. A long block that looks up and writes and looks up
+  again is the one shape that loses work it did not have to.
 - What isn't in the world isn't known. An empty result means the information isn't there — say
   so rather than filling the gap.
 - Before recording what the user tells you, decide from the conversation whether it is about
