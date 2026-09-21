@@ -203,6 +203,39 @@ and never reuses is a heap, and then discovery and promotion are not optional ex
 whole mechanism. Either way we learn what the fixed class set is actually buying us, which is a
 question we have been answering by assertion.
 
+## What the first run answered
+
+Run on 2026-09-21 (`benchmarks/README.md` has the numbers; here is what they mean).
+
+**A host with no vocabulary at all built ours.** Given 455 facts and nothing to file them under,
+it defined twenty classes on the first twenty-five facts, one more at batch ten, and then nothing
+for the remaining 430: `Person`, `Place`, `Organization`, `Work`, `Movement`, `SportsTeam`, and
+fifteen relation types — `authored`, `born_in`, `died_in`, `citizen_of`, `spouse`, `ceo_of`,
+`chairperson_of`, `director_of`, `educated_at`, `founded`, `founded_movement`, `headquarters_in`,
+`located_in`, `worked_in`, `associated_with`.
+
+That is the core set we argued our way to, arrived at independently, from a different direction,
+in one batch. It is the strongest evidence we have that the fixed classes are not an arbitrary
+choice — and it is worth more than the benchmark score, which came out 11/20 against 12/20 for
+our own classes, one scenario's worth of difference on twenty questions.
+
+**Typed values supersede; that half of the thesis held.** Four of the five losses that motivated
+this whole design turned into wins the moment the values had a declared home.
+
+**And the failure moved, which is the finding.** The vocabulary froze after the first batches and
+the data was then made to fit it: a fact with no home was dropped ("Ferdowsi is famous for
+Shahnameh"), or written as prose that cannot supersede ("rugby union was created here"), or the
+same word was instantiated as four different kinds of thing. Convergence is what we wanted;
+convergence this early is the failure mode, and it is a different problem from the one we set
+out to fix.
+
+What follows from it is in the order of work below: the world says when a name is already taken
+under another class (in, 2026-09-21), a relation type must declare whether it holds one at a time
+(in), and the reach for prose is caught not by reading the sentence — that is a judgement about
+content this world does not make — but by **counting shape**: a class accumulating many texts
+while holding few typed values is a class missing an attribute, and that is a proposal the
+structuring pass can raise with evidence behind it.
+
 ## Order of work
 
 1. The open class: definition with a description, declared attributes, the identifying attribute,

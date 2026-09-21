@@ -91,19 +91,32 @@ once over time, give the one that holds now, not the first one."""
 
 
 def vocabulary(db: Path) -> dict:
-    """What the host built, read out of the world it built it in."""
+    """What the host built, read out of the world it built it in.
+
+    Besides the list of classes, one ratio per class: how much of what was said about its
+    instances went into free text against how much went into declared values. Counting the shape
+    of what was recorded is the deterministic version of "this host is writing prose where a
+    value belongs" — no sentence is read, and a class high on this list is a class missing an
+    attribute.
+    """
     if not db.exists():
         return {}
     conn = sqlite3.connect(db)
     tables = [r[0] for r in conn.execute("select name from sqlite_master where type='table'")]
     classes = sorted(t[len("facts_"):] for t in tables if t.startswith("facts_"))
-    counts = {}
+    counts, prose = {}, {}
     for name in classes:
         try:
             counts[name] = conn.execute(f'select count(*) from "facts_{name}"').fetchone()[0]
+            said = conn.execute(
+                f'select sum(slot in ("descriptions", "notes", "description")), count(*) '
+                f'from "facts_{name}"').fetchone()
+            if said and said[1]:
+                prose[name] = round((said[0] or 0) / said[1], 2)
         except sqlite3.Error:
             counts[name] = 0
-    return {"classes": classes, "statements_per_class": counts}
+    return {"classes": classes, "statements_per_class": counts,
+            "share_written_as_prose": dict(sorted(prose.items(), key=lambda kv: -kv[1]))}
 
 
 def main() -> int:
