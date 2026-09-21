@@ -409,11 +409,24 @@ def note_gap_on_ending(world, relation) -> None:
             continue
         space = timeutil.as_datetime(starts) - closed
         if space > timedelta(0):
+            when = timeutil.show(starts)
             ontology.note_hint(
                 f"{relation.display_name()} now ends {timeutil.show(closed)}, and "
-                f"{other.display_name()} starts {timeutil.show(starts)} — leaving no {label} in "
+                f"{other.display_name()} starts {when} — leaving no {label} in "
                 f"between for {obj.display_name()}. If one replaces the other, end this one "
-                f"where that one begins: rel.keep(until={timeutil.show(starts)})."
+                f"where that one begins: rel.keep(until={when})."
+            )
+            # And keep it, because a hint is read once. A gap is the kind of thing nobody
+            # notices until the day somebody asks who the dentist was that week.
+            world.questions.raise_(
+                obj, "gap_between",
+                f"no {label} between {timeutil.show(closed)} and {when}: "
+                f"{relation.display_name()} ends, {other.display_name()} starts. "
+                f"Was there really a gap, or does one replace the other?",
+                options=[f"one replaces the other — end the old at {when}",
+                         "there really was a gap"],
+                involves=[relation, other],
+                touches=[f"relation:{spec(type(relation))['kind']}", f"label:{label}"],
             )
             return
 
