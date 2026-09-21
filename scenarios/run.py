@@ -210,6 +210,18 @@ def run_scenario(scenario, mode: str, work: Path, out_dir: Path) -> dict:
 
 
 def start_server(db: Path) -> subprocess.Popen:
+    # Refuse a port that already answers. A server left behind by an earlier run keeps serving
+    # happily, the new run talks to it, and every number it produces is about the old build and
+    # a different world. That has silently invalidated two measurements; it is not worth a third.
+    try:
+        urllib.request.urlopen(f"{URL}/health", timeout=1)
+    except OSError:
+        pass
+    else:
+        raise RuntimeError(
+            f"something is already serving {URL} — it is not this run's world, and its answers "
+            f"would be about whatever code it was started with. Stop it "
+            f"(pkill -f 'terraweaver.server --db /tmp/tw-scenarios') or pass --port for a free one.")
     server = subprocess.Popen(
         [sys.executable, "-m", "terraweaver.server", "--db", str(db), "--port", str(PORT), "--rebuild"],
         cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
