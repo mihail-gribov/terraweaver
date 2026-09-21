@@ -303,3 +303,21 @@ at construction, `impls.add_participant`, and the APPLY_ORDER for derived attrib
 `new()`.
 
 Worth doing with the comments/descriptions merge, since both are "two mechanisms for one thing".
+
+## The prompt: inline the few hot classes, name the rest
+
+Measured 2026-09-21. Cutting the class dump out of the prompt halved it (12,004 → 6,949 tokens)
+and did not save a penny: cost per scenario stayed at ~$0.19 because the host now spends the
+saving on round trips (s01: cache-created −23%, turns 20 → 32). The saving is real, it just moved.
+
+The shape that should win, agreed with the user: carry the few classes a world is actually worked
+with **in full**, and the rest as names with `describe_classes` for detail. Which ones are hot is
+not a guess — `usage.py` already counts every get/find/ensure per entity, so the world can order
+its own classes by how often they come up (instance counts as a fallback in a fresh world).
+
+The effect grows with the number of classes: at nine the dump is 6k tokens, at thirty it is
+20k+, while the hot handful stays the same size. That is the case for doing it — not today's
+prompt, but the one a grown world would have.
+
+Next, in order: the four steady failures (s04 remembered name choice — our own machinery, not the
+model; s11, s18, s20), then this.
