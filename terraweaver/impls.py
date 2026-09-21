@@ -19,7 +19,7 @@ def person_send_email(self, subject: str, body: str) -> bool:
     # The world remembers what was sent to whom — "when did I last write to Anna?" is a
     # question about the world like any other.
     from datetime import datetime, timezone
-    self.comment(f"email sent: {subject}", when=datetime.now(timezone.utc), permanent=True)
+    self.describe(f"email sent: {subject}", when=datetime.now(timezone.utc), permanent=True)
     return True
 
 

@@ -25,7 +25,7 @@ assert priya[0].organization.name == "GreenGrid"
 gg = Organization.get(name="GreenGrid")
 assert [p.full_name for p in gg.employees].count("Priya Shah") == 1, "Priya listed once at GreenGrid"
 bob = Person.get(email="robert@example.com")
-berlin = bob.comments(contains="Berlin")
+berlin = bob.described(contains="Berlin")
 assert berlin and berlin[0].tentative, "Bob's move is a tentative remark"
 assert bob.organization.name == "FinEdge", "Bob's employer untouched"
 """

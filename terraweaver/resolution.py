@@ -74,7 +74,7 @@ class NeedsResolution:
     # raise discards the whole run — so one unanswerable person in a list of four took the other
     # three down with her, including the ones nothing was wrong with. Reads still raise: there
     # is no honest value to give back for "what is this one's email".
-    HELD = ("relate", "tag", "untag", "add", "drop", "comment", "keep", "repeat", "expire",
+    HELD = ("relate", "tag", "untag", "add", "drop", "describe", "keep", "repeat", "expire",
             "save", "forget", "question")
 
     def _hold(self, name: str):

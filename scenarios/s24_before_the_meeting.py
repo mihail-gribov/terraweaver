@@ -30,11 +30,11 @@ sofia.relate(owner, "social", label="former colleague")
 last_time = Event.new(title="lunch with Sofia", kind="meeting", status="confirmed",
                       start_time=now() - timedelta(days=142), participants=[sofia],
                       notes="talked about her move into research management")
-sofia.comment("asked me to send the Kaplan paper — still haven't", when=now() - timedelta(days=142))
-sofia.comment("her son started school this autumn", when=now() - timedelta(days=30))
-sofia.comment("don't bring up the Pike Logistics job — she was turned down", when=now() - timedelta(days=100),
+sofia.describe("asked me to send the Kaplan paper — still haven't", when=now() - timedelta(days=142))
+sofia.describe("her son started school this autumn", when=now() - timedelta(days=30))
+sofia.describe("don't bring up the Pike Logistics job — she was turned down", when=now() - timedelta(days=100),
               permanent=True)
-sofia.comment("was on parental leave until March", when=now() - timedelta(days=320),
+sofia.describe("was on parental leave until March", when=now() - timedelta(days=320),
               until=now() - timedelta(days=180))
 
 # What changed since that lunch, recorded later and from elsewhere.

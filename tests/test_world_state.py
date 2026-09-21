@@ -188,34 +188,34 @@ def main() -> int:
     classes, store, world = fresh_world()
     Person = classes["Person"]
     ada = Person.find(email="ada@example.com").main[0]
-    ada.comment("allergic to nuts")
-    ada.comment("might move to Berlin", when=date(2026, 10, 1), tentative=True)
-    texts = [c.text for c in ada.comments()]
+    ada.describe("allergic to nuts")
+    ada.describe("might move to Berlin", when=date(2026, 10, 1), tentative=True)
+    texts = [c.text for c in ada.described()]
     check("remarks come back newest first", texts == ["might move to Berlin", "allergic to nuts"], str(texts))
-    check("a tentative remark says so", ada.comments(contains="Berlin")[0].tentative)
-    ada.comments(contains="nuts")[0].forget()
-    check("a forgotten remark is gone", [c.text for c in ada.comments()] == ["might move to Berlin"])
+    check("a tentative remark says so", ada.described(contains="Berlin")[0].tentative)
+    ada.described(contains="nuts")[0].forget()
+    check("a forgotten remark is gone", [c.text for c in ada.described()] == ["might move to Berlin"])
     try:
         with store.transaction():
-            ada.comment("never kept")
+            ada.describe("never kept")
             raise RuntimeError("the run failed after commenting")
     except RuntimeError:
         pass
-    check("a remark from a failed run isn't kept", not ada.comments(contains="never kept"))
+    check("a remark from a failed run isn't kept", not ada.described(contains="never kept"))
     # --- remarks go stale, into history rather than away ---
     from datetime import timedelta
-    ada.comment("lived in Moscow", when=date(2020, 1, 1), until=date(2025, 6, 1))
-    ada.comment("allergic to nuts", permanent=True)
-    ada.comment("likes coffee")
-    current = {c.text for c in ada.comments()}
+    ada.describe("lived in Moscow", when=date(2020, 1, 1), until=date(2025, 6, 1))
+    ada.describe("allergic to nuts", permanent=True)
+    ada.describe("likes coffee")
+    current = {c.text for c in ada.described()}
     check("an expired remark drops out of ordinary reads", "lived in Moscow" not in current, str(current))
     check("and stays in the history",
-          any(c.text == "lived in Moscow" and c.expired for c in ada.comments(include_expired=True)))
-    check("a permanent remark has no end", ada.comments(contains="nuts")[0].until is None)
-    check("an unsaid end gets the default", ada.comments(contains="coffee")[0].until is not None)
-    coffee = ada.comments(contains="coffee")[0]
+          any(c.text == "lived in Moscow" and c.expired for c in ada.described(include_expired=True)))
+    check("a permanent remark has no end", ada.described(contains="nuts")[0].until is None)
+    check("an unsaid end gets the default", ada.described(contains="coffee")[0].until is not None)
+    coffee = ada.described(contains="coffee")[0]
     coffee.keep(ttl=timedelta(days=-1))
-    check("the host can change how long a remark holds", not ada.comments(contains="coffee"))
+    check("the host can change how long a remark holds", not ada.described(contains="coffee"))
 
     # --- a record's period: ended things become history, never disappear ---
     from terraweaver.conditions import after, before, between, now
@@ -264,14 +264,14 @@ def main() -> int:
     acme = Organization.ensure(name="Held Links Ltd")
     held.relate(acme, "membership", title="advisor")      # would have raised and discarded it all
     held.tag("conference")
-    held.comment("met at the conference")
+    held.describe("met at the conference")
     alongside = Person.new(full_name="Quinn Ivers", email="quinn@x.org")
     check("the rest of the batch survives a question", isinstance(alongside, Person))
     settled = world.settle(held, petr)
     check("and everything held is done once the question is answered",
           any(r.other(settled) is acme for r in settled.relations("membership"))
           and "conference" in (settled.tags or [])
-          and any("conference" in c.text for c in settled.comments()),
+          and any("conference" in c.text for c in settled.described()),
           str([settled.tags, [r.display_name() for r in settled.relations("membership")]]))
     reading = None
     try:

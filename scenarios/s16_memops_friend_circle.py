@@ -20,7 +20,7 @@ CONVERSATIONS = [
 EXPECT = """
 darrens = [p for p in Person.all(limit=None) if "darren" in p.full_name.lower()]
 assert len(darrens) == 1, f"expected one Darren, got {len(darrens)}"
-assert not world.comments(contains="storage"), "the storage-unit detail is still current"
+assert not world.described(contains="storage"), "the storage-unit detail is still current"
 """
 
 # Asked afterwards, each in a fresh conversation: (question, must mention, must not mention).

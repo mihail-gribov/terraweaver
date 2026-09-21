@@ -96,8 +96,8 @@ def main() -> int:
     # --- a relation is an instance: attributes, history, comments ---
     job.title = "team lead"
     check("a relation's attribute keeps its history", [p.value for p in job.history("title")] == ["vendor logistics lead", "team lead"])
-    job.comment("moved from Procurement")
-    check("a relation takes comments", bool(job.comments(contains="Procurement")))
+    job.describe("moved from Procurement")
+    check("a relation takes comments", bool(job.described(contains="Procurement")))
 
     # --- organization assignment moves the primary membership ---
     ada.organization = Organization.get(name="DataWorks")

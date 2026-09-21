@@ -14,8 +14,8 @@ TURNS = [
 ]
 
 EXPECT = """
-assert Person.get(email="anna.sullivan@example.com").comments(contains="email sent"), "nothing sent to Anna Sullivan"
-assert not Person.get(email="anna.peterson@example.com").comments(contains="email sent"), "wrote to the wrong Annie"
+assert Person.get(email="anna.sullivan@example.com").described(contains="email sent"), "nothing sent to Anna Sullivan"
+assert not Person.get(email="anna.peterson@example.com").described(contains="email sent"), "wrote to the wrong Annie"
 """
 
 # Asked afterwards, each in a fresh conversation: (question, must mention, must not mention).

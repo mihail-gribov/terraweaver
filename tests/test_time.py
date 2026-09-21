@@ -79,16 +79,16 @@ def main() -> int:
     listing.expire()
     check("expired entities leave Class.all", listing not in classes["Vacancy"].all(limit=None))
     check("any_time=True returns them", listing in classes["Vacancy"].all(limit=None, any_time=True))
-    michael.comment("on vacation", until=date(2020, 1, 1))
-    check("an expired remark is hidden", not [c for c in michael.comments() if "vacation" in c.text])
+    michael.describe("on vacation", until=date(2020, 1, 1))
+    check("an expired remark is hidden", not [c for c in michael.described() if "vacation" in c.text])
     check("any_time=True shows expired remarks",
-          [c for c in michael.comments(any_time=True) if "vacation" in c.text] != [])
+          [c for c in michael.described(any_time=True) if "vacation" in c.text] != [])
 
     # --- timeline: everything dated about one thing ---
     ada = Person.get(full_name="Ada Lovelace")
     was = ada.organization
     ada.organization = acme
-    ada.comment("moved teams", when=date(2026, 9, 1))
+    ada.describe("moved teams", when=date(2026, 9, 1))
     moments = ada.timeline()
     what = [m.what for m in moments]
     check("the timeline is ordered oldest first", moments == sorted(moments, key=lambda m: m.when))

@@ -26,7 +26,7 @@ elena = Person.get(email="elena@example.com")
 assert "elena" in elena.full_name.lower(), f"wife recorded as {elena.full_name}"
 everything = " ".join(
     [repr(e) for cls in (Project, Idea, Preference, Event) for e in cls.all(limit=None)]
-    + [c.text for c in world.comments(limit=500, any_time=True)]
+    + [c.text for c in world.described(limit=500, any_time=True)]
 ).lower()
 for model in ("qn90d", "c4", "bravia", "supersonic", "philips"):
     assert model in everything, f"{model} not recorded anywhere"

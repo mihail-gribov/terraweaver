@@ -55,11 +55,11 @@ for i, guest in enumerate(seen_lately):
     Event.new(title=f"coffee with {guest.full_name}", kind="meeting",
               start_time=now() - timedelta(days=3 + i * 9), status="confirmed", participants=[guest],
               about=companies[6])
-people[24].comment("mentioned they are looking", when=now() - timedelta(days=11))
+people[24].describe("mentioned they are looking", when=now() - timedelta(days=11))
 
 # Remarks worth finding later, spread thinly: a third of the people have one.
 for i in range(0, 90, 3):
-    people[i].comment(["mentioned they are looking", "allergic to peanuts", "has two kids",
+    people[i].describe(["mentioned they are looking", "allergic to peanuts", "has two kids",
                        "prefers mornings", "speaks Portuguese", "runs marathons"][i % 6],
                       when=now() - timedelta(days=(i * 4) % 200))
 """
@@ -72,7 +72,7 @@ TURNS = [
 EXPECT = """
 maya = [p for p in Person.all(limit=None) if p.full_name == "Maya Grant"]
 assert len(maya) == 1, f"Maya duplicated or lost: {len(maya)}"
-assert [c for c in maya[0].comments() if "hiring" in c.text.lower() or "analyst" in c.text.lower()], \
+assert [c for c in maya[0].described() if "hiring" in c.text.lower() or "analyst" in c.text.lower()], \
     "the hiring remark wasn't attached to Maya"
 """
 

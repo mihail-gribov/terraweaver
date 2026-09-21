@@ -526,7 +526,7 @@ class Entity:
             moments.append((spell.starts, f"tagged {spell.value}"))
             if spell.until is not None:
                 moments.append((spell.until, f"no longer tagged {spell.value}"))
-        for comment in self.comments(any_time=True):
+        for comment in self.described(any_time=True):
             moments.append((comment.when or comment.recorded_at, f"remark: {comment.text}"))
         for relation in (relations.relations_of(world, self, None, True) if not isinstance(self, Relation_base()) else []):
             other = relation.other(self)
@@ -559,9 +559,13 @@ class Entity:
         """Persist this entity and everything it references."""
         current_world().save(self)
 
-    def comment(self, text: str, when=None, tentative: bool = False, until=None, ttl=None,
-                starts=None, permanent: bool = False):
-        """Attach a dated remark to this entity — for what its attributes have no place for.
+    def describe(self, text: str, when=None, tentative: bool = False, until=None, ttl=None,
+                 starts=None, permanent: bool = False):
+        """Say something about this entity in words — for what its attributes have no place for.
+
+        It goes where every text about it goes, into `descriptions`, and is read back with
+        `described(...)`. One word for one place: this used to be called `comment` while landing
+        in descriptions, which is exactly the kind of discrepancy a host pays for.
 
         `starts=` is taken as `when=`: everywhere else in the world that word opens a period, and
         a remark's period opens on the day it is about. One vocabulary, however the host reaches
@@ -797,9 +801,10 @@ class Entity:
         """What's open about this entity. Each has .text, .options, .answer("…"), .drop()."""
         return current_world().questions.of(self, include_closed=include_closed)
 
-    def comments(self, since=None, until=None, contains: str | None = None, include_expired: bool = False,
-                 any_time: bool = False) -> list:
-        """This entity's current remarks, newest first; include_expired=True adds the history."""
+    def described(self, since=None, until=None, contains: str | None = None,
+                  include_expired: bool = False, any_time: bool = False) -> list:
+        """What has been said about this one in words, newest first — each with when it happened,
+        how long it holds and whether it was only tentative. any_time=True adds what has run out."""
         return current_world().comments.of(self, since=since, until=until, contains=contains,
                                            include_expired=include_expired or any_time)
 
@@ -871,7 +876,7 @@ class Entity:
                     + (f" — did you mean '{near}'? " if near else ". ")
                     + "Its attributes are: "
                     + ", ".join(a["name"] for a in spec["attributes"])
-                    + ". What none of them holds goes into a dated remark: entity.comment(...)."
+                    + ". What none of them holds goes into a dated remark: entity.describe(...."
                 )
             if "derived" in declared:
                 if declared.get("settable"):
@@ -1000,10 +1005,10 @@ def _remark_note(entity) -> str:
     """Relations and entities carry remarks that attributes don't show. Reading one and seeing
     only fields is how "rent: not recorded" gets answered over a comment that says $2,100."""
     try:
-        count = len(entity.comments())
+        count = len(entity.described())
     except Exception:  # noqa: BLE001 - a repr must never fail
         return ""
-    return f", {count} remark{'s' if count > 1 else ''} (.comments())" if count else ""
+    return f", {count} remark{'s' if count > 1 else ''} (.described())" if count else ""
 
 
 def _as_statement(value):
@@ -1094,7 +1099,7 @@ def _construction_problem(class_name: str, spec: dict, missing: list, unexpected
         parts.append(f"no attribute '{given}'" + (f" — did you mean '{near}'?" if near else ""))
     return (f"{class_name}{call}: " + "; ".join(parts) + ". Its attributes are: "
             + ", ".join(known) + ". What none of them holds goes into a dated remark: "
-            "entity.comment(...).")
+            "entity.describe(....")
 
 
 def _check_slot(entity, slot: str) -> None:
@@ -1113,7 +1118,7 @@ def _check_slot(entity, slot: str) -> None:
         f"{type(entity).__name__} has no list of texts called {slot!r}"
         + (f" — did you mean {near!r}? " if near else ". ")
         + (f"It has: {', '.join(sorted(lists))}." if lists else "It has none.")
-        + " What no slot holds goes into a dated remark: entity.comment(...).")
+        + " What no slot holds goes into a dated remark: entity.describe(....")
 
 
 def _texts_as(slot: str):
@@ -1200,7 +1205,7 @@ def _check_type(class_name: str, spec: dict[str, Any], attr_name: str, value) ->
             raise ValueError(
                 f"{class_name}.{attr_name} is one of: {', '.join(allowed)} — {value!r} is none of them"
                 + (f"; did you mean {near!r}? " if near else ". ")
-                + (f"Use '{allowed[-1]}' and say what it is in a remark: entity.comment(...)."
+                + (f"Use '{allowed[-1]}' and say what it is in a remark: entity.describe(...."
                    if allowed[-1] in ("other", "misc") else
                    "Pick the closest, and put what the user actually said in a remark.")
             )
@@ -1213,7 +1218,7 @@ def _check_type(class_name: str, spec: dict[str, Any], attr_name: str, value) ->
                 raise ValueError(
                     f"{class_name}.{attr_name} takes any number of: {', '.join(allowed)} — "
                     f"{one!r} is none of them. What the vocabulary has no word for belongs in a "
-                    f"free text: entity.add('descriptions', ...) or entity.comment(...).")
+                    f"free text: entity.add('descriptions', ...) or entity.describe(....")
     elif declared.startswith("list[ref:"):
         expected = declared[len("list[ref:"):-1]
         if expected == "any":

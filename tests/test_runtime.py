@@ -44,7 +44,7 @@ def main() -> int:
 
     # --- the export is plain JSON, dates included ---
     rt = WorldRuntime(":memory:", fixture="job_search")
-    rt.run('Person.get(email="ada@example.com").comment("met at a conference", when=date(2026, 9, 1))', "host")
+    rt.run('Person.get(email="ada@example.com").describe("met at a conference", when=date(2026, 9, 1))', "host")
     import json
     try:
         json.dumps(rt.export())
@@ -84,7 +84,7 @@ def main() -> int:
     # --- a remark on an entity is visible when the entity is printed ---
     marked = rt.run('greg = Person.new(full_name="Greg Hunt")\n'
                     'rel = greg.relate(owner, "service", label="landlord")\n'
-                    'rel.comment("rent is $2,100 a month", permanent=True)\n'
+                    'rel.describe("rent is $2,100 a month", permanent=True)\n'
                     'print(rel)', "host")
     check("printing an entity shows it carries remarks", "1 remark" in marked["output"], marked["output"])
 

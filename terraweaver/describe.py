@@ -51,7 +51,7 @@ Rules the world enforces:
 
   Never construct `Class(...)` directly. Check the [created] / [updated] / [found] lines of
   each result against what you meant. What has no attribute to go into is attached as a dated
-  remark: `anna.comment("allergic to nuts", when=date(...))`.
+  remark: `anna.describe("allergic to nuts", when=date(...))`.
 - Which entity the user means is never yours to guess. Look it up with everything the user
   already told you — `Person.find(full_name="Annie", organization=cloudnine)`, not just the name.
   If it is still open, you get a NeedsResolution; printing it shows the question and the
@@ -224,7 +224,7 @@ Every class below shares these, so they aren't repeated for each one:
         a.shared_with(b)      what both are connected to: people, companies, places in common
         a.reaches("part_of")  everything along one kind of link, as far as it goes
     relate returns the relation — assign its attributes like any entity's (m.title = "team lead"),
-    comment on it, end it (m.expire()). entity.relations(kind) gives the relations themselves;
+    describe it, end it (m.expire()). entity.relations(kind) gives the relations themselves;
     entity.related(kind) the entities at the other end — also by the reverse name (b04.related(
     "members")) and along chains (kevin.related("membership") includes the company B04 is part
     of). What no type fits: a.relate(b, "related", label="godfather", description="…").
@@ -246,7 +246,7 @@ Every class below shares these, so they aren't repeated for each one:
       when it's true   — the validity period, starts / until. Every entity and every relation
                          has one. A job that ran March to September, a lease to next June.
       when it happened — the thing's own time, an ordinary attribute: Event.start_time, a
-                         comment's when. A past meeting and next week's one are both valid
+                         a description's when. A past meeting and next week's one are both valid
                          records; find them by that attribute (Event.find(start_time=after(now()))).
       when we learned  — created_at / recorded_at, the world's bookkeeping. A marriage recorded
                          today may have started in 2019; you never set this.
@@ -262,7 +262,7 @@ Every class below shares these, so they aren't repeated for each one:
                      anna.drop("descriptions", "...") ends one; anna.spells("descriptions")
                      lists the stretches. `anna.descriptions = [...]` means "these are the
                      ones now" and goes through the same door.
-      a remark       anna.comment(text, when=..., until=..., ttl=..., permanent=True)
+      a remark       anna.describe(text, when=..., until=..., ttl=..., permanent=True)
     Searching words, two ways, and they are not the same question:
         world.where(mentions="lisbon flat")   — literally: every word appears, case ignored,
                                                 nothing stemmed, same answer every time
@@ -302,7 +302,7 @@ Every class below shares these, so they aren't repeated for each one:
     is cyclic in words. A cyclic tag answers as of a moment like any other: whether someone is
     on call on the 30th is world.where(tagged="on-call", at=date(2026, 9, 30)).
 
-    Writing a period, the same four keywords for entities, relations and comments:
+    Writing a period, the same four keywords for entities, relations and descriptions:
         Class.ensure(..., starts=date(2026, 10, 1))   — begins later
         Class.ensure(..., until=date(...) | ttl=timedelta(days=30))
         kevin.relate(b04, "membership", title="lead", starts=date(2026, 1, 15))
@@ -311,14 +311,14 @@ Every class below shares these, so they aren't repeated for each one:
         becomes history.
     Reading, the default is now — that's why "who is her partner" doesn't return an ex. One
     keyword widens any read: any_time=True in Class.all, Class.find, entity.relations,
-    entity.related, entity.comments, world.comments. It adds both ended and not-yet-started
+    entity.related, entity.described, world.described. It adds both ended and not-yet-started
     ones — the future is not history. When a read hides something, you get a [hint] saying so.
     entity.timeline(since=None, until=None)
         Everything dated about one entity or relation, oldest first — when it was recorded, when
         its period starts and ends, what its attributes were changed to and when, its dated
         remarks, its relations starting and ending. Each moment has .when and .what. This is the
         one call for "what happened with this, and when", instead of assembling history(),
-        comments() and relations(any_time=True) by hand.
+        described() and relations(any_time=True) by hand.
     Conflicts are judged by overlapping periods, not by "now": one employer at a time, one
     mother, one CEO — but divorced in 2020 and married in 2022 contradict nothing.
 
@@ -350,24 +350,25 @@ Every class below shares these, so they aren't repeated for each one:
     A question closes itself once its reason is gone: end the old dentist's relation and the
     question about two dentists goes away without anyone answering it.
 
-    entity.comment(text, when=None, tentative=False, until=None, ttl=None, permanent=False)
-        A remark is a description: it goes into entity.descriptions, which holds as many texts
-        as anyone cares to say, and is found by its words (world.where(mentions=...)) and by its
-        meaning like any other. What `comment` adds is when the thing happened (`when=`, as
-        distinct from when the text starts to hold), that it may be only tentative, and an end
-        by default so notes go stale on their own.
-        Attach a dated remark to any entity: whatever matters about it but has no attribute —
+    entity.describe(text, when=None, tentative=False, until=None, ttl=None, permanent=False)
+        One word, one place: it goes into entity.descriptions, which holds as many texts as
+        anyone cares to say, and is found by its words (world.where(mentions=...)) and by its
+        meaning like anything else said here. What `describe` adds over
+        entity.add("descriptions", ...) is when the thing happened (`when=`, as distinct from
+        when the text starts to hold), that it may be only tentative, and an end by default so
+        notes go stale on their own.
+        Say whatever matters about it but has no attribute —
         a friend's allergy, "hiring frozen since March", "might move in spring". `when` is the
         date it happened or holds (a date or datetime), if known; tentative=True for what isn't
         certain yet. Say how long it holds: until=date(...), ttl=timedelta(days=7) ("on vacation
         until Friday", a pickup code), or permanent=True (an allergy). Unsaid, it holds 180 days,
         a tentative one 30. Prefer a real attribute when one exists; never invent attributes.
-    entity.comments(since=None, until=None, contains=None, any_time=False)
+    entity.described(since=None, until=None, contains=None, any_time=False)
         That entity's current remarks, newest first; expired ones are history, shown only with
         any_time=True. Each has .text, .when, .until, .expired, .recorded_at,
         .tentative, .about, and .forget() (delete for good), .confirm(),
         .keep(until=... | ttl=... | permanent=True) to change how long it holds.
-    world.comments(since=None, until=None, contains=None, any_time=False)
+    world.described(since=None, until=None, contains=None, any_time=False)
         Remarks across the whole world.
 """
 
@@ -507,7 +508,7 @@ def describe_for_prompt(specs: dict[str, dict[str, Any]], only: list[str] | None
         lines.append("")
     if relation_types and only is None:
         lines.append("Relation types — instances linking a subject and an object, with their own attributes and")
-        lines.append("validity period (starts / until), history and comments.")
+        lines.append("validity period (starts / until), history and descriptions.")
         lines.append("")
         lines.append("Direction, one rule for every type: the subject is the one the label describes.")
         lines.append("a.relate(b, kind, label=X) reads as the sentence \"a is b's X\" — so the dentist, the")

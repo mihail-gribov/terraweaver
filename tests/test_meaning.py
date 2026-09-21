@@ -23,9 +23,9 @@ def main() -> int:
     w = open_world()
     # The offline stand-in, so this test says the same thing on any machine.
     w.world.meanings = Meanings(w.store, model=Plain())
-    w.run('Person.new(full_name="Rita Chen").comment("does cell chemistry at a battery startup")\n'
-          'Person.new(full_name="Pavel Orlov").comment("teaches piano on weekends")\n'
-          'Person.new(full_name="Ines Vega").comment("allergic to peanuts, carries an epipen")', "host")
+    w.run('Person.new(full_name="Rita Chen").describe("does cell chemistry at a battery startup")\n'
+          'Person.new(full_name="Pavel Orlov").describe("teaches piano on weekends")\n'
+          'Person.new(full_name="Ines Vega").describe("allergic to peanuts, carries an epipen")', "host")
 
     made = w.world.meanings.refresh(w.world)
     check("remarks are indexed", made >= 3, str(made))

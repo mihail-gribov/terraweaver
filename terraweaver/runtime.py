@@ -159,7 +159,7 @@ class WorldView:
         """Build every entity again from what was said. Safe, and states nothing."""
         return len(self._world.rebuild())
 
-    def comments(self, since=None, until=None, contains: str | None = None, limit: int = 50,
+    def described(self, since=None, until=None, contains: str | None = None, limit: int = 50,
                  include_expired: bool = False, any_time: bool = False):
         """Dated remarks across every entity, newest first; include_expired=True adds history."""
         return self._world.comments.search(since=since, until=until, contains=contains, limit=limit,
@@ -176,7 +176,7 @@ class WorldView:
         print(f"[unpinned] {', '.join(names)}")
 
     def __repr__(self):
-        return ("<world: all, find, where, get, new, ensure, settle, comments, questions, happening, repeats, texts, tags, tagged, "
+        return ("<world: all, find, where, get, new, ensure, settle, described, questions, happening, repeats, texts, tags, tagged, "
                 "tagged_all, merge_tags, untag, like, rebuild, pin, unpin, owner, me, pending>")
 
 

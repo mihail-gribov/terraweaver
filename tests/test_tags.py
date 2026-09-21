@@ -62,8 +62,8 @@ def main() -> int:
           w.world.tags()["job-search"]["count"] == 4, str(w.world.tags()["job-search"]["count"]))
 
     # --- and tags worth considering, from whatever reads alike ---
-    w.run('Person.new(full_name="Rita Chen", tags=["batteries"]).comment("cell chemistry at a battery startup")\n'
-          'Person.new(full_name="Lars Ek").comment("works on lithium anodes at a small firm")', "host")
+    w.run('Person.new(full_name="Rita Chen", tags=["batteries"]).describe("cell chemistry at a battery startup")\n'
+          'Person.new(full_name="Lars Ek").describe("works on lithium anodes at a small firm")', "host")
     lars = w.classes["Person"].get(full_name="Lars Ek")
     suggested = [tag for tag, _ in tagging.suggest(w.world, lars)]
     check("a tag is suggested from what reads like it", "batteries" in suggested, str(suggested))

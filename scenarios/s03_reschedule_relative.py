@@ -22,7 +22,7 @@ assert iv.start_time.date() in (date(2026, 9, 25), date(2026, 9, 26)), f"intervi
 assert iv.status in ("confirmed", "planned"), f"status changed to {iv.status}"
 if iv.status == "planned":
     assert [p.value for p in iv.history("status")][0] == "confirmed", "the old status isn't in the history"
-assert Person.get(email="anna.peterson@example.com").comments(contains="email sent"), "recruiter not told"
+assert Person.get(email="anna.peterson@example.com").described(contains="email sent"), "recruiter not told"
 """
 
 # Asked afterwards, each in a fresh conversation: (question, must mention, must not mention).
