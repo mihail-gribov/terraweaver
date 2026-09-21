@@ -1021,8 +1021,9 @@ def _as_written(values) -> list:
     return out
 
 
-def _construction_problem(class_name: str, spec: dict, missing: list, unexpected: dict) -> str:
-    """What is wrong with this Class(...) call, all of it, with the likely word for each slip."""
+def _construction_problem(class_name: str, spec: dict, missing: list, unexpected: dict,
+                          call: str = "(...)") -> str:
+    """What is wrong with this call, all of it, with the likely word for each slip."""
     from difflib import get_close_matches
 
     known = [a["name"] for a in spec["attributes"] if "derived" not in a]
@@ -1040,7 +1041,7 @@ def _construction_problem(class_name: str, spec: dict, missing: list, unexpected
         if not near and calls_it and given in ("name", "title", "label", "full_name"):
             near = [calls_it]
         parts.append(f"no attribute '{given}'" + (f" — did you mean '{near[0]}'?" if near else ""))
-    return (f"{class_name}(...): " + "; ".join(parts) + ". Its attributes are: "
+    return (f"{class_name}{call}: " + "; ".join(parts) + ". Its attributes are: "
             + ", ".join(known) + ". What none of them holds goes into a dated remark: "
             "entity.comment(...).")
 

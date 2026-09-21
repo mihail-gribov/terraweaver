@@ -161,6 +161,17 @@ def main() -> int:
           str(names(asked.similar)))
     check("and it doesn't read as nothing at all", bool(asked) is True and list(asked) == [])
 
+    # --- a lookup by an attribute the class hasn't got is a typo, not a miss ---
+    typo = refused(lambda: Organization.find(full_name="TechCorp")) if "refused" in dir() else None
+    if typo is None:
+        try:
+            Organization.find(full_name="TechCorp")
+            typo = ""
+        except TypeError as exc:
+            typo = str(exc)
+    check("looking up by an attribute the class lacks says so",
+          "no attribute 'full_name'" in typo and "did you mean 'name'" in typo, typo or "(no error)")
+
     print()
     if failures:
         print(f"{len(failures)} failed: {', '.join(failures)}")

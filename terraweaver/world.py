@@ -158,6 +158,7 @@ class World:
         """
         ontology.note_world_call("world_queries")
         class_name = self._name(cls)
+        self._check_attrs(class_name, attrs)
         scored = matching.score_candidates(self.all(cls, limit=None, history=history or any_time),
                                            class_name, attrs, filter_others=True)
         # Relevance first; between equally good matches, whoever was dealt with most recently.
@@ -355,6 +356,21 @@ class World:
             out.append(f"{self._named(row['subject'])}: "
                        + (f"{row['value']} — " if row["value"] else "") + said)
         return sorted(out)
+
+    def _check_attrs(self, class_name: str, attrs: dict) -> None:
+        """Looking something up by an attribute the class hasn't got is not a miss, it's a typo.
+
+        Answering "nothing matched" to `Organization.find(full_name="CloudNine")` is true and
+        useless: the host reads it as "CloudNine isn't in the world" and goes looking elsewhere,
+        which is exactly what it did. Say what is wrong with the question instead, and name the
+        word it probably wanted — the same answer `Class(...)` gives for the same mistake.
+        """
+        spec = self.specs.get(class_name) or self.classes[class_name]._spec
+        known = {a["name"] for a in spec["attributes"]}
+        unknown = [name for name in attrs if name not in known]
+        if unknown:
+            raise TypeError(ontology._construction_problem(
+                class_name, spec, [], dict.fromkeys(unknown), call=".find/.get(...)"))
 
     def _named(self, subject: str) -> str:
         """Whoever a statement is about, as a person would name them rather than as an id."""
