@@ -221,8 +221,9 @@ def happening(world, since=None, until=None, limit: int = 200) -> list[tuple]:
         dated = [a["name"] for a in cls._spec["attributes"]
                  if a.get("type") == "datetime" and "derived" not in a
                  and a["name"] not in ("created_at", "accessed_at", "valid_from", "valid_until")]
-        if not dated:
-            continue
+        # Every class, not only the ones with a date of their own: a rota is a tag on a person,
+        # and a person has no start_time. Leaving those out left "when am I on call" unanswered
+        # by the one call meant to answer it.
         for entity in world.all(class_name, limit=None, any_time=True):
             named[getattr(entity, "subject_id", None) or entity.id] = entity
             for slot in dated[:1]:  # the first dated attribute is the thing's own time
