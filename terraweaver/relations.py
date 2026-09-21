@@ -121,7 +121,11 @@ def resolve_kind(classes: dict[str, type], kind: str) -> tuple[str, bool]:
     for name, cls in relation_classes(classes).items():
         rel = spec(cls)
         known.append(rel["kind"] + (f" / {rel['reverse']}" if rel.get("reverse") else ""))
-    raise ValueError(f"no relation type {kind!r}; the types are: {', '.join(known)}")
+    words = [w.strip() for line in known for w in line.split(" / ")]
+    near = ontology.did_you_mean(wanted, words)
+    raise ValueError(f"no relation type {kind!r}"
+                     + (f" — did you mean {near!r}? " if near else "; ")
+                     + f"the types are: {', '.join(known)}")
 
 
 def _check_label_fits(world, name: str, cls, rel: dict, attrs: dict) -> None:
@@ -437,6 +441,18 @@ def _between(rel, subject, obj, symmetric: bool) -> bool:
     return bool(symmetric) and same(rel.subject, obj) and same(rel.object, subject)
 
 
+def _how_to_make_room(start) -> str:
+    """What actually ends the old one where the new one begins.
+
+    Offering `.expire()` first is advice to end it today, and when the new one starts in March
+    that leaves months with nothing in the post — which is how a reorganisation announced ahead
+    of time turned into a refusal the host could not get past."""
+    if start is not None and timeutil.as_datetime(start) > timeutil.now():
+        return (f"end that one where this one begins — old.keep(until={timeutil.show(start)}) — "
+                f"or give this one a later starts=")
+    return "end that one first (its .expire(), or keep(until=...)), or give this one starts= after it ends"
+
+
 def _check_functional(world, name, rel, subject, obj, start, end, attrs) -> None:
     candidates = [r for r in world.all(name, limit=None, history=True) if _overlaps(r, start, end)]
     if rel.get("functional") == "at_any_time":
@@ -444,22 +460,27 @@ def _check_functional(world, name, rel, subject, obj, start, end, attrs) -> None
             if same(r.subject, subject) or (rel.get("symmetric") and (same(r.object, subject) or same(r.subject, obj) or same(r.object, obj))):
                 taken = subject if (same(r.subject, subject) or same(r.object, subject)) else obj
                 raise ValueError(
-                    f"{taken.display_name()} already has a {name} for that time: {r.display_name()}. One at a time — "
-                    f"end that one first (its .expire(), or keep(until=...)), or give this one starts= after it ends."
+                    f"{taken.display_name()} already has a {name} for that time: {r.display_name()}. "
+                    f"One at a time — {_how_to_make_room(start)}."
                 )
     if rel.get("inverse_functional") == "at_any_time":
         for r in candidates:
             if same(r.object, obj):
                 raise ValueError(
-                    f"{obj.display_name()} already has a {name} for that time: {r.display_name()}. One at a time — "
-                    f"end that one first, or give this one starts= after it ends."
+                    f"{obj.display_name()} already has a {name} for that time: {r.display_name()}. "
+                    f"One at a time — {_how_to_make_room(start)}."
                 )
     if name == "Membership" and attrs.get("primary"):
         for r in candidates:
             if same(r.subject, subject) and getattr(r, "primary", False):
+                later = start is not None and timeutil.as_datetime(start) > timeutil.now()
                 raise ValueError(
-                    f"{subject.display_name()} already has a primary membership for that time: {r.display_name()}. "
-                    f"Assign person.organization instead — it closes the old one and opens the new one."
+                    f"{subject.display_name()} already has a primary membership for that time: "
+                    f"{r.display_name()}. "
+                    + (f"A move that begins later ends the old one there: "
+                       f"old.keep(until={timeutil.show(start)}), then record this one."
+                       if later else
+                       "Assign person.organization instead — it closes the old one and opens the new one.")
                 )
 
 

@@ -490,3 +490,29 @@ be absent and the world still records, answers and rebuilds.
 
 Nothing in 5 or 6 starts before 4 reads as well as it did before. That is the whole point of
 measuring it.
+
+## An answer to a question put wrongly
+
+A world that answers "nothing matched" to `Organization.find(full_name="CloudNine")` is telling
+the truth and doing harm. The host reads it as "CloudNine isn't in the world", says so to the
+user, and goes looking elsewhere — and nothing in the exchange suggests the question itself was
+the problem. The same silence came back three times in one day: a constructor that reported a
+missing required attribute without mentioning the unknown ones beside it, a relation asked from
+an end that had none, and a lookup by an attribute the class hasn't got.
+
+So it is a rule here, not a series of fixes: **when there is no answer, work out what was meant
+and say it.** Name what is wrong with the question, name the nearest thing that would have
+worked, and stop there — a suggestion said out loud, never a substitution made quietly.
+
+It has to be deterministic. The world does not ask a model what a host probably meant: it is
+spelling distance, singular against plural, and a small table of words people use for each other
+("name" where this class says "title"). One function does it for everything —
+`ontology.did_you_mean(word, options, extra)` — so the same mistake gets the same answer twice,
+and a test can hold it to that. Places that use it: an attribute set or given to a constructor,
+an attribute looked up by, a relation type, a value outside a vocabulary, a list of texts
+written into. Each of them used to answer with silence, an empty list, or a bare refusal.
+
+The same rule shapes refusals that are correct but useless. "One at a time — end that one first
+(its `.expire()`…)" is sound advice and the wrong advice for a move announced ahead of time:
+`.expire()` ends it today, the new one starts in March, and the host loops. A refusal names the
+call that would work *here*, with the date in it.

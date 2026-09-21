@@ -172,6 +172,30 @@ def main() -> int:
     check("looking up by an attribute the class lacks says so",
           "no attribute 'full_name'" in typo and "did you mean 'name'" in typo, typo or "(no error)")
 
+    # --- when there is no answer, say what was probably meant (docs/architecture.md) ---
+    def refusal(action):
+        try:
+            action()
+            return ""
+        except (TypeError, ValueError, AttributeError) as exc:
+            return str(exc)
+
+    ada = Person.get(email="ada@example.com")
+    cases = [
+        (lambda: Organization.find(full_name="TechCorp"), "did you mean 'name'"),
+        (lambda: setattr(ada, "fullname", "x"), "did you mean 'full_name'"),
+        (lambda: ada.add("descrptions", "note"), "did you mean 'descriptions'"),
+        (lambda: ada.relate(Organization.get(name="TechCorp"), "memberships"), "did you mean 'membership'"),
+    ]
+    for action, wanted in cases:
+        said = refusal(action)
+        check(f"a near miss is named: {wanted}", wanted in said, said or "(no refusal)")
+    check("and the same question twice gets the same answer",
+          refusal(lambda: Organization.find(full_name="TechCorp"))
+          == refusal(lambda: Organization.find(full_name="TechCorp")))
+    check("nothing close enough is simply refused, not guessed at",
+          "did you mean" not in refusal(lambda: Organization.find(zzzz="x")))
+
     print()
     if failures:
         print(f"{len(failures)} failed: {', '.join(failures)}")

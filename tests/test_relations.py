@@ -227,6 +227,17 @@ def main() -> int:
           not any("goes the other way" in line for line in first_of_its_kind.hints),
           str(first_of_its_kind.hints))
 
+    # --- a move announced ahead of time is refused with the date, not with "expire it" ---
+    holder = Person.new(full_name="Rita Vale")
+    north = Organization.new(name="Northwind Freight")
+    south = Organization.new(name="Southwind Freight")
+    holder.relate(north, "membership", title="lead", primary=True)
+    clash = refused(lambda: holder.relate(south, "membership", title="lead", primary=True,
+                                          starts=date(2027, 3, 1)))
+    check("a link that starts later is refused with the date that makes room",
+          clash is not None and "keep(until=2027-03-01)" in clash, str(clash))
+    check("and not with advice that would end it today", clash is not None and ".expire()" not in clash)
+
     # --- an unanswered question is not an entity to link ---
     asked = Person.new(full_name="Darren")  # resembles Darren Liu: a question, not a person
     linked = refused(lambda: owner.relate(asked, "social", label="friend"))

@@ -611,6 +611,7 @@ class Entity:
             acme.add("descriptions", "hiring freeze", starts=date(2026, 3, 1))
             mike.add("tags", "on-call", every="3 weeks", lasting=timedelta(days=7))
         """
+        _check_slot(self, slot)
         tidy = _texts_as(slot)
         if self._no_world():
             with trusted_writes(), not_recording():
@@ -642,6 +643,7 @@ class Entity:
 
     def drop(self, slot: str, *texts: str):
         """Take a text out of a dated list: it stops holding now, and the record keeps that it did."""
+        _check_slot(self, slot)
         tidy = _texts_as(slot)
         if self._no_world():
             gone = set(tidy(texts))
@@ -849,10 +851,13 @@ class Entity:
             # An attribute the class doesn't have used to be accepted and then lost on save —
             # a write that looked fine and never happened.
             if declared is None:
+                near = did_you_mean(name, [a["name"] for a in spec["attributes"]])
                 raise AttributeError(
-                    f"{class_name} has no attribute '{name}'. Its attributes are: "
+                    f"{class_name} has no attribute '{name}'"
+                    + (f" — did you mean '{near}'? " if near else ". ")
+                    + "Its attributes are: "
                     + ", ".join(a["name"] for a in spec["attributes"])
-                    + ". What has no attribute goes into a dated remark: entity.comment(...)."
+                    + ". What none of them holds goes into a dated remark: entity.comment(...)."
                 )
             if "derived" in declared:
                 if declared.get("settable"):
@@ -1021,29 +1026,65 @@ def _as_written(values) -> list:
     return out
 
 
+def did_you_mean(word: str, options, extra: dict | None = None) -> str | None:
+    """The closest of `options` to `word`, or None when nothing is close enough.
+
+    One place, so every refusal in this world guesses the same way and guesses the same thing
+    twice. It is spelling distance, singular against plural, and a small table of words people
+    use for each other (`extra`) — arithmetic on strings, no model, no world knowledge. The
+    answer is a suggestion named out loud, never a substitution made quietly.
+    """
+    from difflib import get_close_matches
+
+    if not word:
+        return None
+    names = [str(one) for one in options]
+    near = get_close_matches(str(word), names, n=1, cutoff=0.6)
+    if near:
+        return near[0]
+    plural = [n for n in names if n.rstrip("s") == str(word).rstrip("s")]
+    if plural:
+        return plural[0]
+    swap = (extra or {}).get(str(word))
+    return swap if swap in names else None
+
+
 def _construction_problem(class_name: str, spec: dict, missing: list, unexpected: dict,
                           call: str = "(...)") -> str:
     """What is wrong with this call, all of it, with the likely word for each slip."""
-    from difflib import get_close_matches
+    from terraweaver import matching
 
     known = [a["name"] for a in spec["attributes"] if "derived" not in a]
     parts = []
     if missing:
         parts.append("missing required attribute(s): " + ", ".join(f"'{n}'" for n in missing))
-    from terraweaver import matching
-
     # Whatever this class calls its name, a host will sometimes call it something else: "name"
     # for a title, "title" for a name. That is not a typo, so spelling distance never finds it.
     calls_it = matching.NAME_KEYS.get(class_name)
+    synonyms = {word: calls_it for word in ("name", "title", "label", "full_name")} if calls_it else {}
     for given in unexpected:
-        near = get_close_matches(given, known, n=1, cutoff=0.6)
-        near = near or [n for n in known if n.rstrip("s") == given.rstrip("s")]
-        if not near and calls_it and given in ("name", "title", "label", "full_name"):
-            near = [calls_it]
-        parts.append(f"no attribute '{given}'" + (f" — did you mean '{near[0]}'?" if near else ""))
+        near = did_you_mean(given, known, synonyms)
+        parts.append(f"no attribute '{given}'" + (f" — did you mean '{near}'?" if near else ""))
     return (f"{class_name}{call}: " + "; ".join(parts) + ". Its attributes are: "
             + ", ".join(known) + ". What none of them holds goes into a dated remark: "
             "entity.comment(...).")
+
+
+def _check_slot(entity, slot: str) -> None:
+    """A text written into a slot the class hasn't got would be a fact nothing ever reads.
+
+    Silent is the worst of the three outcomes here: the host believes it recorded something,
+    the record holds it under a name no image is built from, and nobody finds out.
+    """
+    lists = dated_lists(type(entity)._spec)
+    if slot in lists:
+        return
+    near = did_you_mean(slot, lists)
+    raise AttributeError(
+        f"{type(entity).__name__} has no list of texts called {slot!r}"
+        + (f" — did you mean {near!r}? " if near else ". ")
+        + (f"It has: {', '.join(sorted(lists))}." if lists else "It has none.")
+        + " What no slot holds goes into a dated remark: entity.comment(...).")
 
 
 def _texts_as(slot: str):
@@ -1124,8 +1165,10 @@ def _check_type(class_name: str, spec: dict[str, Any], attr_name: str, value) ->
         # business. Spelling and case are not: "Meeting" is the word, written differently.
         match = next((v for v in allowed if v.lower() == value.strip().lower()), None)
         if match is None:
+            near = did_you_mean(value, allowed)
             raise ValueError(
-                f"{class_name}.{attr_name} is one of: {', '.join(allowed)} — {value!r} is none of them. "
+                f"{class_name}.{attr_name} is one of: {', '.join(allowed)} — {value!r} is none of them"
+                + (f"; did you mean {near!r}? " if near else ". ")
                 + (f"Use '{allowed[-1]}' and say what it is in a remark: entity.comment(...)."
                    if allowed[-1] in ("other", "misc") else
                    "Pick the closest, and put what the user actually said in a remark.")
@@ -1235,9 +1278,31 @@ def _make_stub(class_name: str, method_name: str):
     return stub
 
 
+# Every class can be described and tagged, relations included. A relation is an entity here —
+# it has its own attributes, its own period, its own history — and "rent is $2,100 a month" is
+# said about the landlord link, not about either person. Declaring these in nine JSON files and
+# forgetting them in eleven others is how relations ended up unable to hold a remark at all.
+COMMON_SLOTS = (
+    {"name": "descriptions", "type": "list[text]", "required": False,
+     "description": "How this one has been described, in whoever's words — several are normal."},
+    {"name": "tags", "type": "list[str]", "required": False,
+     "description": "Loose ties to other things, for what no attribute or relation says."},
+)
+
+
+def with_common_slots(spec: dict[str, Any]) -> dict[str, Any]:
+    """The spec as declared, plus the slots every class has whether it says so or not."""
+    declared = {a["name"] for a in spec.get("attributes", [])}
+    missing = [dict(slot) for slot in COMMON_SLOTS if slot["name"] not in declared]
+    if not missing:
+        return spec
+    return {**spec, "attributes": list(spec.get("attributes", [])) + missing}
+
+
 def build_classes(specs: dict[str, dict[str, Any]], impls: dict[tuple[str, str], Any] | None = None) -> dict[str, type]:
     impls = impls or {}
     classes: dict[str, type] = {}
+    specs = {name: with_common_slots(spec) for name, spec in specs.items()}
     for name, spec in specs.items():
         namespace = {
             "__doc__": spec.get("description", ""),
