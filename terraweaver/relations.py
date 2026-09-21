@@ -342,13 +342,50 @@ def _note_gap(world, name: str, obj, label: str, start, created) -> None:
         if ends is None:
             continue
         space = begins - timeutil.as_datetime(ends)
-        if timedelta(0) < space <= timedelta(days=3):
+        # A short space between two spells of one post is a slip; a long one is a real gap that
+        # somebody meant — unless the old one was ended *now* while the new one starts later,
+        # which is `.expire()` reached for where a date was needed. That one is always a slip.
+        ended_today = abs(timeutil.as_datetime(ends) - timeutil.now()) < timedelta(hours=12)
+        if timedelta(0) < space and (space <= timedelta(days=3) or ended_today):
             ontology.note_hint(
                 f"{r.display_name()} ends {timeutil.show(ends)} and this one starts "
                 f"{timeutil.show(begins)}, leaving no {label} in between for "
                 f"{obj.display_name()}. "
                 f"A period runs up to but not including its end, so a handover ends the old one "
                 f"where the new one begins: old.keep(until={timeutil.show(begins)})."
+            )
+            return
+
+
+def note_gap_on_ending(world, relation) -> None:
+    """The same slip made from the other end: ending the old holder today when the new one
+    starts later. Whichever order a host does it in, the world says what the dates add up to."""
+    rel = spec(type(relation))
+    if not rel.get("one_of_a_label"):
+        return
+    label = str(getattr(relation, "label", None) or getattr(relation, "role", None) or "").strip().lower()
+    ends = getattr(relation, "valid_until", None)
+    obj = getattr(relation, "object", None)
+    if not label or ends is None or not isinstance(obj, Entity):
+        return
+    from datetime import timedelta
+
+    closed = timeutil.as_datetime(ends)
+    for other in world.all(type(relation).__name__, limit=None, history=True):
+        if same(other, relation) or not same(other.object, obj):
+            continue
+        if str(getattr(other, "label", None) or getattr(other, "role", None) or "").strip().lower() != label:
+            continue
+        starts = getattr(other, "valid_from", None)
+        if starts is None:
+            continue
+        space = timeutil.as_datetime(starts) - closed
+        if space > timedelta(0):
+            ontology.note_hint(
+                f"{relation.display_name()} now ends {timeutil.show(closed)}, and "
+                f"{other.display_name()} starts {timeutil.show(starts)} — leaving no {label} in "
+                f"between for {obj.display_name()}. If one replaces the other, end this one "
+                f"where that one begins: rel.keep(until={timeutil.show(starts)})."
             )
             return
 

@@ -203,6 +203,16 @@ def main() -> int:
     check("and nothing is said when there was nobody in the post before",
           not any("in between" in line for line in clean.hints), str(clean.hints))
 
+    with ontology.record_changes() as ended_today:
+        gone = Person.new(full_name="Nils Board")
+        post = gone.relate(owner, "service", label="tutor")
+        Person.new(full_name="Ida Board").relate(owner, "service", label="tutor",
+                                                 starts=date(2026, 10, 1))
+        post.expire()
+    check("ending the old one today when the new starts later is pointed out too",
+          any("leaving no tutor in between" in line for line in ended_today.hints),
+          str(ended_today.hints))
+
     # --- an unanswered question is not an entity to link ---
     asked = Person.new(full_name="Darren")  # resembles Darren Liu: a question, not a person
     linked = refused(lambda: owner.relate(asked, "social", label="friend"))

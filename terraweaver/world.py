@@ -425,6 +425,10 @@ class World:
             for attr, value in period.items():
                 setattr(instance, attr, value)
         self.store.save_graph(instance)
+        if "valid_until" in period and "relation" in type(instance)._spec:
+            from terraweaver import relations
+
+            relations.note_gap_on_ending(self, instance)
 
     def create(self, class_name: str, attrs: dict):
         ontology.note_world_call("world_writes")
