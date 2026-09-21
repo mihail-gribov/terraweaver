@@ -312,6 +312,7 @@ class WorldRuntime:
         """
         said: list[str] = []
         touched = {e.id for e in _entities_of(recording) if getattr(e, "id", None)}
+        touched |= _entity_ids(session.namespace.values())
         if not touched:
             return said
         for value in list(session.namespace.values()):
@@ -628,6 +629,25 @@ def _effects(recording, created: set[int]) -> dict[str, list[str]]:
     return {"created": made, "updated": changed, "found": found, "comments": list(recording.remarks),
             "assumed": list(recording.assumed), "hints": list(recording.hints),
             "questions": list(recording.questions), "ask_now": list(recording.ask_now)}
+
+
+def _entity_ids(values) -> set:
+    """The entities a host is holding — in a variable, in a list, in a result it kept.
+
+    Working with one of the candidates is not always a call the world sees: `Person.find(...)`
+    hands back a result and the host keeps the one it wanted in a variable. That is the choice,
+    made as plainly as `get()` makes it, and it is visible right here in the namespace.
+    """
+    found = set()
+    for value in values:
+        for item in (value if isinstance(value, (list, tuple)) else [value]):
+            if isinstance(item, Entity) and getattr(item, "id", None):
+                found.add(item.id)
+            else:
+                main = getattr(item, "main", None)
+                if isinstance(main, (list, tuple)):
+                    found |= {e.id for e in main if isinstance(e, Entity) and getattr(e, "id", None)}
+    return found
 
 
 def _entities_of(recording) -> list:

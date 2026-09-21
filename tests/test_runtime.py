@@ -98,6 +98,17 @@ def main() -> int:
     check("and a later conversation does not ask again",
           "Anna Sullivan" in (later["output"] or ""), str(later["output"] or later["error"]))
 
+    kept = WorldRuntime(str(Path(tempfile.mkdtemp()) / "kept.db"), fixture="job_search", rebuild=True)
+    kept.run('annie = Person.find(full_name="Annie")', "one")
+    by_find = kept.run('anna = Person.find(full_name="Anna Sullivan")\nprint(anna.main[0].job_title)', "one")
+    check("keeping one of them from a find settles it too",
+          any("Anna Sullivan" in line for line in by_find["assumed"]), str(by_find["assumed"]))
+
+    two = WorldRuntime(str(Path(tempfile.mkdtemp()) / "two.db"), fixture="job_search", rebuild=True)
+    two.run('annie = Person.find(full_name="Annie")', "one")
+    ambiguous = two.run('pair = [p for p in Person.all(limit=None) if "Anna" in p.full_name]\nprint(len(pair))', "one")
+    check("holding both of them settles nothing", ambiguous["assumed"] == [], str(ambiguous["assumed"]))
+
     broke = WorldRuntime(str(Path(tempfile.mkdtemp()) / "broke.db"), fixture="job_search", rebuild=True)
     broke.run('annie = Person.find(full_name="Annie")', "one")
     failed = broke.run('anna = Person.get(full_name="Anna Sullivan")\nprint(anna.organization.full_name)', "one")
