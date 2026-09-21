@@ -297,7 +297,7 @@ class WorldRuntime:
         """What these methods do, in full, with examples where they help."""
         return describe_methods(self.specs, names)
 
-    def _learn_name_choice(self, session, recording) -> None:
+    def _learn_name_choice(self, session, recording) -> list[str]:
         """Take the answer to "which Annie?" in the form a host actually gives it.
 
         The world only ever learned a name choice through `world.settle(...)`, and hosts rarely
@@ -310,9 +310,10 @@ class WorldRuntime:
         same candidate list, one of them and no other. And it is said out loud rather than
         assumed in silence, so a wrong reading costs one sentence to correct.
         """
+        said: list[str] = []
         touched = {e.id for e in _entities_of(recording) if getattr(e, "id", None)}
         if not touched:
-            return
+            return said
         for value in list(session.namespace.values()):
             if (not isinstance(value, NeedsResolution) or value.skill != "resolve_ambiguity"
                     or value.context.get("learned")):
@@ -326,9 +327,10 @@ class WorldRuntime:
                 # Straight onto this run's record rather than through note_assumed: by the time
                 # a run's effects are gathered the recording context is closed, and a note made
                 # then goes nowhere. Learning in silence is the one thing this must not do.
-                recording.assumed.append(
+                said.append(
                     f"{name!r} taken as {chosen[0].display_name()} from here on, since that is "
                     f"the one you worked with — say so if it was someone else")
+        return said
 
     def _questions_note(self) -> str:
         """A host starting a task should know there is something the user could settle."""
@@ -404,8 +406,9 @@ class WorldRuntime:
                     exec(compile(tree, "<run>", "exec"), namespace)
                 access = dict(counts)
                 self._persist(recording, namespace)
-                self._learn_name_choice(session, recording)
+                learned = self._learn_name_choice(session, recording)
                 effects = _effects(recording, created={id(o) for o in self.store._tx_new_ids})
+                effects["assumed"] += learned
                 session.touched |= {e.id for e in _entities_of(recording)}
                 # Only what this run raised. Repeating every doubt about every entity a run
                 # happens to touch is noise: the literature's criterion is relevance to the
@@ -418,6 +421,14 @@ class WorldRuntime:
             error = _host_traceback(exc)
             rolled_back = _discarded(recording)
             self._refresh(namespace)
+            # A failed run is discarded, but an answer to the world's own question is not the
+            # host's write and did not fail: the host really did work with one of the candidates
+            # before its next line broke. Rolling that back meant the user answered "which
+            # Annie?" and was asked again in the next conversation — the whole point of the
+            # remembered choice, undone by an unrelated AttributeError eight lines later.
+            if recording is not None:
+                with self.store.transaction():
+                    effects["assumed"] += self._learn_name_choice(session, recording)
         new_names = session.sync()
         result = {
             "session_reset": key in self.idle_reset,

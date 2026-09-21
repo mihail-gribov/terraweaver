@@ -98,6 +98,16 @@ def main() -> int:
     check("and a later conversation does not ask again",
           "Anna Sullivan" in (later["output"] or ""), str(later["output"] or later["error"]))
 
+    broke = WorldRuntime(str(Path(tempfile.mkdtemp()) / "broke.db"), fixture="job_search", rebuild=True)
+    broke.run('annie = Person.find(full_name="Annie")', "one")
+    failed = broke.run('anna = Person.get(full_name="Anna Sullivan")\nprint(anna.organization.full_name)', "one")
+    check("a run that breaks later still leaves the answer standing",
+          failed["error"] is not None and any("Anna Sullivan" in line for line in failed["assumed"]),
+          str(failed["assumed"]))
+    check("and the next conversation goes with it",
+          "Anna Sullivan" in (broke.run('print(Person.find(full_name="Annie").main[0].full_name)',
+                                        "two")["output"] or ""))
+
     apart = WorldRuntime(str(Path(tempfile.mkdtemp()) / "apart.db"), fixture="job_search", rebuild=True)
     apart.run('annie = Person.find(full_name="Annie")', "one")
     unrelated = apart.run('print(Person.get(email="ada@example.com").full_name)', "one")
