@@ -514,20 +514,23 @@ class World:
                 needs.context[key] = fresh(needs.context[key])
         return needs
 
-    def remember_choice(self, needs: NeedsResolution, entity) -> None:
-        """The user said who they meant by that name; the next lookup by it will assume so."""
+    def remember_choice(self, needs: NeedsResolution, entity) -> str | None:
+        """The user said who they meant by that name; the next lookup by it will assume so.
+
+        Returns the name it was stored under, so a caller can say what it now assumes."""
         class_name = needs.context.get("class_name")
         name = needs.context.get("incoming", {}).get(matching.NAME_KEYS.get(class_name, ""))
         if not isinstance(name, str):
-            return
+            return None
         key = (class_name, matching.normalize(name))
         if entity is None:  # "someone new": the name is shared by one more now, so ask again next time
             self.store.conn.execute("DELETE FROM name_choices WHERE class_name = ? AND name = ?", key)
-            return
+            return None
         self.store.conn.execute(
             "INSERT OR REPLACE INTO name_choices (class_name, name, entity_id, chosen_at) VALUES (?, ?, ?, ?)",
             key + (entity.id, timeutil.now().isoformat()),
         )
+        return name
 
     def _remembered(self, class_name: str, attrs: dict, candidates: list):
         """The candidate the user chose for this name before, if they did and it's among these."""

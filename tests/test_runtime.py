@@ -3,6 +3,7 @@
 Run: .venv/bin/python tests/test_runtime.py
 """
 import sys
+import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -86,6 +87,24 @@ def main() -> int:
                     'rel.comment("rent is $2,100 a month", permanent=True)\n'
                     'print(rel)', "host")
     check("printing an entity shows it carries remarks", "1 remark" in marked["output"], marked["output"])
+
+    # --- the answer to "which one?" arrives as what the host does next ---
+    choice = WorldRuntime(str(Path(tempfile.mkdtemp()) / "choice.db"), fixture="job_search", rebuild=True)
+    choice.run('annie = Person.find(full_name="Annie")', "one")
+    told = choice.run('anna = Person.get(full_name="Anna Sullivan"); print(anna.full_name)', "one")
+    check("working with one of the candidates settles the name",
+          any("Anna Sullivan" in line for line in told["assumed"]), str(told["assumed"]))
+    later = choice.run('again = Person.find(full_name="Annie"); print(again.main[0].full_name)', "two")
+    check("and a later conversation does not ask again",
+          "Anna Sullivan" in (later["output"] or ""), str(later["output"] or later["error"]))
+
+    apart = WorldRuntime(str(Path(tempfile.mkdtemp()) / "apart.db"), fixture="job_search", rebuild=True)
+    apart.run('annie = Person.find(full_name="Annie")', "one")
+    unrelated = apart.run('print(Person.get(email="ada@example.com").full_name)', "one")
+    check("someone who was never a candidate settles nothing", unrelated["assumed"] == [],
+          str(unrelated["assumed"]))
+    check("so the question is still open",
+          "False" in (apart.run('print(Person.find(full_name="Annie").matched)', "two")["output"] or ""))
 
     print()
     if failures:

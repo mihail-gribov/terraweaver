@@ -82,8 +82,12 @@ user.tag("on-call", every="3 weeks", lasting=timedelta(days=7), starts=date(2026
     check("the rule reads back in words",
           standup.repeats() == ["every day, from 2026-09-21 09:00, 30 minutes at a time"],
           str(standup.repeats()))
-    check("the next one is known", standup.next_occurrence() == datetime(2026, 9, 21, 9, 0),
-          str(standup.next_occurrence()))
+    # Asked from a stated moment, never from the wall clock: "the next one" measured against
+    # now answers differently before and after nine in the morning, and a test that changes its
+    # mind at breakfast is worse than no test.
+    check("the next one is known",
+          standup.next_occurrence(after=datetime(2026, 9, 20)) == datetime(2026, 9, 21, 9, 0),
+          str(standup.next_occurrence(after=datetime(2026, 9, 20))))
     week = standup.occurrences(since=date(2026, 9, 21), until=date(2026, 9, 25))
     check("a window asked about is counted out", len(week) == 4, str(week))
     check("and nothing is counted out without one",

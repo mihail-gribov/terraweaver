@@ -297,6 +297,39 @@ class WorldRuntime:
         """What these methods do, in full, with examples where they help."""
         return describe_methods(self.specs, names)
 
+    def _learn_name_choice(self, session, recording) -> None:
+        """Take the answer to "which Annie?" in the form a host actually gives it.
+
+        The world only ever learned a name choice through `world.settle(...)`, and hosts rarely
+        call it: the user says "Anna Sullivan", the host looks her up by her full name, answers,
+        and moves on. Nothing was wrong with what it did — but the next conversation asked which
+        Annie again, which is the one thing this world exists not to do.
+
+        So a standing question about a name, plus this run working with exactly one of that
+        question's own candidates, counts as the answer. It is a narrow signal: same session,
+        same candidate list, one of them and no other. And it is said out loud rather than
+        assumed in silence, so a wrong reading costs one sentence to correct.
+        """
+        touched = {e.id for e in _entities_of(recording) if getattr(e, "id", None)}
+        if not touched:
+            return
+        for value in list(session.namespace.values()):
+            if (not isinstance(value, NeedsResolution) or value.skill != "resolve_ambiguity"
+                    or value.context.get("learned")):
+                continue
+            chosen = [c for c in value.candidates if getattr(c, "id", None) in touched]
+            if len(chosen) != 1:
+                continue
+            name = self.world.remember_choice(value, chosen[0])
+            if name:
+                value.context["learned"] = chosen[0].id
+                # Straight onto this run's record rather than through note_assumed: by the time
+                # a run's effects are gathered the recording context is closed, and a note made
+                # then goes nowhere. Learning in silence is the one thing this must not do.
+                recording.assumed.append(
+                    f"{name!r} taken as {chosen[0].display_name()} from here on, since that is "
+                    f"the one you worked with — say so if it was someone else")
+
     def _questions_note(self) -> str:
         """A host starting a task should know there is something the user could settle."""
         open_ = self.world.questions.open_(limit=3)
@@ -371,6 +404,7 @@ class WorldRuntime:
                     exec(compile(tree, "<run>", "exec"), namespace)
                 access = dict(counts)
                 self._persist(recording, namespace)
+                self._learn_name_choice(session, recording)
                 effects = _effects(recording, created={id(o) for o in self.store._tx_new_ids})
                 session.touched |= {e.id for e in _entities_of(recording)}
                 # Only what this run raised. Repeating every doubt about every entity a run
