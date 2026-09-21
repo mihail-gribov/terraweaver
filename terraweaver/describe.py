@@ -288,6 +288,10 @@ Every class below shares these, so they aren't repeated for each one:
       every=   "day", "week", "2 weeks", "month", "quarter", "year", or a timedelta
       lasting= how long each one runs; left out, it is a moment rather than a stretch
       starts=  the first one (anchor); until= when the series stops
+    "What repeats?" is world.repeats() — every cyclic thing in the world, whatever kind it is.
+    Do not answer it from the events alone: a rota, a season, anything that holds for a while
+    again and again is a tag with a period, and it will not be in Event.all().
+
     world.happening(since, until) answers "what is on between these two dates" for the whole
     world, counting repeats out into that window. Use it rather than a date query on an
     attribute: a weekly standup has one start_time — the day it started — so
