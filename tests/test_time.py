@@ -122,6 +122,13 @@ def main() -> int:
     check("asking a relation for 'the related one' says which ends it has",
           ends is not None and "rel.subject" in (ends or ""), str(ends))
 
+    # --- a stored time compares with a date, which is what hosts write ---
+    when = classes["Event"].new(title="Standup", kind="meeting", status="planned",
+                     start_time=datetime(2026, 10, 1, 9, 0))
+    check("an attribute time compares with a plain date", when.start_time >= date(2026, 9, 30))
+    check("and with a datetime, as before", when.start_time >= datetime(2026, 9, 30))
+    check("and is still a datetime for everything else", isinstance(when.start_time, datetime))
+
     print()
     if failures:
         print(f"{len(failures)} failed: {', '.join(failures)}")

@@ -837,6 +837,13 @@ class Entity:
             ACCESS["entity_reads"] += 1
             if _OPEN_TOKENS and name not in _MANAGED_ATTRS:
                 ask_if_questioned(self, f"attr:{name}")
+        # Times come back comparable with dates. `event.start_time >= today()` is the obvious
+        # thing to write, and a plain datetime raises on it — one discarded run each time, for
+        # nothing. Moment is a datetime, so everything else about it is unchanged.
+        if type(value) is datetime and not name.startswith("_"):
+            from terraweaver import timeutil
+
+            return timeutil.moment(value)
         return value
 
     def display_name(self) -> str:
