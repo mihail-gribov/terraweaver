@@ -302,6 +302,16 @@ def main() -> int:
           "Rent" in (back["output"] or ""), str(back["output"] or back["error"]))
     check("and so does the period, which is what made this dangerous",
           "2027" in (back["output"] or ""), str(back["output"] or back["error"]))
+    # And the reading must not have changed what is stored. Checking only what came back hid
+    # this for hours: a read that saved a half-filled entity returned the right answer from
+    # memory while writing nulls over the row behind it. So read it once more, from scratch.
+    del again
+    third = open_world(str(path))
+    once_more = third.run(
+        'print([(e.title, e.valid_until) for e in Event.all(limit=None, any_time=True)])', "host")
+    check("and reading a world leaves it exactly as it was",
+          "Rent" in (once_more["output"] or "") and "2027" in (once_more["output"] or ""),
+          str(once_more["output"] or once_more["error"]))
 
     print()
     if failures:

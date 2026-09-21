@@ -861,11 +861,17 @@ class Entity:
                 raise TypeError(_derived_message(class_name, declared))
             _check_type(class_name, spec, name, value)
             if (isinstance(value, list) and getattr(self, "id", None) is not None
-                    and name in dated_lists(spec)):
+                    and not _TRUSTED and name in dated_lists(spec)):
                 # One way in, whichever way it is written. `anna.tags = [...]` and
                 # `anna.character = [...]` both say "these are the texts now", so each is the
                 # same act as adding what is new and dropping what is gone — through the same
                 # door, which is what keeps the periods honest.
+                #
+                # Only for a write somebody made, though: inside trusted_writes() the machinery
+                # is filling this in — loading a row, rebuilding an image — and the door states
+                # facts and saves the entity, which during a load means saving a half-filled one. That is what emptied Event.title across a whole world:
+                # `descriptions` is set partway through loading, the save that followed wrote
+                # every attribute not yet read as null, and the next read found them gone.
                 self._set_many(name, value)
                 return
             # One form of time, whatever came in. A world that keeps some times with a zone and
