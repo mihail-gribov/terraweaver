@@ -220,6 +220,12 @@ class World:
         same one identification uses everywhere here (`_only_match`): one candidate, nothing
         that disagrees, no question. What the host called them is kept as another name they
         answer to, so the next lookup by either finds them.
+
+        Only on a strong key, though, and that limit is deliberate. A name alone is not enough
+        here: `new()` carries the user's own claim that this one is new, and that claim is what
+        disagrees with a namesake. Loosening it to any single match without a contradiction was
+        tried and reverted — it made a second Robert Wolfe impossible to record, and four
+        suites that build a question out of a name went red at once.
         """
         name_key = matching.NAME_KEYS.get(class_name)
         rest = {k: v for k, v in attrs.items() if k != name_key}
