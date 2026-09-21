@@ -126,6 +126,39 @@ worth more than the score. What gets measured on the first run:
 - what it does with the core classes once it can make its own — the precedence rule tested, not
   assumed.
 
+## Methods, and docking what the host built onto what we gave it
+
+A class is not only slots. `growth.py` already lets a grown spec carry **methods**, which is the
+difference between a record and a thing that can do something: a `Subscription` that can say when
+it renews, a `Position` that can list who has held it. So the same door that lets a host define a
+class lets the world, later, hand that class behaviour — written once, in the grown layer, kept
+apart from the core and droppable without losing a statement.
+
+The second half is **docking**. A host that invents freely will invent `Company` next to our
+`Organization`, `Employer` next to both, and a `heads` relation beside our `Authority`. That is
+not a failure of the host; it is what happens when vocabulary is written locally, and it is why
+uniformity is the world's job rather than the host's. Docking is the operation that resolves it:
+
+- recognise that a host-authored class is one we already have — by name, by description, by the
+  attributes it grew, and in the end by somebody's decision, never silently;
+- keep the better home: the given class, with its identity rules, its name matching, its derived
+  relations;
+- carry the host's additions across as a grown extension of that class — the attributes it
+  declared, the methods it was given, the relation labels it used;
+- re-point the statements to the surviving subject, which costs nothing, because statements stay
+  with the subject they were made about and the image is derived (`facts.py`, `assembly.py`).
+
+It is the same operation as merging two tags, one level up, with the same rules: the world
+measures and proposes, a person or the model decides, the write is ordinary and reversible, and
+`rebuild()` reassembles the world from what was actually said. A wrong docking is undone by
+deleting a link, not by repairing data.
+
+This is also what keeps the open door from becoming a second ontology living beside ours. The
+open class is where a statement lands when it has no home yet; docking and promotion are how it
+stops being homeless. The end state we should expect is not a heap of host-invented classes, but
+a core set that has grown a few attributes and a few methods it did not ship with — and a short
+list of genuinely new classes that earned their place.
+
 ## Order of work
 
 1. The open class: definition with a description, declared attributes, the identifying attribute,
@@ -134,8 +167,11 @@ worth more than the score. What gets measured on the first run:
    difference between an ontology and a heap, and it should show as reuse, not as accuracy.
 3. Host-defined relation types with characteristics. The bigger half, and the one that carries
    the checks.
-4. Promotion: a loosely defined class that recurs becomes a grown class in `ontology/grown/`,
-   with its evidence. The trigger and the evidence exist; the middle does not.
+4. Promotion and docking: a loosely defined class that recurs becomes a grown class in
+   `ontology/grown/` with its evidence; one that turns out to be a class we already have is
+   docked onto it, its additions carried across as a grown extension, its statements re-pointed.
+   The trigger and the evidence exist; the middle does not.
+5. Methods on grown classes — the spec already allows them, nothing writes them yet.
 
 Measure between each. The point of this document is not that the design is right — it is that
 the design is testable, and the first test is already written.
