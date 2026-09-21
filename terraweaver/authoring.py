@@ -119,18 +119,27 @@ class Authoring:
         return attr
 
     def define_relation(self, name: str, description: str, subject, object,
-                        cardinality: str = "many-to-many", over_time: bool = True,
+                        cardinality: str = "many-to-many", over_time: bool | None = None,
                         attributes: list[dict] | None = None):
         """A new relation type: the sides, how many may stand on each, and whether one at a time.
 
-        `over_time=True` is what makes "who is it *now*" answerable: a new holder ends the old
-        one's period instead of standing beside it. Cardinality alone never decides that.
+        `over_time` has no default on purpose. It is what makes "who is it *now*" answerable — a
+        new holder ends the previous one's period instead of standing beside it — and a run where
+        it was quietly left off answered every changed citizenship with the first one it was told
+        (`benchmarks/README.md`, experiment zero). Cardinality never decides this; saying so does.
         """
         from terraweaver import ontology
 
         kind = _clean(name).lower()
         if not kind:
             raise Refused("a relation type needs a name")
+        if over_time is None:
+            raise Refused(
+                f"say whether {kind} holds one at a time: over_time=True when a thing has one "
+                "current holder and a new one ends the last (an employer, a spouse, a "
+                "citizenship somebody changes), over_time=False when they simply accumulate "
+                "(everything a person has ever written). Without it, asking later gives you the "
+                "first answer you were ever told.")
         if cardinality not in CARDINALITY:
             raise Refused(f"cardinality is one of {', '.join(CARDINALITY)}")
         one_subject, one_object = CARDINALITY[cardinality]
@@ -170,6 +179,31 @@ class Authoring:
             for attr in cls._spec.get("attributes", []):
                 known[f"{name}.{attr['name']}"] = attr.get("description", "")
         return self._like(text, known, limit)
+
+    def anything_like(self, name: str, limit: int = 5) -> list:
+        """Is there already a thing called this, of any kind at all?
+
+        Identity in this world is declared per class, so nothing stops the same word becoming
+        four different things — in experiment zero "rugby" ended up a Place, an Organization, a
+        Work and a SportsTeam at once, and no answer about it could be right. This is the look
+        across classes that the world does not do by itself: ask before creating a fourth one.
+        """
+        wanted = (name or "").strip().lower()
+        if not wanted:
+            return []
+        found = []
+        for class_name, cls in self.world.classes.items():
+            if cls._spec.get("relation"):
+                continue
+            for entity in self.world.all(class_name, limit=None):
+                for slot in ("name", "full_name", "title", "label"):
+                    said = getattr(entity, slot, None)
+                    if isinstance(said, str) and wanted in said.lower():
+                        found.append((class_name, entity))
+                        break
+            if len(found) >= limit:
+                break
+        return found[:limit]
 
     def _like(self, text: str, known: dict[str, str], limit: int) -> list[tuple[str, str]]:
         """Spelling first, through the world's one suggester; then meaning, over descriptions."""
@@ -252,5 +286,6 @@ def install(world, specs_dir=None) -> Authoring:
         "define_relation": authoring.define_relation,
         "classes_like": authoring.classes_like,
         "attributes_like": authoring.attributes_like,
+        "anything_like": authoring.anything_like,
     })
     return authoring

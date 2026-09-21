@@ -39,6 +39,7 @@ What you can do:
 
     world.classes_like("a sport")         — is there already a class for this? Look before inventing.
     world.attributes_like("spoken language") — attributes that already mean roughly this.
+    world.anything_like("rugby")          — is there already a thing called this, of any kind?
     Position = world.define("Position", "a role a player occupies in a team sport",
                             identified_by="name")
     world.attribute(Position, "sport", "the sport this position belongs to")
@@ -51,8 +52,19 @@ what it is — that is what a later lookup searches. And an attribute for someth
 change must be a value, not free text: several tellings of prose sit side by side and none of \
 them replaces the others, so "what is it now" stops having an answer.
 
-`over_time=True` on a relation means only one of them holds at a time, so a new one ends the \
-previous one. Use it wherever a thing has one current holder.
+`over_time` on a relation has to be said: True when a thing has one current holder and a new one \
+ends the last (an employer, a spouse, a citizenship somebody changes), False when they simply \
+accumulate. Without it, asking later gives back the first answer you were ever told.
+
+Three habits that matter more than the modelling you choose:
+
+- **When something does not fit, extend the vocabulary — never squeeze it.** A fact you cannot \
+  place is a class or a relation type you have not defined yet. Writing it as prose in a \
+  description, or skipping it, loses it: prose cannot be superseded and cannot be searched by \
+  value.
+- **Look before you invent, every time.** One idea should be one class and one name.
+- **One thing is one thing.** Before creating something, `world.anything_like("its name")` — \
+  the same word becoming four kinds of thing makes every answer about it wrong.
 
 After defining, it is an ordinary world: Class.ensure(...), a.relate(b, "kind"), periods, \
 history, comments. Say what you need and build as you go — nothing is waiting for you."""
@@ -65,6 +77,9 @@ the same idea.
 
 If one of these says something different from what is already recorded about the same thing, \
 what I am telling you now is what holds, and the earlier one stopped holding today.
+
+If one of them does not fit anything you have defined, define what it needs — a class, an \
+attribute or a relation type — rather than dropping it or writing it into a description.
 
 {facts}"""
 
