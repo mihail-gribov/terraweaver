@@ -35,12 +35,15 @@ def main() -> int:
     after = rt.run('print(Person.get(email="ada@example.com").organization.name)', "check")
     check("and the settled value is what the world holds", after["output"].strip() == "DataWorks", after["output"])
 
-    # --- a run that fails leaves nothing behind, even objects it created ---
+    # --- a run stops where it breaks and keeps what it had already done ---
+    # All-or-nothing was the rule here until the measurements turned against it: a fifth to a
+    # quarter of every pool's runs ended discarded, most over a typo far from anything that
+    # mattered, and the heavy work before it was re-run for nothing.
     rt = WorldRuntime(":memory:", fixture="job_search")
     rt.run('i = Idea.new(title="Leftover", content="c")\nraise RuntimeError("boom")', "host")
-    rt.run('x = 1', "host")
     left = rt.run('print(len([i for i in Idea.all(limit=None) if i.title == "Leftover"]))', "check")
-    check("an object from a failed run isn't saved by a later one", left["output"].strip() == "0", left["output"])
+    check("what a completed statement wrote is kept when a later one fails",
+          left["output"].strip() == "1", left["output"])
 
     # --- the export is plain JSON, dates included ---
     rt = WorldRuntime(":memory:", fixture="job_search")
@@ -62,31 +65,30 @@ def main() -> int:
                     'mark.relate(Organization.get(name="FinEdge"), "membership", title="analyst")\n'
                     'raise RuntimeError("later line fails")', "host")
     shown = format_result(broken)
-    check("the rollback names what was discarded", "Mark Stone" in shown, shown)
-    check("and says the entity it made is not in the world any more",
-          "[not in the world] mark" in shown, shown)
-    kept = rt.run('print(type(mark).__name__, mark.id)', "host")
-    check("the variable itself survives the rollback, holding an unrecorded entity",
-          kept["output"].strip() == "Person None", str(kept["output"] or kept["error"]))
+    check("the failure says where it stopped and that what came before is kept",
+          "before this one are done and kept" in shown, shown)
+    kept = rt.run('print(len([p for p in Person.all(limit=None) if p.full_name == "Mark Stone"]))', "host")
+    check("the person the first statement made is in the world",
+          kept["output"].strip() == "1", str(kept["output"] or kept["error"]))
     still = rt.run('org = Organization.get(name="FinEdge")\n'
                    'note = "for later"\n'
                    'raise RuntimeError("stop")', "host")
     cut = rt.run('a = 1\nb = 2\nraise RuntimeError("stop")\nc = 3\nd = 4', "host")
     check("the failure names the line it broke on, with its text",
           'line 3: raise RuntimeError("stop")' in cut["error"], cut["error"])
-    check("and says how much ran before it and how much never did",
-          "2 line(s) ran before it" in cut["error"] and "2 after it never ran" in cut["error"],
+    check("and says how much is done and how much never ran",
+          "2 line(s) before it are done" in cut["error"] and "2 after it never ran" in cut["error"],
           cut["error"])
 
-    check("and a failed run says which variables it does not have to redo",
-          "[still bound]" in format_result(still) and "org" in format_result(still),
-          format_result(still))
-    gone = rt.run('print(len([p for p in Person.all(limit=None) if p.full_name == "Mark Stone"]))', "host")
-    check("nothing from it was kept", gone["output"].strip() == "0", gone["output"])
+    check("and a failed run tells the host to carry on rather than resend",
+          "Carry on from the line below" in format_result(still), format_result(still))
+    undone = rt.run('print(len([p for p in Person.all(limit=None) if p.full_name == "Never Made"]))', "host")
+    check("and the statement that raised left nothing of its own", undone["output"].strip() == "0",
+          undone["output"])
 
     # --- a relation's own attribute may be called kind ---
-    ok = rt.run('mark = Person.new(full_name="Mark Stone")\n'
-                'm = mark.relate(Organization.get(name="FinEdge"), "membership", kind="employment")\n'
+    ok = rt.run('rita = Person.new(full_name="Rita Sandoval")\n'
+                'm = rita.relate(Organization.get(name="FinEdge"), "membership", kind="employment")\n'
                 'print(m.kind)', "host")
     check("relate takes kind= as the relation's attribute", ok["output"].strip() == "employment",
           str(ok["error"]) or ok["output"])

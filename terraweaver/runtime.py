@@ -416,6 +416,7 @@ class WorldRuntime:
         started = time.monotonic()
         standing: list[str] = []
         unrecorded: list[str] = []
+        ran_before: dict = {}
         # World variables are fresh in every run: entities come from the world as they are now,
         # and one pinned by another session shows up here too.
         world_vars = self.variables.load()
@@ -431,10 +432,16 @@ class WorldRuntime:
         try:
             ontology.set_open_tokens(self.world.questions.tokens())
             tree = _variables_by_name(sandbox.check(code, protected=set(world_vars) | ALWAYS, always=ALWAYS))
+            # Statement by statement, each in its own transaction. All-or-nothing was the rule
+            # here for a long time, and the measurements turned against it: a fifth to a quarter
+            # of every pool's runs ended discarded, most of them over a typo eight lines from
+            # anything that mattered. What a completed statement wrote is a whole thought — the
+            # subgraph a single call touches is saved together inside it — so keeping it costs
+            # no consistency, and the host is told exactly where the block stopped.
+            with contextlib.redirect_stdout(stdout), ontology.track_access() as counts, \
+                    ontology.record_changes() as recording, sandbox.time_limit():
+                _exec_by_statement(tree, namespace, self.store)
             with self.store.transaction():
-                with contextlib.redirect_stdout(stdout), ontology.track_access() as counts, \
-                        ontology.record_changes() as recording, sandbox.time_limit():
-                    exec(compile(tree, "<run>", "exec"), namespace)
                 access = dict(counts)
                 self._persist(recording, namespace)
                 learned = self._learn_name_choice(session, recording, before)
@@ -451,9 +458,22 @@ class WorldRuntime:
                                         if not any(q.split(": ", 1)[-1][:50] in line for line in recording.ask_now)]
         except (Exception, sandbox.RunTimeout) as exc:  # noqa: BLE001 - reporting any failure to the host is the point
             error = _host_traceback(exc, code)
-            rolled_back = _discarded(recording)
+            # The statements that finished are in the world; only the one that raised was
+            # rolled back, and whatever it had begun to make lost its id with it.
+            rolled_back = [name for name in _discarded(recording) if name]
+            # A failure before the code ever ran — a sandbox refusal, a syntax error — has no
+            # recording to report from.
+            if recording is not None:
+                with self.store.transaction():
+                    effects = _effects(recording, created={id(o) for o in self.store._tx_new_ids})
+                    effects["assumed"] += self._learn_name_choice(session, recording, before)
+                # Whatever the failing statement had begun to make lost its id when that one
+                # statement was undone; it is not among what was kept.
+                effects["created"] = [line for line in effects["created"]
+                                      if "id=None" not in line]
             self._refresh(namespace)
             standing, unrecorded = _what_survived(namespace, session)
+            ran_before = _ran_before(code, exc, wrote=True)
             # A failed run is discarded, but an answer to the world's own question is not the
             # host's write and did not fail: the host really did work with one of the candidates
             # before its next line broke. Rolling that back meant the user answered "which
@@ -473,6 +493,7 @@ class WorldRuntime:
             **effects,
             "standing": standing,
             "unrecorded": unrecorded,
+            "ran_before": ran_before,
             "new_variables": {name: session.variables[name]["description"] for name in new_names},
             "duration_ms": int((time.monotonic() - started) * 1000),
         }
@@ -730,6 +751,50 @@ def _merge_questions(raised: list[str], standing: list[str]) -> list[str]:
     return out[:5]
 
 
+MAX_ECHO = 18   # lines of a failed block worth handing back; beyond that, say how many
+
+
+def _ran_before(code: str, exc: BaseException, wrote: bool) -> dict:
+    """The part of the block that got as far as running, handed back as text.
+
+    A host that fails on line 5 of 9 rewrites all nine from memory. It doesn't have to: the
+    world has the code and knows where it stopped. What it hands back depends on one thing —
+    whether those lines wrote anything. If they only looked things up, their variables are
+    still bound and the work is done; if they wrote, the writing was rolled back with the rest
+    and has to be sent again. Saying "it ran" without saying which of the two would be a lie
+    the host pays for.
+    """
+    frames = [f for f in traceback.extract_tb(exc.__traceback__) if f.filename == "<run>"]
+    if not frames or not code:
+        return {}
+    where = frames[-1].lineno or 0
+    lines = code.splitlines()
+    if not 0 < where <= len(lines):
+        return {}
+    before = lines[:where - 1]
+    kept = [line for line in before if line.strip()]
+    if not kept:
+        return {}
+    return {"wrote": wrote, "lines": len(kept),
+            "code": "\n".join(before) if len(kept) <= MAX_ECHO else ""}
+
+
+def _exec_by_statement(tree, namespace: dict, store) -> None:
+    """Run the block one top-level statement at a time, each one committed on its own.
+
+    A statement is the unit that either happened or didn't: `anna.relate(acme, ...)` writes a
+    relation and both ends together, inside one call, and either all of that lands or none of
+    it does. What the unit is *not* is the whole block a host happened to send — and treating
+    it that way threw away everything before the line that broke.
+    """
+    import ast
+
+    for statement in tree.body:
+        piece = ast.Module(body=[statement], type_ignores=[])
+        with store.transaction():
+            exec(compile(piece, "<run>", "exec"), namespace)
+
+
 def _what_survived(namespace: dict, session) -> tuple[list[str], list[str]]:
     """After a failure: which variables are still worth something, and which only look it.
 
@@ -773,18 +838,16 @@ def format_result(result: dict) -> str:
         parts.append("[session was reset after a long pause — earlier variables are gone]")
     parts.append(result["output"] or "(no output)")
     if result["error"]:
-        undone = result.get("rolled_back") or []
-        lost = f" — {', '.join(undone[:5])} " + ("were" if len(undone) > 1 else "was") + " discarded" if undone else ""
-        told = [f"[error — nothing this run wrote was kept{lost}]"]
-        # What it doesn't have to redo. The writes are gone; the variables are not, and a host
-        # told to "send the whole block again" repeats lookups it already has in hand.
-        if result.get("standing"):
-            told.append("[still bound] " + ", ".join(result["standing"])
-                        + " — these survived, so send again only what the failure stopped")
+        ran = result.get("ran_before") or {}
+        done = ran.get("lines", 0)
+        told = [f"[stopped here — the {done} line(s) before this one are done and kept; "
+                f"only this one was undone]" if done else "[stopped on the first line]"]
         if result.get("unrecorded"):
             told.append("[not in the world] " + ", ".join(result["unrecorded"])
-                        + " — the variable still holds it, but its creation was rolled back:"
-                        " record it again before anything is linked to it")
+                        + " — this one was being made when the line failed, so it was undone:"
+                        " make it again if you still want it")
+        told.append("Carry on from the line below; what ran before it is in the world and its "
+                    "variables are still bound. Send it again only if you want it done twice.")
         parts.append("\n".join(told) + f"\n{result['error']}")
     for kind in ("created", "updated", "found", "comments", "assumed", "hints"):
         if result.get(kind):
@@ -817,8 +880,7 @@ def _host_traceback(exc: BaseException, code: str = "") -> str:
             ran = len([l for l in source[:where - 1] if l.strip()])
             left = len([l for l in source[where:] if l.strip()])
             lines.append(f"line {where}: {source[where - 1].strip()}")
-            lines.append(f"({ran} line(s) ran before it and were rolled back; "
-                         f"{left} after it never ran)")
+            lines.append(f"({ran} line(s) before it are done; {left} after it never ran)")
         else:
             lines.append(f"line {where}")
     elif frames:

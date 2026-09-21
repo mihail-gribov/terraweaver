@@ -34,12 +34,11 @@ result — carries over. After a long pause the session is reset for you. Anythi
 outlive the task belongs in the world, not in a variable.
 
 Rules the world enforces:
-- Each `run` is atomic: if your code raises, nothing it *wrote* is kept — including the lines
-  that printed before it failed. Your variables are not rolled back, though: the result says
-  which are [still bound], so send again only what the failure stopped, not the lookups you
-  already have. One thing to watch: an entity created in the failed run is [not in the world]
-  — the variable still holds it, its record was taken back, and it must be recorded again
-  before anything is linked to it.
+- A run stops where it breaks, and keeps what it had already done. Each statement stands on
+  its own: the ones before the failure are in the world, the one that raised was undone whole
+  (an entity it had begun to make is named [not in the world]), and the ones after it never
+  ran. Your variables are not rolled back either. So fix the line it names and send the rest —
+  sending the whole block again records everything before it a second time.
 - So write in two kinds of block, not one long one. Look things up first — find the people,
   the company, the dates, bind them to variables — and let that run finish. Then write, in a
   block small enough that everything in it belongs together: a person and the link that gives
