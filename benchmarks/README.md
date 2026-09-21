@@ -110,3 +110,49 @@ This is the same defect as the BBQ sauce in LongMemEval and the "Pilsner or Lage
 trimmed: **what will be asked about must be recorded as something that can change, not as a
 sentence.** It is the `Preference` gap in docs/TODO.md, now with a number attached: fixing it is
 worth roughly 35 points on this task.
+
+## Experiment zero: a world with no classes (2026-09-21, sh/6k, Haiku, 20 questions)
+
+**11/20 = 55%** against **12/20 = 60%** for the fixed class set — the same slice, the same host,
+the same questions. At n=20 those are one number, not two. $4.82 and 45 minutes, against $3.83
+and 35 for the fixed classes, so authoring the ontology is not expensive.
+
+**The vocabulary converged, and fast.** Twenty classes defined in the first batch of 25 facts, one
+more at batch ten, nothing after that — 430 further facts were recorded in words the host had
+already chosen. What it built: `Person`, `Place`, `Organization`, `Work`, `Movement`,
+`SportsTeam`, and fifteen relation types — `authored`, `born_in`, `died_in`, `citizen_of`,
+`spouse`, `ceo_of`, `chairperson_of`, `director_of`, `educated_at`, `founded`, `founded_movement`,
+`headquarters_in`, `located_in`, `worked_in`, `associated_with`. Recognisably an ontology, and
+recognisably close to the one we wrote by hand.
+
+**What got better is exactly what we predicted.** Four of the five supersession losses turned into
+wins: Microsoft's CEO, the sport of the quarterback position, Japan's official language, what
+Nobuhiro Watsuki is famous for. Typed values supersede; that part of the thesis held.
+
+**What got worse is the other half, and it is a new finding.** Five questions the fixed classes
+answered were lost, and none of them to supersession:
+
+- *Ferdowsi is famous for Shahnameh* — not recorded at all. There is a `Work` and an `authored`,
+  but "famous for" was not in the vocabulary by the time fact 86 arrived, and the fact was
+  dropped rather than the vocabulary extended.
+- *rugby union was created in England, then in India* — recorded as prose
+  (`Place.descriptions: "rugby union was created here"`), so the later fact could not supersede.
+  Worse, "rugby" exists in that world four times over: as a `Place`, an `Organization`, a `Work`
+  and a `SportsTeam`. Nothing ties them together, because identity is declared per class and
+  nothing looks across classes.
+- *Meredith Grey was performed by Ellen Pompeo* — no relation type for performing; dropped.
+- *Cédric Klapisch is a citizen of France, then of Malaysia* — `citizen_of` exists with 83
+  statements, but the first value came back, so it was not declared to hold one at a time.
+
+So: **the host froze its vocabulary after the first batches and then made the data fit**, by
+dropping it, by writing prose, or by instantiating the same word as four different kinds of
+thing. Convergence is what we hoped for; convergence this early is the failure mode.
+
+Three things follow, and they are cheap:
+
+1. The world should notice the reach for prose or the silent drop, and say so — a fact that fits
+   nothing is a proposal to extend the vocabulary, not a fact to squeeze.
+2. `over_time` (one holder at a time) should be asked about at definition, not defaulted away:
+   `citizen_of` had the statements and still answered with the first one.
+3. Identity has to look across classes, not only within one: four rugbies is a worse outcome than
+   any wrong answer on this list.
