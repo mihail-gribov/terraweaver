@@ -52,6 +52,9 @@ rita.tag("apartment-hunt", starts=date(2026, 3, 1), until=date(2026, 6, 1))
     check("naming a class narrows to it",
           names(world.where(Person, tagged="move")) == {"Rita Chen"},
           str(names(world.where(Person, tagged="move"))))
+    check("a class has the same door as the world",
+          names(Person.where(tagged="move")) == names(world.where(Person, tagged="move")),
+          str(names(Person.where(tagged="move"))))
     check("the class may be its name",
           names(world.where("Person", tagged="move")) == names(world.where(Person, tagged="move")))
 

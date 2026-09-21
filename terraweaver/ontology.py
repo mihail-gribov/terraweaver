@@ -294,6 +294,13 @@ class Entity:
         return current_world().all(cls, limit=limit, history=history or any_time)
 
     @classmethod
+    def where(cls, **conditions) -> list:
+        """Entities of this class answering all the conditions at once — attributes, a link,
+        tags, words, meaning. `Person.where(...)` is `world.where(Person, ...)`; the world's own
+        one is for a question that isn't about a single kind of thing (selecting.py)."""
+        return current_world().where(cls, **conditions)
+
+    @classmethod
     def find(cls, *, any_time: bool = False, history: bool = False, **attrs):
         """Entities of this class matching the attributes, best match first.
 

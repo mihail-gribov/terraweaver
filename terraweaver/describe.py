@@ -117,6 +117,7 @@ Every class below shares these, so they aren't repeated for each one:
         candidates), printing it shows the question, and which one was meant is not yours to
         decide — ask the user, then world.settle(...).
 
+    Person.where(...) is the same call from the class's side, as Person.all and Person.find are.
     world.where(...) is the one way of asking, and the plain searches are it with a single
     condition — world.where(tagged="move") is the tag search, world.where(like="cell chemistry")
     is the meaning search. Everything given narrows; nothing widens:
