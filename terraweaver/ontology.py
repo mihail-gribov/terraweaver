@@ -9,7 +9,7 @@ import json
 from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import wraps
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -879,6 +879,28 @@ class Entity:
         # dicts and sets regardless.
         return hash((type(self).__name__, self.id)) if self.id is not None else object.__hash__(self)
 
+    def __getattr__(self, name):
+        """Only reached when the attribute isn't there — so it is the place to say what is.
+
+        Reading `idea.name` where the class calls it `title` used to give Python's bare message
+        and cost the statement. Writing it already said which word was meant; reading it should
+        say the same thing.
+        """
+        if name.startswith("_"):
+            raise AttributeError(name)
+        spec = type(self)._spec
+        known = [a["name"] for a in spec.get("attributes", [])]
+        from terraweaver import matching
+
+        calls_it = matching.NAME_KEYS.get(type(self).__name__)
+        synonyms = {w: calls_it for w in ("name", "title", "label", "full_name")} if calls_it else {}
+        near = did_you_mean(name, known, synonyms)
+        raise AttributeError(
+            f"{type(self).__name__} has no {name!r}"
+            + (f" — did you mean {near!r}? " if near else ". ")
+            + (f"It has: {', '.join(known)}." if known else "")
+            + " What none of them holds goes into a description: entity.describe(...).")
+
     def __setattr__(self, name, value):
         spec = type(self)._spec
         class_name = type(self).__name__
@@ -918,6 +940,12 @@ class Entity:
                 # every attribute not yet read as null, and the next read found them gone.
                 self._set_many(name, value)
                 return
+            # A date where a datetime is wanted is the same moment, said shorter — midnight, as
+            # everywhere else in this world. Refusing it cost a statement each time, and the
+            # refusal the host actually saw was "Object of type date is not JSON serializable".
+            if (isinstance(value, date) and not isinstance(value, datetime)
+                    and declared.get("type") == "datetime"):
+                value = datetime(value.year, value.month, value.day)
             # One form of time, whatever came in. A world that keeps some times with a zone and
             # some without cannot compare its own records — and the host, holding a literal
             # datetime(2026, 10, 1), finds that out mid-task.

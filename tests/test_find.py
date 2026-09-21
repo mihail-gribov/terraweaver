@@ -7,6 +7,7 @@ deterministic checks over the prepared world.
 Run: python3 tests/test_find.py
 """
 import sys
+from datetime import date
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -247,6 +248,21 @@ def main() -> int:
           "nothing in the world matches" in empty, empty or "(no refusal)")
     check("and names all three ways on: ask differently, or record it as new",
           "needs changing" in empty and "Person.new(...)" in empty, empty)
+
+    # --- two more near misses, both seen costing a live host a statement ---
+    dated = classes["Event"].new(title="Meetup", kind="meeting", status="planned",
+                                 start_time=date(2026, 9, 24)) if "Event" in classes else None
+    check("a date where a datetime is wanted is that day's midnight",
+          dated is not None and dated.start_time.hour == 0 and dated.start_time.day == 24,
+          str(getattr(dated, "start_time", None)))
+    idea = classes["Idea"].new(title="An idea", content="c")
+    misread = ""
+    try:
+        idea.name
+    except AttributeError as exc:
+        misread = str(exc)
+    check("reading an attribute that isn't there says which one was meant",
+          "did you mean 'title'" in misread, misread or "(no refusal)")
 
     print()
     if failures:
