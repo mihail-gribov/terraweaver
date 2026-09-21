@@ -319,6 +319,40 @@ def relate(world, a, b, kind: str, period: dict, attrs: dict):
     return created
 
 
+def _note_gap(world, name: str, obj, label: str, start, created) -> None:
+    """A handover that leaves a day with nobody in the post.
+
+    Periods here run from the start up to but not including the end, and nothing says so where
+    a host is looking. Told "from October 1 it's Dr Patel instead of Dr Rao", a host ends Rao on
+    September 30 and starts Patel on October 1 — which reads, to every question this world can
+    be asked, as a day with no dentist. The dates are both plausible, so the world does not
+    correct them; it says what they add up to and names the one that closes it.
+    """
+    from datetime import timedelta
+
+    if start is None:
+        return
+    begins = timeutil.as_datetime(start)
+    for r in world.all(name, limit=None, history=True):
+        if same(r, created) or not same(r.object, obj):
+            continue
+        if str(getattr(r, "label", None) or getattr(r, "role", None) or "").strip().lower() != label:
+            continue
+        ends = getattr(r, "valid_until", None)
+        if ends is None:
+            continue
+        space = begins - timeutil.as_datetime(ends)
+        if timedelta(0) < space <= timedelta(days=3):
+            ontology.note_hint(
+                f"{r.display_name()} ends {timeutil.show(ends)} and this one starts "
+                f"{timeutil.show(begins)}, leaving no {label} in between for "
+                f"{obj.display_name()}. "
+                f"A period runs up to but not including its end, so a handover ends the old one "
+                f"where the new one begins: old.keep(until={timeutil.show(begins)})."
+            )
+            return
+
+
 def _between(rel, subject, obj, symmetric: bool) -> bool:
     if same(rel.subject, subject) and same(rel.object, obj):
         return True
@@ -366,6 +400,9 @@ def _note_same_label(world, name: str, rel: dict, subject, obj, attrs: dict, sta
         if same(r.object, obj) and not same(r, created) and _overlaps(r, start, end)
         and str(getattr(r, "label", None) or getattr(r, "role", None) or "").strip().lower() == label
     ]
+    if not same_label:
+        _note_gap(world, name, obj, label, start, created)
+        return
     if same_label:
         old = same_label[0]
         # Name the exact fix, with the date: a replacement that begins in October ends the old

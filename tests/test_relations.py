@@ -187,6 +187,22 @@ def main() -> int:
     check("a relation to the owner reads as English", not any("you's" in r for r in reads),
           str(reads[:2]))
 
+    # --- a handover that leaves a day with nobody in the post ---
+    with ontology.record_changes() as handover:
+        leaving = Person.new(full_name="Otto Vane")
+        old_post = leaving.relate(owner, "service", label="gardener")
+        old_post.keep(until=date(2026, 9, 30))
+        Person.new(full_name="Vera Lund").relate(owner, "service", label="gardener",
+                                                 starts=date(2026, 10, 1))
+    said = " ".join(handover.hints)
+    check("a gap between two spells of one post is pointed out",
+          "leaving no gardener in between" in said and "2026-10-01" in said, said or "(no hint)")
+    with ontology.record_changes() as clean:
+        Person.new(full_name="Wim Toll").relate(owner, "service", label="plumber",
+                                                starts=date(2026, 10, 1))
+    check("and nothing is said when there was nobody in the post before",
+          not any("in between" in line for line in clean.hints), str(clean.hints))
+
     # --- an unanswered question is not an entity to link ---
     asked = Person.new(full_name="Darren")  # resembles Darren Liu: a question, not a person
     linked = refused(lambda: owner.relate(asked, "social", label="friend"))
