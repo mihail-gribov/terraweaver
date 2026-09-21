@@ -252,6 +252,8 @@ def main() -> None:
     parser.add_argument("--db", default="worlds/job_search.db")
     parser.add_argument("--fixture", default="job_search", help="world to build when the db is empty")
     parser.add_argument("--rebuild", action="store_true", help="rebuild from the fixture on start")
+    parser.add_argument("--blank", action="store_true",
+                        help="no classes at all: the host defines the ontology (docs/open-ontology.md)")
     parser.add_argument("--host", default="127.0.0.1", help="0.0.0.0 to serve the local network (token required)")
     parser.add_argument("--port", type=int, default=7000)
     parser.add_argument("--allow-origin", action="append", default=[],
@@ -259,7 +261,15 @@ def main() -> None:
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
-    runtime = WorldRuntime(args.db, fixture=args.fixture, rebuild=args.rebuild)
+    if args.blank:
+        # A world with the mechanism and no vocabulary. The host defines the classes; the world
+        # keeps them uniform and answers "is there already something for this?".
+        from terraweaver import authoring
+
+        runtime = WorldRuntime(args.db, fixture=None, specs={}, selves=False)
+        authoring.install(runtime.world, Path(args.db).with_suffix("").parent / "grown")
+    else:
+        runtime = WorldRuntime(args.db, fixture=args.fixture, rebuild=args.rebuild)
 
     names = ["127.0.0.1", "localhost"]
     lan = _lan_address()

@@ -119,11 +119,14 @@ def plain(prompt: str, model: str = "haiku", timeout: int = 300) -> str:
     return (run.stdout or "").strip()
 
 
-def start_server(db: Path, port: int) -> subprocess.Popen:
-    """An empty world of its own: no fixture, so nothing is in it but `user` and `agent`."""
+def start_server(db: Path, port: int, blank: bool = False) -> subprocess.Popen:
+    """An empty world of its own: no fixture, so nothing is in it but `user` and `agent`.
+
+    `blank=True` goes further and takes the classes away too — the host defines the ontology
+    (`docs/open-ontology.md`)."""
     server = subprocess.Popen(
         [sys.executable, "-m", "terraweaver.server", "--db", str(db), "--port", str(port),
-         "--fixture", ""],
+         *(["--blank"] if blank else ["--fixture", ""])],
         cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     for _ in range(120):
         if server.poll() is not None:
