@@ -264,6 +264,7 @@ class Entity:
         self.valid_from = kwargs.pop("valid_from", None)
         self.valid_until = kwargs.pop("valid_until", None)
         class_name = type(self).__name__
+        missing = []
         for attr in type(self)._spec["attributes"]:
             name = attr["name"]
             if "derived" in attr:
@@ -276,14 +277,18 @@ class Entity:
             if name in kwargs:
                 setattr(self, name, kwargs.pop(name))
             elif attr.get("required") and "default" not in attr:
-                raise TypeError(f"{class_name}(...) missing required attribute '{name}'")
+                missing.append(name)
             else:
                 default = attr.get("default")
                 if default is None and attr["type"].startswith("list["):
                     default = []
                 setattr(self, name, default)
-        if kwargs:
-            raise TypeError(f"{class_name}(...) got unexpected attribute(s): {', '.join(kwargs)}")
+        if missing or kwargs:
+            # Both at once, and with the near miss named. Reported one at a time, a host told
+            # only "missing title" adds a title and keeps its `name=` — and learns on the next
+            # try that the first answer was incomplete. Once cost a whole scenario: the events
+            # went in under `name=`, were refused, and came back with no title at all.
+            raise TypeError(_construction_problem(class_name, type(self)._spec, missing, kwargs))
 
     # --- what every class in the world can do ---
 
@@ -1008,6 +1013,30 @@ def _as_written(values) -> list:
         if said not in out:
             out.append(said)
     return out
+
+
+def _construction_problem(class_name: str, spec: dict, missing: list, unexpected: dict) -> str:
+    """What is wrong with this Class(...) call, all of it, with the likely word for each slip."""
+    from difflib import get_close_matches
+
+    known = [a["name"] for a in spec["attributes"] if "derived" not in a]
+    parts = []
+    if missing:
+        parts.append("missing required attribute(s): " + ", ".join(f"'{n}'" for n in missing))
+    from terraweaver import matching
+
+    # Whatever this class calls its name, a host will sometimes call it something else: "name"
+    # for a title, "title" for a name. That is not a typo, so spelling distance never finds it.
+    calls_it = matching.NAME_KEYS.get(class_name)
+    for given in unexpected:
+        near = get_close_matches(given, known, n=1, cutoff=0.6)
+        near = near or [n for n in known if n.rstrip("s") == given.rstrip("s")]
+        if not near and calls_it and given in ("name", "title", "label", "full_name"):
+            near = [calls_it]
+        parts.append(f"no attribute '{given}'" + (f" — did you mean '{near[0]}'?" if near else ""))
+    return (f"{class_name}(...): " + "; ".join(parts) + ". Its attributes are: "
+            + ", ".join(known) + ". What none of them holds goes into a dated remark: "
+            "entity.comment(...).")
 
 
 def _texts_as(slot: str):
