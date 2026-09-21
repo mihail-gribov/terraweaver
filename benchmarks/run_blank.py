@@ -109,7 +109,7 @@ def vocabulary(db: Path) -> dict:
         try:
             counts[name] = conn.execute(f'select count(*) from "facts_{name}"').fetchone()[0]
             said = conn.execute(
-                f'select sum(slot in ("descriptions", "notes", "description")), count(*) '
+                'select sum(slot in (\'descriptions\', \'notes\', \'description\')), count(*) '
                 f'from "facts_{name}"').fetchone()
             if said and said[1]:
                 prose[name] = round((said[0] or 0) / said[1], 2)

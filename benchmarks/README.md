@@ -156,3 +156,42 @@ Three things follow, and they are cheap:
    `citizen_of` had the statements and still answered with the first one.
 3. Identity has to look across classes, not only within one: four rugbies is a worse outcome than
    any wrong answer on this list.
+
+## Experiment zero, second run (same slice, with `over_time` required and the anti-prose primer)
+
+**10/20.** With the first blank run at 11/20 and the fixed classes at 12/20, that is three numbers
+that say nothing: at n=20 each is worth ±20 points, and which questions they win keeps changing.
+Reading single-run totals here is the mistake our own rules already forbid.
+
+What *did* move is readable, because it is structural rather than statistical:
+
+**The vocabulary was designed once again, and again it was richer than it needed to be.** Twenty-
+four classes on the first twenty-five facts, then flat for 430 more: `Person`, `Place`,
+`Organization`, `Work`, `Sport`, `Religion`, `Continent` plus seventeen relation types including
+`plays_position`, `capital_of`, `married_to`, `founder_of`, `author_of`. The primer's instruction
+to extend the vocabulary whenever something did not fit changed **what it defined up front** —
+`Sport` and `Religion` are precisely the gaps that lost run one — and did not make it extend
+later. A host designs an ontology once, at the beginning, from the first thing it sees.
+
+That is the evening's sharpest lesson and it is one we have written down before: **a guarantee
+that lives in the prompt is not a guarantee.** "Extend when something does not fit" is a rule the
+world must provoke — by noticing, counting, and coming back with a proposal — not a sentence in
+a brief.
+
+**The coverage losses came back as wins**: Ferdowsi's Shahnameh, the quarterback's position,
+Ellen Pompeo, where rugby union was created. Other questions lost instead. The kind of failure
+keeps moving; the total does not.
+
+**Prose share is the measurement worth keeping.** Counting what went into `descriptions`/`notes`
+against everything said about a class — no sentence read, exactly the deterministic signal the
+core refused to fake at write time:
+
+| run | most prose-heavy classes |
+|---|---|
+| fixed classes | Person 0.49, Idea 0.27, Place 0.27, Organization 0.26, Related 0.25 |
+| blank, first | SportsTeam 0.50, Person 0.41, Work 0.36, Organization 0.24 |
+| blank, with the primer | Sport 0.42, Person 0.37, Work 0.33, Place 0.29 |
+
+Half of everything said about a person under our own classes went into prose; under a host-built
+ontology with the anti-prose primer it is a third. That trend is visible where accuracy is not,
+and it is the number to track while the scores are this noisy.
