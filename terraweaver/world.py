@@ -223,6 +223,34 @@ class World:
                                   f"who answers to that, and nothing said disagrees with them")
         return self._determined(entity)
 
+    def _note_named_elsewhere(self, class_name: str, attrs: dict) -> None:
+        """Something of this name already exists, under another class.
+
+        Identity is declared per class, so nothing looks across them: in one run "rugby" ended
+        up recorded four times over — a Place, an Organization, a Work and a SportsTeam — and
+        each was correct on its own terms. The world does not decide whether they are one thing;
+        two things can share a name, and a town called after a sport is not the sport. It says
+        that the name is taken elsewhere, which is the part nobody can see from inside one class.
+        """
+        name = attrs.get(matching.NAME_KEYS.get(class_name, ""))
+        if not isinstance(name, str) or not name.strip():
+            return
+        wanted = matching.normalize(name)
+        for other, cls in self.classes.items():
+            if other == class_name or "relation" in cls._spec:
+                continue
+            key = matching.NAME_KEYS.get(other)
+            if not key:
+                continue
+            for entity in self.all(other, limit=None, any_time=True):
+                if matching.normalize(str(getattr(entity, key, "") or "")) == wanted:
+                    ontology.note_hint(
+                        f"{name!r} is already in this world as a {other} "
+                        f"({entity.display_name()}). Two things can share a name, so this may be "
+                        f"right — but if they are one thing, record it once under the class that "
+                        f"fits and say the rest about that one.")
+                    return
+
     def _same_by_strong_key(self, class_name: str, attrs: dict, twins: list):
         """An address nobody else has is not a resemblance — it is them.
 
@@ -334,6 +362,7 @@ class World:
             if period and not isinstance(outcome, NeedsResolution):
                 self.apply_period(outcome, period)
             return outcome
+        self._note_named_elsewhere(class_name, attrs)
         if twins:
             needs = looks_existing(class_name, attrs, twins)
             needs.context["period"] = period

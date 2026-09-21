@@ -281,6 +281,19 @@ def main() -> int:
     check("reading a question is still refused — there is no honest value to give",
           reading is not None and "a question has no" in reading, str(reading))
 
+    # --- a name already taken under another class is said, not decided ---
+    from terraweaver import ontology as _o
+
+    world.classes["Place"].new(name="Rugby", city="Rugby", category="other")
+    with _o.record_changes() as across:
+        world.classes["Organization"].new(name="Rugby", industry="Sport")
+    check("a name already used under another class is pointed out",
+          any("already in this world as a Place" in line for line in across.hints), str(across.hints))
+    with _o.record_changes() as apart:
+        world.classes["Organization"].new(name="Quietwood Ltd", industry="Sport")
+    check("and an unused name is left alone",
+          not any("already in this world" in line for line in apart.hints), str(apart.hints))
+
     # --- who the user meant by a name is remembered ---
     annie = Person.find(full_name="Annie")
     sullivan = Person.get(email="anna.sullivan@example.com")
