@@ -250,10 +250,21 @@ def relate(world, a, b, kind: str, period: dict, attrs: dict):
     rel = spec(cls)
     for end in (subject, obj):
         if hasattr(end, "skill") and hasattr(end, "candidates"):  # an unanswered question, not an entity
-            raise TypeError(
-                f"{name} links two entities, and one of them is still a question: {end.reason}. "
-                f"Settle it first — ask the user, then world.settle(<it>, <the one they meant>)."
-            )
+            # Held, not refused — the same as writing to a question directly (resolution.py).
+            # Raising here discarded whole runs over one unsettled end: everything else the host
+            # recorded in that block went with it.
+            if end is subject:
+                end.relate(obj, kind, **attrs)          # held on the question itself
+            else:
+                # The question is the far end, so the call that will make this link starts from
+                # the other one. Holding `question.relate(subject, ...)` would settle into a
+                # link pointing the wrong way.
+                end.context.setdefault("held", []).append(("relate_to", (subject, kind), attrs))
+                ontology.note_hint(
+                    f"{end.reason}: this {kind} link is held until that is settled — "
+                    f"world.settle(<this question>, <the one they meant>) makes it. Nothing "
+                    f"else in this run is affected.")
+            return None
     if not isinstance(subject, Entity) or not isinstance(obj, Entity):
         raise TypeError(f"{name} links two entities; got {type(subject).__name__} and {type(obj).__name__}")
     if not _fits(subject, rel["from"]) or not _fits(obj, rel["to"]):

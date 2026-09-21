@@ -238,11 +238,27 @@ def main() -> int:
           clash is not None and "keep(until=2027-03-01)" in clash, str(clash))
     check("and not with advice that would end it today", clash is not None and ".expire()" not in clash)
 
-    # --- an unanswered question is not an entity to link ---
+    # --- a question at either end holds the link rather than discarding the run ---
+    unsettled = Organization.new(name="TechCorp")            # a twin exists, so this is a question
+    linked = Person.new(full_name="Vera Holt", email="vera@holt.example")
+    linked.relate(unsettled, "membership", title="director", primary=True)
+    alongside = Person.new(full_name="Wes Holt", email="wes@holt.example")
+    check("the rest of the block survives a question at the far end", isinstance(alongside, Person))
+    settled = world.settle(unsettled, Organization.get(name="TechCorp"))
+    made = [r.display_name() for r in Person.get(email="vera@holt.example").relations("membership")]
+    check("and the held link is made pointing the way it was written",
+          any("Vera Holt is TechCorp's" in line for line in made), str(made))
+
+    # --- an unanswered question is not an entity to link, so the link waits for the answer ---
     asked = Person.new(full_name="Darren")  # resembles Darren Liu: a question, not a person
-    linked = refused(lambda: owner.relate(asked, "social", label="friend"))
-    check("relating to an unsettled question says to settle it first",
-          linked is not None and "still a question" in (linked or ""), str(linked))
+    with ontology.record_changes() as waiting:
+        owner.relate(asked, "social", label="friend")
+    check("linking to an unsettled question is held, not refused",
+          any("held until that is settled" in line for line in waiting.hints), str(waiting.hints))
+    friend = world.settle(asked, Person.get(full_name="Darren Liu"))
+    check("and is made, the way it was written, once the question is answered",
+          any(r.other(friend) is owner for r in friend.relations("social")),
+          str([r.display_name() for r in friend.relations("social")]))
 
     print()
     if failures:

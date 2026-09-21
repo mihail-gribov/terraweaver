@@ -202,6 +202,10 @@ def contradicting_value(instance, attr: str, existing_value, incoming_value) -> 
 def _apply_held(world, needs: NeedsResolution, entity) -> None:
     """Everything that was waiting on this answer, done now that there is one to do it to."""
     for name, args, kwargs in needs.context.pop("held", []):
+        if name == "relate_to":                 # the link runs towards this one, not from it
+            starts_at, kind = args
+            world.relate(starts_at, entity, kind, **kwargs)
+            continue
         getattr(entity, name)(*args, **kwargs)
 
 
