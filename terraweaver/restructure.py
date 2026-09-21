@@ -94,13 +94,17 @@ def prose_share(conn) -> dict[str, dict]:
     return dict(sorted(out.items(), key=lambda kv: -kv[1]["share"]))
 
 
-def notes(conn) -> list[tuple[str, str, str]]:
-    """(class, subject, text) for everything that went into a text slot."""
+def notes(conn) -> list[tuple[str, str, str, str]]:
+    """(class, subject, text, statement id) for everything that went into a text slot.
+
+    The statement comes along because a value read out of a note is a conclusion, and a
+    conclusion has to be able to say which note it rests on.
+    """
     found = []
     for table in _class_tables(conn):
         class_name = table[len("facts_"):]
-        for subject, value in _rows(
-                conn, f'select subject, value from "{table}" where slot in '
+        for row_id, subject, value in _rows(
+                conn, f'select id, subject, value from "{table}" where slot in '
                       f'({",".join("?" * len(NOTE_SLOTS))})', NOTE_SLOTS):
             try:
                 said = json.loads(value)
@@ -108,14 +112,14 @@ def notes(conn) -> list[tuple[str, str, str]]:
                 said = value
             for one in (said if isinstance(said, list) else [said]):
                 if isinstance(one, str) and one.strip():
-                    found.append((class_name, subject, one.strip()))
+                    found.append((class_name, subject, one.strip(), f"{table}:{row_id}"))
     return found
 
 
 def repeated(conn) -> list[tuple[str, int, list[str]]]:
     """Notes written word for word more than once — nobody repeats what has a field."""
     counts, classes = Counter(), defaultdict(set)
-    for class_name, _, text in notes(conn):
+    for class_name, _, text, _id in notes(conn):
         counts[text] += 1
         classes[text].add(class_name)
     return [(text, count, sorted(classes[text]))
@@ -132,7 +136,7 @@ def shapes(conn, least: int = WORTH_LOOKING) -> list[dict]:
     names = known_names(conn)
     pattern = re.compile("|".join(re.escape(name) for name in names) or r"(?!x)x")
     seen: dict[str, dict] = {}
-    for class_name, subject, text in notes(conn):
+    for class_name, subject, text, _id in notes(conn):
         filled = pattern.findall(text)
         skeleton = pattern.sub("…", text).strip()
         skeleton = re.sub(r"\s+", " ", skeleton)
@@ -431,7 +435,7 @@ def apply(world, answer: dict, *, specs_dir=None, dry_run: bool = False) -> dict
     for shape, class_name, slot in targets:
         if not (shape and slot):
             continue
-        for note_class, subject, text in notes(conn):
+        for note_class, subject, text, said_in in notes(conn):
             if class_name and note_class != class_name:
                 continue
             values = _values_in(shape, text, names)
@@ -447,15 +451,16 @@ def apply(world, answer: dict, *, specs_dir=None, dry_run: bool = False) -> dict
                                     if c._spec.get("relation")} else None
             try:
                 if kind and other is not None:
-                    world.relate(world.store.load(subject, world.classes), other, kind)
+                    world.relate(world.store.load(subject, world.classes), other, kind,
+                                 basis=[said_in])
                     done["linked"] += 1
                 elif kind:
-                    done["skipped"] += 1
+                    done["skipped"] += 1  # the note names something this world has never met
                 else:
-                    basis = [s.id for s in world.facts.about(subject, "descriptions")
-                             if isinstance(s.value, (str, list))][:1]
-                    world.facts.conclude(subject, slot, value, basis=basis, class_name=note_class)
+                    world.facts.conclude(subject, slot, value, basis=[said_in],
+                                         class_name=note_class)
                     done["concluded"] += 1
-            except Exception:
+            except Exception as trouble:
                 done["skipped"] += 1
+                done.setdefault("trouble", []).append(str(trouble)[:120])
     return done
