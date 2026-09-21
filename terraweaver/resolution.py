@@ -54,10 +54,11 @@ class NeedsResolution:
         return False
 
     @property
-    def main(self) -> list:
+    def matches(self) -> list:
+        """None of them: that is what an unsettled search is. `.main` says so in words."""
         from terraweaver.matching import Matches
 
-        return Matches([], "main")
+        return Matches([], "matches")
 
     @property
     def similar(self) -> list:
@@ -103,6 +104,11 @@ class NeedsResolution:
             raise AttributeError(name)
         if name in NeedsResolution.HELD:
             return self._hold(name)
+        if name == "main":
+            raise AttributeError(
+                f"this search didn't settle: {self.reason}. The candidates are in .similar; "
+                f"which one is meant is the user's to say — ask, then "
+                f"world.settle(<this>, <the one they meant>), or new=True if it is a new one.")
         raise AttributeError(
             f"a question has no {name!r}: this is {self.reason}, not the entity. Print it to see "
             f"the candidates (.similar), ask the user, then world.settle(<this>, <the one they "

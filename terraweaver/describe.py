@@ -95,9 +95,13 @@ Every class below shares these, so they aren't repeated for each one:
         a company website matches on its domain (https://careers.acme.com/jobs ~ acme.com).
 
         The result comes back in two parts, and the difference matters:
-            result.main     — entities that actually match
-            result.similar  — entities that merely resemble what you asked for
+            result.main     — the one it found, when the search found exactly one
+            result.matches  — the ones that match (a list: none, one or several)
+            result.similar  — the ones that merely resemble what you asked for
             result.matched  — False when nothing actually matched
+        `result.main` is the usual way in and it is right whenever the search settled. Where it
+        didn't, it says which: several match (look at result.matches and narrow what you asked —
+        one more attribute usually settles it), or none did and some merely resemble.
         Iterating the result gives everything, best first, so it still works as a list —
         but `result[0]` may well be a resemblance. When `result.matched` is False, nothing
         in the world matches: say so, rather than serving the closest thing as the answer.

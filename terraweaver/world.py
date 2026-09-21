@@ -279,17 +279,17 @@ class World:
         result = self.find(cls, history=True, **attrs)
         if isinstance(result, NeedsResolution):
             return result
-        if len(result.main) == 1:
-            entity = self._determined(result.main[0])
+        if len(result.matches) == 1:
+            entity = self._determined(result.matches[0])
             ontology.note_found(entity)
             return entity
-        if result.main or result.similar:
+        if result.matches or result.similar:
             only = self._only_match(class_name, attrs,
-                                    matching.score_candidates(result.main or result.similar, class_name, attrs))
+                                    matching.score_candidates(result.matches or result.similar, class_name, attrs))
             if only is not None:
                 ontology.note_found(only)
                 return only
-            needs = ambiguous_identity(class_name, attrs, result.main or result.similar, exact=bool(result.main))
+            needs = ambiguous_identity(class_name, attrs, result.matches or result.similar, exact=bool(result.matches))
             self.pending = needs
             return needs
         described = ", ".join(f"{k}={v.display_name() if isinstance(v, ontology.Entity) else v}" for k, v in attrs.items())

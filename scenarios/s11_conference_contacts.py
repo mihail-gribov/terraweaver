@@ -22,10 +22,10 @@ TURNS = [
 ]
 
 EXPECT = """
-assert len(Person.find(email="kjohnson@nasa.gov").main) == 1, "Katherine duplicated"
-assert len(Person.find(email="william.chen@stripe.com").main) == 1, "William Chen duplicated"
+assert len(Person.find(email="kjohnson@nasa.gov").matches) == 1, "Katherine duplicated"
+assert len(Person.find(email="william.chen@stripe.com").matches) == 1, "William Chen duplicated"
 assert len([p for p in Person.all(limit=None) if "liskov" in p.full_name.lower()]) == 1, "Barbara duplicated"
-assert len(Person.find(email="dana@fbi.gov").main) == 1, "Dana not recorded"
+assert len(Person.find(email="dana@fbi.gov").matches) == 1, "Dana not recorded"
 """
 
 PROBES = [

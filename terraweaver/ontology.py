@@ -30,7 +30,7 @@ _MANAGED_ATTRS = ("id", "created_at", "accessed_at", "valid_from", "valid_until"
 _TRACK = False
 ACCESS = {"entity_reads": 0, "world_queries": 0, "world_writes": 0}
 # Entities changed while recording, keyed by id(): a script's writes have to be persisted even
-# when the changed object isn't bound to any variable (`Vacancy.find(...).main[0].apply()`).
+# when the changed object isn't bound to any variable (`Vacancy.find(...).matches[0].apply()`).
 # Keyed by object identity because an entity's hash changes once it receives an id.
 _CHANGED: "Recording | None" = None
 # The ones that are stored as values (id is the row key, not a value).

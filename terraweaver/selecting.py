@@ -121,8 +121,8 @@ def _by_attributes(world, class_name: str, attributes: dict, any_time: bool) -> 
     if not attributes:
         return world.all(class_name, limit=None, any_time=any_time)
     result = world.find(class_name, history=any_time, **attributes)
-    if hasattr(result, "main") and result.main is not None:
-        return [result.main] if not isinstance(result.main, list) else list(result.main)
+    if hasattr(result, "matches") and result.matches is not None:
+        return [result.matches] if not isinstance(result.matches, list) else list(result.matches)
     return list(getattr(result, "candidates", []) or [])
 
 

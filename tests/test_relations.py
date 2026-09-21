@@ -152,7 +152,7 @@ def main() -> int:
     # --- find compares entities by identity, not name ---
     twin = Organization.new(name="Meridian Corp (Boston)")
     check("find by a referenced entity matches that record only",
-          [p.full_name for p in Person.find(organization=b04).main] == ["Kevin Chen"])
+          [p.full_name for p in Person.find(organization=b04).matches] == ["Kevin Chen"])
 
     # --- the end you didn't ask from has a name ---
     served = owner.relations("served_by")

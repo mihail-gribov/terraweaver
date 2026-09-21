@@ -48,19 +48,19 @@ def main() -> int:
 
     # --- a name that identifies exactly one person ---
     result = Person.find(full_name="Alan Turing")
-    check("exact full name matches", not isinstance(result, NeedsResolution) and names(result.main) == ["Alan Turing"])
+    check("exact full name matches", not isinstance(result, NeedsResolution) and names(result.matches) == ["Alan Turing"])
 
     result = Person.find(full_name="Barb")
-    check("recorded alias matches", not isinstance(result, NeedsResolution) and names(result.main) == ["Barbara Liskov"],
+    check("recorded alias matches", not isinstance(result, NeedsResolution) and names(result.matches) == ["Barbara Liskov"],
           f"got {result!r}")
 
     result = Person.find(full_name="Barb Liskov")
     check("nickname with surname matches", not isinstance(result, NeedsResolution)
-          and names(result.main) == ["Barbara Liskov"], f"got {result!r}")
+          and names(result.matches) == ["Barbara Liskov"], f"got {result!r}")
 
     result = Person.find(email="ada@example.com")
     check("strong key matches without a name", not isinstance(result, NeedsResolution)
-          and names(result.main) == ["Ada Lovelace"])
+          and names(result.matches) == ["Ada Lovelace"])
 
     # --- a name that doesn't settle it: the user has to ---
     result = Person.find(full_name="Annie")
@@ -71,7 +71,7 @@ def main() -> int:
     # "Robert" is his first name, and he is the only person in this world it can mean.
     result = Person.find(full_name="Robert")
     check("a bare first name with one candidate is them",
-          not isinstance(result, NeedsResolution) and names(result.main) == ["Robert Wolfe"], f"got {result!r}")
+          not isinstance(result, NeedsResolution) and names(result.matches) == ["Robert Wolfe"], f"got {result!r}")
 
     # A name that merely resembles is not a name they answer to: a misspelling still asks,
     # because the same leniency would swallow "William Chen" into "Wilma Chen".
@@ -86,7 +86,7 @@ def main() -> int:
 
     # --- match and resemblance are kept apart ---
     result = Person.find(full_name="Ann")
-    check("one certain match wins", not isinstance(result, NeedsResolution) and names(result.main) == ["Anna Sullivan"],
+    check("one certain match wins", not isinstance(result, NeedsResolution) and names(result.matches) == ["Anna Sullivan"],
           f"got {result!r}")
     check("resemblances are set aside, not dropped",
           not isinstance(result, NeedsResolution) and names(result.similar) == ["Anna Peterson"])
@@ -99,10 +99,10 @@ def main() -> int:
           not isinstance(result, NeedsResolution) and not result.matched and len(result) == 0, f"got {result!r}")
 
     # --- ordinary attributes filter ---
-    techcorp = Organization.find(name="TechCorp").main[0]
-    check("filters by an ordinary attribute", names(Person.find(organization=techcorp).main) == ["Ada Lovelace"])
+    techcorp = Organization.find(name="TechCorp").matches[0]
+    check("filters by an ordinary attribute", names(Person.find(organization=techcorp).matches) == ["Ada Lovelace"])
     check("filters by several attributes",
-          all(v.remote and v.status == "not_applied" for v in Vacancy.find(remote=True, status="not_applied").main))
+          all(v.remote and v.status == "not_applied" for v in Vacancy.find(remote=True, status="not_applied").matches))
     check("a filter that matches nothing yields nothing", len(Vacancy.find(status="withdrawn")) == 0)
 
     # A list attribute is satisfied by containing the value. Comparing the whole list to one
@@ -110,33 +110,33 @@ def main() -> int:
     Event = classes["Event"]
     owner = world.owner
     check("filters by membership of a list attribute",
-          len(Event.find(participants=owner).main) == len(Event.all(limit=None)),
-          f"got {len(Event.find(participants=owner).main)}")
+          len(Event.find(participants=owner).matches) == len(Event.all(limit=None)),
+          f"got {len(Event.find(participants=owner).matches)}")
     check("membership works for plain values too",
-          all("Python" in v.stack for v in Vacancy.find(stack="Python").main))
+          all("Python" in v.stack for v in Vacancy.find(stack="Python").matches))
     check("and a value that's in no list matches nothing", len(Vacancy.find(stack="COBOL")) == 0)
 
     # --- companies get the same treatment as people ---
-    check("company alias matches", names(Organization.find(name="Data Works").main) == ["DataWorks"])
-    check("company short form matches", names(Organization.find(name="DW").main) == ["DataWorks"])
+    check("company alias matches", names(Organization.find(name="Data Works").matches) == ["DataWorks"])
+    check("company short form matches", names(Organization.find(name="DW").matches) == ["DataWorks"])
     # "Data" is part of its recorded alias "Data Works", so it is a name this company answers
     # to — and it is the only one. A company that merely resembled would still ask.
     check("a company name it answers to, with no rival, is it",
-          names(Organization.find(name="Data").main) == ["DataWorks"])
+          names(Organization.find(name="Data").matches) == ["DataWorks"])
 
     # --- searching is not working with anything ---
-    ada = Person.find(email="ada@example.com").main[0]
+    ada = Person.find(email="ada@example.com").matches[0]
     before = ada.accessed_at
     Person.find(full_name="Alan Turing")
     Person.find(organization=techcorp)
     check("a search leaves access times alone",
-          Person.find(email="ada@example.com").main[0].accessed_at == before)
+          Person.find(email="ada@example.com").matches[0].accessed_at == before)
 
     # --- equal relevance is broken by who was dealt with most recently ---
-    remote = Vacancy.find(remote=True).main
+    remote = Vacancy.find(remote=True).matches
     world._determined(remote[-1])
     check("ties go to the most recently handled",
-          Vacancy.find(remote=True).main[0].id == remote[-1].id)
+          Vacancy.find(remote=True).matches[0].id == remote[-1].id)
 
     # --- a title is how a name is said, not part of it: "Dr. Rao" is Arun Rao ---
     check("a name given with a title still resembles the person",
@@ -188,7 +188,7 @@ def main() -> int:
     with ontology.record_changes() as spoke:
         found = Organization.find(full_name="TechCorp")
     check("a near-miss attribute answers the question it meant",
-          found.main and found.main[0].name == "TechCorp", str(found))
+          found.matches and found.matches[0].name == "TechCorp", str(found))
     check("and the caveat is said out loud",
           any("'full_name' taken as 'name'" in line for line in spoke.assumed), str(spoke.assumed))
 
@@ -215,7 +215,7 @@ def main() -> int:
         got = Person.find(full_name="Ada Lovelace")
         check("a search result with one match reads as that one", got.full_name == "Ada Lovelace",
               str(got))
-        check("through .main as well", got.main.email == "ada@example.com")
+        check("through .matches as well", got.matches.email == "ada@example.com")
     check("and says where the answer came from",
           any("read from the one match" in line for line in one_match.assumed), str(one_match.assumed))
 
@@ -227,6 +227,24 @@ def main() -> int:
         told = str(exc)
     check("with several it refuses and says which one to name",
           "one of them" in told and "result.similar[0]" in told, told or "(no refusal)")
+
+    # --- .main is the one it found, or says why it can't be ---
+    def why_not(action):
+        try:
+            action()
+            return ""
+        except AttributeError as exc:
+            return str(exc)
+
+    check("one match: .main is that one", Person.find(full_name="Ada Lovelace").main.email
+          == "ada@example.com")
+    crowded = why_not(lambda: Person.find(full_name="Anna").main)
+    check("several: it says the search wasn't unambiguous and what would narrow it",
+          "didn't settle" in crowded or "wasn't unambiguous" in crowded, crowded or "(no refusal)")
+    check("and points at where to look", "similar" in crowded or "result.matches" in crowded, crowded)
+    empty = why_not(lambda: Person.find(full_name="Nobody At All").main)
+    check("none: it says nothing matched rather than serving the closest",
+          "nothing matched" in empty, empty or "(no refusal)")
 
     print()
     if failures:

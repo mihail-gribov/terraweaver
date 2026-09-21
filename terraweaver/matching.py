@@ -176,7 +176,7 @@ def score_candidates(existing_instances: list, class_name: str, attrs: dict, fil
 
 
 class Matches(list):
-    """The matches themselves. A list — but `result.main.full_name` is the shape hosts reach
+    """The matches themselves. A list — but `result.matches.full_name` is the shape hosts reach
     for, and a bare 'list has no attribute' tells them nothing.
 
     With exactly one match there is nothing to choose between, so the attribute is read from it
@@ -193,13 +193,23 @@ class Matches(list):
     def __getattr__(self, name: str):
         if name.startswith("_"):
             raise AttributeError(name)
-        if len(self) == 1:
+        if len(self) == 1 and hasattr(self[0], name):
             from terraweaver import ontology
 
             ontology.note_assumed(
                 f"result.{name} read from the one match ({self[0].display_name()}) — "
                 f"a search result is a list, and result.{self._which}[0] is that one")
             return getattr(self[0], name)
+        from terraweaver import ontology
+
+        # `main` was this list's name until hosts kept reading it as "the main one" — the word
+        # is gone, and anyone who learned it is sent to the one that replaced it.
+        near = ontology.did_you_mean(name, ["matches", "similar", "matched"],
+                                     {"main": "matches", "result": "matches", "all": "matches"})
+        if near:   # a word for the result itself, read off the wrong part of it
+            raise AttributeError(
+                f"a list of matches has no {name!r} — did you mean result.{near}? "
+                f"result.matches are the ones that match, result.similar the ones that resemble.")
         where = (f"one of them ({len(self)} here), e.g. result.{self._which}[0].{name}" if self
                  else "there are none — say so rather than filling the gap")
         raise AttributeError(f"these are the matches, not one entity: no {name!r} on a list. Use {where}.")
@@ -219,24 +229,28 @@ class FindResult(list):
     exact guess this design exists to prevent.
     """
 
-    def __init__(self, main: list, similar: list):
-        super().__init__(list(main) + list(similar))
-        self.main = Matches(main, "main")
+    def __init__(self, matches: list, similar: list):
+        super().__init__(list(matches) + list(similar))
+        self.matches = Matches(matches, "matches")
         self.similar = Matches(similar, "similar")
 
     @property
     def matched(self) -> bool:
-        return bool(self.main)
+        return bool(self.matches)
 
     def __getattr__(self, name: str):
         # `Person.find(...).full_name` — the host took the search for the person it found. A bare
         # AttributeError on 'list' says nothing; this says which entity it meant to reach.
+        # (A property would be unreachable here: one that raises AttributeError falls through
+        # to __getattr__, so the rule for `main` lives in it rather than beside it.)
         if name.startswith("_"):
             raise AttributeError(name)
-        if len(self.main) == 1:
-            return getattr(self.main, name)   # one match, one answer, the caveat said there
-        if self.main:
-            where = f"one of result.main ({len(self.main)} matched), e.g. result.main[0].{name}"
+        if name == "main":
+            return self._the_one()
+        if len(self.matches) == 1:
+            return getattr(self.matches, name)   # one match, one answer, the caveat said there
+        if self.matches:
+            where = f"one of result.matches ({len(self.matches)} matched), e.g. result.matches[0].{name}"
         elif self.similar:
             where = (f"nothing matched; {len(self.similar)} merely resemble it (result.similar) — "
                      f"say so rather than serving the closest one")
@@ -244,10 +258,32 @@ class FindResult(list):
             where = "nothing in the world matches — say so, don't fill the gap"
         raise AttributeError(f"a search result has no {name!r}: it's the matches, not the entity. Use {where}.")
 
+    def _the_one(self):
+        """The one this search found — when the search found exactly one.
+
+        `result.main` is what a host reaches for, and it should be right: one match and nothing
+        to choose between is an answer. Where there is a choice the world does not make it; it
+        says what to look at and what would narrow it, because picking the first of several is
+        the guess this design exists to prevent.
+        """
+        if len(self.matches) == 1:
+            return self.matches[0]
+        if self.matches:
+            raise AttributeError(
+                f"the search wasn't unambiguous: {len(self.matches)} of them match. Look with "
+                f"result.matches and narrow what you asked — one more attribute usually settles "
+                f"it (email, organization, a date). result.matches[0] is right only if you have "
+                f"a reason to prefer it.")
+        raise AttributeError(
+            "nothing matched" + (f"; {len(self.similar)} merely resemble it (result.similar) — "
+                                 "say so rather than serving the closest one"
+                                 if self.similar else " — say so rather than filling the gap")
+            + ". result.matched is False for exactly this.")
+
     def __repr__(self):
-        if not self.main:
+        if not self.matches:
             return f"FindResult(no exact match; {len(self.similar)} similar: {list.__repr__(self.similar)})"
-        return f"FindResult(matched={list.__repr__(self.main)}, also similar={list.__repr__(self.similar)})"
+        return f"FindResult(matched={list.__repr__(self.matches)}, also similar={list.__repr__(self.similar)})"
 
 
 def contradictions(instance, attrs: dict) -> list[tuple]:

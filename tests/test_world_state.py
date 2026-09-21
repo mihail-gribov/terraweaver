@@ -41,18 +41,18 @@ def main() -> int:
     Person, Organization = classes["Person"], classes["Organization"]
 
     # --- one row is one object ---
-    first = Person.find(email="ada@example.com").main[0]
-    second = Person.find(email="ada@example.com").main[0]
+    first = Person.find(email="ada@example.com").matches[0]
+    second = Person.find(email="ada@example.com").matches[0]
     check("the same row loads as the same object", first is second)
 
     # A settled change must survive an older reference to the same entity being saved again.
     # This is how a resolved contradiction used to revert itself: whoever saved last won.
-    dataworks = Organization.find(name="DataWorks").main[0]
+    dataworks = Organization.find(name="DataWorks").matches[0]
     needs = world.ensure(Person, email="ada@example.com", organization=dataworks)
     run_skill(needs, lambda question, options: 0, world)
     store.save_graph(first)  # an earlier reference, saved after the change
     check("a settled change isn't overwritten by an older reference",
-          Person.find(email="ada@example.com").main[0].organization.name == "DataWorks")
+          Person.find(email="ada@example.com").matches[0].organization.name == "DataWorks")
 
     # --- relationships hold on both sides ---
     classes, store, world = fresh_world()
@@ -61,16 +61,16 @@ def main() -> int:
     acme = Organization(name="Acme")
     bob.organization = acme
     bob.save()
-    stored_acme = Organization.find(name="Acme").main[0]
+    stored_acme = Organization.find(name="Acme").matches[0]
     check("linking one side links the other", [p.full_name for p in stored_acme.employees] == ["Steve"])
     acme.add_contact(bob)
     check("linking again through a method doesn't list them twice", [p.full_name for p in acme.employees] == ["Steve"])
-    check("and it survives storage", Person.find(email="steve@acme.com").main[0].organization.name == "Acme")
+    check("and it survives storage", Person.find(email="steve@acme.com").matches[0].organization.name == "Acme")
 
     # --- a fact reaches storage even when the return value is thrown away ---
     classes, store, world = fresh_world()
     Person = classes["Person"]
-    ada = Person.find(email="ada@example.com").main[0]
+    ada = Person.find(email="ada@example.com").matches[0]
     before = len(store.load_all("Preference", classes))
     ada.add_fact(predicate="likes", value="chess")  # return deliberately discarded
     ada.save()
@@ -82,11 +82,11 @@ def main() -> int:
     # --- an assignment is the host's statement: it goes through, and the old value is kept ---
     classes, store, world = fresh_world()
     Person, Organization = classes["Person"], classes["Organization"]
-    ada = Person.find(email="ada@example.com").main[0]
+    ada = Person.find(email="ada@example.com").matches[0]
     techcorp, dataworks = Organization.get(name="TechCorp"), Organization.get(name="DataWorks")
     ada.organization = dataworks
     check("an assignment goes through without a question",
-          Person.find(email="ada@example.com").main[0].organization is dataworks)
+          Person.find(email="ada@example.com").matches[0].organization is dataworks)
     past = ada.history("organization")
     check("the old value stays in the history",
           [p.value for p in past] == [techcorp, dataworks] and past[0].until is not None and past[1].until is None)
@@ -97,7 +97,7 @@ def main() -> int:
     check("ensure with a conflicting value asks", getattr(needs, "skill", None) == "resolve_contradiction")
     check("and offers that it's a different person", len(getattr(needs, "options", [])) == 3)
     check("the world is untouched until the user decides",
-          Person.find(email="ada@example.com").main[0].organization is techcorp)
+          Person.find(email="ada@example.com").matches[0].organization is techcorp)
     other = world.settle(needs, new=True)
     check("answering 'a different one' creates a second person and leaves the first alone",
           other is not ada and other.organization is dataworks and ada.organization is techcorp)
@@ -115,11 +115,11 @@ def main() -> int:
         text, blew_up = "", True
     check("printing a cyclic graph doesn't recurse", not blew_up)
     check("references appear as labels, not expansions", "<Vacancy " in text or "<Organization " in text, text[:120])
-    check("and the text stays readable", len(repr(Person.find(email="ada@example.com").main[0])) < 400)
+    check("and the text stays readable", len(repr(Person.find(email="ada@example.com").matches[0])) < 400)
 
     classes, store, world = fresh_world()
     Person, Organization = classes["Person"], classes["Organization"]
-    ada = Person.find(email="ada@example.com").main[0]
+    ada = Person.find(email="ada@example.com").matches[0]
 
     # --- a write the class can't hold fails loudly instead of vanishing on save ---
     try:
@@ -136,7 +136,7 @@ def main() -> int:
         derived_refused = True
     check("a derived side of a relationship can't be set", derived_refused)
     dataworks = Organization.get(name="DataWorks")
-    world.settle(Person.find(email="ada@example.com").main[0].__class__.ensure(email="ada@example.com", organization=dataworks), 0)
+    world.settle(Person.find(email="ada@example.com").matches[0].__class__.ensure(email="ada@example.com", organization=dataworks), 0)
     check("changing jobs moves a person between employee lists",
           ada not in techcorp.employees and ada in dataworks.employees)
 
@@ -168,7 +168,7 @@ def main() -> int:
     initech.notes = None
     store.save_graph(job)
     check("the same graph saves once fixed",
-          Person.find(email="carol@initech.com").main[0].organization.name == "Initech")
+          Person.find(email="carol@initech.com").matches[0].organization.name == "Initech")
 
     # A transaction spanning several graphs — one agent script's changes — is one unit too.
     classes, store, world = fresh_world()
@@ -187,7 +187,7 @@ def main() -> int:
     from datetime import date
     classes, store, world = fresh_world()
     Person = classes["Person"]
-    ada = Person.find(email="ada@example.com").main[0]
+    ada = Person.find(email="ada@example.com").matches[0]
     ada.describe("allergic to nuts")
     ada.describe("might move to Berlin", when=date(2026, 10, 1), tentative=True)
     texts = [c.text for c in ada.described()]
@@ -220,7 +220,7 @@ def main() -> int:
     # --- a record's period: ended things become history, never disappear ---
     from terraweaver.conditions import after, before, between, now
     Vacancy, Organization, Event = classes["Vacancy"], classes["Organization"], classes["Event"]
-    dataworks = Organization.find(name="DataWorks").main[0]
+    dataworks = Organization.find(name="DataWorks").matches[0]
     closed = Vacancy.ensure(title="Staff SRE", organization=dataworks, ttl=timedelta(days=-1))
     check("an ended record drops out of ordinary reads",
           "Staff SRE" not in [v.title for v in Vacancy.find(organization=dataworks)])

@@ -18,7 +18,7 @@ the same requirement to say why. Two authors, one mechanism.
     ```procedure Person.colleagues(self)
     because: asked three times this week — who else works where this person works
     org = self.organization
-    return [p for p in Person.find(organization=org).main if p != self] if org else []
+    return [p for p in Person.find(organization=org).matches if p != self] if org else []
     ```
 
 What the file declares is re-read when the file changes, and what it declared before is taken

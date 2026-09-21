@@ -19,7 +19,7 @@ assert len(meetups) == 1, f"expected one meetup, got {len(meetups)}"
 m = meetups[0]
 assert m.start_time.hour == 19, f"meetup at {m.start_time}"
 assert Person.get(email="anna.sullivan@example.com") in m.participants, "Anna Sullivan should be a participant"
-priya = Person.find(email="priya@example.com").main
+priya = Person.find(email="priya@example.com").matches
 assert len(priya) == 1, "Priya recorded once"
 assert priya[0].organization.name == "GreenGrid"
 gg = Organization.get(name="GreenGrid")

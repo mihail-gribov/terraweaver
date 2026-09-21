@@ -65,7 +65,7 @@ def main() -> int:
     rt.world.procedures.define(
         "colleagues", "colleagues(self)",
         "org = self.organization\n"
-        "return [p for p in Person.find(organization=org).main if p != self] if org else []",
+        "return [p for p in Person.find(organization=org).matches if p != self] if org else []",
         because="asked three times this week: who else works where this person works",
         attaches_to="Person")
     rt.world.procedures.bind(rt.classes)

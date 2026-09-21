@@ -141,7 +141,7 @@ async def variables(ctx: Context) -> str:
 @server.tool()
 async def set_variable(name: str, expression: str, description: str, ctx: Context) -> str:
     """Set a world variable, shared by every session, to the value of a Python expression over
-    the world — e.g. `Person.find(email="ann@x.org").main[0]`, `Vacancy.find(status="applied").main`
+    the world — e.g. `Person.find(email="ann@x.org").matches[0]`, `Vacancy.find(status="applied").matches`
     or `42`. An entity is kept by id, so it always reads as it is now; other values are snapshots.
     The description must say what it is and why it is kept."""
     key = _session_key(ctx)

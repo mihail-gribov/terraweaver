@@ -691,7 +691,7 @@ def _entity_ids(values) -> set:
             if isinstance(item, Entity) and getattr(item, "id", None):
                 found.add(item.id)
             else:
-                main = getattr(item, "main", None)
+                main = getattr(item, "matches", None)
                 if isinstance(main, (list, tuple)):
                     found |= {e.id for e in main if isinstance(e, Entity) and getattr(e, "id", None)}
     return found

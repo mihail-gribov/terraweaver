@@ -94,7 +94,7 @@ def main() -> int:
     told = choice.run('anna = Person.get(full_name="Anna Sullivan"); print(anna.full_name)', "one")
     check("working with one of the candidates settles the name",
           any("Anna Sullivan" in line for line in told["assumed"]), str(told["assumed"]))
-    later = choice.run('again = Person.find(full_name="Annie"); print(again.main[0].full_name)', "two")
+    later = choice.run('again = Person.find(full_name="Annie"); print(again.matches[0].full_name)', "two")
     check("and a later conversation does not ask again",
           "Anna Sullivan" in (later["output"] or ""), str(later["output"] or later["error"]))
 
@@ -132,7 +132,7 @@ def main() -> int:
 
     kept = WorldRuntime(str(Path(tempfile.mkdtemp()) / "kept.db"), fixture="job_search", rebuild=True)
     kept.run('annie = Person.find(full_name="Annie")', "one")
-    by_find = kept.run('anna = Person.find(full_name="Anna Sullivan")\nprint(anna.main[0].job_title)', "one")
+    by_find = kept.run('anna = Person.find(full_name="Anna Sullivan")\nprint(anna.matches[0].job_title)', "one")
     check("keeping one of them from a find settles it too",
           any("Anna Sullivan" in line for line in by_find["assumed"]), str(by_find["assumed"]))
 
@@ -148,7 +148,7 @@ def main() -> int:
           failed["error"] is not None and any("Anna Sullivan" in line for line in failed["assumed"]),
           str(failed["assumed"]))
     check("and the next conversation goes with it",
-          "Anna Sullivan" in (broke.run('print(Person.find(full_name="Annie").main[0].full_name)',
+          "Anna Sullivan" in (broke.run('print(Person.find(full_name="Annie").matches[0].full_name)',
                                         "two")["output"] or ""))
 
     apart = WorldRuntime(str(Path(tempfile.mkdtemp()) / "apart.db"), fixture="job_search", rebuild=True)

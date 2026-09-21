@@ -57,7 +57,7 @@ def main() -> int:
     techcorp = Organization.get(name="TechCorp")
     techcorp.website = "https://www.techcorp.com/"
     check("a company website matches on its domain",
-          Organization.find(website="https://careers.techcorp.com/jobs").main == [techcorp])
+          Organization.find(website="https://careers.techcorp.com/jobs").matches == [techcorp])
     twin = Person.new(full_name="Ada L", email="Ada@Example.com")
     # An address nobody else has is not a resemblance. The same rule identification uses
     # everywhere here: one candidate, nothing that disagrees, no question — and what the host
