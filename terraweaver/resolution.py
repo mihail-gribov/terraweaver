@@ -70,21 +70,23 @@ class NeedsResolution:
     def __bool__(self) -> bool:
         return True  # it is something, and it must not read as "nothing came back"
 
-    def relate(self, other, kind: str, /, **attrs):
-        """A link to something that is still a question: held, not refused.
+    # Writing to something that is still a question: held, not refused. Refusing raised, and a
+    # raise discards the whole run — so one unanswerable person in a list of four took the other
+    # three down with her, including the ones nothing was wrong with. Reads still raise: there
+    # is no honest value to give back for "what is this one's email".
+    HELD = ("relate", "tag", "untag", "add", "drop", "comment", "keep", "repeat", "expire")
 
-        Refusing raised, and a raise discards the whole run — so one unanswerable person in a
-        list of four took the other three down with her, including the ones nothing was wrong
-        with. The link is kept here instead and made the moment the question is settled; until
-        then it exists nowhere, which is the truth. Whoever answers gets it for free.
-        """
-        self.context.setdefault("held_links", []).append((other, kind, attrs))
-        ontology.note_hint(
-            f"{self.reason.split(' — ')[0]}: this {kind} link is held until that is settled — "
-            f"world.settle(<this question>, <the one they meant>) makes it, or new=True does. "
-            f"Nothing else in this run is affected."
-        )
-        return None
+    def _hold(self, name: str):
+        def held(*args, **kwargs):
+            self.context.setdefault("held", []).append((name, args, kwargs))
+            ontology.note_hint(
+                f"{self.reason}: this {name} is held until that is settled — "
+                f"world.settle(<this question>, <the one they meant>) applies it, or new=True "
+                f"does. Nothing else in this run is affected."
+            )
+            return None
+
+        return held
 
     def __getattr__(self, name: str):
         # Reached only for attributes this object doesn't have — usually an entity's, because
@@ -92,6 +94,8 @@ class NeedsResolution:
         # so the next run is the right one rather than the same mistake.
         if name.startswith("_"):
             raise AttributeError(name)
+        if name in NeedsResolution.HELD:
+            return self._hold(name)
         raise AttributeError(
             f"a question has no {name!r}: this is {self.reason}, not the entity. Print it to see "
             f"the candidates (.similar), ask the user, then world.settle(<this>, <the one they "
@@ -188,10 +192,10 @@ def contradicting_value(instance, attr: str, existing_value, incoming_value) -> 
     )
 
 
-def _make_held_links(world, needs: NeedsResolution, entity) -> None:
-    """The links that were waiting on this answer, made now that there is one to hang them on."""
-    for other, kind, attrs in needs.context.pop("held_links", []):
-        world.relate(entity, other, kind, **dict(attrs))
+def _apply_held(world, needs: NeedsResolution, entity) -> None:
+    """Everything that was waiting on this answer, done now that there is one to do it to."""
+    for name, args, kwargs in needs.context.pop("held", []):
+        getattr(entity, name)(*args, **kwargs)
 
 
 def run_skill(needs: NeedsResolution, ask_user: Callable[[str, list[str]], int], world) -> Any:
@@ -213,11 +217,11 @@ def run_skill(needs: NeedsResolution, ask_user: Callable[[str, list[str]], int],
         if choice < len(needs.candidates):
             settled = world.apply_attrs(needs.candidates[choice], needs.context["incoming"])
             world.remember_choice(needs, settled)
-            _make_held_links(world, needs, settled)
+            _apply_held(world, needs, settled)
         else:
             settled = world.create(needs.context["class_name"], needs.context["incoming"])
             world.remember_choice(needs, None)
-            _make_held_links(world, needs, settled)
+            _apply_held(world, needs, settled)
             # "Someone new" next to someone who answers to the same name is the answer the world
             # can't check: it never sees the conversation, and a host that skipped asking leaves
             # a second Olga behind. The record stands; the doubt is kept (questions.py).

@@ -263,12 +263,23 @@ def main() -> int:
     held = Person.new(full_name="Pete Ivanson")           # same name, nothing to tell them apart
     acme = Organization.ensure(name="Held Links Ltd")
     held.relate(acme, "membership", title="advisor")      # would have raised and discarded it all
+    held.tag("conference")
+    held.comment("met at the conference")
     alongside = Person.new(full_name="Quinn Ivers", email="quinn@x.org")
     check("the rest of the batch survives a question", isinstance(alongside, Person))
     settled = world.settle(held, petr)
-    check("and the held link is made once the question is answered",
-          any(r.other(settled) is acme for r in settled.relations("membership")),
-          str([r.display_name() for r in settled.relations("membership")]))
+    check("and everything held is done once the question is answered",
+          any(r.other(settled) is acme for r in settled.relations("membership"))
+          and "conference" in (settled.tags or [])
+          and any("conference" in c.text for c in settled.comments()),
+          str([settled.tags, [r.display_name() for r in settled.relations("membership")]]))
+    reading = None
+    try:
+        held.email
+    except AttributeError as exc:
+        reading = str(exc)
+    check("reading a question is still refused — there is no honest value to give",
+          reading is not None and "a question has no" in reading, str(reading))
 
     # --- who the user meant by a name is remembered ---
     annie = Person.find(full_name="Annie")
