@@ -98,6 +98,15 @@ def main() -> int:
     check("and a later conversation does not ask again",
           "Anna Sullivan" in (later["output"] or ""), str(later["output"] or later["error"]))
 
+    loop = WorldRuntime(str(Path(tempfile.mkdtemp()) / "loop.db"), fixture="job_search", rebuild=True)
+    asking = loop.run('annie = Person.find(full_name="Annie")\n'
+                      'for p in annie.similar[:3]:\n    print(p.full_name)', "one")
+    check("printing the candidates settles nothing, whatever a loop leaves bound",
+          asking["assumed"] == [], str(asking["assumed"]))
+    answering = loop.run('anna = Person.get(full_name="Anna Sullivan")\nprint(anna.job_title)', "one")
+    check("and the run after it does settle it",
+          any("Anna Sullivan" in line for line in answering["assumed"]), str(answering["assumed"]))
+
     kept = WorldRuntime(str(Path(tempfile.mkdtemp()) / "kept.db"), fixture="job_search", rebuild=True)
     kept.run('annie = Person.find(full_name="Annie")', "one")
     by_find = kept.run('anna = Person.find(full_name="Anna Sullivan")\nprint(anna.main[0].job_title)', "one")

@@ -297,7 +297,7 @@ class WorldRuntime:
         """What these methods do, in full, with examples where they help."""
         return describe_methods(self.specs, names)
 
-    def _learn_name_choice(self, session, recording) -> list[str]:
+    def _learn_name_choice(self, session, recording, before: dict) -> list[str]:
         """Take the answer to "which Annie?" in the form a host actually gives it.
 
         The world only ever learned a name choice through `world.settle(...)`, and hosts rarely
@@ -311,13 +311,19 @@ class WorldRuntime:
         assumed in silence, so a wrong reading costs one sentence to correct.
         """
         said: list[str] = []
+        fresh = [value for name, value in session.namespace.items()
+                 if before.get(name) != id(value)]
         touched = {e.id for e in _entities_of(recording) if getattr(e, "id", None)}
-        touched |= _entity_ids(session.namespace.values())
+        touched |= _entity_ids(fresh)
         if not touched:
             return said
         for value in list(session.namespace.values()):
             if (not isinstance(value, NeedsResolution) or value.skill != "resolve_ambiguity"
                     or value.context.get("learned")):
+                continue
+            # Never in the run that raised it: the question and its answer are two moments, and
+            # a candidate bound while the question is being asked is the asking, not the answer.
+            if any(value is one for one in fresh):
                 continue
             chosen = [c for c in value.candidates if getattr(c, "id", None) in touched]
             if len(chosen) != 1:
@@ -398,6 +404,11 @@ class WorldRuntime:
             namespace.pop(name, None)
         namespace.update(world_vars)
         session.world_vars = set(world_vars)
+        # What the namespace held before this run, so the learner below can tell what this run
+        # bound from what was lying around. A loop variable outlives its loop in Python, and
+        # `for p in annie.similar` left the last candidate bound — which once taught the world
+        # the wrong Anna.
+        before = {name: id(value) for name, value in namespace.items()}
         try:
             ontology.set_open_tokens(self.world.questions.tokens())
             tree = _variables_by_name(sandbox.check(code, protected=set(world_vars) | ALWAYS, always=ALWAYS))
@@ -407,7 +418,7 @@ class WorldRuntime:
                     exec(compile(tree, "<run>", "exec"), namespace)
                 access = dict(counts)
                 self._persist(recording, namespace)
-                learned = self._learn_name_choice(session, recording)
+                learned = self._learn_name_choice(session, recording, before)
                 effects = _effects(recording, created={id(o) for o in self.store._tx_new_ids})
                 effects["assumed"] += learned
                 session.touched |= {e.id for e in _entities_of(recording)}
@@ -429,7 +440,7 @@ class WorldRuntime:
             # remembered choice, undone by an unrelated AttributeError eight lines later.
             if recording is not None:
                 with self.store.transaction():
-                    effects["assumed"] += self._learn_name_choice(session, recording)
+                    effects["assumed"] += self._learn_name_choice(session, recording, before)
         new_names = session.sync()
         result = {
             "session_reset": key in self.idle_reset,
