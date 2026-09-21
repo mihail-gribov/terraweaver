@@ -22,6 +22,7 @@ TERRAWEAVER_TOKEN, else from `.terraweaver-token`, generated on first use.
 import argparse
 import hmac
 import ipaddress
+import json
 import logging
 import os
 import secrets
@@ -72,19 +73,45 @@ async def describe_world(ctx: Context) -> str:
 
 
 @server.tool()
-async def describe_classes(names: list[str], ctx: Context) -> str:
+async def describe_classes(names: list[str] | str | None = None, ctx: Context = None,
+                           class_names: list[str] | str | None = None) -> str:
     """What these classes are made of: attributes with their types, methods, and the relations
     they take part in. The world's prompt lists the class names; ask here for the few a task
     needs, e.g. ["Person", "Event"]."""
-    return runtime.describe_classes(names)
+    return runtime.describe_classes(_names(names, class_names))
 
 
 @server.tool()
-async def describe_methods(names: list[str], ctx: Context) -> str:
+async def describe_methods(names: list[str] | str | None = None, ctx: Context = None,
+                           method_names: list[str] | str | None = None) -> str:
     """What particular methods do, in full and with examples — for the few a task actually uses,
     e.g. ["tag", "repeat", "Event.reschedule"]. describe_classes lists them in one line each;
     this explains them."""
-    return runtime.describe_methods(names)
+    return runtime.describe_methods(_names(names, method_names))
+
+
+def _names(*given) -> list[str]:
+    """Take the names however they arrive.
+
+    A host writing `class_names='["Person", "Organization"]'` gets a validation error and loses
+    a turn to it — seen in a scenario. The tool is called by a language model, so the edge is
+    the right place to be forgiving: either keyword, a list or a string, JSON or commas.
+    """
+    for value in given:
+        if not value:
+            continue
+        if isinstance(value, list):
+            return [str(one).strip() for one in value if str(one).strip()]
+        text = str(value).strip()
+        try:
+            loaded = json.loads(text)
+            if isinstance(loaded, list):
+                return [str(one).strip() for one in loaded if str(one).strip()]
+            text = str(loaded)
+        except ValueError:
+            pass
+        return [part.strip(" '\"[]") for part in text.split(",") if part.strip(" '\"[]")]
+    return []
 
 
 @server.tool()
