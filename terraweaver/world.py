@@ -174,14 +174,16 @@ class World:
         if looked_up_by_name and scored and len(certain) != 1:
             chosen = self._remembered(class_name, attrs, certain or similar)
             if chosen is not None:
-                return matching.FindResult([chosen], [inst for inst, _ in scored if inst is not chosen])
+                return matching.FindResult([chosen], [inst for inst, _ in scored if inst is not chosen],
+                                           class_name)
             only = self._only_match(class_name, attrs, scored)
             if only is not None:
-                return matching.FindResult([only], [inst for inst, _ in scored if inst is not only])
+                return matching.FindResult([only], [inst for inst, _ in scored if inst is not only],
+                                           class_name)
             needs = ambiguous_identity(class_name, attrs, certain or similar, exact=bool(certain))
             self.pending = needs
             return needs
-        return matching.FindResult(certain, similar)
+        return matching.FindResult(certain, similar, class_name)
 
     def _only_match(self, class_name: str, attrs: dict, scored: list):
         """One candidate, and nothing that disagrees with it, is not an ambiguity — it's them.

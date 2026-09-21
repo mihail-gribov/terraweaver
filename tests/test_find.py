@@ -244,7 +244,9 @@ def main() -> int:
     check("and points at where to look", "similar" in crowded or "result.matches" in crowded, crowded)
     empty = why_not(lambda: Person.find(full_name="Nobody At All").main)
     check("none: it says nothing matched rather than serving the closest",
-          "nothing matched" in empty, empty or "(no refusal)")
+          "nothing in the world matches" in empty, empty or "(no refusal)")
+    check("and names all three ways on: ask differently, or record it as new",
+          "needs changing" in empty and "Person.new(...)" in empty, empty)
 
     print()
     if failures:

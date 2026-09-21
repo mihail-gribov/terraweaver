@@ -229,8 +229,10 @@ class FindResult(list):
     exact guess this design exists to prevent.
     """
 
-    def __init__(self, matches: list, similar: list):
+    def __init__(self, matches: list, similar: list, class_name: str | None = None):
         super().__init__(list(matches) + list(similar))
+        self._class_name = class_name or (type(matches[0]).__name__ if matches else
+                                          type(similar[0]).__name__ if similar else "")
         self.matches = Matches(matches, "matches")
         self.similar = Matches(similar, "similar")
 
@@ -274,11 +276,22 @@ class FindResult(list):
                 f"result.matches and narrow what you asked — one more attribute usually settles "
                 f"it (email, organization, a date). result.matches[0] is right only if you have "
                 f"a reason to prefer it.")
+        what = self._class_name or "one"
+        made = f"{what}.new(...)" if self._class_name else "Class.new(...)"
+        if self.similar:
+            raise AttributeError(
+                f"nothing matched, though {len(self.similar)} resemble it — they are in "
+                f"result.similar, look before deciding. Three ways on, and they are different "
+                f"answers: one of those is the one meant (name it, or ask the user which), or "
+                f"what you asked needs changing (another attribute, a fuller name), or this "
+                f"{what} is not in the world yet and the user is telling you about it now — "
+                f"then record it with {made}. Serving the closest resemblance is none of them.")
         raise AttributeError(
-            "nothing matched" + (f"; {len(self.similar)} merely resemble it (result.similar) — "
-                                 "say so rather than serving the closest one"
-                                 if self.similar else " — say so rather than filling the gap")
-            + ". result.matched is False for exactly this.")
+            f"nothing in the world matches that. Either what you asked needs changing — a "
+            f"fuller name, another attribute, any_time=True for something ended — or there is "
+            f"no such {what} here yet: if the user is telling you about it, record it with "
+            f"{made}; if they are asking about it, say it isn't there rather than filling the "
+            f"gap. result.matched is False for exactly this.")
 
     def __repr__(self):
         if not self.matches:
