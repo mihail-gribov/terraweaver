@@ -123,6 +123,9 @@ def main() -> int:
                       'for p in annie.similar[:3]:\n    print(p.full_name)', "one")
     check("printing the candidates settles nothing, whatever a loop leaves bound",
           asking["assumed"] == [], str(asking["assumed"]))
+    over_similar = loop.run('for person in annie.similar:\n    print(person.full_name)', "one")
+    check("and neither does looping over them a run later",
+          over_similar["assumed"] == [], str(over_similar["assumed"]))
     answering = loop.run('anna = Person.get(full_name="Anna Sullivan")\nprint(anna.job_title)', "one")
     check("and the run after it does settle it",
           any("Anna Sullivan" in line for line in answering["assumed"]), str(answering["assumed"]))

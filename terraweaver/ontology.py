@@ -89,6 +89,10 @@ class Recording:
         self.changed: dict[int, Any] = {}
         self.attrs: dict[int, set] = {}
         self.found: dict[int, Any] = {}
+        # Entities a query handed back, as distinct from the one get() settled on. Only the
+        # world's own doors put anything here, which is what makes it usable as evidence: a
+        # variable left over from a loop looks exactly like a choice, and this does not.
+        self.looked_up: dict[int, Any] = {}
         self.remarks: list[str] = []  # comments added, forgotten or confirmed, as the host should read them
         self.assumed: list[str] = []  # identities taken from what the user settled before
         self.hints: list[str] = []  # what the world suggests about a write that went through
@@ -125,6 +129,15 @@ def _note_changed(entity, attr: str | None = None) -> None:
         _CHANGED.changed[id(entity)] = entity
         if attr is not None:
             _CHANGED.attrs.setdefault(id(entity), set()).add(attr)
+
+
+def note_looked_up(entities) -> None:
+    """Entities a query returned — evidence of what the host actually asked the world for."""
+    if _CHANGED is None:
+        return
+    for entity in (entities if isinstance(entities, (list, tuple)) else [entities]):
+        if getattr(entity, "id", None) is not None:
+            _CHANGED.looked_up[id(entity)] = entity
 
 
 def note_found(entity) -> None:

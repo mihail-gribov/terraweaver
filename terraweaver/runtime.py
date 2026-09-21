@@ -320,8 +320,11 @@ class WorldRuntime:
         # left the last of them bound.
         if any(isinstance(one, NeedsResolution) and one.candidates for one in fresh):
             return said
+        # Only what the world itself handed over — get() settling on one, or a query returning
+        # it. A binding in the namespace is not evidence: `for p in annie.similar` leaves the
+        # last candidate bound, and twice now that has taught the world the wrong Anna.
         touched = {e.id for e in _entities_of(recording) if getattr(e, "id", None)}
-        touched |= _entity_ids(fresh)
+        touched |= {e.id for e in recording.looked_up.values() if getattr(e, "id", None)}
         if not touched:
             return said
         for value in list(session.namespace.values()):

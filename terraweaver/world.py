@@ -163,6 +163,7 @@ class World:
                                            class_name, attrs, filter_others=True)
         # Relevance first; between equally good matches, whoever was dealt with most recently.
         scored.sort(key=lambda pair: (-pair[1], -pair[0].accessed_at.timestamp()))
+        ontology.note_looked_up([inst for inst, _ in scored])
         name_key = matching.NAME_KEYS.get(class_name)
         looked_up_by_name = name_key in attrs and not any(
             key in attrs for key in matching.STRONG_KEYS.get(class_name, [])
