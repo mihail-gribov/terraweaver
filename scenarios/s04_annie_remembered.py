@@ -14,7 +14,14 @@ CONVERSATIONS = [
 ]
 
 EXPECT = """
-assert Person.get(full_name="Annie") == Person.get(email="anna.sullivan@example.com"), "the choice wasn't remembered"
+meant = Person.get(email="anna.sullivan@example.com")
+try:
+    taken_as = Person.get(full_name="Annie")
+except NotInWorld:
+    taken_as = None
+assert taken_as == meant, (
+    f"'Annie' is taken as {taken_as.display_name() if taken_as else 'nobody'}, not {meant.display_name()} — "
+    f"the choice wasn't remembered")
 """
 
 ANSWER_MUST = ["CloudNine"]
