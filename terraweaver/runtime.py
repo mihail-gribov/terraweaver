@@ -450,7 +450,7 @@ class WorldRuntime:
                 effects["questions"] = [q for q in effects["questions"]
                                         if not any(q.split(": ", 1)[-1][:50] in line for line in recording.ask_now)]
         except (Exception, sandbox.RunTimeout) as exc:  # noqa: BLE001 - reporting any failure to the host is the point
-            error = _host_traceback(exc)
+            error = _host_traceback(exc, code)
             rolled_back = _discarded(recording)
             self._refresh(namespace)
             standing, unrecorded = _what_survived(namespace, session)
@@ -801,10 +801,28 @@ def format_result(result: dict) -> str:
     return "\n".join(parts)
 
 
-def _host_traceback(exc: BaseException) -> str:
-    """The error as the host needs it: frames of its own code only, plus the message."""
+def _host_traceback(exc: BaseException, code: str = "") -> str:
+    """The error as the host needs it: frames of its own code only, plus the message.
+
+    With the code in hand it also draws the boundary — what ran before the failure, the line
+    that broke, and what was never reached. A host that can see the cut fixes one line and
+    sends the rest; without it, the usual answer is to send everything again.
+    """
     frames = [f for f in traceback.extract_tb(exc.__traceback__) if f.filename == "<run>"]
-    lines = [f"line {f.lineno}" for f in frames[-1:]]
+    lines = []
+    if frames and code:
+        where = frames[-1].lineno or 0
+        source = code.splitlines()
+        if 0 < where <= len(source):
+            ran = len([l for l in source[:where - 1] if l.strip()])
+            left = len([l for l in source[where:] if l.strip()])
+            lines.append(f"line {where}: {source[where - 1].strip()}")
+            lines.append(f"({ran} line(s) ran before it and were rolled back; "
+                         f"{left} after it never ran)")
+        else:
+            lines.append(f"line {where}")
+    elif frames:
+        lines.append(f"line {frames[-1].lineno}")
     lines.append("".join(traceback.format_exception_only(type(exc), exc)).strip())
     return "\n".join(lines)
 

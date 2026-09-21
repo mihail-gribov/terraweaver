@@ -71,6 +71,13 @@ def main() -> int:
     still = rt.run('org = Organization.get(name="FinEdge")\n'
                    'note = "for later"\n'
                    'raise RuntimeError("stop")', "host")
+    cut = rt.run('a = 1\nb = 2\nraise RuntimeError("stop")\nc = 3\nd = 4', "host")
+    check("the failure names the line it broke on, with its text",
+          'line 3: raise RuntimeError("stop")' in cut["error"], cut["error"])
+    check("and says how much ran before it and how much never did",
+          "2 line(s) ran before it" in cut["error"] and "2 after it never ran" in cut["error"],
+          cut["error"])
+
     check("and a failed run says which variables it does not have to redo",
           "[still bound]" in format_result(still) and "org" in format_result(still),
           format_result(still))
