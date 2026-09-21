@@ -260,6 +260,34 @@ def main() -> int:
           any(r.other(friend) is owner for r in friend.relations("social")),
           str([r.display_name() for r in friend.relations("social")]))
 
+    # --- a link the world worked out is a conclusion, and can be dropped as a guess ---
+    ana = Person.new(full_name="Ana Borg", email="ana@borg.example")
+    ana.describe("famous for the Shahnameh")
+    note = world.facts.about(ana.subject_id, "descriptions")[0]
+    book = world.classes["Idea"].new(title="Shahnameh", content="an epic")
+    guess = world.relate(ana, book, "related", label="famous for", description="from a note",
+                         basis=[note])
+    made = world.facts.about(guess.id)
+    check("a derived link is written as the world's own conclusion",
+          made and all(s.is_conclusion and s.source == "world" for s in made),
+          str([(s.slot, s.source) for s in made]))
+    check("and it knows what it rests on",
+          all(note.id in (s.basis or []) for s in made), str([s.basis for s in made]))
+    guess.retract("the note meant someone else")
+    check("retracting a guess removes the link rather than ending it",
+          not [r for r in ana.relations("related", any_time=True)],
+          str([r.display_name() for r in ana.relations("related", any_time=True)]))
+    check("and leaves what it was drawn from untouched",
+          [s.value for s in world.facts.about(ana.subject_id, "descriptions")] == ["famous for the Shahnameh"])
+    stated = world.relate(ana, book, "related", label="wrote", description="the user said so")
+    refused_retract = ""
+    try:
+        stated.retract()
+    except TypeError as exc:
+        refused_retract = str(exc)
+    check("a stated link is not retractable — what was said stays",
+          "what was said stays" in refused_retract, refused_retract or "(allowed)")
+
     print()
     if failures:
         print(f"{len(failures)} failed: {', '.join(failures)}")

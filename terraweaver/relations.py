@@ -89,6 +89,28 @@ class Relation(Entity):
             "rel.object, rel.other(entity). rel.role_of(entity) says what an end is to the other."
         )
 
+    def retract(self, why: str = "withdrawn") -> None:
+        """Drop a link the world worked out and no longer believes.
+
+        Not `expire()`: ending it says it held and then stopped, which about a guess is a second
+        untruth on top of the first. Retracting takes back the statements that made it and
+        removes the link itself; a relation the person actually stated is not retractable here —
+        it was said, and what was said stays.
+        """
+        from terraweaver.ontology import current_world
+
+        world = current_world()
+        said = [s for s in world.facts.about(self.id) if not s.is_conclusion]
+        if said:
+            raise TypeError(
+                f"{self.display_name()} was stated, not worked out — what was said stays. If it "
+                f"has stopped holding, end it: rel.keep(until=...) or rel.expire().")
+        for statement in world.facts.about(self.id):
+            world.facts.retract(statement.id, by=why)
+        world.store.forget(self.id)
+        ontology.note_hint(f"{self.display_name()} was the world's own conclusion and is dropped "
+                           f"({why}) — the statements it rested on are untouched.")
+
     def other(self, entity):
         """The end of this relation that isn't `entity`."""
         return self.object if same(self.subject, entity) else self.subject
@@ -251,7 +273,7 @@ def _overlaps(rel, start, end) -> bool:
 
 # --- writing ---
 
-def relate(world, a, b, kind: str, period: dict, attrs: dict):
+def relate(world, a, b, kind: str, period: dict, attrs: dict, basis: list | None = None):
     """Record that `a` stands in relation `kind` to `b` — or update that relation if it exists."""
     name, reverse = resolve_kind(world.classes, kind)
     subject, obj = (b, a) if reverse else (a, b)
@@ -337,7 +359,7 @@ def relate(world, a, b, kind: str, period: dict, attrs: dict):
     if rel.get("acyclic") and _reaches(world, name, obj, subject):
         raise ValueError(f"{name} can't form a cycle: {obj.display_name()} already leads to {subject.display_name()}")
     _note_flipped(world, name, rel, subject, obj, attrs)
-    created = world.create(name, {"subject": subject, "object": obj, **attrs})
+    created = world.create(name, {"subject": subject, "object": obj, **attrs}, basis=basis)
     waiting = getattr(subject, "_waiting_title", None)
     if waiting and name == "Membership" and attrs.get("primary") and not attrs.get("title"):
         created.title = waiting          # the title that was set before there was a job

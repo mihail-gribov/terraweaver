@@ -139,16 +139,21 @@ def shapes(conn, least: int = WORTH_LOOKING) -> list[dict]:
         if skeleton.count("…") == 0 or len(skeleton) < 6:
             continue
         entry = seen.setdefault(skeleton, {"shape": skeleton, "seen": 0, "classes": Counter(),
-                                           "examples": [], "values": Counter()})
+                                           "examples": [], "values": Counter(),
+                                           "value_classes": Counter()})
         entry["seen"] += 1
         entry["classes"][class_name] += 1
         entry["values"].update(filled)
+        # What kind of thing stood in the gap is the far end of a relation, and the world already
+        # knows it — so the model is told rather than left to guess.
+        entry["value_classes"].update(names[value] for value in filled if value in names)
         if len(entry["examples"]) < 3:
             entry["examples"].append(text)
     out = []
     for entry in seen.values():
         if entry["seen"] >= least:
             entry["classes"] = dict(entry["classes"])
+            entry["value_classes"] = dict(entry["value_classes"])
             entry["values"] = [v for v, _ in entry["values"].most_common(8)]
             out.append(entry)
     return sorted(out, key=lambda e: -e["seen"])
@@ -186,7 +191,13 @@ def schema(world) -> dict:
 
 def evidence(conn, world=None, least: int = WORTH_LOOKING) -> dict:
     """Everything the restructuring pass reasons from, all of it counted rather than read."""
-    return {"prose_share": prose_share(conn),
+    counts = {}
+    for table in _class_tables(conn):
+        rows = _rows(conn, f'select count(distinct subject) from "{table}"')
+        if rows and rows[0][0]:
+            counts[table[len("facts_"):]] = rows[0][0]
+    return {"things_per_class": dict(sorted(counts.items(), key=lambda kv: -kv[1])),
+            "prose_share": prose_share(conn),
             "repeated_notes": [{"text": t, "seen": n, "classes": c} for t, n, c in repeated(conn)[:20]],
             "shapes": shapes(conn, least)[:20],
             "schema": schema(world) if world is not None else None}
@@ -196,11 +207,17 @@ ASK = """\
 You are the model inside a personal world model, looking at notes that piled up in free-text \
 fields and deciding what the world's structure should do about them.
 
-Here is what the world can already say:
+Here is the whole structure of this world — every class with its description and attributes, and
+every relation type with the ends it may join:
 {schema}
 
+How many things of each kind there are:
+{counts}
+
 Here are shapes found in the notes — the same sentence with different things in it, with how \
-often each was seen, under which classes, and which values were substituted:
+often each was seen, under which classes the notes sit ("classes"), what stood in the gap
+("values"), and what kind of thing those were ("value_classes") — a shape whose values are all of
+one kind is a relation to that kind, one whose values are plain words is an attribute:
 {shapes}
 
 Notes repeated word for word:
@@ -242,9 +259,10 @@ def read_notes(evidence: dict, model: str | None = None) -> dict:
     from terraweaver import llm
 
     prompt = ASK.format(
-        schema=json.dumps(evidence.get("schema") or {}, indent=1)[:6000],
-        shapes=json.dumps(evidence.get("shapes") or [], indent=1)[:6000],
-        repeated=json.dumps(evidence.get("repeated_notes") or [], indent=1)[:2000])
+        schema=json.dumps(evidence.get("schema") or {}, indent=1)[:20000],
+        counts=json.dumps(evidence.get("things_per_class") or {})[:1500],
+        shapes=json.dumps(evidence.get("shapes") or [], indent=1)[:9000],
+        repeated=json.dumps(evidence.get("repeated_notes") or [], indent=1)[:1500])
     answer = llm.client().chat.completions.create(
         model=model or llm.DEFAULT_MODEL,
         messages=[{"role": "user", "content": prompt}],
@@ -327,3 +345,117 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+
+# --- putting the answer into effect -------------------------------------------------------
+
+def _merge_proposals(proposals: list[dict]) -> list[dict]:
+    """One proposal per name: the same predicate seen under several shapes is still one thing."""
+    merged: dict[str, dict] = {}
+    for one in proposals:
+        name = (one.get("name") or "").strip()
+        if not name:
+            continue
+        have = merged.setdefault(name, {**one, "from": list(one.get("from") or []),
+                                        "to": list(one.get("to") or []), "shapes": []})
+        for side in ("from", "to"):
+            for end in one.get(side) or []:
+                if end not in have[side]:
+                    have[side].append(end)
+        if one.get("shape") and one["shape"] not in have["shapes"]:
+            have["shapes"].append(one["shape"])
+    return list(merged.values())
+
+
+def _values_in(shape: str, text: str, names: dict[str, str]) -> list[str]:
+    """What stood where the dots are, for this one note."""
+    pattern = re.compile("|".join(re.escape(name) for name in names) or r"(?!x)x")
+    filled = pattern.findall(text)
+    skeleton = re.sub(r"\s+", " ", pattern.sub("…", text).strip())
+    return filled if skeleton == shape else []
+
+
+def apply(world, answer: dict, *, specs_dir=None, dry_run: bool = False) -> dict:
+    """Define what was missing, and read the notes into it.
+
+    Two kinds of write, and the difference matters. A value read out of a note is a **conclusion**
+    with that note as its basis — the world's own weakest statement, retractable one at a time,
+    and the note stays where it is. A link between two things is an ordinary relation, because a
+    relation is not one slot on one subject; that is a gap worth closing later, and until then a
+    wrong link is undone by ending it rather than by retracting it.
+
+    Nothing is invented: if a note names something the world has never heard of, the link is
+    skipped rather than the thing conjured. A restructuring pass is for what was already said.
+    """
+    from terraweaver import authoring
+
+    conn = world.store.conn
+    names = known_names(conn)
+    by_name = {}
+    for class_name in list(world.classes):
+        try:
+            for entity in world.all(class_name, limit=None):
+                for slot in NAME_SLOTS:
+                    said = getattr(entity, slot, None)
+                    if isinstance(said, str) and said.strip():
+                        by_name.setdefault(said.strip(), entity)
+                        break
+        except Exception:  # a relation class has no instances to name
+            continue
+
+    author = authoring.Authoring(world, specs_dir)
+    done = {"defined": [], "concluded": 0, "linked": 0, "skipped": 0, "refused": []}
+
+    for proposal in _merge_proposals(answer.get("propose", [])):
+        if dry_run:
+            done["defined"].append(proposal.get("name"))
+            continue
+        try:
+            if proposal.get("kind") == "relation":
+                author.define_relation(proposal["name"], proposal["description"],
+                                       subject=(proposal.get("from") or ["Thing"])[0],
+                                       object=(proposal.get("to") or ["Thing"])[0],
+                                       cardinality="many-to-many",
+                                       over_time=bool(proposal.get("changes", True)))
+            else:
+                author.attribute(proposal.get("on"), proposal["name"], proposal["description"],
+                                 changes=bool(proposal.get("changes", True)))
+            done["defined"].append(proposal.get("name"))
+        except Exception as refused:
+            done["refused"].append(f"{proposal.get('name')}: {refused}")
+
+    targets = [(f.get("shape"), f.get("class"), f.get("slot")) for f in answer.get("fits", [])]
+    targets += [(p.get("shape"), (p.get("from") or [p.get("on")])[0], p.get("name"))
+                for p in answer.get("propose", []) if p.get("shape")]
+
+    for shape, class_name, slot in targets:
+        if not (shape and slot):
+            continue
+        for note_class, subject, text in notes(conn):
+            if class_name and note_class != class_name:
+                continue
+            values = _values_in(shape, text, names)
+            if not values:
+                continue
+            value = values[-1]
+            if dry_run:
+                done["concluded"] += 1
+                continue
+            other = by_name.get(value)
+            kind = slot if slot in {c._spec.get("relation", {}).get("kind")
+                                    for c in world.classes.values()
+                                    if c._spec.get("relation")} else None
+            try:
+                if kind and other is not None:
+                    world.relate(world.store.load(subject, world.classes), other, kind)
+                    done["linked"] += 1
+                elif kind:
+                    done["skipped"] += 1
+                else:
+                    basis = [s.id for s in world.facts.about(subject, "descriptions")
+                             if isinstance(s.value, (str, list))][:1]
+                    world.facts.conclude(subject, slot, value, basis=basis, class_name=note_class)
+                    done["concluded"] += 1
+            except Exception:
+                done["skipped"] += 1
+    return done

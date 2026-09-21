@@ -471,13 +471,14 @@ class Entity:
         return current_world().history.of(self, attr)
 
     def relate(self, other, kind: str, /, *, starts=None, until=None, ttl=None,
-               permanent: bool = False, every=None, lasting=None, **attrs):
+               permanent: bool = False, every=None, lasting=None, basis: list | None = None,
+               **attrs):
         """Record that this entity stands in relation `kind` to `other`; returns the relation.
 
         A relation takes a period like anything else, and a cyclic one the same way: a cleaner
         every other week, a class every Tuesday term-time."""
         made = current_world().relate(self, other, kind, starts=starts, until=until, ttl=ttl,
-                                      permanent=permanent, **attrs)
+                                      permanent=permanent, basis=basis, **attrs)
         return _also_repeats(made, every, lasting, starts, until)
 
     def relations(self, kind: str | None = None, *, any_time: bool = False, history: bool = False) -> list:

@@ -531,11 +531,17 @@ class World:
         for name in sorted(deferred, key=lambda n: relations.APPLY_ORDER.index(n) if n in relations.APPLY_ORDER else 99):
             setattr(instance, name, deferred[name])
 
-    def relate(self, a, b, kind: str, /, starts=None, until=None, ttl=None, permanent: bool = False, **attrs):
+    def relate(self, a, b, kind: str, /, starts=None, until=None, ttl=None,
+               permanent: bool = False, basis: list | None = None, **attrs):
+        """Record that `a` stands in relation `kind` to `b`.
+
+        `basis=[statements]` makes it a conclusion rather than a statement: the world worked the
+        link out from what was said, and says so. Without it nothing changes."""
         from terraweaver import relations
 
         ontology.note_world_call("world_writes")
-        return relations.relate(self, a, b, kind, _period(starts, until, ttl, permanent), attrs)
+        return relations.relate(self, a, b, kind, _period(starts, until, ttl, permanent), attrs,
+                                basis=basis)
 
     def set_period(self, instance, starts=None, until=None, ttl=None, permanent: bool = False) -> None:
         period = _period(starts, until, ttl, permanent)
@@ -554,7 +560,7 @@ class World:
 
             relations.note_gap_on_ending(self, instance)
 
-    def create(self, class_name: str, attrs: dict):
+    def create(self, class_name: str, attrs: dict, basis: list | None = None):
         ontology.note_world_call("world_writes")
         instance = self.classes[class_name](**attrs)
         self.store.save_graph(instance)
@@ -566,7 +572,16 @@ class World:
             if "derived" in attr or name in ontology.MANAGED_VALUE_ATTRS or name == "tags":
                 continue  # tags go through their own door below, so periods work from the start
             value = attrs.get(name, instance.__dict__.get(name))  # as given, not as tidied
-            if value is not None and value != []:
+            if value is None or value == []:
+                continue
+            if basis:
+                # Something the world worked out, not something it was told. It goes where every
+                # conclusion goes — the reasoning tables, weakest source, its basis recorded —
+                # so a derived link can be told from a stated one, ranked below it, and dropped
+                # as a guess rather than ended as if it had once been true.
+                self.facts.conclude(instance.id, name, ontology._as_statement(value),
+                                    basis=basis, run_id=run_id, class_name=class_name)
+            else:
                 self.facts.state(instance.id, name, ontology._as_statement(value),
                                  source=source, run_id=run_id, class_name=class_name)
         if isinstance(attrs.get("tags"), list) and attrs["tags"]:

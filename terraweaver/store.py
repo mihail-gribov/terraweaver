@@ -210,6 +210,19 @@ class Store:
             for instance_id in ids:
                 self._identity.pop(instance_id, None)
 
+    def forget(self, instance_id: str) -> None:
+        """Remove one instance's image. For something the world concluded and no longer believes:
+        the statements behind it are retracted separately, and what was *said* is never removed."""
+        row = self.conn.execute("SELECT class_name FROM instances WHERE id = ?",
+                                (instance_id,)).fetchone()
+        if row is None:
+            return
+        with self.transaction():
+            self.conn.execute(f'DELETE FROM "{self.values_table(row[0])}" WHERE instance_id = ?',
+                              (instance_id,))
+            self.conn.execute("DELETE FROM instances WHERE id = ?", (instance_id,))
+        self._identity.pop(instance_id, None)
+
     def is_live(self, instance) -> bool:
         """Whether this object is the one the identity map holds for its row (or nothing does)."""
         held = self._identity.get(instance.id)
