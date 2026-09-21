@@ -98,6 +98,16 @@ def main() -> int:
     check("and a later conversation does not ask again",
           "Anna Sullivan" in (later["output"] or ""), str(later["output"] or later["error"]))
 
+    waiting = WorldRuntime(str(Path(tempfile.mkdtemp()) / "waiting.db"), fixture="job_search", rebuild=True)
+    waiting.run('barb = Person.new(full_name="Barb Liskov")\n'
+                'barb.tag("conference")\n'
+                'kept = Person.new(full_name="Zoya Ren", email="zoya@x.org")', "one")
+    check("a question in a batch does not take the rest of it down",
+          "Zoya" in (waiting.run('print(Person.get(email="zoya@x.org").full_name)', "two")["output"] or ""))
+    nagged = waiting.run('print("something else")', "one")
+    check("and what is waiting on the answer is said again every run",
+          any("waiting on the answer" in q for q in nagged["questions"]), str(nagged["questions"]))
+
     loop = WorldRuntime(str(Path(tempfile.mkdtemp()) / "loop.db"), fixture="job_search", rebuild=True)
     asking = loop.run('annie = Person.find(full_name="Annie")\n'
                       'for p in annie.similar[:3]:\n    print(p.full_name)', "one")

@@ -421,6 +421,7 @@ class WorldRuntime:
                 learned = self._learn_name_choice(session, recording, before)
                 effects = _effects(recording, created={id(o) for o in self.store._tx_new_ids})
                 effects["assumed"] += learned
+                effects["questions"] += _waiting_on_answers(session)
                 session.touched |= {e.id for e in _entities_of(recording)}
                 # Only what this run raised. Repeating every doubt about every entity a run
                 # happens to touch is noise: the literature's criterion is relevance to the
@@ -640,6 +641,24 @@ def _effects(recording, created: set[int]) -> dict[str, list[str]]:
     return {"created": made, "updated": changed, "found": found, "comments": list(recording.remarks),
             "assumed": list(recording.assumed), "hints": list(recording.hints),
             "questions": list(recording.questions), "ask_now": list(recording.ask_now)}
+
+
+def _waiting_on_answers(session) -> list[str]:
+    """Questions this session is holding writes for, said again every run until they are settled.
+
+    A held write is quiet by design — nothing is guessed — and quiet is how things get lost: a
+    host that never settles the question leaves the membership it wrote unmade and never hears
+    about it again. The doubt outlives the run that raised it, so the reminder does too.
+    """
+    out = []
+    for value in session.namespace.values():
+        held = isinstance(value, NeedsResolution) and value.context.get("held")
+        if held:
+            what = ", ".join(sorted({name for name, _, _ in held}))
+            out.append(f"{value.reason} — {len(held)} thing(s) waiting on the answer ({what}). "
+                       f"world.settle(<it>, <the one they meant>) applies them; new=True records "
+                       f"it as new and applies them to that.")
+    return out
 
 
 def _entity_ids(values) -> set:
