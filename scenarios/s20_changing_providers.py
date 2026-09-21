@@ -17,7 +17,9 @@ TURNS = [
 EXPECT = """
 rao = Person.get(email="rao@smilecare.example")
 ending = [r for r in rao.relations("service", any_time=True) if r.object == owner]
-assert ending and ending[0].valid_until is not None and ending[0].valid_until.date() == date(2026, 10, 1), "Dr. Rao isn't recorded as ending on October 1"
+assert ending, "Dr. Rao's service to the owner isn't in the world at all"
+assert ending[0].valid_until is not None and ending[0].valid_until.date() == date(2026, 10, 1), (
+    f"Dr. Rao's service ends {ending[0].valid_until}, not on October 1 — the handover leaves a gap")
 patel = [p for p in Person.all(limit=None) if "patel" in p.full_name.lower()]
 assert len(patel) == 1, "Dr. Patel not recorded once"
 starting = [r for r in patel[0].relations("service", any_time=True) if r.object == owner]

@@ -213,6 +213,20 @@ def main() -> int:
           any("leaving no tutor in between" in line for line in ended_today.hints),
           str(ended_today.hints))
 
+    # --- a link that runs against every other of its label, where no type check can see it ---
+    with ontology.record_changes() as flipped:
+        vet = Person.new(full_name="Hugo Salt")
+        vet.relate(owner, "service", label="vet")
+        pet_person = Person.new(full_name="Mila Salt")
+        owner.relate(pet_person, "service", label="vet")  # the wrong way round; both are people
+    check("a reversed link is caught by the world's own data",
+          any("goes the other way" in line for line in flipped.hints), str(flipped.hints))
+    with ontology.record_changes() as first_of_its_kind:
+        Person.new(full_name="Cleo Salt").relate(owner, "service", label="chiropractor")
+    check("and the first link of a label is not second-guessed",
+          not any("goes the other way" in line for line in first_of_its_kind.hints),
+          str(first_of_its_kind.hints))
+
     # --- an unanswered question is not an entity to link ---
     asked = Person.new(full_name="Darren")  # resembles Darren Liu: a question, not a person
     linked = refused(lambda: owner.relate(asked, "social", label="friend"))

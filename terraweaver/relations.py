@@ -312,6 +312,7 @@ def relate(world, a, b, kind: str, period: dict, attrs: dict):
         _check_roles(world, name, cls, subject, obj, attrs["role"], start, end)
     if rel.get("acyclic") and _reaches(world, name, obj, subject):
         raise ValueError(f"{name} can't form a cycle: {obj.display_name()} already leads to {subject.display_name()}")
+    _note_flipped(world, name, rel, subject, obj, attrs)
     created = world.create(name, {"subject": subject, "object": obj, **attrs})
     if period:
         world.apply_period(created, period)
@@ -355,6 +356,33 @@ def _note_gap(world, name: str, obj, label: str, start, created) -> None:
                 f"where the new one begins: old.keep(until={timeutil.show(begins)})."
             )
             return
+
+
+def _note_flipped(world, name: str, rel: dict, subject, obj, attrs: dict) -> None:
+    """The one kind of reversed link no type check can catch: both ends the same kind of thing.
+
+    `user.relate(nina, "service", label="dentist")` records that the user is Nina's dentist. The
+    type is satisfied — Person to Person — and the sentence is wrong. The world can still see it,
+    not by knowing what a dentist is, but by reading what it already holds: every other 'dentist'
+    link in this world has this person at the other end. That is consistency with its own data,
+    which is its business; what a dentist is, is not.
+    """
+    label = str(attrs.get("label") or attrs.get("role") or "").strip().lower()
+    if not label or rel.get("symmetric"):
+        return
+    others = [r for r in world.all(name, limit=None, history=True)
+              if str(getattr(r, "label", None) or getattr(r, "role", None) or "").strip().lower() == label]
+    if not others:
+        return
+    as_object = [r for r in others if same(r.object, subject)]
+    as_subject = [r for r in others if same(r.subject, subject)]
+    if as_object and not as_subject:
+        ontology.note_hint(
+            f"This records {subject.display_name()} as {obj.display_name()}'s {label}. Every "
+            f"other {label} link here goes the other way — {as_object[0].display_name()}. If you "
+            f"meant it the usual way round: {obj.display_name().split()[0].lower()}"
+            f".relate({subject.display_name().split()[0].lower()}, '{rel['kind']}', label='{label}')."
+        )
 
 
 def note_gap_on_ending(world, relation) -> None:
