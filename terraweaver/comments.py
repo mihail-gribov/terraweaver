@@ -1,4 +1,19 @@
-"""Dated free-form comments attached to any entity.
+"""Dated remarks: free text about an entity, kept where all free text is kept.
+
+A remark is a description. `anna.comment("signed the lease on Tuesday", when=...)` states one
+more text in `anna.descriptions`, which is a `list[text]` slot and holds as many as anyone cares
+to say. That is the whole merge: the text lives once, in the record, so it is rebuildable,
+retractable, interned with every other text, and found by both searches — by its words
+(`world.where(mentions=...)`, `world.texts(...)`) and by its meaning (`world.like(...)`). Before
+this, a sentence written as a remark could not be found by its words at all unless the host
+happened to know it had gone in as a remark rather than as a description.
+
+What a remark has that a plain description doesn't is kept here and only here: when the thing
+happened (as distinct from when the text starts to hold), whether it is only tentative, and an
+end date it gets by default so notes go stale on their own. One row per remark, holding those
+three things and the name of its text — never the text itself.
+
+The older shape of this module:
 
 The object model can't foresee everything worth knowing: a friend's allergy, that a company
 froze hiring in March, that the user *might* move in spring. Rather than lose such facts or
@@ -26,7 +41,7 @@ SCHEMA = """
 CREATE TABLE IF NOT EXISTS comments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     entity_id TEXT NOT NULL,
-    text TEXT NOT NULL,
+    text TEXT,                   -- only rows written before the merge; the text lives in `texts`
     happened_at TEXT,            -- when the thing itself happened or holds; NULL if unknown
     recorded_at TEXT NOT NULL,   -- when it was written down
     tentative INTEGER NOT NULL DEFAULT 0,
@@ -86,6 +101,15 @@ class Comments:
         store.conn.executescript(SCHEMA)
         # Tables created before remarks could expire lack these columns.
         columns = {row[1] for row in store.conn.execute("PRAGMA table_info(comments)")}
+        if "text_ref" not in columns:
+            store.conn.execute("ALTER TABLE comments ADD COLUMN text_ref TEXT")
+            store.conn.commit()
+            columns.add("text_ref")
+        if _column_required(store.conn, "comments", "text"):
+            # Written when this table held the words themselves. New rows hold only the name of
+            # the text, so the column has to stop being required — and SQLite has no way to
+            # relax a constraint except by rebuilding the table.
+            _relax_text_column(store.conn)
         if "valid_until" not in columns:
             store.conn.execute("ALTER TABLE comments ADD COLUMN valid_until TEXT")
         if "default_ttl" not in columns:
@@ -106,11 +130,15 @@ class Comments:
         recorded = datetime.now(timezone.utc)
         ontology.note_world_call("world_writes")
         with self.store.transaction():
+            # The text goes where every text goes: one more description, stated in the record
+            # with the period this remark holds for.
+            entity.add("descriptions", text.strip(),
+                       starts=when if when is not None else None, until=ends)
             cursor = self.store.conn.execute(
-                "INSERT INTO comments (entity_id, text, happened_at, recorded_at, tentative, valid_until, default_ttl) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (entity.id, text.strip(), _encode_date(when), recorded.isoformat(), int(bool(tentative)),
-                 _encode_date(ends), int(default)),
+                "INSERT INTO comments (entity_id, text, text_ref, happened_at, recorded_at, "
+                "tentative, valid_until, default_ttl) VALUES (?, NULL, ?, ?, ?, ?, ?, ?)",
+                (entity.id, _ref(text), _encode_date(when), recorded.isoformat(),
+                 int(bool(tentative)), _encode_date(ends), int(default)),
             )
         ontology.note_remark(f"added on {entity.display_name()}: {text.strip()}")
         return Comment(cursor.lastrowid, entity, text.strip(), timeutil.moment(when), recorded,
@@ -131,7 +159,7 @@ class Comments:
         """An entity's comments, newest first (by when it happened, else when recorded)."""
         if entity.id is None:
             return []
-        return self._query("entity_id = ?", (entity.id,), since, until, contains, include_expired or any_time)
+        return self._query("c.entity_id = ?", (entity.id,), since, until, contains, include_expired or any_time)
 
     def search(self, since=None, until=None, contains: str | None = None, limit: int = 50,
                include_expired: bool = False, any_time: bool = False) -> list[Comment]:
@@ -162,14 +190,28 @@ class Comments:
 
     def _query(self, where: str, params: tuple, since, until, contains, include_expired: bool = False) -> list[Comment]:
         ontology.note_world_call("world_queries")
-        sql = f"SELECT id, entity_id, text, happened_at, recorded_at, tentative, valid_until FROM comments WHERE {where}"
+        # The words are in the texts table, which is derived: bring it up to date first, or a
+        # remark written a moment ago reads as one whose text has gone.
+        from terraweaver import texts as texts_module
+        from terraweaver.store import run_script
+
+        world = ontology.world_if_bound()
+        if world is not None and getattr(world, "facts", None) is not None:
+            texts_module.rebuild(world)
+        else:
+            run_script(self.store.conn, texts_module.SCHEMA)
+        sql = (f"SELECT c.id, c.entity_id, COALESCE(c.text, t.text), c.happened_at, c.recorded_at, "
+               f"c.tentative, c.valid_until FROM comments c "
+               f"LEFT JOIN texts t ON t.id = c.text_ref WHERE {where}")
         args = list(params)
         if contains:
-            sql += " AND text LIKE ?"
+            sql += " AND COALESCE(c.text, t.text) LIKE ?"
             args.append(f"%{contains}%")
         rows = self.store.conn.execute(sql, args).fetchall()
         out = []
         for cid, entity_id, text, happened, recorded, tentative, valid_until in rows:
+            if not text:  # its text was retracted from the record; the remark goes with it
+                continue
             ends = _decode_date(valid_until)
             if not include_expired and ends is not None and _as_datetime(ends) < _now():
                 continue
@@ -187,6 +229,27 @@ class Comments:
                                      bool(tentative), timeutil.moment(ends), self)))
         out.sort(key=lambda pair: pair[0], reverse=True)
         return [comment for _, comment in out]
+
+
+def _column_required(conn, table: str, column: str) -> bool:
+    return any(row[1] == column and row[3] for row in conn.execute(f"PRAGMA table_info({table})"))
+
+
+def _relax_text_column(conn) -> None:
+    columns = [row[1] for row in conn.execute("PRAGMA table_info(comments)")]
+    conn.execute("ALTER TABLE comments RENAME TO comments_was")
+    conn.executescript(SCHEMA)
+    kept = [c for c in columns if c in {row[1] for row in conn.execute("PRAGMA table_info(comments)")}]
+    conn.execute(f"INSERT INTO comments ({', '.join(kept)}) SELECT {', '.join(kept)} FROM comments_was")
+    conn.execute("DROP TABLE comments_was")
+    conn.commit()
+
+
+def _ref(text: str) -> str:
+    """The name of this text in the texts table — the words alone, so identical remarks share it."""
+    from terraweaver import texts
+
+    return texts.name_of(text.strip())
 
 
 def _encode_date(value) -> str | None:

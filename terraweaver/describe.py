@@ -351,6 +351,11 @@ Every class below shares these, so they aren't repeated for each one:
     question about two dentists goes away without anyone answering it.
 
     entity.comment(text, when=None, tentative=False, until=None, ttl=None, permanent=False)
+        A remark is a description: it goes into entity.descriptions, which holds as many texts
+        as anyone cares to say, and is found by its words (world.where(mentions=...)) and by its
+        meaning like any other. What `comment` adds is when the thing happened (`when=`, as
+        distinct from when the text starts to hold), that it may be only tentative, and an end
+        by default so notes go stale on their own.
         Attach a dated remark to any entity: whatever matters about it but has no attribute —
         a friend's allergy, "hiring frozen since March", "might move in spring". `when` is the
         date it happened or holds (a date or datetime), if known; tentative=True for what isn't
