@@ -36,19 +36,22 @@ ROOT = Path(__file__).resolve().parent.parent
 RESULTS = ROOT / "benchmarks" / "results"
 
 RECORD = """\
-It is {when}. Here is a conversation we had. Record in my world whatever it says about me and \
-my life — people, places, organisations, events, projects, preferences, plans — as of that date. \
-Don't answer anything, don't summarise back to me: just record it, and stop.
+It is {when}. Here is a conversation we had. Record whatever it holds that is worth keeping — \
+about me and my life (people, places, organisations, events, projects, preferences, plans) and \
+about what you told me: advice you gave, options you recommended, figures you looked up. I may \
+ask you later either kind of thing, including what you yourself said. Don't answer anything, \
+don't summarise back to me: just record it, and stop.
 
 {text}"""
 
 ANSWER = """\
-Today is {when}. Answer this question from what you have recorded about me, and nothing else: \
-{question}
+Today is {when}. Here is what I am asking you: {question}
 
-Look through what you recorded before you decide — search it, don't answer from memory of this \
-conversation. Answer in one or two sentences. If, after looking, nothing you recorded answers \
-it, say that you don't know rather than guessing."""
+Answer as my assistant, out of what you have recorded about me — search it first, and don't \
+answer out of this conversation. If I am asking for a fact, give it in one or two sentences, and \
+say you don't know if you have not recorded it. If I am asking for advice or a suggestion, give \
+it, shaped by what you know about me — my preferences and plans are exactly what you recorded \
+them for."""
 
 
 def one(instance, mode: str, model: str, port: int, out_dir: Path, judge_model: str) -> dict:
