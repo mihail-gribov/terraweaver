@@ -264,6 +264,24 @@ def main() -> int:
     check("reading an attribute that isn't there says which one was meant",
           "did you mean 'title'" in misread, misread or "(no refusal)")
 
+    # --- the small accommodations, each one seen costing a live host a statement ---
+    ivo = Person.new(full_name="Ivo Sand", email="ivo@sand.example")
+    ivo.job_title = "analyst"                      # before there is an employer to hold it
+    ivo.relate(Organization.get(name="TechCorp"), "membership", primary=True)
+    check("a title set before the job lands when the job does", ivo.job_title == "analyst",
+          str(ivo.job_title))
+    link = ivo.relations("membership")[0]
+    check("a relation says what kind of link it is", link.kind in ("membership", "employment"),
+          str(link.kind))
+    check("and whether its period has run out", link.expired is False)
+    listing = ""
+    try:
+        Person.find(full_name="Anna", limit=1)
+    except TypeError as exc:
+        listing = str(exc)
+    check("find says it identifies rather than lists, instead of ignoring limit=",
+          "Person.all(limit=...)" in listing, listing or "(accepted silently)")
+
     print()
     if failures:
         print(f"{len(failures)} failed: {', '.join(failures)}")

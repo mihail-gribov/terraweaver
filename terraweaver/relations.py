@@ -59,6 +59,15 @@ class Relation(Entity):
                     return f"{said} — so {obj.display_name()} is {subject.display_name()}'s {role['inverse']}"
         return said
 
+    def __getattr__(self, name):
+        """What kind of link this is — 'membership', 'service' — when the type doesn't declare
+        a `kind` of its own. Reached only when normal lookup fails, so a relation that has its
+        own `kind` attribute keeps it; hosts ask for this constantly and got Python's bare
+        message instead."""
+        if name == "kind":
+            return spec(type(self))["kind"]
+        return Entity.__getattr__(self, name)
+
     @property
     def counterpart(self):
         """The end that isn't the one you asked from — set when the relation came out of
@@ -329,6 +338,10 @@ def relate(world, a, b, kind: str, period: dict, attrs: dict):
         raise ValueError(f"{name} can't form a cycle: {obj.display_name()} already leads to {subject.display_name()}")
     _note_flipped(world, name, rel, subject, obj, attrs)
     created = world.create(name, {"subject": subject, "object": obj, **attrs})
+    waiting = getattr(subject, "_waiting_title", None)
+    if waiting and name == "Membership" and attrs.get("primary") and not attrs.get("title"):
+        created.title = waiting          # the title that was set before there was a job
+        object.__setattr__(subject, "_waiting_title", None)
     if period:
         world.apply_period(created, period)
     _note_same_label(world, name, rel, subject, obj, attrs, start, end, created)
@@ -800,10 +813,15 @@ def _get_job_title(person):
 def _set_job_title(person, title) -> None:
     job = _primary_membership(person)
     if job is None:
-        raise TypeError(
-            "job_title is the role in the person's primary membership — set their organization first, "
-            "or person.relate(org, 'membership', title=...)"
-        )
+        # Held rather than refused: a title with nobody to hold it under is not wrong, it is
+        # early. The host usually writes the two lines in the other order, and refusing cost it
+        # the statement seven times in one pool. It lands the moment an employer does.
+        object.__setattr__(person, "_waiting_title", title)
+        ontology.note_hint(
+            f"{person.display_name()} has no employer recorded yet, so {title!r} is held as the "
+            f"title and set the moment one is: person.relate(org, 'membership', primary=True), "
+            f"or person.organization = org.")
+        return
     job.title = title
 
 

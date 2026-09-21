@@ -421,6 +421,13 @@ class World:
             return attrs
         calls_it = matching.NAME_KEYS.get(class_name)
         synonyms = {w: calls_it for w in ("name", "title", "label", "full_name")} if calls_it else {}
+        for word, instead in (("limit", f"{class_name}.all(limit=...)"),
+                              ("order_by", f"{class_name}.all(...)")):
+            if word in attrs:
+                raise TypeError(
+                    f"{class_name}.find/.get(...) has no {word!r}: it identifies one thing rather "
+                    f"than listing — {instead} is the listing, and world.where({class_name}, ...) "
+                    f"narrows by several conditions at once.")
         left = []
         for given in unknown:
             meant = ontology.did_you_mean(given, sorted(known), synonyms)

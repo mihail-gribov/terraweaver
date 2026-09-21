@@ -500,6 +500,14 @@ class Entity:
         return relations.related(current_world(), self, kind, history or any_time)
 
     @property
+    def expired(self) -> bool:
+        """Whether its period has run out — the word hosts reach for on anything dated."""
+        from terraweaver import timeutil
+
+        until = getattr(self, "valid_until", None)
+        return until is not None and timeutil.as_datetime(until) <= timeutil.now()
+
+    @property
     def starts(self):
         """When it begins to hold (None: since it was recorded) — as given with starts=."""
         from terraweaver import timeutil
