@@ -84,3 +84,29 @@ Three findings, in the order they appeared — the first two were ours, the thir
 
 The third one is the reason to run benchmarks at all: it is a real defect, found by an outside
 question, in the exact place our own scenarios were not looking.
+
+## FactConsolidation, first run (2026-09-21, sh/6k, Haiku, 20 questions)
+
+**12/20 = 60%**, $3.83, 35 minutes (28 of them writing 455 facts in 19 batches, 434 host turns).
+Published numbers on the same task: Zep/Graphiti 7%, Mem0 18%, BM25 48%, HippoRAG-v2 54%, and a
+deterministic `max(serial)` recipe 78% (gpt-4o-mini) / 94.8% (gpt-4o). At n=20 the 95% interval
+is roughly 39–78%, so the honest claim is "clear of the memory products, not yet separable from
+the best method".
+
+**Seven of the eight failures are the same failure**, and it is not retrieval: the world returned
+the value that was stated *first* where a later fact overrode it — Microsoft's CEO (fact 85 then
+188), the quarterback's sport (31 then 50), Japan's official language (240 then 439), Robert
+Parish's position (330 then 334), the author of Sidereus Nuncius (124 then 401). The eighth was a
+plain miss: "the author of The Marriage of Figaro" was recorded (fact 398) and not found.
+
+**Why, from the world's own tables:** the host had nowhere typed to put these, so they went in as
+prose — `Idea.title` with `Idea.descriptions` ("Quarterback position is associated with Muay
+Thai"), and `Related.description` ("Robert Parish plays the position of quarterback"). Supersession
+cannot work on prose: the two tellings sit side by side and the reader takes whichever it meets
+first. The world absorbed 455 open-domain triples without refusing anything — it degraded into
+text instead, which is worse than refusing, because it looks like it worked.
+
+This is the same defect as the BBQ sauce in LongMemEval and the "Pilsner or Lager" that got
+trimmed: **what will be asked about must be recorded as something that can change, not as a
+sentence.** It is the `Preference` gap in docs/TODO.md, now with a number attached: fixing it is
+worth roughly 35 points on this task.
