@@ -24,6 +24,8 @@ married in 2022 is no conflict. Design: docs/relations.md.
 """
 from typing import Any
 
+import difflib
+
 from terraweaver import assembly, ontology, timeutil
 from terraweaver.ontology import Entity
 
@@ -1403,8 +1405,58 @@ def verify(world, least: int = 3) -> list[dict]:
                         f"{', '.join(wider)} at an end.",
                 "settled_by": "widen the type, or these belong to another one",
             })
-    found.extend(_one_idea_two_words(world, least))
+    each_way = _one_word_each_way(world)
+    found.extend(each_way)
+    # One pair, one finding: the precise reading — a link read from both ends, whose remedy is a
+    # reverse name — says more than "these read alike", so it silences the looser one.
+    already = {name for one in each_way for name in one["said"].split() if name in world.classes}
+    found.extend(one for one in _one_idea_two_words(world, least)
+                 if not already & {word.strip("(),") for word in one["said"].split()})
     return found
+
+
+def _one_word_each_way(world) -> list[dict]:
+    """Two types that are one link read from its two ends.
+
+    `employed_by` and `employs` came out of one run as separate types. Reading their descriptions
+    cannot catch it — they are written to differ, one naming the employer and one the employed —
+    and the check that compares descriptions put them comfortably apart. What gives it away is
+    arithmetic: the ends are mirrored and the names share a stem. A type already has a place for
+    the other end; that place is `reverse`, and a second type is a second vocabulary for it.
+    """
+    typed = [(name, spec(cls)) for name, cls in relation_classes(world.classes).items()
+             if not spec(cls).get("free")]
+    seen, out = set(), []
+    for name, rel in typed:
+        ends = (tuple(rel.get("from") or ["any"]), tuple(rel.get("to") or ["any"]))
+        if "any" in ends[0] + ends[1]:
+            continue
+        stem = _asked(rel.get("kind") or name)[0]
+        for other, theirs in typed:
+            if other == name or (other, name) in seen:
+                continue
+            mirrored = (tuple(theirs.get("from") or []), tuple(theirs.get("to") or [])) == (ends[1], ends[0])
+            if not mirrored:
+                continue
+            # By closeness, not by equality: "employed_by" reduces to "employed" and "employs"
+            # to "employs", and one letter of grammar is not a different idea.
+            theirs_stem = _asked(theirs.get("kind") or other)[0]
+            if not theirs_stem or not stem:
+                continue
+            if theirs_stem != stem and difflib.SequenceMatcher(
+                    None, stem, theirs_stem).ratio() < 0.7:
+                continue
+            seen.add((name, other))
+            held = {n: len(world.all(n, limit=None, history=True)) for n in (name, other)}
+            out.append({
+                "about": "one link read from both ends", "type": name, "seen": 2,
+                "said": f"{name} goes {' / '.join(ends[0])} → {' / '.join(ends[1])} and {other} "
+                        f"goes back the other way, on the same word. "
+                        f"{', '.join(f'{n}: {held[n]} links' for n in held)}.",
+                "settled_by": f"keep one and let the other be its reverse name — a type already "
+                              f"has somewhere for the far end",
+            })
+    return out
 
 
 def _one_idea_two_words(world, least: int) -> list[dict]:
