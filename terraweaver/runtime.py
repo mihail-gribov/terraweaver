@@ -913,13 +913,43 @@ def _exec_by_statement(tree, namespace: dict, store) -> None:
     relation and both ends together, inside one call, and either all of that lands or none of
     it does. What the unit is *not* is the whole block a host happened to send — and treating
     it that way threw away everything before the line that broke.
+
+    A statement that raises no longer ends the block either. Counted on one run: 26 blocks of
+    relations failed partway, holding 109 links between them, and 65 of those links were on lines
+    after the break — written by the host, never run, never retried. Keeping what came before was
+    half the job; the other half is that one bad line must not cost the forty behind it.
+
+    The first failure is the one reported, because it is the one that explains the rest. The
+    others are counted and named briefly: a block where everything fails is usually one mistake
+    seen forty times, and forty tracebacks bury it.
     """
     import ast
 
+    broke: list[BaseException] = []
+    ran_after = 0
     for statement in tree.body:
         piece = ast.Module(body=[statement], type_ignores=[])
-        with store.transaction():
-            exec(compile(piece, "<run>", "exec"), namespace)
+        try:
+            with store.transaction():
+                exec(compile(piece, "<run>", "exec"), namespace)
+            if broke:
+                ran_after += 1
+        except (Exception, sandbox.RunTimeout) as failed:  # noqa: BLE001 - carrying on is the point
+            if isinstance(failed, sandbox.RunTimeout):
+                raise                      # out of time is out of time; the rest would not run
+            broke.append(failed)
+            if len(broke) >= _GIVE_UP_AFTER:
+                break
+    if broke:
+        if len(broke) > 1 or ran_after:
+            others = "; ".join(f"{type(one).__name__}: {str(one)[:60]}" for one in broke[1:])
+            ontology.note_hint(
+                f"{len(broke)} statement(s) in this block failed; the rest of the block ran, "
+                f"{ran_after} of them after the first failure — everything that did not raise is "
+                f"in the world. The first failure is reported below"
+                + (f"; the others: {others}." if others else ".")
+            )
+        raise broke[0]
 
 
 def _what_survived(namespace: dict, session) -> tuple[list[str], list[str]]:
@@ -991,6 +1021,12 @@ def format_result(result: dict) -> str:
     if result["new_variables"]:
         parts.append("[new variables] " + "; ".join(f"{k}: {v}" for k, v in result["new_variables"].items()))
     return "\n".join(parts)
+
+
+# How many failing statements before a block is called hopeless. Three is a mistake repeated;
+# beyond that the host is writing against a world it has misunderstood, and running on wastes a
+# turn producing forty copies of one error.
+_GIVE_UP_AFTER = 3
 
 
 # What a host writes when it is adding to the vocabulary rather than using it.

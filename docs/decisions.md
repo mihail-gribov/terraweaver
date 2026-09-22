@@ -17,6 +17,38 @@ Newest first.
 
 ---
 
+## 2026-09-22 · One bad line must not cost the forty behind it
+
+**Seen.** A second base run answered 8 of 20 where the first answered 14, while every count of
+structure improved — 318 typed links against 299, 95 prose facts against 128, 26 types against
+31. Six of the twelve wrong answers said the same thing: "X exists in the world but is not
+recorded as …". The entity was there; the link was not.
+
+Traced to the end: the host writes entities in one block and links in the next, forty or more to
+a block. A statement raises, and every statement after it in that block is never run. Counted
+over the run — **26 blocks of relations failed, holding 109 links, and 65 of those links were on
+lines after the break.** Written by the host, never executed, never retried.
+
+**Done.** A failing statement no longer ends the block. Each still runs in its own transaction
+and a failure still rolls its own statement back; the rest of the block runs. The first failure
+is raised as before, the others are counted and named in one line, and after three failures the
+block is given up.
+
+**Why this.** Per-statement transactions were half the answer and we have been treating them as
+the whole one since they went in. They keep what happened before the break — and the loss was on
+the other side, in what the host had already written and the world simply did not do. Three
+failures is where carrying on stops paying: beyond that it is one misunderstanding repeated, and
+running it forty times buries the one error that explains the rest.
+
+**Not this.** Carrying on past a timeout. Out of time is out of time, and the statements after it
+would not have run anyway.
+
+**How we would know it was wrong.** A block whose later statements depend on the one that failed
+producing a cascade of errors that hides the first — which is what the give-up after three is
+there to prevent, and what to watch in the next run.
+
+---
+
 ## 2026-09-22 · The looking happens on the way in
 
 **Seen.** Two channels reach this host: the description it is handed every turn, and what comes
