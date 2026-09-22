@@ -1,0 +1,105 @@
+# Why the world is the way it is
+
+One entry per decision that changed how the world behaves. Not a changelog — the commits carry
+that. This is the reasoning: what was seen, what was done about it, and what was rejected. A
+decision without its evidence is an opinion, and an opinion cannot be revisited when the evidence
+changes.
+
+The shape of an entry, in order:
+
+- **Seen** — the observation, with the number. Counted in a run, not imagined.
+- **Done** — what changed, in a line.
+- **Why this** — the reasoning, including what it costs.
+- **Not this** — the alternative that was rejected, and why. Leave it out only if there was none.
+- **How we would know it was wrong** — what would have to show up for this to be reopened.
+
+Newest first.
+
+---
+
+## 2026-09-22 · A word the world took is a word it answers to
+
+**Seen.** A host wrote `a.relate(b, "related", label="plays position")` and then read it back with
+`goalkeeper.related("plays position")`. The world refused: "no relation type 'plays position'".
+It had accepted the word on the way in and would not answer to it on the way out.
+
+**Done.** A read by a word that is not a type looks through the free links by their label. A word
+that is neither a type nor a label anybody has used is still refused, with the nearest label
+suggested.
+
+**Why this.** Acceptance that cannot be read back is worth nothing: the fact is in the world and
+the host cannot reach it, which is indistinguishable from not recording it. The refusal for an
+unknown word stays because answering "none" to a word the world has never heard reads as "there
+are no such links", and a typo would pass for an answer.
+
+**Not this.** Making every free link's label a real relation type on the spot. A label is a word
+somebody used once; a type carries cardinality, direction and whether it holds one at a time.
+Promoting every word to a type fills the vocabulary with types nobody checked.
+
+**How we would know it was wrong.** Hosts reading by label instead of defining types at all —
+the vocabulary would stop growing while the free links kept piling up.
+
+---
+
+## 2026-09-22 · A gap is not a refusal
+
+**Seen.** `Idea` declares `content` required. Of seventy things a host tried to record in a
+455-fact run, ten were lost outright; the rest got through by filling the field — "Novel by
+Robert A. Heinlein" for one, an empty string for eight. Those inventions went into the record as
+`source=agent`, indistinguishable from what the person actually said.
+
+**Done.** A required attribute that is not the one identifying the entity no longer blocks
+creation. The entity is made without it and the host is told not to invent one.
+
+**Why this.** A required attribute the host has not got is an invitation to invent one, and an
+invented value is worse than a missing one: the record cannot tell it from something the user
+said, and every later answer inherits it. The identifying attribute stays required, because an
+entity nothing can identify breeds duplicates, and that is a defect no later telling repairs.
+
+**Not this.** Holding the creation as a question for the user. The user does not know the content
+either — it is the host's to supply when it has it. A question here would be work moved to the
+one person who cannot answer it.
+
+**How we would know it was wrong.** Entities accumulating with nothing but a name, where the host
+had the information and simply did not write it.
+
+---
+
+## 2026-09-22 · A link the world cannot type is still a link
+
+**Seen.** 600 host runs in one 455-fact run, 258 with an error. 72 were "this relation type does
+not take these ends" and 22 were "no such relation type". In 51 of those the host's very next
+move was `describe(...)` — the fact written out as a sentence.
+
+**Done.** A relation whose declared ends do not fit, or whose type does not exist, is recorded
+under the free type with the host's own word as its label, and the host is told so.
+
+**Why this.** Prose cannot be superseded: a later correction settles beside the old sentence
+instead of replacing it, so the question stops having an answer. A refusal is only worth making
+when it protects the data; a type mismatch protects nothing and costs the fact. The label is not
+waste — a word that keeps coming back is how the world finds the type it is missing.
+
+**Not this.** Widening the type to fit. The type's ends are what its checks are made of, and
+widening them silently would turn one wrong link into a licence for all of them.
+
+**How we would know it was wrong.** Free links accumulating under labels that already have types
+— the world would be accepting sloppiness rather than absorbing novelty.
+
+---
+
+## 2026-09-22 · One word for one place
+
+**Seen.** Three slots held free text: `descriptions` (dated, in the texts table, supersedable),
+`notes` (a plain string on four classes) and `description` (a plain string on two). A host wrote
+into whichever it remembered.
+
+**Done.** `descriptions` is the only place it is stored. `notes` and `description` read the
+latest of them and write one more. Statements recorded under the old names are read as
+descriptions, so worlds written before this keep what they said.
+
+**Why this.** Only one of the three carried a date, a source and a period — the other two could
+not be superseded and could not be crystallised out of. Three names for one thing also means
+three places to look, and anything that reads free text had to know all three.
+
+**How we would know it was wrong.** Hosts wanting a single summary line that is not the latest
+description — then `notes` is a real attribute and not a spelling of this one.
