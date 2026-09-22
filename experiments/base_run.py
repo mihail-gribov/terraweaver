@@ -19,6 +19,7 @@ The host driver, the benchmark data and the grading are `benchmarks/`, imported 
 """
 import argparse
 import json
+import shutil
 import sqlite3
 import subprocess
 import sys
@@ -162,6 +163,8 @@ def main() -> int:
     parser.add_argument("--model", default="haiku")
     parser.add_argument("--questions", type=int, default=20)
     parser.add_argument("--chunk", type=int, default=25)
+    parser.add_argument("--also", default="mh", choices=["sh", "mh", ""],
+                        help="a second question set to ask the same world (default: mh)")
     parser.add_argument("--facts", type=int, default=0,
                         help="use only the first N facts — for checking the pipeline cheaply")
     parser.add_argument("--port", type=int, default=7070)
@@ -170,7 +173,14 @@ def main() -> int:
     variant = fc.load(args.hops, args.context)
     if args.facts:
         variant.facts = variant.facts[:args.facts]
-    questions = variant.questions[:args.questions]
+    # Both question sets against the one world. They are asked of the same 455 facts, and
+    # building the world is nearly all of the hour and nearly all of the money — so asking the
+    # multi-hop set as well costs a few minutes and gives a second reading that needs no caveat
+    # about the two worlds differing, because there is only one.
+    asking = [(args.hops, variant.questions[:args.questions])]
+    if args.also and args.also != args.hops:
+        asking.append((args.also, fc.load(args.also, args.context).questions[:args.questions]))
+    questions = asking[0][1]
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     out_dir = RESULTS / f"{stamp}-base-{variant.name}-{args.model}"
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -212,25 +222,43 @@ def main() -> int:
                   f"classes: {len(built.get('classes', []))}", flush=True)
 
         asked_on = (last_day + timedelta(days=1)).isoformat()
-        for number, question in enumerate(questions, 1):
-            got = hosting.ask(agent, ASK.format(when=asked_on, question=question.text),
-                              agent.conversation(), None, log, args.model)
-            spent["turns"] += got["turns"]
-            spent["cost"] += got["cost"]
-            right = fc.correct(got["text"], question.gold)
-            results.append({"id": question.id, "question": question.text, "gold": question.gold,
-                            "answer": got["text"][:300], "correct": right,
-                            "turns": got["turns"], "cost": round(got["cost"], 3)})
-            print(f"{'ok ' if right else '   '} {number:>3}/{len(questions)} {question.gold} "
-                  f"<- {got['text'][:80].replace(chr(10), ' ')}", flush=True)
+        for hops, these in asking:
+            print(f"  — {hops} —", flush=True)
+            for number, question in enumerate(these, 1):
+                got = hosting.ask(agent, ASK.format(when=asked_on, question=question.text),
+                                  agent.conversation(), None, log, args.model)
+                spent["turns"] += got["turns"]
+                spent["cost"] += got["cost"]
+                right = fc.correct(got["text"], question.gold)
+                results.append({"id": question.id, "hops": hops, "question": question.text,
+                                "gold": question.gold, "answer": got["text"][:300],
+                                "correct": right, "turns": got["turns"],
+                                "cost": round(got["cost"], 3)})
+                print(f"{'ok ' if right else '   '} {hops} {number:>3}/{len(these)} "
+                      f"{question.gold} <- {got['text'][:70].replace(chr(10), ' ')}", flush=True)
     finally:
         if server:
             hosting.stop(server)
         if agent:
             hosting.forget_folder_memory(agent.cwd)
 
+    by_hops = {}
+    for hops, these in asking:
+        mine = [r for r in results if r["hops"] == hops]
+        by_hops[hops] = {"correct": sum(r["correct"] for r in mine), "of": len(mine)}
+    # The world is kept beside its results. Building it is the hour and the money; the questions
+    # are minutes and pennies, so a saved world is a place to debug readings for nothing — and
+    # `fact_by_fact.py` reads it without a model at all.
+    kept = out_dir / "world"
+    kept.mkdir(exist_ok=True)
+    if db.exists():
+        shutil.copy(db, kept / "world.db")
+        grown = db.parent / "grown"
+        if grown.is_dir():
+            shutil.copytree(grown, kept / "grown", dirs_exist_ok=True)
+
     summary = {"accuracy": round(sum(r["correct"] for r in results) / max(1, len(results)), 3),
-               "questions": len(results), "cost_usd": round(spent["cost"], 2),
+               "by_hops": by_hops, "questions": len(results), "cost_usd": round(spent["cost"], 2),
                "turns": spent["turns"], "minutes": round((time.monotonic() - started) / 60, 1),
                "world": str(db)}
     built = {"vocabulary": vocabulary(db), "census": census(str(db)) if db.exists() else {},
