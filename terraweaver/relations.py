@@ -522,7 +522,7 @@ def take_in(world, kind, idea: str | None = None) -> list:
     asked = _asked(idea or rel.get("kind") or name)[0]
     theirs = {link.id: _asked(getattr(link, "label", "") or "")[0] for link in waiting}
     mine = {i for i, said in theirs.items() if said == asked}
-    if not mine and waiting:
+    if waiting:
         # A type is rarely called what its links were called: `authorship` was written as
         # "author of", and no spelling rule crosses that. So the type is read as what it says it
         # is — its name and its description together — and the labels are ranked against that.
@@ -533,7 +533,10 @@ def take_in(world, kind, idea: str | None = None) -> list:
         vectors = world.meanings.model.embed([says] + ideas)
         close = {idea for idea, v in zip(ideas, vectors[1:])
                  if sum(a * b for a, b in zip(vectors[0], v)) >= _ONE_KIND}
-        mine = {i for i, said in theirs.items() if said in close}
+        # Added to what matched by spelling, not instead of it. Running only when nothing matched
+        # left every inverse spelling behind: three links called "author of" were taken and the
+        # one called "authored by" stayed free, which is the case this was written for.
+        mine |= {i for i, said in theirs.items() if said in close}
     # Told all at once and read again once. Becoming one at a time would rebuild the world
     # between each, and every link still in hand would be a stale copy of a thing that moved.
     moving = [link for link in waiting if link.id in mine]
