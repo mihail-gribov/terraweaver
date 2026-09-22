@@ -273,9 +273,41 @@ def _overlaps(rel, start, end) -> bool:
 
 # --- writing ---
 
+def _as_free_link(world, subject, obj, kind: str, period: dict, attrs: dict, basis, why: str):
+    """A link the named type cannot hold is still a link: record it free rather than refuse it.
+
+    Refusing cost far more than it protected. A host told that `located_in` goes Place → Continent
+    does not look for a better type — it writes the fact into a description, and prose cannot be
+    superseded, so the later correction settles beside the old sentence instead of replacing it.
+    Half the notes in a 455-fact run arrived that way. The word the host reached for is kept as
+    the label, which is also how restructuring finds the type the world is missing: a label that
+    keeps turning up is a type waiting to be declared.
+    """
+    free = next((n for n, c in relation_classes(world.classes).items() if spec(c).get("free")), None)
+    if free is None:                                   # a world without the free type has no room
+        raise ValueError(why)
+    label = str(attrs.get("label") or "").strip() or str(kind).strip()
+    extras = {k: v for k, v in attrs.items() if k not in ("label", "description")}
+    said = str(attrs.get("description") or "").strip()
+    described = said or (f"{subject.display_name()} {label.replace('_', ' ')} {obj.display_name()}"
+                         + (f" ({', '.join(f'{k}: {v}' for k, v in extras.items())})" if extras else ""))
+    ontology.note_hint(
+        f"{why} — recorded as a free link labelled '{label}' instead, so the fact is kept and can "
+        f"be superseded later. Don't write it out as a description as well: that would be the "
+        f"same fact twice, and the sentence would outlive any correction."
+    )
+    return relate(world, subject, obj, spec(world.classes[free])["kind"], period,
+                  {"label": label, "description": described}, basis)
+
+
 def relate(world, a, b, kind: str, period: dict, attrs: dict, basis: list | None = None):
     """Record that `a` stands in relation `kind` to `b` — or update that relation if it exists."""
-    name, reverse = resolve_kind(world.classes, kind)
+    try:
+        name, reverse = resolve_kind(world.classes, kind)
+    except ValueError as unknown:                      # no such type: the link is still a link
+        if not isinstance(a, Entity) or not isinstance(b, Entity):
+            raise
+        return _as_free_link(world, a, b, kind, period, attrs, basis, str(unknown))
     subject, obj = (b, a) if reverse else (a, b)
     cls = world.classes[name]
     rel = spec(cls)
@@ -299,9 +331,10 @@ def relate(world, a, b, kind: str, period: dict, attrs: dict, basis: list | None
     if not isinstance(subject, Entity) or not isinstance(obj, Entity):
         raise TypeError(f"{name} links two entities; got {type(subject).__name__} and {type(obj).__name__}")
     if not _fits(subject, rel["from"]) or not _fits(obj, rel["to"]):
-        raise ValueError(
-            f"{name} goes {' / '.join(rel['from'])} → {' / '.join(rel['to'])}; "
-            f"not {type(subject).__name__} → {type(obj).__name__}. For a link no type fits, use 'related'."
+        return _as_free_link(
+            world, subject, obj, kind, period, attrs, basis,
+            f"{name} goes {' / '.join(rel['from'])} → {' / '.join(rel['to'])}, "
+            f"not {type(subject).__name__} → {type(obj).__name__}",
         )
     if rel.get("same_class") and type(subject) is not type(obj):
         raise ValueError(f"{name} links two of the same kind: {type(subject).__name__} and {type(obj).__name__} differ")

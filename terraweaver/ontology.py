@@ -1117,13 +1117,39 @@ def did_you_mean(word: str, options, extra: dict | None = None) -> str | None:
         return None
     names = [str(one) for one in options]
     near = get_close_matches(str(word), names, n=1, cutoff=0.6)
-    if near:
+    if near and _same_head(str(word), near[0]):
         return near[0]
     plural = [n for n in names if n.rstrip("s") == str(word).rstrip("s")]
     if plural:
         return plural[0]
     swap = (extra or {}).get(str(word))
     return swap if swap in names else None
+
+
+# Tails that carry grammar rather than meaning: two link names sharing one are not therefore
+# close. "invented_by" and "owned_by" agree on four of eleven characters and on nothing else.
+_GRAMMAR_TAILS = ("_by", "_of", "_in", "_at", "_to", "_for", "_with", "_from")
+
+
+def _same_head(word: str, candidate: str) -> bool:
+    """Whether a spelling match survives having its grammatical tail removed.
+
+    Only applied where both words carry such a tail, or where one is the other's bare head:
+    `located_in` still finds `located`, `job_title` still finds `title`, and `invented_by` no
+    longer finds `owned_by`.
+    """
+    from difflib import get_close_matches
+
+    def head(w):
+        for tail in _GRAMMAR_TAILS:
+            if w.endswith(tail) and len(w) > len(tail):
+                return w[: -len(tail)]
+        return w
+
+    a, b = head(word.lower()), head(candidate.lower())
+    if (a, b) == (word.lower(), candidate.lower()):   # no tail on either: nothing to correct for
+        return True
+    return a == b or bool(get_close_matches(a, [b], n=1, cutoff=0.6))
 
 
 def take_as(what: str, given: str, meant: str) -> str:

@@ -91,7 +91,14 @@ def main() -> int:
     check("a cycle of parts is refused", refused(lambda: company.relate(b04, "part_of")) is not None)
     check("a second current manager of the same department is refused",
           refused(lambda: chen.relate(b04, "authority")) is not None)
-    check("an endpoint of the wrong class is refused", refused(lambda: b04.relate(chen, "kin")) is not None)
+    # A type whose ends don't fit used to refuse, and the host then wrote the fact out as a
+    # description — prose, which nothing can supersede. The link is kept instead, under the free
+    # type, with the word the host reached for as its label.
+    kept = b04.relate(chen, "kin")
+    check("an endpoint of the wrong class is kept as a free link",
+          type(kept).__name__ == "Related" and kept.label == "kin", repr(kept))
+    check("and an unknown type is kept the same way",
+          getattr(b04.relate(chen, "keeps_bees_for"), "label", None) == "keeps_bees_for")
 
     # --- a relation is an instance: attributes, history, comments ---
     job.title = "team lead"
