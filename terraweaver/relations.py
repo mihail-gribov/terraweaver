@@ -657,14 +657,29 @@ def relations_of(world, entity, kind: str | None = None, history: bool = False,
         _note_hidden(entity, kind, hidden)
     if kind is not None and not found and not hidden and not strict:
         found = _from_the_other_end(world, entity, kind, *chosen[0], history=history)
-    # The one that was said last comes first, always and for every host. Where two relations
-    # contradict each other this is the world's standing reading (questions.py, RULES), so a
-    # singular answer — "who is my dentist" — is the same whoever asks and whenever they ask.
-    found.sort(key=lambda r: (timeutil.as_datetime(r.valid_from or r.created_at), r.created_at),
+    # What was said outranks what was worked out, and only then does the latest come first.
+    # A slot has always been read this way (assembly.resolve: trust, then time) and a relation
+    # was not — so a link the world derived for itself competed with one the person stated and
+    # won on recency. That is how a restructuring pass made a world worse than it found it: it
+    # added readings to the one channel where their source was never consulted.
+    found.sort(key=lambda r: (_stated_rank(world, r),
+                              timeutil.as_datetime(r.valid_from or r.created_at), r.created_at),
                reverse=True)
     for relation in found:  # so rel.counterpart knows which end the host asked from
         relation.__dict__["_asked_from"] = entity
     return found
+
+
+def _stated_rank(world, relation) -> int:
+    """2 for a link somebody stated, 1 for one the world worked out.
+
+    The same order of trust the slots use, in the one place that lacked it. A conclusion is the
+    weakest thing in this world; it should be read last, not first because it is newest."""
+    try:
+        said = world.facts.about(relation.id)
+    except Exception:  # noqa: BLE001 - ordering must never be what breaks a read
+        return 2
+    return 1 if said and all(s.is_conclusion for s in said) else 2
 
 
 def _note_hidden(entity, kind: str | None, hidden: list) -> None:

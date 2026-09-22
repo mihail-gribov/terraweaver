@@ -296,6 +296,20 @@ def main() -> int:
           all(s.valid_from is not None for s in world.facts.about(early.id)),
           str([(s.slot, s.valid_from) for s in world.facts.about(early.id)]))
 
+    # --- what was said is read before what was worked out ---
+    from datetime import date as _d
+
+    stayed = Person.new(full_name="Ines Vale", email="ines@vale.example")
+    here = world.classes["Place"].new(name="Porto", city="Porto", category="other")
+    stayed.relate(here, "located", starts=_d(2026, 3, 1))          # the person said so
+    stayed.describe("seems to have moved to Lisbon", when=_d(2026, 6, 1))
+    guessed_from = [s for s in world.facts.about(stayed.subject_id, "descriptions")][0]
+    there = world.classes["Place"].new(name="Lisbon", city="Lisbon", category="other")
+    world.relate(stayed, there, "located", starts=guessed_from.valid_from, basis=[guessed_from])
+    check("a link the world worked out is read after one the person stated, however new it is",
+          [p.name for p in stayed.related("located")] == ["Porto", "Lisbon"],
+          str([p.name for p in stayed.related("located")]))
+
     stated = world.relate(ana, book, "related", label="wrote", description="the user said so")
     refused_retract = ""
     try:
