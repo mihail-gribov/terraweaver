@@ -456,6 +456,35 @@ def _note_a_type_is_wanted(world, created) -> None:
     )
 
 
+def _note_the_ones_that_did_not_fit(world, name: str, rel: dict, asked: str, moving: list) -> None:
+    """Say when the same word was written between ends the type does not take.
+
+    Refusing these at the door is what made the vocabulary worse: told that
+    `affiliated_with_religion` goes Person → Thing, a host defined
+    `affiliated_with_religion_thing_to_thing` rather than concluding its own type was too narrow.
+    The type usually is too narrow — it was declared from the first example anybody saw. So the
+    links stay free and the world says which type they were reaching for, because a host that
+    hears "these do not fit" invents; one that hears "your type is narrower than your facts"
+    can widen it.
+    """
+    free = [n for n, c in relation_classes(world.classes).items() if spec(c).get("free")]
+    left = [link for n in free for link in world.all(n, limit=None)
+            if link.subject is not None and link.object is not None
+            and _asked(getattr(link, "label", "") or "")[0] == asked
+            and not any(link.id == one.id for one in moving)]
+    if not left:
+        return
+    shapes = sorted({f"{type(l.subject).__name__} → {type(l.object).__name__}" for l in left})
+    ontology.note_hint(
+        f"{len(left)} more link(s) say '{asked}' but between {' and '.join(shapes)}, and "
+        f"{name} takes {' / '.join(rel.get('from') or ['any'])} → "
+        f"{' / '.join(rel.get('to') or ['any'])}. They are still here, untyped. Most likely the "
+        f"type is narrower than the facts — it was named after the first example. A second type "
+        f"with the class names in it is the one thing not to do: that is two words for one idea, "
+        f"and every later question has to ask both."
+    )
+
+
 def take_in(world, kind, idea: str | None = None) -> list:
     """Move the free links that were waiting for this type into it.
 
@@ -468,11 +497,24 @@ def take_in(world, kind, idea: str | None = None) -> list:
     if name not in world.classes:
         raise ValueError(f"there is no relation type {name!r} here")
     rel = spec(world.classes[name])
-    ends = {*rel.get("from", []), *rel.get("to", [])}
+    one_way = list(rel.get("from", [])) != list(rel.get("to", []))
+
+    def fits_the_type(link) -> bool:
+        """Each end against its own side of the type, in the direction it would be taken in.
+
+        This was one unordered set of both sides, and a Thing → Thing link passed a
+        Person → Thing type because Thing is in it somewhere. It went through here and failed
+        where it was written instead, which read to the host as the type being wrong — and the
+        host answered by defining a second type with the class names in it.
+        """
+        if link.subject is None or link.object is None:
+            return False
+        inverted = one_way and _asked(getattr(link, "label", "") or "")[1]
+        start, end = (link.object, link.subject) if inverted else (link.subject, link.object)
+        return _fits(start, rel.get("from") or ["any"]) and _fits(end, rel.get("to") or ["any"])
+
     free = [n for n, c in relation_classes(world.classes).items() if spec(c).get("free")]
-    waiting = [link for n in free for link in world.all(n, limit=None)
-               if not ends or {type(link.subject).__name__,
-                               type(link.object).__name__} <= ends]
+    waiting = [link for n in free for link in world.all(n, limit=None) if fits_the_type(link)]
     asked = _asked(idea or rel.get("kind") or name)[0]
     theirs = {link.id: _asked(getattr(link, "label", "") or "")[0] for link in waiting}
     mine = {i for i, said in theirs.items() if said == asked}
@@ -491,7 +533,7 @@ def take_in(world, kind, idea: str | None = None) -> list:
     # Told all at once and read again once. Becoming one at a time would rebuild the world
     # between each, and every link still in hand would be a stale copy of a thing that moved.
     moving = [link for link in waiting if link.id in mine]
-    one_way = list(rel.get("from", [])) != list(rel.get("to", []))
+    _note_the_ones_that_did_not_fit(world, name, rel, asked, moving)
     taken = []
     for link in moving:
         if one_way and _asked(getattr(link, "label", "") or "")[1]:
