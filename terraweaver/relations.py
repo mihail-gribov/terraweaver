@@ -159,23 +159,22 @@ def resolve_kind(classes: dict[str, type], kind: str) -> tuple[str, bool]:
     raise ValueError(f"no relation type {kind!r}; the types are: {', '.join(known)}")
 
 
-def _check_label_fits(world, name: str, cls, rel: dict, attrs: dict) -> None:
-    """A label is a user's word, but some words are another type's business: "husband" is a
-    partner, not kin. Recording it under the wrong type loses every check that type would do,
-    so the world refuses and says where it belongs."""
+def _type_the_label_belongs_to(world, name: str, cls, rel: dict, attrs: dict) -> str | None:
+    """The type a label really belongs to: "husband" is a partner, not kin.
+
+    Recording it under the wrong type loses every check that type would do, so the link goes to
+    the right one. This used to refuse and print the call the host should have written — which
+    cost a turn to be told something the world had already worked out, and the second try was as
+    often prose as the corrected call. Where the correction is unambiguous the world applies it
+    and says so, the same bargain `take_as` makes for a misspelt word.
+    """
     label = str(attrs.get("label") or "").strip()
     if not label or rel.get("free"):
-        return
+        return None
     if label.lower() in [l.lower() for l in rel.get("labels", [])] or match_role(cls, label):
-        return
+        return None
     fitting = type_for_label(world.classes, label) or role_type(world.classes, label)
-    if fitting and fitting != name:
-        other = spec(world.classes[fitting])
-        raise ValueError(
-            f"'{label}' is a {other['kind']} relation, not {rel['kind']}: "
-            f"a.relate(b, '{other['kind']}', label='{label}'). "
-            f"{other['kind']} knows how that link behaves — {fitting} checks apply."
-        )
+    return fitting if fitting and fitting != name else None
 
 
 def role_type(classes: dict[str, type], label: str) -> str | None:
@@ -340,11 +339,22 @@ def relate(world, a, b, kind: str, period: dict, attrs: dict, basis: list | None
         raise ValueError(f"{name} links two of the same kind: {type(subject).__name__} and {type(obj).__name__} differ")
     if rel.get("irreflexive", True) and same(subject, obj):
         raise ValueError(f"{subject.display_name()} can't be in a {name} relation with itself")
-    _check_label_fits(world, name, cls, rel, attrs)
+    belongs = _type_the_label_belongs_to(world, name, cls, rel, attrs)
+    if belongs:
+        other = spec(world.classes[belongs])
+        ontology.note_hint(
+            f"'{attrs['label']}' is a {other['kind']} relation, not {rel['kind']} — recorded as "
+            f"{other['kind']}, which knows how that link behaves. Say it that way next time."
+        )
+        return relate(world, subject, obj, other["kind"], period, attrs, basis)
     if rel.get("free"):
-        missing = [k for k in ("label", "description") if not str(attrs.get(k) or "").strip()]
-        if missing:
-            raise ValueError(f"a Related link needs a label and a description of what it is; missing: {', '.join(missing)}")
+        # A label is what makes a free link readable; a description is prose about it. Requiring
+        # the prose to accept the structure is backwards, and it refused four links in one run.
+        if not str(attrs.get("label") or "").strip():
+            raise ValueError("a Related link needs a label — one word for what this link is")
+        if not str(attrs.get("description") or "").strip():
+            attrs = {**attrs, "description": f"{subject.display_name()} "
+                                             f"{attrs['label'].replace('_', ' ')} {obj.display_name()}"}
         fitting = type_for_label(world.classes, attrs["label"])
         if fitting:
             ontology.note_hint(f"'{attrs['label']}' is what {fitting} is for — "
@@ -1007,3 +1017,101 @@ def describe_relations(specs: dict[str, dict], class_name: str) -> list[str]:
             lines.append(f"      {rel['reverse']} ← {' / '.join(rel['from'])}  — {note}")
     lines.append("      related → any  — anything no type fits (label and description required)")
     return lines
+
+
+# --- what the free links are asking for ---
+
+# Words that hang off a link's name without changing what it is. Only "by" and "from" turn it
+# around, and only that matters here: which end the host started from.
+_TAIL_WORDS = ("of", "by", "in", "at", "to", "for", "with", "from", "on")
+_INVERTING = ("by", "from")
+# How close two labels must read to count as one word for one thing. 0.8 keeps "author of" with
+# "authored by" (0.92) and away from unrelated prose (0.62) on the model we use.
+_ONE_IDEA = 0.8
+
+
+def _asked(label: str) -> tuple[str, bool]:
+    """A label without its grammar, and whether the host started from the far end."""
+    words = str(label or "").lower().replace("_", " ").replace("-", " ").split()
+    inverted = bool(words) and words[-1] in _INVERTING
+    while words and words[-1] in _TAIL_WORDS:
+        words.pop()
+    return " ".join(words), inverted
+
+
+def _one_idea(world, labels: list[str]) -> list[list[str]]:
+    """Labels grouped into the ideas behind them, by the world's own index of meaning.
+
+    Spelling was tried first and is not enough: "performer of" and "performed by" are one idea
+    and share four letters, while "author" loses its own name to a suffix rule. Meaning is what
+    tells them apart, and the world already keeps an index of it. Where no model answers, the
+    stand-in embedder still separates spellings of one word, which is most of the work.
+    """
+    if len(labels) < 2:
+        return [list(labels)]
+    vectors = world.meanings.model.embed(labels)
+    groups: list[list[int]] = []
+    for i in range(len(labels)):
+        for group in groups:
+            if any(sum(a * b for a, b in zip(vectors[i], vectors[j])) >= _ONE_IDEA for j in group):
+                group.append(i)
+                break
+        else:
+            groups.append([i])
+    return [[labels[i] for i in group] for group in groups]
+
+
+def free_shapes(world, least: int = 2) -> list[dict]:
+    """The shapes the host keeps writing as free links, most asked-for first.
+
+    A free link is a fact the world had no type for, recorded under the host's own word rather
+    than refused. Counted, those words are the world's own evidence of what its vocabulary is
+    missing: one idea, stable classes at each end, written often enough to be a habit.
+
+    The two directions are one shape. `author of` from a Person and `authored by` from the thing
+    are the same link read from opposite ends — which is precisely what a type's kind and its
+    reverse name are, so the pair is what gets proposed, not two types.
+
+    What a model does here is group spellings of one idea. What it does not do is decide the
+    ends or the count: those are classes the world already assigned and arithmetic over them.
+    Naming the type well comes afterwards, and is the only part worth a prompt.
+    """
+    free = [name for name, cls in relation_classes(world.classes).items() if spec(cls).get("free")]
+    links: dict = {}
+    for name in free:
+        for link in world.all(name, limit=None):
+            subject, obj = getattr(link, "subject", None), getattr(link, "object", None)
+            label = str(getattr(link, "label", "") or "")
+            idea, inverted = _asked(label)
+            if subject is None or obj is None or not idea:
+                continue
+            ends = sorted((type(subject).__name__, type(obj).__name__))
+            forward = (type(subject).__name__, type(obj).__name__) == tuple(ends)
+            links.setdefault(tuple(ends), []).append(
+                {"label": label, "idea": idea, "id": link.id,
+                 "from_first_end": forward != inverted})
+
+    shapes = []
+    for ends, group in links.items():
+        ideas = sorted({one["idea"] for one in group})
+        for together in _one_idea(world, ideas):
+            mine = [one for one in group if one["idea"] in together]
+            if len(mine) < least:
+                continue
+            spellings: dict = {}
+            for one in mine:
+                spellings[one["label"]] = spellings.get(one["label"], 0) + 1
+            leading = max(spellings, key=lambda w: spellings[w])
+            starts_at = sum(1 for one in mine if one["from_first_end"])
+            first, second = ends
+            shapes.append({
+                "asked": leading,
+                "from": first if starts_at >= len(mine) - starts_at else second,
+                "to": second if starts_at >= len(mine) - starts_at else first,
+                "seen": len(mine),
+                "both_ways": 0 < starts_at < len(mine),
+                "labels": dict(sorted(spellings.items(), key=lambda kv: -kv[1])),
+                "links": [one["id"] for one in mine],
+            })
+    shapes.sort(key=lambda s: (-s["seen"], s["asked"]))
+    return shapes

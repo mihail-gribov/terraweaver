@@ -45,6 +45,7 @@ CREATE INDEX IF NOT EXISTS idx_meanings_subject ON meanings(subject);
 
 OLLAMA = os.environ.get("TERRAWEAVER_OLLAMA", "http://localhost:11434")
 LOCAL_MODEL = os.environ.get("TERRAWEAVER_EMBEDDING", "bge-m3")
+REMOTE_MODEL = os.environ.get("TERRAWEAVER_EMBEDDING_API", "Qwen/Qwen3-Embedding-8B")
 
 # Free-text attributes worth finding by meaning. Names are not here on purpose: a name is for
 # identity, and identity is not decided by proximity.
@@ -89,13 +90,37 @@ class Ollama:
             return [_unit(v) for v in json.loads(answer.read())["embeddings"]]
 
 
+class Nebius:
+    """The same model for everyone, over the API — for a machine with nothing installed on it.
+
+    Which vectors a world holds is recorded per row and every read filters by it, so moving
+    between here and the local model rebuilds the index rather than mixing two spaces. That is
+    what makes this a choice about quality and not about correctness.
+    """
+
+    def __init__(self, model: str = REMOTE_MODEL):
+        self.name = model
+
+    def embed(self, texts: list[str]) -> list[list[float]]:
+        from terraweaver import llm
+
+        answer = llm.client().embeddings.create(model=self.name, input=texts)
+        return [_unit(item.embedding) for item in sorted(answer.data, key=lambda d: d.index)]
+
+
 def embedder():
-    """The best available, without ceremony: the local model if it answers, else the fallback."""
+    """The best available, without ceremony.
+
+    The local model first: it costs nothing and answers in milliseconds, which is what a world
+    being written to needs. The API next, where nothing is installed — the contest machine, a
+    fresh checkout. The stand-in last, so every path works with no model at all.
+    """
     try:
         urllib.request.urlopen(f"{OLLAMA}/api/tags", timeout=1).read()
         return Ollama()
     except (urllib.error.URLError, OSError, ValueError):
-        return Plain()
+        pass
+    return Nebius() if os.environ.get("NEBIUS_API_KEY") else Plain()
 
 
 # How many of an entity's texts have a say when it is scored as a whole. All of them compete;

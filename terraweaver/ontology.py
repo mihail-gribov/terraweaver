@@ -301,18 +301,20 @@ class Entity:
             if name in kwargs:
                 setattr(self, name, kwargs.pop(name))
             elif attr.get("required") and "default" not in attr:
-                missing.append(name)
+                missing.append(attr)
             else:
                 default = attr.get("default")
                 if default is None and attr["type"].startswith("list["):
                     default = []
                 setattr(self, name, default)
+        missing = _gaps_are_not_refusals(self, class_name, missing)
         if missing or kwargs:
             # Both at once, and with the near miss named. Reported one at a time, a host told
             # only "missing title" adds a title and keeps its `name=` — and learns on the next
             # try that the first answer was incomplete. Once cost a whole scenario: the events
             # went in under `name=`, were refused, and came back with no title at all.
-            raise TypeError(_construction_problem(class_name, type(self)._spec, missing, kwargs))
+            raise TypeError(_construction_problem(class_name, type(self)._spec,
+                                                  [a["name"] for a in missing], kwargs))
 
     # --- what every class in the world can do ---
 
@@ -1163,6 +1165,36 @@ def take_as(what: str, given: str, meant: str) -> str:
     note_assumed(f"{what}: {given!r} taken as {meant!r} — the nearest thing to it here, and "
                  f"nothing else is close; say so if you meant something else")
     return meant
+
+
+def _gaps_are_not_refusals(entity, class_name: str, missing: list) -> list:
+    """Of the required attributes not given, keep refusing only the one that names the entity.
+
+    A required attribute the host hasn't got is an invitation to invent one. Measured on a
+    455-fact run: `Idea` requires `content`, and of seventy things the host tried to record,
+    ten were lost outright and the rest got through by filling it — "Novel by Robert A.
+    Heinlein" for one, an empty string for eight others. The invented lines went into the record
+    as `source=agent`, indistinguishable from what the person actually said, which is the one
+    thing this world exists to keep apart.
+
+    So the gap is left open instead. The name is still required, because an entity nothing can
+    identify breeds duplicates, and that is a defect no later telling repairs.
+    """
+    from terraweaver import matching
+
+    identifies = matching.NAME_KEYS.get(class_name) or type(entity)._spec.get("identified_by")
+    unnamed = [a for a in missing if a["name"] == identifies]
+    gaps = [a for a in missing if a["name"] != identifies]
+    for attr in gaps:
+        object.__setattr__(entity, attr["name"], [] if attr["type"].startswith("list[") else None)
+    if gaps:
+        note_hint(
+            f"{class_name} declares {', '.join(repr(a['name']) for a in gaps)} required and none "
+            f"was given — left empty rather than refused. Fill it when the user says so; don't "
+            f"put your own knowledge there to satisfy the check, because the record cannot tell "
+            f"that apart from what they told you."
+        )
+    return unnamed
 
 
 def _construction_problem(class_name: str, spec: dict, missing: list, unexpected: dict,
