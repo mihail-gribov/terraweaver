@@ -5,6 +5,7 @@ entity", and it never silently guesses. If the incoming data plausibly refers to
 something already in the world but isn't certain, or contradicts what's stored, it
 returns a NeedsResolution naming the skill the agent must run instead of picking.
 """
+import json
 from typing import Any
 
 from terraweaver import matching, ontology, resolution, timeutil
@@ -296,7 +297,7 @@ class World:
         ontology.note_world_call("world_queries")
         class_name = self._name(cls)
         # Identity is timeless: an ended or not-yet-started entity is still the same one.
-        scored = matching.score_candidates(self.all(cls, limit=None, history=True), class_name, attrs)
+        scored = matching.score_candidates(self._worth_loading(cls, attrs), class_name, attrs)
         certain = [inst for inst, score in scored if score >= matching.CERTAIN]
         if len(certain) == 1:
             return self._determined(certain[0])
@@ -342,12 +343,53 @@ class World:
             f"filling the gap. {class_name}.find(...) shows what merely resembles it."
         )
 
+    def _worth_loading(self, cls, attrs: dict) -> list:
+        """The entities a name could possibly match, chosen before any of them is built.
+
+        Identifying one entity used to build every entity of its class to score it. At three
+        hundred and fifty that was six tenths of a second a time, and a host writing twenty in one
+        block ran past the ten-second limit — thirty-five of ninety-four refusals in one run. The
+        same scoring decides here, on names read straight from the image table, and only what
+        could match is built. Anything without a name to go on falls back to all of them, because
+        then there is nothing to narrow by.
+        """
+        class_name = self._name(cls)
+        name_key = matching.NAME_KEYS.get(class_name)
+        incoming = attrs.get(name_key) if name_key else None
+        if not isinstance(incoming, str) or not incoming.strip():
+            return self.all(cls, limit=None, history=True)
+        by_parts = class_name in matching.PART_MATCH_CLASSES
+        strong = {k: attrs.get(k) for k in matching.STRONG_KEYS.get(class_name, []) if attrs.get(k)}
+        wanted = {name_key, matching.ALIAS_KEY, *strong}
+        held: dict = {}
+        try:
+            rows = self.store.conn.execute(
+                f'SELECT instance_id, attr, value FROM "{self.store.values_table(class_name)}" '
+                f'WHERE attr IN ({",".join("?" * len(wanted))})', tuple(wanted))
+        except Exception:                      # noqa: BLE001 - no table yet is no candidates
+            return []
+        for instance_id, attr, value in rows:
+            try:
+                held.setdefault(instance_id, {})[attr] = json.loads(value)
+            except Exception:                  # noqa: BLE001 - unreadable is not a match
+                continue
+        keep = []
+        for instance_id, row in held.items():
+            names = [row.get(name_key)] + list(row.get(matching.ALIAS_KEY) or [])
+            close = any(isinstance(n, str) and n
+                        and matching.similarity(incoming, n, by_parts) >= matching.PLAUSIBLE
+                        for n in names)
+            same_key = any(row.get(k) == given for k, given in strong.items())
+            if close or same_key:
+                keep.append(instance_id)
+        return [self.store.load(instance_id, self.classes) for instance_id in keep]
+
     def new(self, cls, starts=None, until=None, ttl=None, permanent: bool = False, **attrs):
         """Create what the host says is new — asking first if its twin is already here."""
         ontology.note_world_call("world_writes")
         class_name = self._name(cls)
         period = _period(starts, until, ttl, permanent)
-        scored = matching.score_candidates(self.all(cls, limit=None, history=True), class_name, attrs)
+        scored = matching.score_candidates(self._worth_loading(cls, attrs), class_name, attrs)
         # A twin (same email, same full name) — or someone whose name this is: "Darren" when
         # "Darren Liu" is recorded is far likelier to be him than a second Darren, and creating
         # one silently splits everything said about him in two. Only names identify, and only a
@@ -385,7 +427,7 @@ class World:
         period = _period(starts, until, ttl, permanent)
         # Identity is timeless: matching sees every entity of the class, ended ones included,
         # and all of them — the 50 most recent aren't enough to rule out a duplicate.
-        scored = matching.score_candidates(self.all(cls, limit=None, history=True), class_name, attrs)
+        scored = matching.score_candidates(self._worth_loading(cls, attrs), class_name, attrs)
 
         certain = [inst for inst, score in scored if score >= matching.CERTAIN]
         if len(certain) == 1:

@@ -17,6 +17,37 @@ Newest first.
 
 ---
 
+## 2026-09-22 · Choose who to compare before building them
+
+**Seen.** Identifying one entity built every entity of its class in order to score it. On the base
+run's world — 709 entities, 195 of them people — a block of twenty `Person.new` calls took 13.9
+seconds and was stopped at the sandbox's ten. Thirty-five of the ninety-four refusals in that run
+were that timeout, the largest single group.
+
+**Done.** Candidates are chosen from the image table before any of them is built: the same
+similarity function on the same names and aliases, plus anything whose strong key equals the one
+given. Only what could match is loaded. The same block now runs in 0.5 seconds.
+
+**Why this.** The scoring was never the cost — building the objects was, and most of them could
+not have matched. Narrowing by the same function that does the scoring is safe in the one way
+that matters: it cannot drop anybody the full scan would have accepted. That mattered more than
+the speed, because the failure mode of a wrong narrowing is not a slow world but two records of
+one person, which no later telling repairs.
+
+**Not this.** Narrowing by shared words or an index of names. Name matching is fuzzy on purpose —
+"Wilma" and "William" share no word and must still be compared — so a word index would quietly
+lose exactly the cases the matching exists for.
+
+**Not this either.** Raising the ten-second limit. It is not the limit that was wrong; a world
+that costs six tenths of a second to add one person is wrong, and at ten thousand entities the
+raised limit would be reached again.
+
+**How we would know it was wrong.** A twin created where the world used to ask — checked directly:
+an exact name, a part of a name and a typo all still return a question, a different person with a
+shared surname is still recorded separately, and a matching email still lands on the same person.
+
+---
+
 ## 2026-09-22 · Classes are not fixed on a relation
 
 **Seen.** The end classes were enforced twice: in `relate`, where a mismatch diverted the link to
