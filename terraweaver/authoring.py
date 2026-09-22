@@ -36,19 +36,27 @@ VALUE_TYPES = ("str", "int", "float", "bool", "datetime", "date", "email", "phon
 TEXT_TYPES = ("text", "list[text]")
 # How alike two type descriptions must read before the world hands back the one it has
 # rather than making a second. Above this they are the same idea said twice.
-# The natures a link can have (EvoOntology, arXiv:2609.15779: association, hierarchy,
-# composition, equivalence, derivation). The set is fixed and small; what is particular — husband
-# and wife, director and company — is a type of its own that names its nature. Two of the five
-# already exist in this world below the level of links: equivalence is `same_as` in the record,
-# derivation is a conclusion with its basis. Giving them link types as well would be two
-# vocabularies for one idea, which is the thing this world spends its time undoing.
+# The natures a link can have. The set is closed and small; what is particular — husband and
+# wife, director and company — is a type of its own that names one of these. Two of the five
+# already exist in this world below the level of links: `same_as` is a slot in the record, a
+# derivation is a conclusion with its basis. Naming them here classifies those mechanisms; it
+# does not give them a second one.
+#
+# Named as the link reads, not as the literature writes it. A host picking a nature has to see
+# what it is from the word: "composition" and "derivation" are terms of art, `part_of` and
+# `derived_from` are the sentence. The paper's words are taken as well, so the correspondence to
+# EvoOntology (arXiv:2609.15779) is not lost.
 NATURES = {
-    "association": "two things stand in some relation — most of a person's world",
-    "hierarchy": "one is a kind of the other, the narrower first",
-    "composition": "one is part of the other",
-    "equivalence": "they are the same thing (recorded as same_as, not as a link)",
-    "derivation": "one was worked out from the other (recorded as a conclusion with its basis)",
+    "related_to": "two things stand in some relation — most of a person's world (association)",
+    "kind_of": "the subject is a narrower kind of the object (hierarchy)",
+    "part_of": "the subject is part of the object (composition)",
+    "same_as": "they are one and the same (equivalence; recorded as same_as, not as a link)",
+    "derived_from": "the subject was worked out from the object (derivation; recorded as a "
+                    "conclusion with its basis)",
 }
+# What the paper calls them, so either word is understood.
+AS_WRITTEN = {"association": "related_to", "hierarchy": "kind_of", "composition": "part_of",
+              "equivalence": "same_as", "derivation": "derived_from"}
 
 SAME_IDEA = 0.82
 
@@ -174,6 +182,7 @@ class Authoring:
                 "citizenship somebody changes), over_time=False when they simply accumulate "
                 "(everything a person has ever written). Without it, asking later gives you the "
                 "first answer you were ever told.")
+        nature = AS_WRITTEN.get(str(nature or "").strip().lower(), nature)
         if nature not in NATURES:
             raise Refused(
                 "say what kind of link this is — its nature, one of: "
@@ -181,7 +190,7 @@ class Authoring:
                 + ". Everything particular — husband and wife, director and company — is a "
                   "type of its own with a nature behind it; the nature is what the world knows "
                   "how to behave about, the name is what you and the user call it.")
-        if nature in ("composition", "hierarchy") and cardinality is None:
+        if nature in ("part_of", "kind_of") and cardinality is None:
             cardinality = "many-to-one"      # a part has one whole, a kind has what it is a kind of
         if cardinality is None:
             raise Refused(

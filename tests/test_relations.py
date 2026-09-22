@@ -89,8 +89,15 @@ def main() -> int:
           str(chen.related("membership")))
     check("who manages the department", b04.related("managed_by") == [linda])
     check("a cycle of parts is refused", refused(lambda: company.relate(b04, "part_of")) is not None)
-    check("a second current manager of the same department is refused",
-          refused(lambda: chen.relate(b04, "authority")) is not None)
+    # A department's manager changing is a handover, not a conflict: authority runs one way, so
+    # the role moved and nobody is displaced by it. What the world refuses to decide alone is a
+    # symmetric link — a partnership is a state two people are in together.
+    chen.relate(b04, "authority")
+    check("a new manager takes over from the last", b04.related("managed_by") == [chen],
+          str(b04.related("managed_by")))
+    check("and the one before is still in the record",
+          linda in b04.related("managed_by", history=True),
+          str(b04.related("managed_by", history=True)))
     # Classes are not fixed on a relation. What a type has run between so far describes it; a
     # link between other ends is news about the type, not an error in the link, so it is recorded
     # as asked and the world says what it noticed.

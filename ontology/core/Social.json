@@ -61,7 +61,7 @@
     ],
     "example": "priya.relate(michael, \"social\", label=\"friend\")",
     "reads": "Priya is Michael's friend",
-    "nature": "association"
+    "nature": "related_to"
   },
   "attributes": [
     {

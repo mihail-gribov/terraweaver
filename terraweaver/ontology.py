@@ -1229,7 +1229,14 @@ def _same_head(word: str, candidate: str) -> bool:
     a, b = head(word.lower()), head(candidate.lower())
     if (a, b) == (word.lower(), candidate.lower()):   # no tail on either: nothing to correct for
         return True
-    return a == b or bool(get_close_matches(a, [b], n=1, cutoff=0.6))
+    # Once a tail is off, the heads have to be nearly the same word. At a loose bar "partner"
+    # matched "part_of" — a nature of links — and a host writing about somebody's wife got a
+    # composition. What this is for is grammar, not resemblance: `located_in` finding `located`.
+    if a == b or get_close_matches(a, [b], n=1, cutoff=0.85):
+        return True
+    # A missing underscore is a typo, not a different word: "partof" is "part_of" and "ownedby"
+    # is "owned_by", and both are the sort of slip this exists to forgive.
+    return bool(get_close_matches(word.lower(), [candidate.lower()], n=1, cutoff=0.85))
 
 
 def take_as(what: str, given: str, meant: str) -> str:

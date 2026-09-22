@@ -20,7 +20,7 @@
     ],
     "example": "michael.relate(berlin, \"located\", label=\"lives in\")",
     "reads": "Michael lives in Berlin",
-    "nature": "association"
+    "nature": "related_to"
   },
   "attributes": [
     {

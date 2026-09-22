@@ -137,11 +137,11 @@ def same(a, b) -> bool:
 # that carried both `nature` and its own `transitive`/`symmetric` fields would be two statements
 # of one thing, and two statements of one thing is how supersession was lost earlier today.
 BY_NATURE = {
-    "composition": {"transitive": True, "acyclic": True, "irreflexive": True},
-    "hierarchy": {"transitive": True, "acyclic": True, "irreflexive": True},
-    "equivalence": {"symmetric": True, "transitive": True},
-    "derivation": {"acyclic": True, "irreflexive": True},
-    "association": {},
+    "part_of": {"transitive": True, "acyclic": True, "irreflexive": True},
+    "kind_of": {"transitive": True, "acyclic": True, "irreflexive": True},
+    "same_as": {"symmetric": True, "transitive": True},
+    "derived_from": {"acyclic": True, "irreflexive": True},
+    "related_to": {},
 }
 
 
@@ -483,7 +483,7 @@ def _note_a_type_is_wanted(world, created) -> None:
         f"'{idea}' has been written {len(kin)} times as a link with no type, always between "
         f"{a} and {b}. That is a type this world hasn't got: "
         f"world.define_relation(\"{idea.replace(' ', '_')}\", \"<what it is>\", "
-        f"nature=\"association\", subject={a}, object={b}, "
+        f"nature=\"related_to\", subject={a}, object={b}, "
         f"cardinality=<how many?>, over_time=<one at a time?>). "
         f"Then world.take_in(<the type>, \"{idea}\") moves the ones already written into "
         f"it — nothing is "
@@ -715,24 +715,24 @@ def _not_ours_to_end(link) -> bool:
     A date. Given one, the link is a claim about a stretch of time, said deliberately; ending it
     on our own initiative overrides what somebody meant.
 
-    A person at the far end. Closing "Linda manages this department" or "Michael's wife is Vera"
-    is the world saying something about somebody's life — a displacement, not a correction. A
-    sport, a country, an employer is not displaced by being superseded; a person is.
+    Symmetry. A partnership or a kinship is a state two people are in together, and ending it is
+    a claim about both of them at once — not a role one of them moved out of. Work, headship,
+    managing a department run one way: the person's part in it changed, and the organisation is
+    not displaced by that. A first attempt at this rule looked for a person at either end, and it
+    refused every change of job, because the person changing jobs is at one of them.
 
     Everything else hands over, which is what a one-at-a-time relation is for.
     """
     if getattr(link, "valid_from", None) is not None:
         return True
-    for end in (getattr(link, "subject", None), getattr(link, "object", None)):
-        if end is not None and type(end).__name__ in matching.PART_MATCH_CLASSES:
-            return True
-    return False
+    return bool(rule(spec(type(link)), "symmetric"))
 
 
 def _why_not_to_assume(link) -> str:
     if getattr(link, "valid_from", None) is not None:
         return "That one was given a date, so ending it is not something to assume."
-    return "Somebody is on the other end of that one, and ending it says something about them."
+    return ("That kind of link is a state the two of them are in together, so ending it is not "
+            "something to decide from one side.")
 
 
 def _hand_over(world, standing, held, start, name: str) -> None:

@@ -50,7 +50,8 @@ Everything else you define as you go:
     world.anything_like("rugby")             — is there already a thing called this, of any kind?
     Sport = world.define("Sport", "a game people play and follow", identified_by="name")
     world.attribute(Person, "email", "the address they are written to at", type="email")
-    world.define_relation("authorship", "who wrote what", nature="association",
+    world.define_relation("authorship", "who wrote what", nature="related_to",   # or part_of,
+                          # kind_of, same_as, derived_from — the five a link can be
                           subject=Person, object=Book,
                           cardinality="one-to-many", over_time=False)
 

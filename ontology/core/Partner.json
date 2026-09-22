@@ -41,7 +41,7 @@
     ],
     "example": "emma.relate(darren, \"partner\", label=\"girlfriend\")",
     "reads": "Emma is Darren's girlfriend",
-    "nature": "association"
+    "nature": "related_to"
   },
   "attributes": [
     {
