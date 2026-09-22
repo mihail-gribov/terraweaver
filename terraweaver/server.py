@@ -82,6 +82,14 @@ async def describe_classes(names: list[str] | str | None = None, ctx: Context = 
 
 
 @server.tool()
+async def classes(like: str | None = None, limit: int = 0, ctx: Context = None) -> str:
+    """Every class this world has right now, most used first — including ones defined in this
+    session. `like="a sport"` narrows it to what reads like that. The opening description carries
+    the ones a task most often needs; this is the whole list."""
+    return runtime.classes_here(like, limit)
+
+
+@server.tool()
 async def describe_methods(names: list[str] | str | None = None, ctx: Context = None,
                            method_names: list[str] | str | None = None) -> str:
     """What particular methods do, in full and with examples — for the few a task actually uses,

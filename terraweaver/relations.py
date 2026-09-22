@@ -505,7 +505,16 @@ def take_in(world, kind, idea: str | None = None) -> list:
                           class_name=type(link).__name__)
     if moving:
         world.rebuild()
-    return [world.store.load(link.id, world.classes) for link in moving]
+    taken = []
+    for link in moving:
+        try:
+            taken.append(world.store.load(link.id, world.classes))
+        except KeyError:
+            # Rebuilding decided this link belongs to another image — two subjects that turned
+            # out to be one. What it said is in the record either way; there is just nothing
+            # here to hand back.
+            continue
+    return taken
 
 
 def _note_gap(world, name: str, obj, label: str, start, created) -> None:

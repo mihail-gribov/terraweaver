@@ -19,7 +19,7 @@ from typing import Any
 
 from terraweaver import onboarding, ontology, sandbox
 from terraweaver.impls import IMPLS
-from terraweaver.describe import (COMMON_MEMBERS, HOST_GUIDE, catalogue, describe_for_prompt,
+from terraweaver.describe import (COMMON_MEMBERS, HOST_GUIDE, catalogue, describe_for_prompt, short,
                                   describe_methods)
 from terraweaver.ontology import Entity, build_classes, load_specs
 from terraweaver.resolution import NeedsResolution
@@ -296,31 +296,76 @@ class WorldRuntime:
 
     # --- what hosts call ---
 
+    def live_specs(self) -> dict:
+        """The classes as they are now, not as they were when the world opened.
+
+        A host that defines a class gets it at once — it is in `world.classes` and it works —
+        and used to be told, every turn after, a list of what this world contains that did not
+        have it in. A world that will not name what someone just built in it invites them to
+        build it again under another name.
+        """
+        return {name: cls._spec for name, cls in self.classes.items()}
+
     def describe(self, key: str) -> str:
         session = self.session(key)
         return "\n".join([
             HOST_GUIDE,
             COMMON_MEMBERS,
-            catalogue(self.specs),
+            catalogue(self.live_specs()),
             self.variables.describe(),
             self._questions_note(),
             session.describe_for_prompt(),
         ])
+
+    def classes_here(self, like: str | None = None, limit: int = 0) -> str:
+        """Every class this world has now, with how much of it there is.
+
+        The world's opening description carries the ones a task is most likely to touch; this is
+        the whole list, including whatever the host defined five minutes ago. Without it a host
+        that builds its own vocabulary is working from a list of what the world contained before
+        it started — which is how the same idea gets defined twice under two names.
+        """
+        from terraweaver import authoring
+
+        counts = {name: 0 for name in self.classes}
+        for name, held in self.store.conn.execute(
+                "SELECT class_name, COUNT(*) FROM instances GROUP BY class_name"):
+            counts[name] = held
+        specs = self.live_specs()
+        if like:
+            near = authoring.Authoring(self.world).classes_like(like, limit=limit or 5)
+            wanted = [name for name, _ in near]
+        else:
+            wanted = sorted(counts, key=lambda n: (-counts[n], n))[:limit or len(counts)]
+        lines = []
+        for name in wanted:
+            spec = specs.get(name, {})
+            rel = spec.get("relation")
+            shape = (f"  ('{rel['kind']}') {' / '.join(rel['from'])} → {' / '.join(rel['to'])}"
+                     if rel else "")
+            lines.append(f"  {name} ×{counts.get(name, 0)}{shape} — "
+                         + short(spec.get("description", "")))
+        return "\n".join([f"{len(wanted)} of {len(counts)} classes in this world, most used first."
+                           if limit else f"{len(counts)} classes in this world, most used first.",
+                           "Ask describe_classes([...]) for what any of them is made of.", ""]
+                          + lines)
 
     def describe_classes(self, names: list[str]) -> str:
         """What the named classes are made of — attributes, methods, relations.
 
         The prompt carries the names; this carries the detail, for the few classes a task
         actually touches."""
-        known = {n.lower(): n for n in self.specs}
+        known = {n.lower(): n for n in self.live_specs()}
         wanted = [known[n.strip().lower()] for n in names if n.strip().lower() in known]
         missing = [n for n in names if n.strip().lower() not in known]
         if not wanted:
-            return ("No such class: " + ", ".join(missing) + ".\n\n" + catalogue(self.specs))
-        text = describe_for_prompt(self.specs, only=wanted)
+            return ("No such class: " + ", ".join(missing) + ".\n\n"
+                    + catalogue(self.live_specs()))
+        text = describe_for_prompt(self.live_specs(), only=wanted)
         text += ('\nWhat any of these does, in full and with examples: '
                  'describe_methods(["tag", "' + wanted[0] + '.' +
-                 (self.specs[wanted[0]].get("methods") or [{"signature": "x"}])[0]["signature"].split("(")[0]
+                 (self.live_specs()[wanted[0]].get("methods")
+                  or [{"signature": "x"}])[0]["signature"].split("(")[0]
                  + '"])')
         if missing:
             text += "\nNot in this world: " + ", ".join(missing) + "."
@@ -328,7 +373,7 @@ class WorldRuntime:
 
     def describe_methods(self, names: list[str]) -> str:
         """What these methods do, in full, with examples where they help."""
-        return describe_methods(self.specs, names)
+        return describe_methods(self.live_specs(), names)
 
     def _learn_name_choice(self, session, recording, before: dict) -> list[str]:
         """Take the answer to "which Annie?" in the form a host actually gives it.

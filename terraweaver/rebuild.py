@@ -39,12 +39,23 @@ def rebuild(world, rule=None, at: datetime | None = None) -> dict:
             entity.__dict__["_subject"] = image.id
             entity.__dict__["_subjects"] = list(image.subjects)
             built[image.id] = entity
+            # Under every name it ever went by. When two subjects turn out to be one person the
+            # image keeps one id, and anything pointing at the other one was left pointing at
+            # nothing — which did not fail where it was written but where it was read, and took
+            # every other link of that class down with it.
+            for subject in image.subjects:
+                built.setdefault(subject, entity)
         for image in images.values():
             entity = built.get(image.id)
             if entity is None:
                 continue
             _fill(world, entity, image, built)
             world.store.save(entity)
+    # The two parties are not built from statements — they are what a world is between, and a
+    # world with neither has no "me" and no "you" to hang anything on. Rebuilding used to be
+    # rare enough that losing them went unnoticed; `become` and `take_in` rebuild whenever the
+    # host learns a word, and the first run that used them ended with both gone.
+    world.ensure_selves()
     return built
 
 

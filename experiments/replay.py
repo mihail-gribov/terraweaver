@@ -12,6 +12,7 @@ three-way answer as before: it passes now, it fails the same way, or it fails di
     .venv/bin/python experiments/replay.py <world.db> --like "goes .* →"
 """
 import argparse
+import json
 import re
 import shutil
 import sqlite3
@@ -23,6 +24,28 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from terraweaver.runtime import WorldRuntime  # noqa: E402
+
+
+def open_as_it_was(world: Path, work: Path) -> "WorldRuntime":
+    """Open a copy of the world with the classes it had, not the ones we ship.
+
+    A host that defined its own vocabulary wrote it into a `grown/` directory beside its world.
+    Replaying without those, every line about a class the host invented fails for a reason that
+    has nothing to do with what is being tested — which is how a replay reports a fix as a
+    regression.
+    """
+    from terraweaver import authoring, ontology
+
+    grown = next((d for d in (world.parent / "grown", world.parent.parent / "grown")
+                  if d.is_dir()), None)
+    if grown is None:
+        return WorldRuntime(str(work))
+    theirs = {json.loads(path.read_text())["name"]: json.loads(path.read_text())
+              for path in sorted(grown.glob("*.json"))}
+    core = ontology.base_specs(Path(__file__).resolve().parent.parent / "ontology" / "core")
+    runtime = WorldRuntime(str(work), fixture=None, specs={**core, **theirs}, selves=True)
+    authoring.install(runtime.world, work.parent / "grown")
+    return runtime
 
 
 def history(path: str) -> list[tuple[str, str]]:
@@ -54,7 +77,7 @@ def main() -> int:
     runs = history(args.world)
     work = Path(tempfile.mkdtemp(prefix="tw-replay-")) / "world.db"
     shutil.copy(args.world, work)
-    runtime = WorldRuntime(str(work))
+    runtime = open_as_it_was(Path(args.world), work)
 
     verdicts: Counter = Counter()
     changed = []

@@ -243,6 +243,7 @@ class Store:
         row = self.conn.execute("SELECT class_name FROM instances WHERE id = ?", (instance_id,)).fetchone()
         if row is None:
             raise KeyError(f"no instance with id {instance_id!r}")
+
         cls = classes[row[0]]
         obj = object.__new__(cls)  # bypass __init__: cyclic refs must register in memo before being filled in
         # Loading is machinery, not a user-driven change: no guard, and nothing to record.
@@ -272,9 +273,21 @@ class Store:
                             when.astimezone(timezone.utc).replace(tzinfo=None)
                             if when.tzinfo is not None else when)
                 elif kind == "ref":
-                    setattr(obj, attr_name, self._load(payload, classes, memo))
+                    try:
+                        setattr(obj, attr_name, self._load(payload, classes, memo))
+                    except KeyError:
+                        # Pointing at something the image no longer holds. Reading it as nothing
+                        # is the truth about the image; raising made one stale reference render
+                        # every instance of its class unreadable.
+                        setattr(obj, attr_name, None)
                 elif kind == "refs":
-                    setattr(obj, attr_name, [self._load(i, classes, memo) for i in payload])
+                    kept = []
+                    for one in payload:
+                        try:
+                            kept.append(self._load(one, classes, memo))
+                        except KeyError:
+                            continue
+                    setattr(obj, attr_name, kept)
                 else:
                     setattr(obj, attr_name, payload)
         return obj
