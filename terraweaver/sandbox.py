@@ -49,51 +49,6 @@ _FORMAT_FIELD_ATTR = re.compile(r"\{[^}]*[.\[]")
 
 
 class _ImportsAlreadyHere(ast.NodeTransformer):
-    """`from datetime import date` asks for something already in the namespace.
-
-    Refusing it protects nothing — it is how the host writes code, not what it does to the data —
-    and it was the single biggest cause of failed runs: 63 of 368 across saved scenarios. Every
-    one of those cost a whole run, and a rolled-back run is where two attempts at the same task
-    start to diverge. So an import of what is already here is granted, not refused: the name is
-    bound to the thing the world already provides. Anything else is still refused.
-    """
-
-    def visit_Import(self, node: ast.Import) -> Any:
-        for alias in node.names:
-            if alias.name.split(".")[0] not in MODULES:
-                return node  # left for check() to refuse, with the message that says what's here
-        bindings = [(alias.asname, alias.name.split(".")[0]) for alias in node.names if alias.asname]
-        return _bind(bindings, node)
-
-    def visit_ImportFrom(self, node: ast.ImportFrom) -> Any:
-        module = (node.module or "").split(".")[0]
-        bindings = []
-        for alias in node.names:
-            name, bound = alias.name, alias.asname or alias.name
-            if name in MODULES:  # already a name of its own: datetime, date, timedelta…
-                if bound != name:
-                    bindings.append((bound, name))
-                continue
-            if module in MODULES and hasattr(MODULES[module], name):
-                bindings.append((bound, f"{module}.{name}"))
-                continue
-            return node
-        return _bind(bindings, node)
-
-
-def _bind(bindings: list, node: ast.AST) -> Any:
-    """Assignments standing in for an import: `defaultdict = collections.defaultdict`."""
-    if not bindings:
-        return ast.copy_location(ast.Pass(), node)
-    out = []
-    for name, source in bindings:
-        value = ast.parse(source, mode="eval").body
-        assign = ast.Assign(targets=[ast.Name(id=name, ctx=ast.Store())], value=value)
-        out.append(ast.copy_location(ast.fix_missing_locations(assign), node))
-    return out
-
-
-class _ImportsAlreadyHere(ast.NodeTransformer):
     """Drop an import that asks for what the namespace already holds.
 
     `from datetime import datetime, timedelta` is a habit, not a request — it was written 55
@@ -102,18 +57,25 @@ class _ImportsAlreadyHere(ast.NodeTransformer):
     import of anything else is still refused, because that is about what the code may reach.
     """
 
+    def __init__(self, lenient: bool):
+        super().__init__()
+        self.lenient = lenient          # code run once may lose a line; code kept must not
+        self.skipped: list[str] = []
+
     def visit_Import(self, node):
         wanted = [alias.asname or alias.name.split(".")[0] for alias in node.names]
-        return None if all(name in MODULES for name in wanted) else node
+        if all(name in MODULES for name in wanted):
+            return None
+        return self._skip(node, [a.name for a in node.names if a.name.split(".")[0] not in MODULES])
 
     def visit_ImportFrom(self, node):
         holder = MODULES.get(node.module)
         if holder is None:
-            return node
+            return self._skip(node, [node.module or "?"])
         binds = []
         for alias in node.names:
             if not hasattr(holder, alias.name) and alias.name not in MODULES:
-                return node      # something this world doesn't have: refused in the walk below
+                return self._skip(node, [f"{node.module}.{alias.name}"])
             if (alias.asname or alias.name) in MODULES and not alias.asname:
                 continue         # already bound under that very name
             # `from datetime import time` asks for something real that simply isn't bound yet:
@@ -125,7 +87,26 @@ class _ImportsAlreadyHere(ast.NodeTransformer):
         return [ast.copy_location(ast.fix_missing_locations(b), node) for b in binds] or None
 
 
-def check(code: str, protected: set[str] = frozenset(), always: set[str] = frozenset()) -> ast.AST:
+    def _skip(self, node, names: list[str]):
+        """An import of what this world hasn't got is dropped, not refused.
+
+        Refusing it threw away the whole block, so host code run once drops it instead. Code
+        that is stored — a procedure — is still refused: keeping something that cannot run is a
+        lasting defect, not a lost line.
+
+        Refusing it threw away the whole block: `import inspect` on line 1 cost twenty-five facts
+        on lines 2 to 40, and the import was usually a habit the code never used. Dropping leaves
+        the name unbound, so code that really wanted it fails on that one statement and everything
+        around it still stands — and nothing unavailable becomes reachable by dropping a line.
+        """
+        if not self.lenient:
+            return node                 # left for the walk below, which refuses it
+        self.skipped.extend(names)
+        return None
+
+
+def check(code: str, protected: set[str] = frozenset(), always: set[str] = frozenset(),
+          skipped: list | None = None) -> ast.AST:
     """Parse and vet host code. Raises SandboxViolation, or SyntaxError for broken code.
 
     What may be refused is what touches the data: writing where the world keeps its own state,
@@ -134,7 +115,12 @@ def check(code: str, protected: set[str] = frozenset(), always: set[str] = froze
 
     `protected` names can be read but not rebound — world variables change only via world.pin.
     """
-    tree = ast.fix_missing_locations(_ImportsAlreadyHere().visit(ast.parse(code, "<run>")))
+    imports = _ImportsAlreadyHere(lenient=skipped is not None)
+    tree = ast.fix_missing_locations(imports.visit(ast.parse(code, "<run>")))
+    if skipped is not None:
+        # Named here, told to the host by whoever is recording — this runs before there is
+        # anywhere to note it.
+        skipped.extend(sorted(set(imports.skipped)))
     for node in ast.walk(tree):
         if isinstance(node, ast.Name) and isinstance(node.ctx, (ast.Store, ast.Del)) and node.id in protected:
             if node.id in always:

@@ -454,7 +454,9 @@ class WorldRuntime:
         before = {name: id(value) for name, value in namespace.items()}
         try:
             ontology.set_open_tokens(self.world.questions.tokens())
-            tree = _variables_by_name(sandbox.check(code, protected=set(world_vars) | ALWAYS, always=ALWAYS))
+            skipped_imports: list[str] = []
+            tree = _variables_by_name(sandbox.check(code, protected=set(world_vars) | ALWAYS,
+                                                    always=ALWAYS, skipped=skipped_imports))
             # Statement by statement, each in its own transaction. All-or-nothing was the rule
             # here for a long time, and the measurements turned against it: a fifth to a quarter
             # of every pool's runs ended discarded, most of them over a typo eight lines from
@@ -463,6 +465,13 @@ class WorldRuntime:
             # no consistency, and the host is told exactly where the block stopped.
             with contextlib.redirect_stdout(stdout), ontology.track_access() as counts, \
                     ontology.record_changes() as recording, sandbox.time_limit():
+                if skipped_imports:
+                    ontology.note_hint(
+                        f"skipped the import of {', '.join(skipped_imports)} — not available here, "
+                        f"and the rest of the code ran without it. Those names are unbound, so "
+                        f"anything that really needed them failed on its own line. "
+                        + sandbox.AVAILABLE.split(". No files")[0] + "."
+                    )
                 _exec_by_statement(tree, namespace, self.store)
             with self.store.transaction():
                 access = dict(counts)

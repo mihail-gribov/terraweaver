@@ -136,10 +136,17 @@ def main() -> int:
     check("an import of what is already here is simply not needed",
           habit["ok"] and "2026-10-01" in habit["output"] and "09:15" in habit["output"],
           str(habit["error"]) or habit["output"])
-    refused_import = rt.run('import os', "host")
-    check("an import of something the world doesn't provide is still refused",
-          not refused_import["ok"] and "isn't available" in str(refused_import["error"]),
-          str(refused_import["error"]))
+    # An import this world hasn't got used to cost the whole block it stood in — twenty-five
+    # facts thrown away over a habit on line one. It is dropped now, and the name stays unbound.
+    skipped = rt.run('import os\nprint("the rest still runs")', "host")
+    check("an import of something the world doesn't provide is dropped, not refused",
+          skipped["ok"] and "the rest still runs" in skipped["output"], str(skipped["error"]))
+    check("and the host is told which one went",
+          any("skipped the import of os" in h for h in skipped.get("hints", [])),
+          str(skipped.get("hints")))
+    unbound = rt.run('import os\nprint(os.listdir("/"))', "host")
+    check("what it stood for is not reachable", not unbound["ok"]
+          and "not defined" in str(unbound["error"]), str(unbound["error"]))
 
     # --- a world structure misused answers where it can, teaches where it can't ---
     misused = rt.run('print(Person.find(full_name="Ada").full_name)', "host")
