@@ -118,10 +118,25 @@ class Authoring:
         self._save(spec)
         return attr
 
-    def define_relation(self, name: str, description: str, subject, object,
+    def define_relation(self, name: str, description: str, subject=None, object=None,
                         cardinality: str = "many-to-many", over_time: bool | None = None,
-                        attributes: list[dict] | None = None):
+                        attributes: list[dict] | None = None, reads: str | None = None,
+                        subject_is: str | None = None, object_is: str | None = None):
         """A new relation type: the sides, how many may stand on each, and whether one at a time.
+
+        `subject_is` / `object_is` name what each end *is* in this link — "driver" and "vehicle",
+        "owner" and "owned". That is what a class cannot say: a car is not barred from driving
+        because it is a Car, but because nothing that drives is a vehicle. Every type in the core
+        names its ends this way, and it is what makes a link written from the wrong end visible
+        as a wrong fact rather than a type mismatch.
+
+        A side may be a class, several classes, or left open. Open is the honest answer when the
+        first example is all anybody has seen: a side named after it refuses the second one, and
+        a host told "this type does not take these ends" defines a second type with the class
+        names in it rather than concluding its own guess was narrow. Two of the thirty-one types
+        a host built in one run were duplicates made that way. Name a side when the world will do
+        something with it — the one thing a named side buys is noticing a link written backwards,
+        and for that the two sides only have to differ.
 
         `over_time` has no default on purpose. It is what makes "who is it *now*" answerable — a
         new holder ends the previous one's period instead of standing beside it — and a run where
@@ -149,14 +164,17 @@ class Authoring:
             "description": _described(f"the relation {kind}", description),
             "relation": {
                 "kind": kind,
-                "from": [self._name_of(subject)],
-                "to": [self._name_of(object)],
+                "from": self._sides(subject),
+                "to": self._sides(object),
                 "functional": when if one_object else False,
                 "inverse_functional": when if one_subject else False,
                 "reverse": f"{kind}_of",
                 "labels": [],
-                "example": f"a.relate(b, {kind!r})",
-                "reads": f"a {kind} b",
+                "example": self._example(kind, subject, object),
+                "reads": reads or self._reads(kind, subject, object, subject_is, object_is),
+                "roles": ([{"name": _clean(subject_is).lower(),
+                            "inverse": _clean(object_is).lower() if object_is else None}]
+                          if subject_is else []),
             },
             "attributes": [self._attribute_spec(**a) for a in (attributes or [])],
             "methods": [],
@@ -265,6 +283,42 @@ class Authoring:
 
     def _name_of(self, cls) -> str:
         return cls if isinstance(cls, str) else getattr(cls, "__name__", str(cls))
+
+    def _reads(self, kind: str, subject, object, subject_is=None, object_is=None) -> str:
+        """Which end is the subject, in a sentence.
+
+        Every type in the core says this — "the owner is the subject", "the member is the
+        subject" — and it is what stops a link being written from the wrong end. Types the host
+        defines used to get "a <kind> b", which says nothing, and links came in backwards. Said
+        with the classes in it, the sentence at least names the ends; said by the host in its own
+        words (`reads=`), it names the roles, which is better.
+        """
+        if subject_is:
+            said = f"the {subject_is} is the subject"
+            return (f"{said}: {subject_is} {kind.replace('_', ' ')} "
+                    f"{object_is or 'the other end'}") if object_is else said
+        starts = " or ".join(self._sides(subject))
+        ends = " or ".join(self._sides(object))
+        if starts == "any" and ends == "any":
+            return (f"a {kind.replace('_', ' ')} b — whichever end you start from is the "
+                    f"subject, so start from the one the sentence starts from")
+        return (f"the {starts} is the subject: "
+                f"{starts} {kind.replace('_', ' ')} {ends}")
+
+    def _example(self, kind: str, subject, object) -> str:
+        a, b = self._sides(subject)[0], self._sides(object)[0]
+        a = "a" if a == "any" else a.lower()
+        b = "b" if b == "any" else b.lower()
+        return f"{a}.relate({b}, {kind!r})"
+
+    def _sides(self, given) -> list[str]:
+        """One side of a relation: a class, several, or open."""
+        if given is None:
+            return ["any"]
+        if isinstance(given, (list, tuple, set)):
+            named = [self._name_of(one) for one in given if one is not None]
+            return named or ["any"]
+        return [self._name_of(given)]
 
     def _spec_of(self, cls) -> dict:
         name = self._name_of(cls)

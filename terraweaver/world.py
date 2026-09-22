@@ -482,6 +482,12 @@ class World:
 
         return relations.free_shapes(self, least=least)
 
+    def verify(self, least: int = 3) -> list[dict]:
+        """What the world notices about its own links — nothing refused, everything named."""
+        from terraweaver import relations
+
+        return relations.verify(self, least)
+
     def take_in(self, kind, idea: str | None = None) -> list:
         """Move the free links that were waiting for a type into the one just defined."""
         from terraweaver import relations

@@ -114,6 +114,86 @@ Two more worth having:
   `[assumed]` notes** — if nobody ever corrects an assumption, the note is noise and the
   threshold should loosen.
 
+## 4. A schema that grows by measurement, not by judgement: EvoOntology
+
+EvoOntology (Chong, Zhang, Fan, Du, Renmin U., Sept 2026,
+[arXiv:2609.15779](https://arxiv.org/abs/2609.15779), PDF in [library/](library/),
+[code](https://github.com/ruc-datalab/EvoOntology)) is the closest published system to the
+shape we chose: an ontology served as an **MCP server** with a schema layer, a content layer and a
+tool layer, which a data agent queries at runtime instead of reading from its prompt. Their
+ontology is a map over data that lives elsewhere (tables, filings, CSVs); ours holds the data.
+That difference is why they have no time, no provenance, no contradictions and no identity —
+and why their numbers are not ours. What they have and we do not is a **measured loop** that
+changes the ontology:
+
+1. **Diagnose** — cluster failure signatures from agent trajectories.
+2. **Attribute** — tag each signature with the one level it belongs to: content, tool or schema.
+3. **Patch** — a typed edit at that level only, with a stated hypothesis.
+4. **Gate** — candidate against parent on the same held-out set, same backbone, same budget;
+   kept only if the gain reaches a margin. Rejected candidates are logged so they are not
+   proposed again.
+
+Every step was ablated (DDR-Bench, four backbones, trajectory-wise accuracy):
+
+| removed | cost |
+|---|---|
+| gate (accept every patch) | −11.2 |
+| attribution (edit any level, no hypothesis) | −6.3 |
+| diagnose (edit from a random trace sample) | −4.8 |
+| typed patch (free-form rewrite instead) | −1.7 |
+
+And the object families of the content layer: masking Mappings (term → column and join path)
+costs −13.4, Evidence (the probe query behind an entry) −8.7, Constraints −3.5, Relations −2.1.
+Their rule follows: **no entry is committed on a natural-language description alone; each is
+anchored in a probe that was actually run.**
+
+### Principles of ours that now have someone else's experiment behind them
+
+- **Knowledge behind a tool, not in the prompt.** The same semantic layer pasted into the
+  context cost −15.0 on Claude-Sonnet-5 and −11.9 overall; exposed through two MCP tools it gave
+  +8.8. Only a short manifest goes into the prompt. This is our "guarantee in the prompt is not a
+  guarantee" from the reading side, and it says the host guide should stay a manifest, not a
+  textbook.
+- **The interface moves the number more than the content.** Tool-level edits (how the ontology
+  is exposed) gave 57% of the accumulated gain, content 34%, schema 9% — the same finding as the
+  SWE-agent ACI ablations in section 1.
+- **One run measures nothing, so a change needs a gate.** Their gate is a paired, same-budget
+  comparison on a held-out fold with a margin, and it is the single most valuable step. Our
+  `pass^k` and repeat runs are the measurement; the gate — a schema change stays only if the host
+  answers better with it — is what we have not built.
+- **Grounded, not described.** Mappings and Evidence are the load-bearing families. Our version:
+  a type is crystallised from counted shapes of free links, and a fact carries its provenance; a
+  class description is not evidence.
+- **Typed structure beats episodic replay.** ReAct + retrieved past trajectories: +6.3.
+  EvoOntology: +20.0, "because episodic memory only replays what has been done and does not
+  expose typed, composable structure". The citation for the position in
+  [landscape.md](landscape.md#2-not-just-memory--and-memory-is-more-than-a-store).
+- **Different hosts need different exposure.** Ontologies evolved for four backbones from the
+  same start overlap at most 0.62 (Jaccard on term ids), and serving one backbone's store to
+  another loses 6.6–10.9 points. Measure per host; a Haiku failure and a Sonnet failure are two
+  data points, not one average.
+- **Structure converges.** Terms grew 61 → 80 over five accepted rounds, under 5% per round after
+  the third, flattening together with the score. A crystallisation step whose type count keeps
+  growing is a bug, not progress.
+- **Count the turns, not only the answers.** Per-turn context rose (3.2K → 4.1K input tokens)
+  but turns per task fell 14.6 → 8.4 and total tokens −20%, with accuracy 69.5 → 89.5. The
+  run-count metric planned for the runner is the right one.
+
+### What is new to us
+
+- **Attribute before fixing.** When a run fails, name the level — data, interface (API + guide),
+  or schema — and state the hypothesis before touching anything. Without the tag their loop
+  "makes content edits when the failure is a manifest problem, and vice versa"; that is what we
+  do by hand after every Haiku run.
+- **The interface is an editable level of the same loop.** Their evolution agent rewrites the
+  manifest and tools, not only the content. Our host guide and API are tuned by hand and never
+  measured as a candidate against a parent.
+- **A logged rejection is a nogood for proposals.** We keep nogoods for contradictions; a
+  rejected schema proposal deserves the same record, so the next session does not re-propose it.
+- **The evaluation protocol**: two disjoint folds, 70% of the adaptation fold for building and
+  30% for the gate, swap and average, ontology frozen before the held-out fold is touched. Cheap
+  to copy onto our scenario pool when the gate exists.
+
 ## What we changed because of this
 
 - `pass^k` is what the runner reports for repeated runs, with the rollback rate beside it.
@@ -124,4 +204,5 @@ Two more worth having:
 
 Still open, in order: a pre-commit check that reports all violations at once; a proposed-vs-
 confirmed `same_as` link with provenance instead of a duplicate; EVPI-shaped ranking to replace
-raw access counts.
+raw access counts; a gate for schema changes — a crystallised type or a grown attribute stays
+only if the host scores better with it on a held-out slice, with rejections logged (section 4).

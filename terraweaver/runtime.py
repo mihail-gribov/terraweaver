@@ -138,6 +138,12 @@ class WorldView:
         kinds of thing — a word that has become a habit. Define it and take them in."""
         return self._world.wanted(least)
 
+    def verify(self, least: int = 3) -> list[dict]:
+        """What the world notices about its own links: one running against its type, a type
+        narrower than its facts, two types that are one idea. Nothing is refused — each finding
+        says what was seen and what would settle it."""
+        return self._world.verify(least)
+
     def take_in(self, kind, idea: str | None = None) -> list:
         """Move the free links that were waiting for a type into the one just defined."""
         return self._world.take_in(kind, idea)

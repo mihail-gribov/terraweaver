@@ -1614,10 +1614,17 @@ def define_class(classes: dict[str, type], spec: dict[str, Any], name: str | Non
             from terraweaver.relations import Relation
 
             base = Relation
+            # The ends take anything. What classes a relation runs between is not a promise the
+            # world holds a host to — it is something the world watches and can count, and it was
+            # wrong as a promise: declared from the first example anybody saw, it refused the
+            # second, and a host told its type does not take these ends defines a second type
+            # with the class names in it. `relation["from"]` and `["to"]` stay, to describe the
+            # type and to measure an odd link against; they no longer stop one being written.
             ends = [
-                {"name": "subject", "type": "ref:" + "|".join(spec["relation"]["from"]), "required": True,
-                 "description": "Where the relation starts."},
-                {"name": "object", "type": "ref:" + "|".join(spec["relation"]["to"]), "required": True,
+                {"name": "subject", "type": "ref:any", "required": True,
+                 "description": "Where the relation starts — "
+                                + (spec["relation"].get("reads") or "the subject")},
+                {"name": "object", "type": "ref:any", "required": True,
                  "description": "Where the relation leads."},
             ]
             if not any(a["name"] == "subject" for a in spec["attributes"]):

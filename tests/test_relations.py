@@ -91,12 +91,12 @@ def main() -> int:
     check("a cycle of parts is refused", refused(lambda: company.relate(b04, "part_of")) is not None)
     check("a second current manager of the same department is refused",
           refused(lambda: chen.relate(b04, "authority")) is not None)
-    # A type whose ends don't fit used to refuse, and the host then wrote the fact out as a
-    # description — prose, which nothing can supersede. The link is kept instead, under the free
-    # type, with the word the host reached for as its label.
+    # Classes are not fixed on a relation. What a type has run between so far describes it; a
+    # link between other ends is news about the type, not an error in the link, so it is recorded
+    # as asked and the world says what it noticed.
     kept = b04.relate(chen, "kin")
-    check("an endpoint of the wrong class is kept as a free link",
-          type(kept).__name__ == "Related" and kept.label == "kin", repr(kept))
+    check("an endpoint of another class is recorded all the same",
+          type(kept).__name__ == "Kin" and kept.subject is b04, repr(kept))
     check("and an unknown type is kept the same way",
           getattr(b04.relate(chen, "keeps_bees_for"), "label", None) == "keeps_bees_for")
 

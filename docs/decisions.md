@@ -17,6 +17,84 @@ Newest first.
 
 ---
 
+## 2026-09-22 · Classes are not fixed on a relation
+
+**Seen.** The end classes were enforced twice: in `relate`, where a mismatch diverted the link to
+the free type, and again in the `subject`/`object` attributes generated from the declaration,
+which raised. The second is the one that fired in the base run, because the host reached the
+relation through `take_in` rather than `relate` — and a host told
+"affiliated_with_religion.subject must be a Person instance" defined
+`affiliated_with_religion_thing_to_thing` on its next turn.
+
+**Done.** The ends take anything. `relation["from"]` and `["to"]` stay in the spec — they
+describe the type and give `verify()` something to measure an odd link against — but nothing
+refuses a link for them. A link between other ends is recorded as asked, with a note saying what
+the type has run between until now.
+
+**Why this.** Which classes a relation runs between is the world's own bookkeeping: it holds the
+links and can count them, where the host had to guess from the first example it saw. A guess is
+not a promise to enforce. The host sets it up as it sees fit; the world records, counts and says
+what it notices. Two enforcement points for one declaration was also how the first fix missed —
+the fallback covered one door and the run went through the other.
+
+**Not this.** Dropping the declared ends altogether. They are the only statement of what the type
+is *for*, and `verify()` needs something to compare against; kept as description they cost
+nothing.
+
+**How we would know it was wrong.** Links arriving between ends so various that nothing can be
+said about a type's shape — then the declaration was carrying weight we have just thrown away.
+
+---
+
+## 2026-09-22 · A role says who stands where; a class only says what it is
+
+**Seen.** Every relation type in the core names its ends in prose — "the owner is the subject",
+"the member is the subject" — and `Kin` tells a mother from a father by role, not by class, since
+both ends are a Person. Types a host defines got `"a <kind> b"`, which says nothing, and the ends
+declared as one class each. In the base run the host wrote `authored by` starting from the book.
+
+**Done.** `define_relation` takes `subject_is` / `object_is` — what each end *is* in this link —
+and generates the sentence from them. A side may also be several classes or left open, where
+before it had to be exactly one. And the world can now say what it has actually seen at each end
+(`ends_seen`), which is counted rather than promised.
+
+**Why this.** A car is not barred from driving because it is a Car but because nothing that
+drives is a vehicle: the role carries the meaning, the class only carries the kind. Roles also
+hold what classes cannot — an inverse, synonyms, a limit — which the core already uses. And which
+classes stand where is the world's own bookkeeping: it has the links and can count them, where
+the host had to guess from one example.
+
+**Not this.** Going further now — verification by role, and a world that corrects its own declared
+ends from what it sees. Both follow from this and both were left, on the user's call, until there
+is more evidence of how it goes in practice.
+
+**How we would know it was wrong.** Hosts naming roles that are just the class again ("person"
+and "thing"), which would mean the distinction is not reaching them.
+
+---
+
+## 2026-09-22 · The world checks its own links and refuses none of them
+
+**Seen.** End types were doing one useful thing — catching a link written from the wrong end —
+and one harmful thing: refusing facts at the door, which cost 51 facts to prose and two duplicate
+types in one run.
+
+**Done.** `world.verify()`: three findings over what the world holds, none of them a refusal —
+a link running against the direction the rest of its type runs, a type narrower than the links it
+holds, two types of the same shape whose names read alike. On the base run's world it names the
+three duplicate pairs the host built.
+
+**Why this.** The same declaration is worth keeping and not worth enforcing: as a gate it loses
+facts, as evidence it answers questions nobody could ask. Each finding says what was seen and what
+would settle it, because every one has an innocent reading — a relation that genuinely runs both
+ways is not a mistake. The arithmetic picks the few; reading them is for the model, which is the
+same division `restructure` uses.
+
+**How we would know it was wrong.** Findings nobody acts on. A report that is never settled is a
+report nobody reads, and it should then be a refusal after all or nothing.
+
+---
+
 ## 2026-09-22 · A type declared from the first example may not reject the second
 
 **Seen.** In the base run the host defined `affiliated_with_religion` as Person → Thing, from the

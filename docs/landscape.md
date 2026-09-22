@@ -143,6 +143,15 @@ to stay true over years:
   tags have drifted; `assembly.unsettled()` reports identities that cannot be settled without
   help; open questions hold a doubt on the entity until somebody answers it.
 
+The field has now measured this distinction once. EvoOntology
+([arXiv:2609.15779](https://arxiv.org/abs/2609.15779), see [related-work.md](related-work.md#4-a-schema-that-grows-by-measurement-not-by-judgement-evoontology))
+compared, on the same agent and backbones, a memory that stores past trajectories and retrieves
+them (+6.3 points over no memory) with a typed ontology served through MCP tools (+20.0): "episodic
+memory only replays what has been done and does not expose typed, composable structure". The same
+paper found that pasting that structure into the prompt as a static semantic layer *hurts*
+(−15 on Claude-Sonnet-5) while querying it through tools helps — the world-as-server shape we
+chose is, on their evidence, the one that works.
+
 Statements with sources, periods and reversible assembly are exactly what memory needs, which is
 why this does memory well. But the thing being built is a governed, self-structuring model of a
 person's world, and the honest comparison set is
@@ -238,10 +247,14 @@ Ordered by return on effort:
 2. **Deterministic assembly for conflicts** wherever we still leave the choice to the model —
    the one measured +10-point result in the field, and it agrees with our own rule that a
    guarantee belongs in code.
-3. **The agenda**, even minimal: review-due tags, look-alikes, unsettled identities and open
+3. **A gate on schema changes**: a crystallised type or a grown attribute is kept only if the
+   host scores better with it on a held-out slice, same budget, paired against the world without
+   it; rejections logged. Accepting every change unmeasured was the costliest ablation in
+   EvoOntology (−11.2), and it is exactly how our growth works today.
+4. **The agenda**, even minimal: review-due tags, look-alikes, unsettled identities and open
    questions in one list of tickets. Without it, half of what is built is unobservable.
-4. **One external benchmark on a slice** — see below.
-5. **Position it by what it is**: a governed, self-structuring model of a person's world —
+5. **One external benchmark on a slice** — see below.
+6. **Position it by what it is**: a governed, self-structuring model of a person's world —
    records, sources, reversible decisions, open questions, a schema that grows, procedures, a
    line to the outside. It owes memory's functions and should be tested on them; it is not
    another memory layer, and the comparison set in section 2 is the one to be judged against.

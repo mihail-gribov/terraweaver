@@ -12,6 +12,7 @@ three-way answer as before: it passes now, it fails the same way, or it fails di
     .venv/bin/python experiments/replay.py <world.db> --like "goes .* →"
 """
 import argparse
+import ast
 import json
 import re
 import shutil
@@ -58,12 +59,27 @@ def history(path: str) -> list[tuple[str, str]]:
 
 
 def up_to_the_break(code: str, error: str) -> str:
-    """The block as far as it got — the world reports the line, so the replay can stop there."""
+    """The block as far as it got, cut at a statement rather than a line.
+
+    Cutting at the reported line severed multi-line calls and loop bodies, and the replay then
+    reported a SyntaxError where the original had a real failure — a fix read as a regression.
+    """
     where = re.search(r"^line (\d+):", error, re.M)
     if not where:
         return code
-    lines = code.splitlines()
-    return "\n".join(lines[: int(where.group(1))])
+    stop = int(where.group(1))
+    try:
+        tree = ast.parse(code)
+    except SyntaxError:
+        return "\n".join(code.splitlines()[:stop])
+    kept = [node for node in tree.body if (getattr(node, "end_lineno", node.lineno) or 0) <= stop]
+    broke = next((node for node in tree.body
+                  if node.lineno <= stop <= (getattr(node, "end_lineno", node.lineno) or stop)), None)
+    if broke is not None:
+        kept.append(broke)
+    if not kept:
+        return code
+    return "\n".join(code.splitlines()[: (getattr(kept[-1], "end_lineno", kept[-1].lineno) or stop)])
 
 
 def main() -> int:

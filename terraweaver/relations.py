@@ -330,10 +330,14 @@ def relate(world, a, b, kind: str, period: dict, attrs: dict, basis: list | None
     if not isinstance(subject, Entity) or not isinstance(obj, Entity):
         raise TypeError(f"{name} links two entities; got {type(subject).__name__} and {type(obj).__name__}")
     if not _fits(subject, rel["from"]) or not _fits(obj, rel["to"]):
-        return _as_free_link(
-            world, subject, obj, kind, period, attrs, basis,
-            f"{name} goes {' / '.join(rel['from'])} → {' / '.join(rel['to'])}, "
-            f"not {type(subject).__name__} → {type(obj).__name__}",
+        # Recorded, and noted. Classes are not fixed on a relation: the declaration says what has
+        # been seen so far, and a link between other ends is news about the type rather than an
+        # error in the link. `world.verify()` is where it is weighed.
+        ontology.note_hint(
+            f"{name} has run {' / '.join(rel['from'])} → {' / '.join(rel['to'])} until now, and "
+            f"this one is {type(subject).__name__} → {type(obj).__name__}. Recorded as it is. If "
+            f"it reads backwards, turn it round; if the type is wider than it was declared, it "
+            f"is the declaration that is behind."
         )
     if rel.get("same_class") and type(subject) is not type(obj):
         raise ValueError(f"{name} links two of the same kind: {type(subject).__name__} and {type(obj).__name__} differ")
@@ -1280,3 +1284,144 @@ def free_shapes(world, least: int = 2) -> list[dict]:
             })
     shapes.sort(key=lambda s: (-s["seen"], s["asked"]))
     return shapes
+
+
+# --- what the world knows about its own links ---
+
+def ends_seen(world, name: str) -> dict:
+    """Which classes actually stand at each end of this type, and how often.
+
+    Declared ends are a guess somebody made from the first example. This is what the world has:
+    counted, current, and its own business — no host promised it and none can get it wrong. It is
+    what the type's description should say, and what an anomaly is measured against.
+    """
+    at: dict = {"from": {}, "to": {}}
+    for link in world.all(name, limit=None, history=True):
+        if link.subject is None or link.object is None:
+            continue
+        at["from"][type(link.subject).__name__] = at["from"].get(type(link.subject).__name__, 0) + 1
+        at["to"][type(link.object).__name__] = at["to"].get(type(link.object).__name__, 0) + 1
+    return {side: dict(sorted(held.items(), key=lambda kv: -kv[1])) for side, held in at.items()}
+
+
+def as_it_runs(world, name: str, rel: dict) -> str:
+    """The type's ends as one line — what the world has seen, falling back to what was declared."""
+    seen = ends_seen(world, name)
+    if not seen["from"]:
+        return f"{' / '.join(rel.get('from') or ['any'])} → {' / '.join(rel.get('to') or ['any'])}"
+    said = lambda side: " / ".join(f"{cls}" + (f" ×{n}" if len(seen[side]) > 1 else "")
+                                   for cls, n in seen[side].items())
+    return f"{said('from')} → {said('to')}"
+
+
+# --- what the world can check about its own links ---
+
+def verify(world, least: int = 3) -> list[dict]:
+    """What the world notices about its own links, without refusing any of them.
+
+    End types are worth having and not worth enforcing at the door: refused there, a fact turns
+    into prose or into a second type with the class names in it, and both were counted. Kept as
+    evidence instead, the same declaration answers three questions nobody could ask before —
+    which link runs against its own type, which type is narrower than its facts, and which two
+    types are one idea under two words.
+
+    Nothing here is decided. Each finding says what was seen and what would settle it; the host
+    or the person settles it, because every one of them has an innocent reading. A relation
+    written from the far end is a mistake; a relation that genuinely goes both ways is not.
+    """
+    found: list[dict] = []
+    for name, cls in relation_classes(world.classes).items():
+        rel = spec(cls)
+        if rel.get("free") or rel.get("symmetric"):
+            continue
+        links = [r for r in world.all(name, limit=None, history=True)
+                 if r.subject is not None and r.object is not None]
+        if not links:
+            continue
+        shapes: dict = {}
+        for link in links:
+            shapes.setdefault((type(link.subject).__name__, type(link.object).__name__),
+                              []).append(link)
+        usual = max(shapes, key=lambda k: len(shapes[k]))
+        for shape, these in shapes.items():
+            if shape == usual or shape != (usual[1], usual[0]):
+                continue
+            if len(these) * 2 > len(links):      # no majority to be against
+                continue
+            found.append({
+                "about": "against the run of its type", "type": name,
+                "links": [r.id for r in these], "seen": len(these),
+                "said": f"{len(these)} {name} link(s) go {shape[0]} → {shape[1]} where "
+                        f"{len(shapes[usual])} go {usual[0]} → {usual[1]}. "
+                        f"{rel.get('reads', '')}".strip(),
+                "settled_by": "turn them round, or say the type goes both ways",
+            })
+        # A car where a person always stands. Not reversed and not outside the declaration —
+        # simply odd, which no rule catches and a reader sees at once. So the world counts what
+        # usually stands at each end and names the few that do not, for the model to look at.
+        already = {r.id for one in found if one["type"] == name for r in links
+                   if r.id in one.get("links", [])}
+        for side, position in ((0, "subject"), (1, "object")):
+            standing: dict = {}
+            for shape, these in shapes.items():
+                standing.setdefault(shape[side], []).extend(these)
+            if len(standing) < 2 or len(links) < least:
+                continue
+            common = max(standing, key=lambda c: len(standing[c]))
+            for held, these in standing.items():
+                these = [r for r in these if r.id not in already]
+                if held == common or not these or len(these) * 4 > len(links):
+                    continue
+                # One link is one finding. Reversed, it already has one: saying the subject is
+                # odd and the object is odd as well is the same news three times, and news
+                # repeated three times is how a report stops being read.
+                already.update(r.id for r in these)
+                found.append({
+                    "about": f"an odd {position}", "type": name, "seen": len(these),
+                    "links": [r.id for r in these],
+                    "said": f"{len(these)} {name} link(s) have a {held} as the {position} where "
+                            f"{len(standing[common])} have a {common}: "
+                            + "; ".join(f"{r.subject.display_name()} → {r.object.display_name()}"
+                                        for r in these[:3]),
+                    "settled_by": "read them: a thing standing where a person stands is usually "
+                                  "a fact recorded against the wrong entity",
+                })
+        wider = sorted({c for shape in shapes for c in shape}
+                       - {*rel.get("from", []), *rel.get("to", []), "any"})
+        if wider and "any" not in rel.get("from", []) + rel.get("to", []):
+            found.append({
+                "about": "narrower than its facts", "type": name, "seen": len(wider),
+                "said": f"{name} is declared {' / '.join(rel.get('from') or ['any'])} → "
+                        f"{' / '.join(rel.get('to') or ['any'])} and holds links with "
+                        f"{', '.join(wider)} at an end.",
+                "settled_by": "widen the type, or these belong to another one",
+            })
+    found.extend(_one_idea_two_words(world, least))
+    return found
+
+
+def _one_idea_two_words(world, least: int) -> list[dict]:
+    """Types of the same shape whose names read alike — one idea that got named twice.
+
+    `affiliated_with_religion` and `affiliated_with_religion_thing_to_thing` came out of one run.
+    The second exists because the first refused a pair of ends, which is the world's own doing;
+    saying so is the least it can offer.
+    """
+    typed = [(name, spec(cls)) for name, cls in relation_classes(world.classes).items()
+             if not spec(cls).get("free")]
+    if len(typed) < 2:
+        return []
+    names = [name for name, _ in typed]
+    out = []
+    for group in _one_idea(world, [n.replace("_", " ") for n in names]):
+        if len(group) < 2:
+            continue
+        together = [names[[n.replace("_", " ") for n in names].index(one)] for one in group]
+        held = {n: len(world.all(n, limit=None, history=True)) for n in together}
+        out.append({
+            "about": "one idea under two words", "type": together[0], "seen": len(together),
+            "said": f"{', '.join(f'{n} ({held[n]} links)' for n in together)} read as the same "
+                    f"idea.",
+            "settled_by": "keep one and take the others' links into it, or say how they differ",
+        })
+    return out
