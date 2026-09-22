@@ -433,6 +433,49 @@ class World:
 
         return periods.happening(self, since, until, limit)
 
+    def retype(self, entity, class_name: str):
+        """Read one entity under another class, without rebuilding the world to do it.
+
+        Becoming is local: the statements about this one thing do not move, and nobody else's
+        image changes. A full rebuild would give the same answer — the record holds `is_a` and
+        says so — but it re-clusters every statement in the world to get there, which took a
+        second and a half on a world of a hundred and thirty and ran a host's block past its
+        time limit on anything larger.
+        """
+        was = type(entity)
+        becomes = self.classes[class_name]
+        keep = {a["name"] for a in becomes._spec["attributes"] if "derived" not in a}
+        carried = {}
+        for attr in was._spec["attributes"]:
+            if "derived" in attr or attr["name"] not in keep:
+                continue
+            value = getattr(entity, attr["name"], None)
+            if value is not None and value != []:
+                carried[attr["name"]] = value
+        # Whatever it was called is what it is called: a Thing's `name` read as a Vacancy's
+        # `title`, the one thing every entity has and the one most easily lost in becoming.
+        named = matching.NAME_KEYS.get(was.__name__)
+        calls_it = matching.NAME_KEYS.get(class_name)
+        if named and calls_it and calls_it not in carried and getattr(entity, named, None):
+            carried[calls_it] = getattr(entity, named)
+        with ontology.trusted_writes(), ontology.not_recording():
+            self.store.forget(entity.id)
+            now = object.__new__(becomes)
+            now.id = entity.id
+            now.__dict__["_subject"] = entity.__dict__.get("_subject", entity.id)
+            now.__dict__["_subjects"] = entity.__dict__.get("_subjects", [entity.id])
+            for attr in becomes._spec["attributes"]:
+                if "derived" in attr:
+                    continue
+                default = [] if attr.get("type", "").startswith("list[") else None
+                setattr(now, attr["name"], carried.get(attr["name"], default))
+            now.created_at = getattr(entity, "created_at", None) or ontology.now_utc()
+            now.accessed_at = ontology.now_utc()
+            now.valid_from = getattr(entity, "valid_from", None)
+            now.valid_until = getattr(entity, "valid_until", None)
+            self.store.save(now)
+        return now
+
     def wanted(self, least: int = 2) -> list[dict]:
         """The types this world keeps needing and hasn't got — counted from its own free links."""
         from terraweaver import relations

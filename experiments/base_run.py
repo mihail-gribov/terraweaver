@@ -46,6 +46,7 @@ entities are already in it: world.owner, the person it belongs to, and world.me,
 Everything else you define as you go:
 
     world.classes_like("a sport")            — is there already a class for this? Look first.
+    classes()                                — every class this world has now, most used first
     world.anything_like("rugby")             — is there already a thing called this, of any kind?
     Sport = world.define("Sport", "a game people play and follow", identified_by="name")
     world.attribute(Person, "email", "the address they are written to at", type="email")

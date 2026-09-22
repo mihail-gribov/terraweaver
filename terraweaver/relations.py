@@ -492,6 +492,7 @@ def take_in(world, kind, idea: str | None = None) -> list:
     # between each, and every link still in hand would be a stale copy of a thing that moved.
     moving = [link for link in waiting if link.id in mine]
     one_way = list(rel.get("from", [])) != list(rel.get("to", []))
+    taken = []
     for link in moving:
         if one_way and _asked(getattr(link, "label", "") or "")[1]:
             # Written from the far end — "authored by" starts at the book. A type that runs one
@@ -503,17 +504,7 @@ def take_in(world, kind, idea: str | None = None) -> list:
                           f"'{getattr(link, 'label', '')}'")
         world.facts.state(getattr(link, "subject_id", None) or link.id, assembly.IS_A, name,
                           class_name=type(link).__name__)
-    if moving:
-        world.rebuild()
-    taken = []
-    for link in moving:
-        try:
-            taken.append(world.store.load(link.id, world.classes))
-        except KeyError:
-            # Rebuilding decided this link belongs to another image — two subjects that turned
-            # out to be one. What it said is in the record either way; there is just nothing
-            # here to hand back.
-            continue
+        taken.append(world.retype(link, name))
     return taken
 
 

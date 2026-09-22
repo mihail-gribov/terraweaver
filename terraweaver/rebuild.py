@@ -80,7 +80,19 @@ def _fill(world, entity, image, built: dict) -> None:
     for slot, value in image.values.items():
         if slot in declared or slot in ("valid_from", "valid_until"):
             kind = declared.get(slot, {}).get("type", "datetime" if slot.startswith("valid_") else "")
-            setattr(entity, slot, _value(value, built, kind))
+            try:
+                setattr(entity, slot, _value(value, built, kind))
+            except (TypeError, ValueError) as wrong:
+                # A class can be declared after the fact it disagrees with. The record is what
+                # was said and the image is a reading of it, so a reading that cannot be made
+                # leaves that one attribute unset — it must never stop the world being built.
+                # Refusing here made a world unopenable because a type defined on Tuesday did
+                # not fit a link written on Monday.
+                ontology.note_hint(
+                    f"{type(entity).__name__}.{slot} is in the record as something the class no "
+                    f"longer allows ({str(wrong).split('.')[0][:90]}) — left unset. What was said "
+                    f"is still there; the class or the statement has to give."
+                )
     said = [s for subject in image.subjects for s in world.facts.about(subject)]
     first = min((s.stated_at for s in said), default=None)
     entity.created_at = first or ontology.now_utc()

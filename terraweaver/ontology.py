@@ -657,10 +657,7 @@ class Entity:
             return self
         world.facts.state(self.subject_id, assembly.IS_A, name, valid_from=when,
                           class_name=type(self).__name__)
-        world.rebuild()
-        # By id, not by name: a link has no name, and an entity's name is exactly the thing most
-        # likely to be spelt differently under a class that calls it something else.
-        return world.store.load(self.id, world.classes)
+        return world.retype(self, name)
 
     def describe(self, text: str, when=None, tentative: bool = False, until=None, ttl=None,
                  starts=None, permanent: bool = False):
