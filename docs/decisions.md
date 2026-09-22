@@ -17,6 +17,46 @@ Newest first.
 
 ---
 
+## 2026-09-22 · The base earns its keep; our classes have to earn theirs
+
+**Seen.** The same 455 facts recorded twice by the same model. Once against our twenty fixed
+classes, once against the base alone — Thing, Related, Person, Agent, and the calls to define
+what turns out to need defining.
+
+|                              | our classes | the base |
+|------------------------------|------------:|---------:|
+| entities                     |         530 |      709 |
+| nothing said about them      |    75 (14%) |  60 (8%) |
+| typed links                  |         114 |      299 |
+| facts written as prose       |         212 |      128 |
+| host runs ending in a refusal|         31% |      24% |
+| questions answered           |       12/20 |    14/20 |
+
+The host on the base defined 31 relation types of its own, and the count settled — 3, 7, 9, 13,
+16, 18, 19, 19, 20, 20 — with the turns per batch falling from 41 to 8 as it did. By the end the
+world was asking for one type it had not got.
+
+**Done.** Nothing yet, beyond the measurement. What this settles is the standard: our fixed
+classes are filling, not foundation, and each of them has to show it makes the work easier than
+the base alone.
+
+**Why this.** The accuracy is the one number that cannot separate them — twenty questions at
+p≈0.6 is one sigma of 2.2, so 14 against 12 is the same number. Everything that can be counted
+deterministically moved one way: two and a half times the structure, forty per cent less prose,
+fewer refusals. A pre-made class is only help if it saves the host work, and on this material
+ours cost it work — turns spent fitting facts into classes meant for something else, which is
+how seventy things ended up inside `Idea`.
+
+**Not this.** Reading 14 against 12 as the world getting better. It is not distinguishable, and
+saying so would be the same mistake that had us "fix" a restructuring pass on a 9-against-7
+difference earlier the same day.
+
+**How we would know it was wrong.** A base run on material where the classes fit — a job search,
+a move, a household — losing to the fixed set on the same counts. This was one benchmark of
+encyclopedic facts, which is the case our classes were least designed for.
+
+---
+
 ## 2026-09-22 · A word the world took is a word it answers to
 
 **Seen.** A host wrote `a.relate(b, "related", label="plays position")` and then read it back with
