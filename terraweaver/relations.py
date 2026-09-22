@@ -765,11 +765,34 @@ def relations_of(world, entity, kind: str | None = None, history: bool = False,
     better answered with a correction than with a silence, but a filter over many is not a
     question: if "everyone with a membership" quietly matched the organizations too, the
     direction would stop meaning anything at all."""
+    by_label = None
     if kind is None:
         chosen = [(name, None) for name in relation_classes(world.classes)]
     else:
-        name, reverse = resolve_kind(world.classes, kind)
-        chosen = [(name, reverse)]
+        try:
+            name, reverse = resolve_kind(world.classes, kind)
+            chosen = [(name, reverse)]
+        except ValueError as unknown:
+            # Not a type — but the world took this word when it was written, as the label of a
+            # link it had no type for. Refusing to answer to it would mean a world that accepts
+            # a host's own word and then cannot be asked about it, which is acceptance worth
+            # nothing. So the free links are searched by what they were called.
+            chosen = [(n, None) for n, c in relation_classes(world.classes).items()
+                      if spec(c).get("free")]
+            by_label = _asked(kind)[0]
+            written = {_asked(getattr(r, "label", "") or "")[0]
+                       for n, _ in chosen for r in world.all(n, limit=None, history=True)}
+            if not by_label or by_label not in written:
+                # Neither a type nor a word anybody has used. Answering "none" to that reads as
+                # "there are no such links", when what is true is that the world has never heard
+                # the word — and a typo would pass for an answer.
+                near = ontology.did_you_mean(by_label or str(kind), sorted(written))
+                raise ValueError(
+                    str(unknown).rstrip(".") + (f"; nor is anything labelled {kind!r}"
+                                                if not near else
+                                                f"; nothing is labelled {kind!r} either — "
+                                                f"did you mean {near!r}?")
+                ) from None
     found, hidden = [], []
     for name, _ in chosen:
         ontology.ask_if_questioned(entity, f"relation:{spec(world.classes[name])['kind']}")
@@ -781,6 +804,8 @@ def relations_of(world, entity, kind: str | None = None, history: bool = False,
             else:
                 hit = same(r.object, entity) if reverse else same(r.subject, entity)
             if not hit:
+                continue
+            if by_label is not None and _asked(getattr(r, "label", "") or "")[0] != by_label:
                 continue
             if history or r.current():
                 found.append(r)
@@ -866,7 +891,12 @@ def _from_the_other_end(world, entity, kind: str, name: str, reverse, history: b
 
 def related(world, entity, kind: str, history: bool = False) -> list:
     """The entities at the other end — plus, for transitive types, the rest of the chain."""
-    name, reverse = resolve_kind(world.classes, kind)
+    try:
+        name, reverse = resolve_kind(world.classes, kind)
+    except ValueError:
+        # A word the world took as a label rather than a type. `relations_of` knows how to look
+        # for those; there is no chain to follow, because an untyped link has no behaviour yet.
+        return _unique([r.other(entity) for r in relations_of(world, entity, kind, history)])
     rel = spec(world.classes[name])
     direct = [r.other(entity) for r in relations_of(world, entity, kind, history)]
     out = _unique(direct)
