@@ -17,6 +17,42 @@ Newest first.
 
 ---
 
+## 2026-09-22 · A type declared from the first example may not reject the second
+
+**Seen.** In the base run the host defined `affiliated_with_religion` as Person → Thing, from the
+first fact it saw. Then "Kingdom of Ireland is affiliated with Zoroastrianism" arrived, the world
+refused on the ends, and the host's very next move was to define
+`affiliated_with_religion_thing_to_thing`. The same happened with
+`associated_with_sport_person_thing`. Two of the 31 types the host built were duplicates of
+another one, named after the classes that did not fit.
+
+The refusal came through `take_in`, whose end check used one unordered set of both sides, so a
+Thing → Thing link passed a Person → Thing type and failed where it was written rather than where
+it was chosen.
+
+**Done.** Each end is checked against its own side, in the direction it would be taken in. Links
+that say the word but do not fit the ends stay free, and the world says which type they were
+reaching for and that the type is probably narrower than the facts.
+
+**Why this.** End types are worth having — they are what a relation's checks are made of, and our
+core types encode real behaviour that derived attributes depend on. But a type the host declared
+five minutes ago from one example carries no such knowledge: it is a guess, and the second
+example is evidence about the guess, not a violation of it. Refusing there does not protect the
+data; it costs a turn and buys a duplicate, which is worse than the narrow type was.
+
+**Not this.** Widening the type automatically. A type whose ends grow to fit whatever arrives
+stops checking anything, and the one case an end check really catches — a link recorded backwards
+— would go through silently.
+
+**Still missing.** A host cannot widen a type it has declared: `define_relation` refuses the name
+and there is no `widen`. The world now names the problem and offers no call for it, which is the
+state we criticise everywhere else. That call is the next thing owed here.
+
+**How we would know it was wrong.** Types accumulating with ends so wide they never refuse
+anything — then the check has become decoration and should be removed rather than kept as ritual.
+
+---
+
 ## 2026-09-22 · The base earns its keep; our classes have to earn theirs
 
 **Seen.** The same 455 facts recorded twice by the same model. Once against our twenty fixed
