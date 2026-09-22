@@ -306,11 +306,39 @@ def _repeat_rules(world) -> list[dict]:
     return out
 
 
-def _from_statements(world):
+def rebuild_for(world, subject: str, slot: str | None = None) -> int:
+    """Derive one subject's stretches again, leaving everyone else's alone.
+
+    The whole table used to be rebuilt every time a list attribute was assigned — every
+    `Organization(aliases=[...])` in a fixture scanned every statement in the world, which is
+    quadratic in the number of entities and hung the build outright once there were enough of
+    them. Nothing about one entity's periods depends on another's, so nothing else needs redoing.
+    """
+    run_script(world.store.conn, SCHEMA)
+    _add_missing_columns(world.store.conn)
+    if slot:
+        world.store.conn.execute("DELETE FROM periods WHERE subject = ? AND nature = ?",
+                                 (subject, slot))
+    else:
+        world.store.conn.execute("DELETE FROM periods WHERE subject = ?", (subject,))
+    rows = 0
+    for held, nature, value, stretches in _from_statements(world, subject, slot):
+        for starts, until in coalesce(stretches):
+            _insert(world, held, nature, value, starts, until)
+            rows += 1
+    world.store.conn.commit()
+    return rows
+
+
+def _from_statements(world, only: str | None = None, slot_only: str | None = None):
     """(subject, nature, value, stretches) for everything the statements say held for a time."""
     gathered: dict = {}
     for slot in over_time(world):
+        if slot_only and slot != slot_only:
+            continue
         for statement in world.facts.with_slot(slot):
+            if only and statement.subject != only:
+                continue
             values = statement.value if isinstance(statement.value, list) else [statement.value]
             for one in values:
                 if not isinstance(one, str):

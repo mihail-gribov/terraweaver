@@ -297,7 +297,12 @@ class WorldRuntime:
         self.store.clear_all()
         self.store.conn.execute("DELETE FROM world_variables")
         self.store.conn.commit()
-        load_world(self.fixture)(self.classes, self.store)
+        # One transaction for the whole build. Saving each entity on its own meant 366 commits
+        # for 331 entities, and a commit is a write to the disk: a tenth of a second when there
+        # is room and seventeen milliseconds apiece when there is not, which is six seconds of
+        # fixture and, on a filesystem at ninety-nine per cent, a build that never finished.
+        with self.store.transaction():
+            load_world(self.fixture)(self.classes, self.store)
         self.sessions = {}
 
     # --- what hosts call ---

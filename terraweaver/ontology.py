@@ -801,7 +801,7 @@ class Entity:
             return
         from terraweaver import periods
 
-        periods.rebuild(world)
+        periods.rebuild_for(world, self.subject_id, slot)
         # What the record says holds, never what the entity happens to carry: at creation the
         # entity already carries what was asked for, and taking that as "already stated" left
         # every tag given to Class.new() unrecorded.
@@ -850,7 +850,7 @@ class Entity:
         from terraweaver import periods, timeutil
 
         world = current_world()
-        periods.rebuild(world)  # cheap, and always exactly what the statements say
+        periods.rebuild_for(world, self.subject_id, slot)  # exactly what the statements say
         return [Spell(one, timeutil.moment(starts), timeutil.moment(until), "record")
                 for one, starts, until in periods.stretches(world, self.subject_id, slot, value)]
 

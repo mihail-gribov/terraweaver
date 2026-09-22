@@ -94,3 +94,26 @@ And keep the reversal honest. Loosening identification so that any single match 
 contradiction counted as the same entity made a second Robert Wolfe impossible to record; four
 suites went red and the change came out again, with the reason written next to the code so the
 next person doesn't retry it blind.
+
+## Take the stack before you take a guess
+
+A suite hung one evening. In an hour it got three explanations — the machine is slow, the local
+embedding server is queued, the change made this afternoon did it — and each was plausible, each
+was said before anything was measured, and each was wrong. The stack, when it was finally taken,
+named the line in one second: a commit blocked inside SQLite, because the disk was at 99%.
+
+Worse came first. The suite had been reported failing several times that day and each time the
+failure was explained away as the timeout being too short. An explanation that costs nothing to
+believe is the one to distrust; a failing check is a fact, and the convenient reading of it is
+not.
+
+    faulthandler.dump_traceback_later(30, exit=True)   # before the call that hangs
+
+Two real defects were hiding under the full disk, invisible while there was room: the fixture
+committed once per entity (366 writes to the disk for 331 entities) and setting any dated list
+rebuilt the period table of the whole world. Neither was the cause of the hang. Both made the
+world fragile exactly when it was under load, which is when it matters.
+
+**Three rules out of it.** Take the stack before explaining. Never write off a failing check as
+an artefact of how it was run — rerun it alone and read what it says. And when several runs share
+one machine, one local model and one disk, the measurement is of the queue, not of the code.
