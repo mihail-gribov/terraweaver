@@ -34,6 +34,10 @@ from pathlib import Path
 VALUE_TYPES = ("str", "int", "float", "bool", "datetime", "date", "email", "phone", "url",
                "domain", "dict")
 TEXT_TYPES = ("text", "list[text]")
+# How alike two type descriptions must read before the world hands back the one it has
+# rather than making a second. Above this they are the same idea said twice.
+SAME_IDEA = 0.82
+
 CARDINALITY = {
     # what the host says          one subject per object?   one object per subject?
     "one-to-one": (True, True),
@@ -159,6 +163,17 @@ class Authoring:
             raise Refused(f"cardinality is one of {', '.join(CARDINALITY)}")
         one_subject, one_object = CARDINALITY[cardinality]
         when = "at_any_time" if over_time else True
+        already = self._relation_like(f"{kind.replace('_', ' ')}. {description}")
+        if already:
+            # The world looks, because the host does not. Forty-six relation types were defined
+            # in one run and `classes_like` was never called once — an instruction to look before
+            # inventing is an instruction, and instructions are what this world stopped relying
+            # on. Where the match is plain the existing type is handed back and the reading is
+            # announced, the same bargain `take_as` makes for a misspelt word.
+            name_of, description_of, _ = already[0]
+            print(f"[note] {kind} reads as {name_of} ({description_of}) — that type, not a "
+                  f"second one. If they differ, say how and define it under a name that says so.")
+            return self.world.classes[name_of]
         spec = {
             "name": _clean(name),
             "description": _described(f"the relation {kind}", description),
@@ -182,6 +197,25 @@ class Authoring:
         built = ontology.define_class(self.world.classes, spec)
         self._save(spec)
         return built
+
+    def _relation_like(self, text: str, limit: int = 1) -> list[tuple[str, str, float]]:
+        """Relation types that read like this, closest first, with how close."""
+        known = {}
+        for name, cls in self.world.classes.items():
+            rel = cls._spec.get("relation")
+            if rel and not rel.get("free"):
+                known[name] = f"{rel['kind'].replace('_', ' ')}. {cls._spec.get('description', '')}"
+        if not known:
+            return []
+        names = list(known)
+        vectors = self.world.meanings.model.embed([text] + [known[n] for n in names])
+        scored = sorted(((n, self.world.classes[n]._spec.get("description", ""),
+                          sum(a * b for a, b in zip(vectors[0], v)))
+                         for n, v in zip(names, vectors[1:])), key=lambda one: -one[2])
+        # Only where it is plain. A looser bar names an unrelated type as a near miss — "married
+        # to" against "associated with sport" — and a warning that cries wolf stops being read,
+        # which costs more than the duplicate it was meant to prevent.
+        return [one for one in scored[:limit] if one[2] >= SAME_IDEA]
 
     # --- looking before inventing ---
 

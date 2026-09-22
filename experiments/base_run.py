@@ -70,6 +70,10 @@ said: True when a thing has one current holder and a new one ends the last (an e
 spouse), False when they simply accumulate. Without it, asking later gives the first answer you \
 were ever told.
 
+Before you record anything, learn what is already here: call `classes()` for the whole list, \
+and `describe_classes([...])` for the ones you are about to use. Do it once, now — what you know \
+about this world decides what you build in it.
+
 Three habits that matter more than the modelling you choose:
 
 - **Never write a fact as a sentence to get it in.** Prose cannot be superseded and cannot be \

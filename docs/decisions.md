@@ -17,6 +17,71 @@ Newest first.
 
 ---
 
+## 2026-09-22 · The looking happens on the way in
+
+**Seen.** Two channels reach this host: the description it is handed every turn, and what comes
+back from `run`. Counted over the base run — 393 calls to `run`, 39 to `describe_world`, 2 to
+`describe_classes`, 0 to `classes_like`. Anything it has to ask for, it does not ask for.
+
+**Done.** Before a block executes, the world reads it. Where it declares a class or a relation
+type, the world looks for what it already holds under another word and says so — on the result
+of that very call, with `describe_classes([...])` named.
+
+**Why this.** Said afterwards it is a post-mortem; put in the prompt it is an instruction, and
+the instruction was there and was ignored 46 times. On the way in it arrives attached to the line
+that would make the duplicate, through the one channel that works. It also catches what the
+check inside `define_relation` cannot: classes, and matches too weak to act on but worth naming.
+
+**Not this.** Checking attributes the same way. Tried and measured: "given names / other names
+they go by" reads 0.701 like `aliases` and 0.684 like `full_name` — seventeen thousandths between
+the right answer and an unrelated field of the same class. Attribute names are short and their
+descriptions formulaic, so everything on one class reads alike. A reminder that names the wrong
+twin half the time is worse than none, so attributes are left out until something separates them.
+
+**How we would know it was wrong.** Reminders on every second declaration. Three defences now
+stand between a host and a duplicate — this one, the hand-back inside `define_relation`, and
+`verify()` afterwards — and if the first is noisy the other two are enough.
+
+---
+
+## 2026-09-22 · The world looks, because the host does not
+
+**Seen.** In the base run the host defined 46 relation types. It called `classes_like` or
+`anything_like` **zero** times, in 392 code runs. The tool counts say the same thing about
+studying at all:
+
+    393  run                 393 times it wrote code
+     39  describe_world      twice a batch, the description it is handed anyway
+      2  describe_classes    twice, in the whole run
+      1  describe_methods
+
+The primer told it to look before inventing. It did not, and three of its types were another
+type said twice.
+
+**Done.** `define_relation` does the lookup itself, against the descriptions of the types the
+world already has. Where the match is plain it hands back the existing type and says so, instead
+of making a second. `define` has done this for classes since it was written; relation types had
+nothing.
+
+**Why this.** An instruction in a prompt is not a guarantee — the rule this project keeps
+relearning. And the counts say something larger: anything reachable only by asking does not reach
+this host. Two channels do — the description it is given every turn, and what comes back from
+`run`. Knowledge belongs in those, which is where every hint added today went.
+
+**Not this.** Warning on a loose match. At the threshold that catches near-misses, "married to"
+reads like "associated with sport", and a warning that cries wolf stops being read — which costs
+more than the duplicate it was meant to prevent. Only the plain case acts; the rest passes.
+
+**Not yet.** Merging two types that are already there. It is written and works — 6 links moved
+between the run's real duplicates — but it stays out of the host's reach for now, on the user's
+call: with merging available the duplicate count gets cleaned up, and then there is no way to see
+whether prevention works.
+
+**How we would know it was wrong.** A host prevented from defining a type it genuinely needed,
+visible as a type whose links mean two things at once.
+
+---
+
 ## 2026-09-22 · Choose who to compare before building them
 
 **Seen.** Identifying one entity built every entity of its class in order to score it. On the base

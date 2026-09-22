@@ -145,6 +145,10 @@ def resolve_kind(classes: dict[str, type], kind: str) -> tuple[str, bool]:
     for name, cls in relation_classes(classes).items():
         rel = spec(cls)
         if wanted in (rel["kind"], name.lower()):
+            # A word that was merged away still lands where its idea went. Refusing it would
+            # cost the fact to save the tidiness, and the host learned this word from us.
+            if rel.get("same_as"):
+                return resolve_kind(classes, rel["same_as"])
             return name, False
         if rel.get("reverse") and wanted == rel["reverse"]:
             return name, True
@@ -1428,3 +1432,47 @@ def _one_idea_two_words(world, least: int) -> list[dict]:
             "settled_by": "keep one and take the others' links into it, or say how they differ",
         })
     return out
+
+
+def merge(world, keep, drop) -> dict:
+    """Make two relation types one, and leave the abandoned word working.
+
+    A vocabulary grows two names for one idea — `associated_with_sport` and
+    `associated_with_sport_person_thing` came out of one run — and naming the pair is no use
+    without a way to close it. Every link of the dropped type becomes the kept one, the way a
+    thing becomes what the world learns to call it: a statement, nothing moved, reversible by
+    retracting it.
+
+    The dropped name is not deleted. A host that learned it will write it again, and refusing
+    then would cost the fact to save the tidiness — so the name stays as another word for the
+    kept type, and `relate` follows it.
+    """
+    names = []
+    for given in (keep, drop):
+        name = given if isinstance(given, str) else getattr(given, "__name__", str(given))
+        if name not in world.classes:
+            raise ValueError(f"there is no relation type {name!r} here")
+        if spec(world.classes[name]).get("free"):
+            raise ValueError(f"{name} is the free type — everything untyped lives there, so it "
+                             f"is not one idea and cannot be merged away")
+        names.append(name)
+    kept, dropped = names
+    if kept == dropped:
+        raise ValueError("a type is already itself")
+    into, gone = spec(world.classes[kept]), spec(world.classes[dropped])
+    moving = [r for r in world.all(dropped, limit=None, history=True)]
+    for link in moving:
+        world.facts.state(getattr(link, "subject_id", None) or link.id, assembly.IS_A, kept,
+                          class_name=dropped)
+    taken = [world.retype(link, kept) for link in moving]
+    # What the dropped type knew, the kept one keeps: its words, and the word itself.
+    into.setdefault("labels", [])
+    for label in [gone.get("kind"), *(gone.get("labels") or [])]:
+        if label and label not in into["labels"]:
+            into["labels"].append(label)
+    gone["same_as"] = into.get("kind") or kept
+    ontology.note_hint(
+        f"{dropped} is now another word for {kept}: {len(taken)} link(s) moved, and writing "
+        f"'{gone['kind']}' still works — it lands on {kept}."
+    )
+    return {"kept": kept, "dropped": dropped, "moved": len(taken)}

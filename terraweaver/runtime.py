@@ -527,6 +527,8 @@ class WorldRuntime:
             # no consistency, and the host is told exactly where the block stopped.
             with contextlib.redirect_stdout(stdout), ontology.track_access() as counts, \
                     ontology.record_changes() as recording, sandbox.time_limit():
+                for said in _about_to_invent(self, tree):
+                    ontology.note_hint(said)
                 if skipped_imports:
                     ontology.note_hint(
                         f"skipped the import of {', '.join(skipped_imports)} — not available here, "
@@ -984,6 +986,79 @@ def format_result(result: dict) -> str:
     if result["new_variables"]:
         parts.append("[new variables] " + "; ".join(f"{k}: {v}" for k, v in result["new_variables"].items()))
     return "\n".join(parts)
+
+
+# What a host writes when it is adding to the vocabulary rather than using it.
+# Attributes are not in here, and not for want of trying. "given names / other names they go by"
+# reads 0.701 like `aliases` and 0.684 like `full_name` — seventeen thousandths between the right
+# answer and an unrelated field of the same class. Attribute names are short and their
+# descriptions formulaic, so everything on one class reads alike, and a reminder that names the
+# wrong twin half the time is worse than none.
+_DECLARING = {"define": "class", "define_relation": "relation type"}
+
+
+def _about_to_invent(runtime, tree) -> list[str]:
+    """Before the code runs: is it naming something this world already has under another word?
+
+    The host does not study the world — 46 relation types defined in one run against two calls
+    to `describe_classes` and none at all to `classes_like`. So the looking happens here, on the
+    way in, attached to the very line that would make the second word. Said afterwards it would
+    be a post-mortem; said in the prompt it would be an instruction, and instructions are what
+    this world stopped relying on.
+    """
+    proposed = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        called = getattr(node.func, "attr", None) or getattr(node.func, "id", None)
+        if called not in _DECLARING:
+            continue
+        words = [a.value for a in node.args if isinstance(a, ast.Constant)
+                 and isinstance(a.value, str)]
+        if words:
+            proposed.append((_DECLARING[called], words[0], " ".join(words[:2])))
+    if not proposed:
+        return []
+    return _reads_like(runtime, proposed)
+
+
+def _reads_like(runtime, proposed: list) -> list[str]:
+    """For each name about to be declared, the nearest thing the world already holds."""
+    known: dict[str, tuple[str, str]] = {}
+    for name, cls in runtime.classes.items():
+        spec = cls._spec
+        rel = spec.get("relation")
+        if rel and rel.get("free"):
+            continue
+        what = "relation type" if rel else "class"
+        known[f"{what}:{name}"] = (name, f"{name.replace('_', ' ')}. {spec.get('description', '')}")
+        for attr in spec.get("attributes", []):
+            if attr["name"] in ("subject", "object") or "derived" in attr:
+                continue
+            known[f"attribute:{name}.{attr['name']}"] = (
+                f"{name}.{attr['name']}",
+                f"{attr['name'].replace('_', ' ')}. {attr.get('description', '')}")
+    said = []
+    for what, name, text in proposed:
+        theirs = [key for key in known if key.startswith(f"{what}:")]
+        if not theirs:
+            continue
+        from terraweaver import authoring
+
+        vectors = runtime.world.meanings.model.embed([text] + [known[k][1] for k in theirs])
+        best, score = None, 0.0
+        for key, vector in zip(theirs, vectors[1:]):
+            close = sum(a * b for a, b in zip(vectors[0], vector))
+            if close > score:
+                best, score = known[key][0], close
+        if best and score >= authoring.SAME_IDEA - 0.08 and best.lower() != name.lower():
+            said.append(
+                f"about to define the {what} '{name}', and this world already has '{best}', "
+                f"which reads much the same. describe_classes([\"{best.split('.')[0]}\"]) says "
+                f"what it is made of. One idea under two words makes every later question ask "
+                f"both."
+            )
+    return said
 
 
 def _host_traceback(exc: BaseException, code: str = "") -> str:
