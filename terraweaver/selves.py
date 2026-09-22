@@ -50,7 +50,7 @@ FILES = {
 
 # Where the part of a file below its front matter belongs. For a person it is a note about them;
 # for the assistant it is what the file is for in the first place — who it is.
-BODY_GOES_TO = {"user": "notes", "agent": "character"}
+BODY_GOES_TO = {"user": "descriptions", "agent": "character"}
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS self_files (
@@ -148,7 +148,7 @@ def _read_into(world, files: "SelfFiles", role: str, entity, path: Path) -> str:
                 world.facts.retract(statement.id)
         declared = {a["name"] for a in type(entity)._spec["attributes"] if "derived" not in a}
         stated = {name: value for name, value in fields.items() if name in declared}
-        body_slot = BODY_GOES_TO.get(role, "notes")
+        body_slot = BODY_GOES_TO.get(role, "descriptions")
         if body and body_slot in declared:
             stated[body_slot] = body
         for name, value in stated.items():

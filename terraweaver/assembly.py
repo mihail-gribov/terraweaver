@@ -27,6 +27,10 @@ SAME_AS, NOT_SAME_AS = "same_as", "not_same_as"
 
 # Slots that say "this is a different one" when two subjects disagree about them. A name can be
 # written half a dozen ways; an email address is either the same address or someone else's.
+# One word for one place: free text lives in `descriptions`. `notes` and `description`
+# are older spellings of it, still on disk in worlds written before the rename.
+ONE_WORD_FOR_TEXT = {"notes": "descriptions", "description": "descriptions"}
+
 DISTINGUISHING = ("email", "phone")
 
 
@@ -257,7 +261,10 @@ def assemble(facts, rule: Callable[[list, list], bool] = same_name, at: datetime
             for statement in facts.about(subject):
                 if statement.slot in (SAME_AS, NOT_SAME_AS):
                     continue
-                by_slot.setdefault(statement.slot, []).append(statement)
+                # Free text had three names once, and worlds recorded before that still hold
+                # statements under the other two. They are read as what they always were.
+                slot = ONE_WORD_FOR_TEXT.get(statement.slot, statement.slot)
+                by_slot.setdefault(slot, []).append(statement)
         class_name = next((facts.class_of(s) for s in image.subjects if facts.class_of(s)), None)
         name_slot = matching.NAME_KEYS.get(class_name or "")
         for slot, statements in by_slot.items():

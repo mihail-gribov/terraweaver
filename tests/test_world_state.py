@@ -154,7 +154,9 @@ def main() -> int:
     carol = Person(full_name="Carol", email="carol@initech.com")
     initech = Organization(name="Initech")
     job = classes["Membership"](subject=carol, object=initech, primary=True)  # a relation holds both ends
-    initech.notes = {"unserializable"}  # a set can't be encoded, so the graph fails midway
+    # A set can't be encoded, so the graph fails midway. It goes in past the attribute door
+    # on purpose: what is under test is the save, not the check that would have caught it.
+    object.__setattr__(initech, "tags", {"unserializable"})
     failed = False
     try:
         store.save_graph(job)
@@ -165,7 +167,7 @@ def main() -> int:
           len(store.load_all("Person", classes)) == people_before
           and len(store.load_all("Organization", classes)) == orgs_before)
     check("and gives back the ids it handed out", carol.id is None and initech.id is None and job.id is None)
-    initech.notes = None
+    object.__setattr__(initech, "tags", [])
     store.save_graph(job)
     check("the same graph saves once fixed",
           Person.find(email="carol@initech.com").matches[0].organization.name == "Initech")

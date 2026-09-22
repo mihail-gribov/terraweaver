@@ -289,6 +289,17 @@ class Entity:
             meant = did_you_mean(given, spec_attrs, synonyms)
             if meant and meant not in kwargs:
                 kwargs[take_as(f"{class_name}(...)", given, meant)] = kwargs.pop(given)
+        # An older spelling given at construction is folded into the one place it belongs before
+        # anything is built. Left to the property, it would be applied after the entity is saved
+        # — outside whatever is recording the run, so a link the world worked out came back with
+        # a description that looked like something the user had said.
+        for attr in type(self)._spec["attributes"]:
+            source = str(attr.get("derived", ""))
+            if source.startswith("self.") and attr["name"] in kwargs:
+                held = source.split(".", 1)[1]
+                given = kwargs.pop(attr["name"])
+                if given is not None:
+                    kwargs[held] = list(kwargs.get(held) or []) + [given]
         for attr in type(self)._spec["attributes"]:
             name = attr["name"]
             if "derived" in attr:
@@ -1300,6 +1311,10 @@ def _check_type(class_name: str, spec: dict[str, Any], attr_name: str, value) ->
     declared = next((a["type"] for a in spec["attributes"] if a["name"] == attr_name), None)
     if not declared:
         return
+    if declared.startswith("list[") and isinstance(value, str):
+        # One of several is still one of several. Written as a bare string it used to be stored
+        # as a string, and then a list attribute answered with its last character.
+        return [value]
     if declared.startswith("ref:"):
         expected = declared[4:]
         if expected != "any" and type(value).__name__ not in expected.split("|"):
@@ -1371,6 +1386,34 @@ def _relation_property(class_name: str, attr: dict):
         raise TypeError(f"{class_name}.{attr['name']} is derived from relations and can't be set directly")
 
     return property(lambda self: getter(self), setter or refuse, doc=attr.get("description", ""))
+
+
+def _same_entity_property(class_name: str, attr: dict):
+    """A second word for something this entity already holds — read as the latest, written as one more.
+
+    Three slots held free text: `descriptions`, `notes` and `description`. A host wrote into
+    whichever it remembered, so the same kind of fact ended up in three places, only one of which
+    carries a date, a source and a period — and the other two could not be superseded or
+    crystallised out of. One word for one place: the text lives in `descriptions`, and these read
+    and write it.
+    """
+    held = attr["derived"].split(".", 1)[1]
+
+    def get(self):
+        texts = getattr(self, held, None) or []
+        return texts[-1] if texts else None
+
+    def put(self, value):
+        if value is None:
+            return
+        if not isinstance(value, str):
+            raise TypeError(f"{class_name}.{attr['name']} is free text — got {type(value).__name__}. "
+                            f"Anything with parts of its own wants an attribute of its own.")
+        # Through the list, not through describe(): the list is the one door, and whatever is
+        # recording this run — a conclusion with its basis, a held write — goes through it too.
+        setattr(self, held, list(getattr(self, held, None) or []) + [value])
+
+    return property(get, put, doc=attr.get("description", ""))
 
 
 def _derived_property(class_name: str, attr: dict):
@@ -1508,6 +1551,8 @@ def define_class(classes: dict[str, type], spec: dict[str, Any], name: str | Non
         for attr in spec.get("attributes", []):
             if attr.get("derived") == "relation":
                 namespace[attr["name"]] = _relation_property(name, attr)
+            elif str(attr.get("derived", "")).startswith("self."):
+                namespace[attr["name"]] = _same_entity_property(name, attr)
             elif "derived" in attr:
                 namespace[attr["name"]] = _derived_property(name, attr)
         for method in spec.get("methods", []):

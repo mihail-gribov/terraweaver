@@ -64,7 +64,7 @@ def main() -> int:
         check("a line taken out takes its value", again.world.owner.email is None,
               str(again.world.owner.email))
         live = again.world.facts.about("person:user")
-        check("the statement it used to make is retracted", {s.slot for s in live} == {"full_name", "notes"},
+        check("the statement it used to make is retracted", {s.slot for s in live} == {"full_name", "descriptions"},
               str(live))
         check("and is still in the record",
               len(again.world.facts.about("person:user", include_retracted=True)) == 5,

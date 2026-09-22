@@ -49,7 +49,7 @@ REMOTE_MODEL = os.environ.get("TERRAWEAVER_EMBEDDING_API", "Qwen/Qwen3-Embedding
 
 # Free-text attributes worth finding by meaning. Names are not here on purpose: a name is for
 # identity, and identity is not decided by proximity.
-TEXT_ATTRIBUTES = ("descriptions", "notes", "description", "title", "value")
+TEXT_ATTRIBUTES = ("descriptions", "title", "value")
 
 
 class Plain:

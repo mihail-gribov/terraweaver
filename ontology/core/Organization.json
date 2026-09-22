@@ -55,7 +55,9 @@
       "name": "notes",
       "type": "str",
       "required": false,
-      "description": "Free-text notes, e.g. facts/news gathered so far."
+      "description": "The latest of this one's descriptions, as one string. Writing it adds a description; they all live there.",
+      "derived": "self.descriptions",
+      "settable": true
     }
   ],
   "methods": [

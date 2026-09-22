@@ -12,7 +12,9 @@
       "name": "description",
       "type": "str",
       "required": false,
-      "description": "What this project is about."
+      "description": "The latest of this one's descriptions, as one string. Writing it adds a description; they all live there.",
+      "derived": "self.descriptions",
+      "settable": true
     },
     {
       "name": "status",

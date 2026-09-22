@@ -24,8 +24,10 @@
     {
       "name": "description",
       "type": "str",
-      "required": true,
-      "description": "What this link is, in a sentence."
+      "required": false,
+      "description": "The latest of this one's descriptions, as one string. Writing it adds a description; they all live there.",
+      "derived": "self.descriptions",
+      "settable": true
     }
   ],
   "methods": []

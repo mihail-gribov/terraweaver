@@ -40,7 +40,9 @@
       "name": "notes",
       "type": "str",
       "required": false,
-      "description": "Anything else it knows about itself."
+      "description": "The latest of this one's descriptions, as one string. Writing it adds a description; they all live there.",
+      "derived": "self.descriptions",
+      "settable": true
     }
   ],
   "methods": []
