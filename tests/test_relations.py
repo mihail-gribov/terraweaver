@@ -279,6 +279,23 @@ def main() -> int:
           str([r.display_name() for r in ana.relations("related", any_time=True)]))
     check("and leaves what it was drawn from untouched",
           [s.value for s in world.facts.about(ana.subject_id, "descriptions")] == ["famous for the Shahnameh"])
+    # --- a conclusion takes its place in time, and a later one closes an earlier one ---
+    from datetime import date as _date
+
+    moved = Person.new(full_name="Cedric Klapisch", email="cedric@x.example")
+    moved.describe("citizen of France", when=_date(2026, 3, 1))
+    moved.describe("citizen of Malaysia", when=_date(2026, 6, 1))
+    told = sorted(world.facts.about(moved.subject_id, "descriptions"),
+                  key=lambda s: s.valid_from or s.stated_at)
+    fr = world.classes["Place"].new(name="France", city="Paris", category="other")
+    my = world.classes["Place"].new(name="Malaysia", city="Kuala Lumpur", category="other")
+    early = world.relate(moved, fr, "located", starts=told[0].valid_from, basis=[told[0]])
+    check("a derived link holds from the moment of what it was drawn from",
+          early.starts == _date(2026, 3, 1), str(early.starts))
+    check("and its statements carry that moment, not now",
+          all(s.valid_from is not None for s in world.facts.about(early.id)),
+          str([(s.slot, s.valid_from) for s in world.facts.about(early.id)]))
+
     stated = world.relate(ana, book, "related", label="wrote", description="the user said so")
     refused_retract = ""
     try:

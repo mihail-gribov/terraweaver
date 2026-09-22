@@ -94,32 +94,37 @@ def prose_share(conn) -> dict[str, dict]:
     return dict(sorted(out.items(), key=lambda kv: -kv[1]["share"]))
 
 
-def notes(conn) -> list[tuple[str, str, str, str]]:
-    """(class, subject, text, statement id) for everything that went into a text slot.
+def notes(conn) -> list[tuple[str, str, str, str, object]]:
+    """(class, subject, text, statement id, when it began to hold) for everything in a text slot.
 
-    The statement comes along because a value read out of a note is a conclusion, and a
-    conclusion has to be able to say which note it rests on.
+    Two things come along with the text. The statement, because a value read out of a note is a
+    conclusion and a conclusion says what it rests on. And **when that note began to hold**,
+    because a conclusion drawn from it holds from then too — the first time this pass ran without
+    that, every derived value was stamped "now", the timeline flattened, and questions that had
+    been answered with the current value started coming back with the first one. Restructuring
+    that loses the time of its evidence destroys the very thing it was built to restore.
     """
     found = []
     for table in _class_tables(conn):
         class_name = table[len("facts_"):]
-        for row_id, subject, value in _rows(
-                conn, f'select id, subject, value from "{table}" where slot in '
-                      f'({",".join("?" * len(NOTE_SLOTS))})', NOTE_SLOTS):
+        for row_id, subject, value, held_from in _rows(
+                conn, f'select id, subject, value, coalesce(valid_from, stated_at) from "{table}" '
+                      f'where slot in ({",".join("?" * len(NOTE_SLOTS))})', NOTE_SLOTS):
             try:
                 said = json.loads(value)
             except (TypeError, json.JSONDecodeError):
                 said = value
             for one in (said if isinstance(said, list) else [said]):
                 if isinstance(one, str) and one.strip():
-                    found.append((class_name, subject, one.strip(), f"{table}:{row_id}"))
+                    found.append((class_name, subject, one.strip(), f"{table}:{row_id}",
+                                  held_from))
     return found
 
 
 def repeated(conn) -> list[tuple[str, int, list[str]]]:
     """Notes written word for word more than once — nobody repeats what has a field."""
     counts, classes = Counter(), defaultdict(set)
-    for class_name, _, text, _id in notes(conn):
+    for class_name, _, text, _id, _when in notes(conn):
         counts[text] += 1
         classes[text].add(class_name)
     return [(text, count, sorted(classes[text]))
@@ -136,7 +141,7 @@ def shapes(conn, least: int = WORTH_LOOKING) -> list[dict]:
     names = known_names(conn)
     pattern = re.compile("|".join(re.escape(name) for name in names) or r"(?!x)x")
     seen: dict[str, dict] = {}
-    for class_name, subject, text, _id in notes(conn):
+    for class_name, subject, text, _id, _when in notes(conn):
         filled = pattern.findall(text)
         skeleton = pattern.sub("…", text).strip()
         skeleton = re.sub(r"\s+", " ", skeleton)
@@ -379,6 +384,23 @@ def _values_in(shape: str, text: str, names: dict[str, str]) -> list[str]:
     return filled if skeleton == shape else []
 
 
+def _moment(held_from):
+    """The note's own moment, whatever shape the store kept it in."""
+    from datetime import datetime
+
+    if held_from in (None, ""):
+        return None
+    if isinstance(held_from, (int, float)):  # the store's microsecond stamp
+        try:
+            return datetime.fromtimestamp(held_from / 1_000_000)
+        except (OverflowError, OSError, ValueError):
+            return None
+    try:
+        return datetime.fromisoformat(str(held_from))
+    except ValueError:
+        return None
+
+
 def apply(world, answer: dict, *, specs_dir=None, dry_run: bool = False) -> dict:
     """Define what was missing, and read the notes into it.
 
@@ -435,7 +457,7 @@ def apply(world, answer: dict, *, specs_dir=None, dry_run: bool = False) -> dict
     for shape, class_name, slot in targets:
         if not (shape and slot):
             continue
-        for note_class, subject, text, said_in in notes(conn):
+        for note_class, subject, text, said_in, held_from in notes(conn):
             if class_name and note_class != class_name:
                 continue
             values = _values_in(shape, text, names)
@@ -452,13 +474,13 @@ def apply(world, answer: dict, *, specs_dir=None, dry_run: bool = False) -> dict
             try:
                 if kind and other is not None:
                     world.relate(world.store.load(subject, world.classes), other, kind,
-                                 basis=[said_in])
+                                 starts=_moment(held_from), basis=[said_in])
                     done["linked"] += 1
                 elif kind:
                     done["skipped"] += 1  # the note names something this world has never met
                 else:
                     world.facts.conclude(subject, slot, value, basis=[said_in],
-                                         class_name=note_class)
+                                         valid_from=_moment(held_from), class_name=note_class)
                     done["concluded"] += 1
             except Exception as trouble:
                 done["skipped"] += 1

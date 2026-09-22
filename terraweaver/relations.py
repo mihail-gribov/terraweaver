@@ -353,13 +353,18 @@ def relate(world, a, b, kind: str, period: dict, attrs: dict, basis: list | None
 
     start = period.get("valid_from") or timeutil.now()
     end = period.get("valid_until")
+    if basis:
+        _supersede_own_conclusions(world, name, rel, subject, obj, start, basis)
     _check_functional(world, name, rel, subject, obj, start, end, attrs)
     if attrs.get("role"):
         _check_roles(world, name, cls, subject, obj, attrs["role"], start, end)
     if rel.get("acyclic") and _reaches(world, name, obj, subject):
         raise ValueError(f"{name} can't form a cycle: {obj.display_name()} already leads to {subject.display_name()}")
     _note_flipped(world, name, rel, subject, obj, attrs)
-    created = world.create(name, {"subject": subject, "object": obj, **attrs}, basis=basis)
+    created = world.create(name, {"subject": subject, "object": obj, **attrs}, basis=basis,
+                           period=period)
+    if period and basis:
+        period = {}      # already on it, and stated as the conclusion it is
     waiting = getattr(subject, "_waiting_title", None)
     if waiting and name == "Membership" and attrs.get("primary") and not attrs.get("title"):
         created.title = waiting          # the title that was set before there was a job
@@ -497,6 +502,36 @@ def _how_to_make_room(start) -> str:
         return (f"end that one where this one begins — old.keep(until={timeutil.show(start)}) — "
                 f"or give this one a later starts=")
     return "end that one first (its .expire(), or keep(until=...)), or give this one starts= after it ends"
+
+
+def _supersede_own_conclusions(world, name, rel, subject, obj, start, basis) -> None:
+    """A later conclusion closes an earlier one of its own kind. Only its own.
+
+    Between two things the world worked out for itself, the later evidence wins and the earlier
+    reading ends where it begins — that is what supersession means, and refusing the second
+    leaves the first standing as the answer, which is how a restructuring pass made a world
+    worse than it found it. Between a conclusion and something the person said, nothing of the
+    sort: the world does not overrule what it was told, and the ordinary refusal stands.
+    """
+    if rel.get("functional") != "at_any_time" and rel.get("inverse_functional") != "at_any_time":
+        return
+    for r in world.all(name, limit=None, history=True):
+        if not (same(r.subject, subject) if rel.get("functional") == "at_any_time"
+                else same(r.object, obj)):
+            continue
+        if not _overlaps(r, start, None) or getattr(r, "valid_until", None) is not None:
+            continue
+        said = [s for s in world.facts.about(r.id) if not s.is_conclusion]
+        if said:
+            continue                       # the person's, not the world's: leave it alone
+        with ontology.trusted_writes(), ontology.not_recording():
+            r.valid_until = start
+        world.store.save_graph(r)
+        world.facts.conclude(r.id, "valid_until", timeutil.as_datetime(start).isoformat(),
+                             basis=basis, class_name=name)
+        ontology.note_hint(
+            f"{r.display_name()} was the world's own reading and ends {timeutil.show(start)}, "
+            f"where the later one begins — both were worked out, so the later evidence wins.")
 
 
 def _check_functional(world, name, rel, subject, obj, start, end, attrs) -> None:

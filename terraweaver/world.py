@@ -560,9 +560,19 @@ class World:
 
             relations.note_gap_on_ending(self, instance)
 
-    def create(self, class_name: str, attrs: dict, basis: list | None = None):
+    def create(self, class_name: str, attrs: dict, basis: list | None = None,
+               period: dict | None = None):
         ontology.note_world_call("world_writes")
         instance = self.classes[class_name](**attrs)
+        if period and basis:
+            # Set here rather than applied afterwards: applying it would state the period as
+            # something the agent said, and this is something the world worked out. It has to
+            # carry the moment of the evidence it was drawn from, or a conclusion about what
+            # held in March is recorded as holding from now — which flattens the timeline and
+            # destroys the very supersession the reasoning was meant to restore.
+            with ontology.trusted_writes(), ontology.not_recording():
+                for attr, value in period.items():
+                    setattr(instance, attr, value)
         self.store.save_graph(instance)
         # Attributes given at construction are set before the entity has an id, so they can't
         # state themselves on the way in; they are stated here, once it has one.
@@ -578,9 +588,12 @@ class World:
                 # Something the world worked out, not something it was told. It goes where every
                 # conclusion goes — the reasoning tables, weakest source, its basis recorded —
                 # so a derived link can be told from a stated one, ranked below it, and dropped
-                # as a guess rather than ended as if it had once been true.
+                # as a guess rather than ended as if it had once been true. With the period of
+                # the evidence on it, so it takes its place in time rather than at the end of it.
                 self.facts.conclude(instance.id, name, ontology._as_statement(value),
-                                    basis=basis, run_id=run_id, class_name=class_name)
+                                    basis=basis, run_id=run_id, class_name=class_name,
+                                    valid_from=(period or {}).get("valid_from"),
+                                    valid_until=(period or {}).get("valid_until"))
             else:
                 self.facts.state(instance.id, name, ontology._as_statement(value),
                                  source=source, run_id=run_id, class_name=class_name)
