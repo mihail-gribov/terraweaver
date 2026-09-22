@@ -96,7 +96,13 @@ def where(world, cls=None, *, related=None, tagged=None, tagged_all=None, mentio
         # tell anyone: the host cannot read one. It asks world.like(text) for that, which returns
         # the text with the score.
 
-    return found[:limit] if limit else found
+    # A selection is a search, and the host reads every search the same way: `.main` for the one
+    # it meant, `.matches` for all of them. Handing back a bare list here made `where(...).main`
+    # the commonest AttributeError in a 600-run pool — one vocabulary, or none.
+    from terraweaver.matching import FindResult
+
+    return FindResult(found[:limit] if limit else found, [],
+                      class_name=cls if isinstance(cls, str) else getattr(cls, "__name__", None))
 
 
 def _classes(world, cls, attributes: dict, wanted_tags: list) -> list[str]:
