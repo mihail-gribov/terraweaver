@@ -26,7 +26,7 @@ from typing import Any
 
 import difflib
 
-from terraweaver import assembly, ontology, timeutil
+from terraweaver import assembly, matching, ontology, timeutil
 from terraweaver.ontology import Entity
 
 
@@ -52,7 +52,7 @@ class Relation(Entity):
         rel = type(self)._spec["relation"]
         subject, obj = getattr(self, "subject", None), getattr(self, "object", None)
         said = self.display_name()
-        if rel.get("symmetric") or not isinstance(subject, Entity) or not isinstance(obj, Entity):
+        if rule(rel, "symmetric") or not isinstance(subject, Entity) or not isinstance(obj, Entity):
             return said
         word = str(self.__dict__.get("role") or self.__dict__.get("label") or "").strip().lower()
         for role in rel.get("roles", []):
@@ -131,6 +131,30 @@ def same(a, b) -> bool:
     if a is b:
         return True
     return isinstance(a, Entity) and isinstance(b, Entity) and a.id is not None and a.id == b.id
+
+
+# What a nature means, in one place. The rules are read from it, never copied beside it: a type
+# that carried both `nature` and its own `transitive`/`symmetric` fields would be two statements
+# of one thing, and two statements of one thing is how supersession was lost earlier today.
+BY_NATURE = {
+    "composition": {"transitive": True, "acyclic": True, "irreflexive": True},
+    "hierarchy": {"transitive": True, "acyclic": True, "irreflexive": True},
+    "equivalence": {"symmetric": True, "transitive": True},
+    "derivation": {"acyclic": True, "irreflexive": True},
+    "association": {},
+}
+
+
+def rule(rel: dict, name: str, default=None):
+    """A relation's behaviour: what its nature says, unless the type states otherwise itself.
+
+    The nature is an attribute, not a class — it names which rules apply. Reading them through
+    here means a type and its nature cannot drift apart, and a nature gained or corrected is
+    gained or corrected everywhere at once.
+    """
+    if name in rel:
+        return rel[name]
+    return BY_NATURE.get(rel.get("nature") or "", {}).get(name, default)
 
 
 def spec(cls) -> dict:
@@ -347,7 +371,7 @@ def relate(world, a, b, kind: str, period: dict, attrs: dict, basis: list | None
         )
     if rel.get("same_class") and type(subject) is not type(obj):
         raise ValueError(f"{name} links two of the same kind: {type(subject).__name__} and {type(obj).__name__} differ")
-    if rel.get("irreflexive", True) and same(subject, obj):
+    if rule(rel, "irreflexive", True) and same(subject, obj):
         raise ValueError(f"{subject.display_name()} can't be in a {name} relation with itself")
     belongs = _type_the_label_belongs_to(world, name, cls, rel, attrs)
     if belongs:
@@ -387,12 +411,12 @@ def relate(world, a, b, kind: str, period: dict, attrs: dict, basis: list | None
         if end.id is None:
             world.save(end)
 
-    existing = [r for r in world.all(name, limit=None) if _between(r, subject, obj, rel.get("symmetric"))]
+    existing = [r for r in world.all(name, limit=None) if _between(r, subject, obj, rule(rel, "symmetric"))]
     if existing:
         found = existing[0]
         # Seen from the other end of a symmetric relation, a label is that side's label:
         # "Darren is Kevin's younger brother" after "Kevin is Darren's older brother".
-        if rel.get("symmetric") and not same(found.subject, subject):
+        if rule(rel, "symmetric") and not same(found.subject, subject):
             attrs = dict(attrs)
             attrs.pop("role", None)  # said from the other end: the stored role is the other side's
             if "label" in attrs and any(a["name"] == "label_reverse" for a in cls._spec["attributes"]):
@@ -411,7 +435,7 @@ def relate(world, a, b, kind: str, period: dict, attrs: dict, basis: list | None
     _check_functional(world, name, rel, subject, obj, start, end, attrs)
     if attrs.get("role"):
         _check_roles(world, name, cls, subject, obj, attrs["role"], start, end)
-    if rel.get("acyclic") and _reaches(world, name, obj, subject):
+    if rule(rel, "acyclic") and _reaches(world, name, obj, subject):
         raise ValueError(f"{name} can't form a cycle: {obj.display_name()} already leads to {subject.display_name()}")
     _note_flipped(world, name, rel, subject, obj, attrs)
     created = world.create(name, {"subject": subject, "object": obj, **attrs}, basis=basis,
@@ -458,8 +482,9 @@ def _note_a_type_is_wanted(world, created) -> None:
     ontology.note_hint(
         f"'{idea}' has been written {len(kin)} times as a link with no type, always between "
         f"{a} and {b}. That is a type this world hasn't got: "
-        f"world.define_relation(\"{idea.replace(' ', '_')}\", \"<what it is>\", subject={a}, "
-        f"object={b}, cardinality=\"many-to-many\", over_time=<one at a time?>). "
+        f"world.define_relation(\"{idea.replace(' ', '_')}\", \"<what it is>\", "
+        f"nature=\"association\", subject={a}, object={b}, "
+        f"cardinality=<how many?>, over_time=<one at a time?>). "
         f"Then world.take_in(<the type>, \"{idea}\") moves the ones already written into "
         f"it — nothing is "
         f"re-read, they were structured all along."
@@ -611,7 +636,7 @@ def _note_flipped(world, name: str, rel: dict, subject, obj, attrs: dict) -> Non
     which is its business; what a dentist is, is not.
     """
     label = str(attrs.get("label") or attrs.get("role") or "").strip().lower()
-    if not label or rel.get("symmetric"):
+    if not label or rule(rel, "symmetric"):
         return
     others = [r for r in world.all(name, limit=None, history=True)
               if str(getattr(r, "label", None) or getattr(r, "role", None) or "").strip().lower() == label]
@@ -680,6 +705,60 @@ def _between(rel, subject, obj, symmetric: bool) -> bool:
     return bool(symmetric) and same(rel.subject, obj) and same(rel.object, subject)
 
 
+def _not_ours_to_end(link) -> bool:
+    """Whether ending this link is a thing the world may decide by itself.
+
+    Nothing in the data tells a handover from a correction — "her partner is Lena" after "her
+    partner is Naomi" reads both ways, and no rule decides it. Two things make it the person's
+    call rather than ours:
+
+    A date. Given one, the link is a claim about a stretch of time, said deliberately; ending it
+    on our own initiative overrides what somebody meant.
+
+    A person at the far end. Closing "Linda manages this department" or "Michael's wife is Vera"
+    is the world saying something about somebody's life — a displacement, not a correction. A
+    sport, a country, an employer is not displaced by being superseded; a person is.
+
+    Everything else hands over, which is what a one-at-a-time relation is for.
+    """
+    if getattr(link, "valid_from", None) is not None:
+        return True
+    for end in (getattr(link, "subject", None), getattr(link, "object", None)):
+        if end is not None and type(end).__name__ in matching.PART_MATCH_CLASSES:
+            return True
+    return False
+
+
+def _why_not_to_assume(link) -> str:
+    if getattr(link, "valid_from", None) is not None:
+        return "That one was given a date, so ending it is not something to assume."
+    return "Somebody is on the other end of that one, and ending it says something about them."
+
+
+def _hand_over(world, standing, held, start, name: str) -> None:
+    """A new holder of a one-at-a-time relation ends the last one, rather than being refused.
+
+    This relation exists to be changed — that is what `over_time` says about it — and the change
+    is the commonest thing anybody records: a new employer, a new capital, the sport a position
+    turns out to belong to. Refusing it made the world answer "which one now" with the first
+    thing it had ever been told: eight of ten wrong answers in one run were a superseded value
+    still standing, because the statement that would have replaced it was turned away at the
+    door and never written anywhere.
+
+    What was said is not erased. The old link keeps its period and its history; it simply stops
+    holding at the moment the new one starts.
+    """
+    when = timeutil.as_datetime(start) if start is not None else timeutil.now()
+    with ontology.trusted_writes():
+        standing.valid_until = when
+        world.save(standing)
+    ontology.note_hint(
+        f"{held.display_name()} had {standing.display_name()} and {name} holds one at a time, so "
+        f"that one now ends {timeutil.show(when)} and this is what holds. Both are in the record; "
+        f"ask with history=True for the one that ended."
+    )
+
+
 def _how_to_make_room(start) -> str:
     """What actually ends the old one where the new one begins.
 
@@ -726,19 +805,29 @@ def _check_functional(world, name, rel, subject, obj, start, end, attrs) -> None
     candidates = [r for r in world.all(name, limit=None, history=True) if _overlaps(r, start, end)]
     if rel.get("functional") == "at_any_time":
         for r in candidates:
-            if same(r.subject, subject) or (rel.get("symmetric") and (same(r.object, subject) or same(r.subject, obj) or same(r.object, obj))):
-                taken = subject if (same(r.subject, subject) or same(r.object, subject)) else obj
-                raise ValueError(
-                    f"{taken.display_name()} already has a {name} for that time: {r.display_name()}. "
-                    f"One at a time — {_how_to_make_room(start)}."
-                )
+            if same(r.subject, subject) or (rule(rel, "symmetric") and (same(r.object, subject) or same(r.subject, obj) or same(r.object, obj))):
+                # The same link said again is both ends the same. Matching on the far end
+                # alone let a symmetric relation through: "Vera's husband is Michael" and then
+                # "Zoya's husband is Michael" share an object and are not one link.
+                if same(r.subject, subject) and same(r.object, obj):
+                    continue
+                if rule(rel, "symmetric") and same(r.object, subject) and same(r.subject, obj):
+                    continue
+                if _not_ours_to_end(r):
+                    raise ValueError(
+                        f"{subject.display_name()} already has a {name} for that time: "
+                        f"{r.display_name()}. {_why_not_to_assume(r)} {_how_to_make_room(start)}."
+                    )
+                _hand_over(world, r, subject, start, name)
     if rel.get("inverse_functional") == "at_any_time":
         for r in candidates:
-            if same(r.object, obj):
-                raise ValueError(
-                    f"{obj.display_name()} already has a {name} for that time: {r.display_name()}. "
-                    f"One at a time — {_how_to_make_room(start)}."
-                )
+            if same(r.object, obj) and not same(r.subject, subject):
+                if _not_ours_to_end(r):
+                    raise ValueError(
+                        f"{obj.display_name()} already has a {name} for that time: "
+                        f"{r.display_name()}. {_why_not_to_assume(r)} {_how_to_make_room(start)}."
+                    )
+                _hand_over(world, r, obj, start, name)
     if name == "Membership" and attrs.get("primary"):
         for r in candidates:
             if same(r.subject, subject) and getattr(r, "primary", False):
@@ -925,7 +1014,7 @@ def _from_the_other_end(world, entity, kind: str, name: str, reverse, history: b
     right, so the next question can be asked properly.
     """
     rel = spec(world.classes[name])
-    if rel.get("symmetric") or not rel.get("reverse"):
+    if rule(rel, "symmetric") or not rel.get("reverse"):
         return []
     mine = "object" if not reverse else "subject"
     theirs, later = [], []
@@ -956,7 +1045,7 @@ def related(world, entity, kind: str, history: bool = False) -> list:
     direct = [r.other(entity) for r in relations_of(world, entity, kind, history)]
     out = _unique(direct)
     if not reverse:
-        if rel.get("transitive"):
+        if rule(rel, "transitive"):
             out = _unique(out + [x for d in direct for x in _chain(world, name, d)])
         if rel.get("transitive_via"):
             out = _unique(out + [x for d in direct for x in _chain(world, rel["transitive_via"], d)])
@@ -1184,10 +1273,10 @@ def describe_relations(specs: dict[str, dict], class_name: str) -> list[str]:
             continue
         labels = ", ".join(rel.get("labels", [])[:5])
         if class_name in rel["from"] or "any" in rel["from"]:
-            arrow = "↔" if rel.get("symmetric") else "→"
+            arrow = "↔" if rule(rel, "symmetric") else "→"
             note = notes.get(rel["kind"], labels)
             lines.append(f"      {rel['kind']} {arrow} {' / '.join(rel['to'])}  — {note}")
-        if not rel.get("symmetric") and rel.get("reverse") and (class_name in rel["to"] or "any" in rel["to"]):
+        if not rule(rel, "symmetric") and rel.get("reverse") and (class_name in rel["to"] or "any" in rel["to"]):
             note = notes.get(rel["reverse"], f"read from this end of {rel['kind']}")
             lines.append(f"      {rel['reverse']} ← {' / '.join(rel['from'])}  — {note}")
     lines.append("      related → any  — anything no type fits (label and description required)")
@@ -1341,7 +1430,7 @@ def verify(world, least: int = 3) -> list[dict]:
     found: list[dict] = []
     for name, cls in relation_classes(world.classes).items():
         rel = spec(cls)
-        if rel.get("free") or rel.get("symmetric"):
+        if rel.get("free") or rule(rel, "symmetric"):
             continue
         links = [r for r in world.all(name, limit=None, history=True)
                  if r.subject is not None and r.object is not None]

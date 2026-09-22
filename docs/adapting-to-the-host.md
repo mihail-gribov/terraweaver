@@ -117,3 +117,17 @@ world fragile exactly when it was under load, which is when it matters.
 **Three rules out of it.** Take the stack before explaining. Never write off a failing check as
 an artefact of how it was run — rerun it alone and read what it says. And when several runs share
 one machine, one local model and one disk, the measurement is of the queue, not of the code.
+
+## A link has two ends, and half the checks written in haste forget one
+
+Three defects in one day, all the same shape. `take_in` compared the ends as one unordered set,
+so a Thing → Thing link passed a Person → Thing type. `_check_functional` called a link "the same
+one said again" on its object alone, so a symmetric relation let a second spouse through. And
+earlier, a filter that never looked at direction at all.
+
+A relation is the only thing in this world with two ends, and every check over it has to say
+which end it means. When one is written quickly, the second end is what goes missing — and it
+goes missing silently, because the check still passes on the cases anyone would try first.
+
+**The rule:** any comparison of two links names both ends explicitly, and says what it does when
+the relation is symmetric. If a test can pass with the ends swapped, it is not testing direction.

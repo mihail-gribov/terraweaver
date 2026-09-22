@@ -120,7 +120,8 @@
       }
     ],
     "example": "kevin.relate(acme, \"membership\", title=\"logistics lead\")",
-    "reads": "Kevin belongs to Acme as logistics lead — the member is the subject"
+    "reads": "Kevin belongs to Acme as logistics lead — the member is the subject",
+    "nature": "association"
   },
   "attributes": [
     {

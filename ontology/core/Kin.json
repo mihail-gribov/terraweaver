@@ -250,7 +250,8 @@
       }
     ],
     "example": "maria.relate(michael, \"kin\", label=\"mother\")",
-    "reads": "Maria is Michael's mother"
+    "reads": "Maria is Michael's mother",
+    "nature": "association"
   },
   "attributes": [
     {

@@ -50,7 +50,8 @@ Everything else you define as you go:
     world.anything_like("rugby")             — is there already a thing called this, of any kind?
     Sport = world.define("Sport", "a game people play and follow", identified_by="name")
     world.attribute(Person, "email", "the address they are written to at", type="email")
-    world.define_relation("authorship", "who wrote what", subject=Person, object=Book,
+    world.define_relation("authorship", "who wrote what", nature="association",
+                          subject=Person, object=Book,
                           cardinality="one-to-many", over_time=False)
 
 Nothing has to wait for a definition. A fact with no class goes in as a Thing; a link with no \

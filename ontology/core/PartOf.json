@@ -27,7 +27,8 @@
       "building"
     ],
     "example": "logistics.relate(acme, \"part_of\")",
-    "reads": "Logistics is part of Acme — the part is the subject"
+    "reads": "Logistics is part of Acme — the part is the subject",
+    "nature": "composition"
   },
   "attributes": [
     {

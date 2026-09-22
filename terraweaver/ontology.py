@@ -240,7 +240,7 @@ def trusted_writes():
 # has to earn its place by making the work easier than the base alone, or it is not help but
 # noise. `Idea` was noise: seventy things were forced into a class meant for notes, ten were lost
 # saying so, and the rest got through by inventing what the host did not know.
-BASE_CLASSES = ("Thing", "Related", "Person", "Agent")
+BASE_CLASSES = ("Thing", "Related", "PartOf", "Kind", "Person", "Agent")
 
 
 # What each base class keeps. A Person in the base is a name, not a name with an employer and a
@@ -253,6 +253,8 @@ BASE_KEEPS = {
     "Agent": ("name", "owner", "character"),      # the soul file's body goes into character
     "Thing": ("name", "aliases"),
     "Related": ("label",),
+    "PartOf": (),
+    "Kind": (),
 }
 _ALWAYS = ("descriptions", "tags", "notes", "description")
 

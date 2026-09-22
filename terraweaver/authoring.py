@@ -36,6 +36,20 @@ VALUE_TYPES = ("str", "int", "float", "bool", "datetime", "date", "email", "phon
 TEXT_TYPES = ("text", "list[text]")
 # How alike two type descriptions must read before the world hands back the one it has
 # rather than making a second. Above this they are the same idea said twice.
+# The natures a link can have (EvoOntology, arXiv:2609.15779: association, hierarchy,
+# composition, equivalence, derivation). The set is fixed and small; what is particular — husband
+# and wife, director and company — is a type of its own that names its nature. Two of the five
+# already exist in this world below the level of links: equivalence is `same_as` in the record,
+# derivation is a conclusion with its basis. Giving them link types as well would be two
+# vocabularies for one idea, which is the thing this world spends its time undoing.
+NATURES = {
+    "association": "two things stand in some relation — most of a person's world",
+    "hierarchy": "one is a kind of the other, the narrower first",
+    "composition": "one is part of the other",
+    "equivalence": "they are the same thing (recorded as same_as, not as a link)",
+    "derivation": "one was worked out from the other (recorded as a conclusion with its basis)",
+}
+
 SAME_IDEA = 0.82
 
 CARDINALITY = {
@@ -123,7 +137,8 @@ class Authoring:
         return attr
 
     def define_relation(self, name: str, description: str, subject=None, object=None,
-                        cardinality: str = "many-to-many", over_time: bool | None = None,
+                        nature: str | None = None,
+                        cardinality: str | None = None, over_time: bool | None = None,
                         attributes: list[dict] | None = None, reads: str | None = None,
                         subject_is: str | None = None, object_is: str | None = None):
         """A new relation type: the sides, how many may stand on each, and whether one at a time.
@@ -159,10 +174,32 @@ class Authoring:
                 "citizenship somebody changes), over_time=False when they simply accumulate "
                 "(everything a person has ever written). Without it, asking later gives you the "
                 "first answer you were ever told.")
+        if nature not in NATURES:
+            raise Refused(
+                "say what kind of link this is — its nature, one of: "
+                + "; ".join(f"{k} ({v})" for k, v in NATURES.items())
+                + ". Everything particular — husband and wife, director and company — is a "
+                  "type of its own with a nature behind it; the nature is what the world knows "
+                  "how to behave about, the name is what you and the user call it.")
+        if nature in ("composition", "hierarchy") and cardinality is None:
+            cardinality = "many-to-one"      # a part has one whole, a kind has what it is a kind of
+        if cardinality is None:
+            raise Refused(
+                f"say how many of these there may be: cardinality is one of "
+                f"{', '.join(CARDINALITY)}. It used to default to many-to-many, and a default "
+                f"nobody chose is a guess the world then treats as an answer — that one switched "
+                f"supersession off for most types defined here and had the world answering "
+                f"'which one now' with the first thing it was ever told.")
         if cardinality not in CARDINALITY:
             raise Refused(f"cardinality is one of {', '.join(CARDINALITY)}")
         one_subject, one_object = CARDINALITY[cardinality]
-        when = "at_any_time" if over_time else True
+        # Two axes, named apart so they cannot be read as one. Cardinality says how many there
+        # may be across all of time; `over_time` says whether one of them holds *now* and a new
+        # one ends the last. They were once multiplied together in a line nobody could read, and
+        # the default cardinality silently switched supersession off for most types defined here.
+        holds_now_only = "at_any_time" if over_time else True
+        one_object_ever = over_time or one_object
+        one_subject_ever = over_time or one_subject
         already = self._relation_like(f"{kind.replace('_', ' ')}. {description}")
         if already:
             # The world looks, because the host does not. Forty-six relation types were defined
@@ -179,10 +216,19 @@ class Authoring:
             "description": _described(f"the relation {kind}", description),
             "relation": {
                 "kind": kind,
+                # The nature is the statement; what follows from it is read through
+                # `relations.rule`, not copied here where the two could drift apart.
+                "nature": nature,
                 "from": self._sides(subject),
                 "to": self._sides(object),
-                "functional": when if one_object else False,
-                "inverse_functional": when if one_subject else False,
+                # `over_time` and cardinality are different axes and must not cancel each
+                # other. Many-to-many says "many over all time"; over_time says "one of them
+                # holds now, and a new one ends the last". Reading cardinality first turned
+                # supersession off for every type declared with the default many-to-many —
+                # which was most of them — and the world then answered "which now" with the
+                # first thing it had ever been told. Eight of ten wrong answers in one run.
+                "functional": holds_now_only if one_object_ever else False,
+                "inverse_functional": holds_now_only if one_subject_ever else False,
                 "reverse": f"{kind}_of",
                 "labels": [],
                 "example": self._example(kind, subject, object),

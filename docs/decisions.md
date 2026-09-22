@@ -17,6 +17,44 @@ Newest first.
 
 ---
 
+## 2026-09-22 · Five natures, and any number of types that name one
+
+**Seen.** A host built four independent relation types for one idea — `ceo`, `chairperson`,
+`head_of_state`, `prime_minister` — because there was no way to say "this is a narrower kind of
+that". And `define_relation` asked for cardinality *and* `over_time`, which are the same question
+in OWL's terms (a functional property *is* a cardinality constraint); multiplying them together
+silently switched supersession off for most types the host defined.
+
+**Done.** Relation types now declare a **nature**, one of five, taken with their names from
+EvoOntology (arXiv:2609.15779): association, hierarchy, composition, equivalence, derivation. The
+set is closed — a host picks one, and names its own type freely. `Kind` was added for the
+hierarchy we had no way to express at all. `PartOf` is composition; everything else of ours is an
+association, which is what a person's world is mostly made of.
+
+**Why this.** A small fixed set of natures with everything particular as a named type is the
+shape we already used for labels inside types, and now it has somebody else's experiment behind
+it rather than our taste. The nature carries behaviour the world would otherwise have to ask
+about: composition and hierarchy are transitive, acyclic and many-to-one; equivalence is
+symmetric. What it does *not* carry is cardinality for associations — and that is where nearly
+all of a personal world lives, so the question stays open there and is answered by declaration or
+by observation.
+
+**Not this.** Relation types for equivalence and derivation. Both already exist in this world
+below the level of links — `same_as` is a slot in the record, a derivation is a conclusion with
+its basis — and a second way to say them is the duplication this whole day was spent undoing.
+They remain natures a type may name; they do not become mechanisms twice.
+
+**And noted, not done.** A relation type is a class: the same `define_class` builds it, with two
+required ends and a nature. Then `define` and `define_relation` are one call with different
+arguments, and having two is the same redundancy as cardinality and `functional` were. Worth
+merging, not at the end of a long day.
+
+**How we would know it was wrong.** Hosts naming `association` for everything because the other
+four never fit what they are recording — which would mean the set is right for an ontology of
+terms and wrong for an ontology of a life.
+
+---
+
 ## 2026-09-22 · One bad line must not cost the forty behind it
 
 **Seen.** A second base run answered 8 of 20 where the first answered 14, while every count of

@@ -140,6 +140,7 @@ def main() -> int:
           [(s["asked"], s["from"], s["to"], s["seen"]) for s in asked]
           == [("author of", "Thing", "Thing", 3)], str(asked))
     closed = base.run('made = world.define_relation("authorship", "who wrote what",\n'
+                      '                             nature="association",\n'
                       '                             subject=Thing, object=Thing,\n'
                       '                             cardinality="one-to-many", over_time=False)\n'
                       'print(len(world.take_in(made)), len(Related.all(limit=None)))', "host")
