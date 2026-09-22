@@ -525,3 +525,35 @@ The same rule shapes refusals that are correct but useless. "One at a time — e
 (its `.expire()`…)" is sound advice and the wrong advice for a move announced ahead of time:
 `.expire()` ends it today, the new one starts in March, and the host loops. A refusal names the
 call that would work *here*, with the date in it.
+
+## What the world is for: less entropy than it found
+
+Everything here is one job said in different ways. A world takes what arrives — a person's
+words, an assistant's reading of them, a page from somewhere — and leaves it more ordered than
+it was. Not more complete, not cleverer: **more ordered**. Every mechanism in this repository is
+an entropy operation, and every defect worth the name is an operation that quietly added some.
+
+That makes a test any change can be held to. *After this operation, is there less disorder than
+before?* It is not rhetorical — the failures all answered it out loud:
+
+- **A conclusion read before a statement.** Slots have always been resolved by trust and then by
+  time; relations were resolved by time alone. So a link the world guessed for itself came back
+  ahead of one the person had stated, because it was newer. The restructuring pass then made a
+  world measurably worse than it found it — 9/20 to 7/20 on an unchanged world — by doing its
+  job. It was not adding wrong facts; it was adding unranked ones to the one channel where rank
+  was never consulted.
+- **A value that cannot supersede.** A fact in prose has no slot, so nothing overrides anything
+  and both readings stand for ever. Order in time is order; prose has none.
+- **One thing recorded four times** — rugby as a Place, an Organization, a Work and a SportsTeam
+  — because identity is declared per class and nothing looked across them.
+- **A discarded run**, which threw away order wholesale: not one reading lost, but everything the
+  host had established in that block.
+- **A silence** where a question was put wrongly, which leaves the host to invent the missing
+  order itself, usually differently each time.
+
+And it tells you what the world must never do to buy order cheaply: guess. Merging two people
+because their names look alike, deciding which Annie was meant, reading a sentence to decide
+whether it states a fact — each of those is order bought with a lie, and the lie has to be
+carried by everything downstream. The world reduces entropy by **saying what it knows, ranking
+what it holds, and naming what it cannot settle** — never by picking.
+
