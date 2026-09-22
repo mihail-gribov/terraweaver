@@ -275,13 +275,15 @@ def main() -> None:
         runtime = WorldRuntime(args.db, fixture=None, specs=specs, selves=False)
         authoring.install(runtime.world, Path(args.specs))
     elif args.base:
-        # The base and nothing else: somewhere to put a thing, a link with no type yet, and the
-        # calls to name what turns out to have a name. What our fixed classes are worth is the
-        # difference between this run and one with them.
+        # The least a world can be: somewhere to put a thing, a link with no type yet, the two
+        # parties the world is between, and the calls to name what turns out to have a name.
+        # What our other classes are worth is the difference between this run and one with them.
         from terraweaver import authoring, ontology as ont
 
         here = Path(__file__).resolve().parent.parent / "ontology" / "core"
-        runtime = WorldRuntime(args.db, fixture=None, specs=ont.base_specs(here), selves=False)
+        # Both parties are in it, because a world is between two parties and a base without them
+        # is not a smaller world but a different kind of thing.
+        runtime = WorldRuntime(args.db, fixture=None, specs=ont.base_specs(here), selves=True)
         authoring.install(runtime.world, Path(args.db).with_suffix("").parent / "grown")
     elif args.blank:
         # A world with the mechanism and no vocabulary. The host defines the classes; the world

@@ -231,19 +231,43 @@ def trusted_writes():
         _TRUSTED = previous
 
 
-# What a world cannot do without, as against what we guessed it would need. A Thing is somewhere
-# to put anything at all, so nothing waits for a class to exist; a Related is a link with no type
-# yet, so no fact waits for a relation type. Everything else — Person, Organization, Place — is
-# filling: useful, probably, but it has to earn its place by making the work easier than the base
-# alone, or it is not help but noise. `Idea` was noise: seventy things were forced into a class
-# meant for notes, and ten were lost saying so.
-BASE_CLASSES = ("Thing", "Related")
+# The least a world can be. A Thing is somewhere to put anything at all, so nothing waits for a
+# class to exist; a Related is a link with no type yet, so no fact waits for a relation type. And
+# every world is between two parties who are in it as entities — without a Person and an Agent
+# there is no "me" and no "you", and "my dentist" has no "my".
+#
+# Everything else — Organization, Place, Event, Vacancy — is filling: useful, probably, but it
+# has to earn its place by making the work easier than the base alone, or it is not help but
+# noise. `Idea` was noise: seventy things were forced into a class meant for notes, ten were lost
+# saying so, and the rest got through by inventing what the host did not know.
+BASE_CLASSES = ("Thing", "Related", "Person", "Agent")
+
+
+# What each base class keeps. A Person in the base is a name, not a name with an employer and a
+# job title: those read from relation types and other classes the base hasn't got, and an
+# attribute that presumes a type is filling however useful it is. What every class gets anyway —
+# descriptions, tags, and the one-word reading of them — is kept, because that is how anything
+# says what it has no attribute for.
+BASE_KEEPS = {
+    "Person": ("full_name", "aliases"),
+    "Agent": ("name", "owner", "character"),      # the soul file's body goes into character
+    "Thing": ("name", "aliases"),
+    "Related": ("label",),
+}
+_ALWAYS = ("descriptions", "tags", "notes", "description")
 
 
 def base_specs(ontology_dir: Path) -> dict[str, dict[str, Any]]:
-    """The base and nothing else: the classes a world needs to be a world."""
-    return {name: spec for name, spec in load_specs(ontology_dir, grown_dir=Path("/nonexistent")).items()
-            if name in BASE_CLASSES}
+    """The least a world can be: the base classes, each cut back to what a world needs of it."""
+    specs = load_specs(ontology_dir, grown_dir=Path("/nonexistent"))
+    out = {}
+    for name in BASE_CLASSES:
+        spec = dict(specs[name])
+        keep = BASE_KEEPS.get(name, ()) + _ALWAYS
+        spec["attributes"] = [dict(a) for a in spec["attributes"] if a["name"] in keep]
+        spec["methods"] = []
+        out[name] = spec
+    return out
 
 
 def load_specs(ontology_dir: Path, grown_dir: Path | None = None) -> dict[str, dict[str, Any]]:
@@ -1429,7 +1453,19 @@ def _relation_property(class_name: str, attr: dict):
     def refuse(self, value):
         raise TypeError(f"{class_name}.{attr['name']} is derived from relations and can't be set directly")
 
-    return property(lambda self: getter(self), setter or refuse, doc=attr.get("description", ""))
+    def read(self):
+        try:
+            return getter(self)
+        except ValueError as unknown:
+            # A world may not have the type this attribute is read from — a minimal one has
+            # Person before it has Membership. There being no links of a type that does not
+            # exist is simply true, and an attribute that raises instead of saying so makes
+            # the entity unusable for everything else it does hold.
+            if "no relation type" not in str(unknown):
+                raise
+            return [] if attr["type"].startswith("list[") else None
+
+    return property(read, setter or refuse, doc=attr.get("description", ""))
 
 
 def _same_entity_property(class_name: str, attr: dict):
