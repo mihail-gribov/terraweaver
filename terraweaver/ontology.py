@@ -594,6 +594,33 @@ class Entity:
         """Persist this entity and everything it references."""
         current_world().save(self)
 
+    def become(self, what, when=None):
+        """Say what this turned out to be, and read it as that from now on.
+
+        A world starts without the word for everything in it. A book, a sport, a genre arrive as
+        Things because nothing better exists yet; later the world has a class for them, and this
+        is how they join it. Nothing is copied and nothing is re-read — the statements about it
+        stay exactly where they were written, and only the class the image is built under
+        changes, because the class was always a thing of the image and of the host's code.
+
+        Told again it supersedes, so a wrong guess is corrected by saying the right one.
+        """
+        from terraweaver import assembly
+
+        world = current_world()
+        name = what if isinstance(what, str) else getattr(what, "__name__", str(what))
+        if name not in world.classes:
+            near = did_you_mean(name, list(world.classes))
+            raise ValueError(f"there is no class {name!r} here"
+                             + (f" — did you mean {near!r}?" if near else "")
+                             + ". Define one with world.authoring.define(...) first.")
+        if name == type(self).__name__:
+            return self
+        world.facts.state(self.subject_id, assembly.IS_A, name, valid_from=when,
+                          class_name=type(self).__name__)
+        world.rebuild()
+        return world.classes[name].get(**{matching_name(name): self.display_name()})
+
     def describe(self, text: str, when=None, tentative: bool = False, until=None, ttl=None,
                  starts=None, permanent: bool = False):
         """Say something about this entity in words — for what its attributes have no place for.
@@ -1114,6 +1141,12 @@ def _as_written(values) -> list:
         if said not in out:
             out.append(said)
     return out
+
+
+def matching_name(class_name: str) -> str:
+    from terraweaver import matching
+
+    return matching.NAME_KEYS.get(class_name, "name")
 
 
 def did_you_mean(word: str, options, extra: dict | None = None) -> str | None:

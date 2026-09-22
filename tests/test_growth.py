@@ -95,6 +95,28 @@ def main() -> int:
     rt.world.procedures.drop("unused")
     check("and dropping it leaves nothing behind", rt.world.procedures.get("unused") is None)
 
+    # --- a world starts without the word for everything in it, and catches up losing nothing ---
+    from terraweaver import authoring
+
+    rt.run('ball = Thing.ensure(name="pesäpallo")\n'
+           'ball.describe("created in Finland")\nball.tag("sport")', "host")
+    was = rt.classes["Thing"].get(name="pesäpallo")
+    authoring.Authoring(rt.world).define("Sport", "A game people play and follow.",
+                                         identified_by="name")
+    rt.classes["Sport"] = rt.world.classes["Sport"]
+    became = rt.run('now = Thing.get(name="pesäpallo").become("Sport")\n'
+                    'print(type(now).__name__, now.name, now.descriptions, now.tags)', "host")
+    check("a Thing becomes the class the world learned", became["ok"], str(became["error"]))
+    check("and reads as one, with everything said about it",
+          became["output"].strip() == "Sport pesäpallo ['created in Finland'] ['sport']",
+          became["output"])
+    check("the same entity, not a copy", rt.classes["Sport"].get(name="pesäpallo").id == was.id)
+    check("and Thing no longer holds it", rt.classes["Thing"].all(limit=None) == [])
+    said = [(s.slot, s.value) for s in rt.world.facts.about(was.subject_id)]
+    check("becoming is a statement like any other", ("is_a", "Sport") in said, str(said))
+    check("and nothing had to move to make it true",
+          any(slot == "descriptions" for slot, _ in said), str(said))
+
     print()
     if failures:
         print(f"{len(failures)} failed: {', '.join(failures)}")
@@ -105,3 +127,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+

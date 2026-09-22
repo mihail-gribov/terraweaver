@@ -1,0 +1,19 @@
+{
+  "name": "Thing",
+  "description": "Anything the world has no better class for — a book, a sport, a genre, a model of car, a dish. It has a name, and everything else it has is said about it: descriptions, tags, links to whatever it belongs with. Reach for it whenever nothing else fits, rather than forcing a thing into a class meant for something else or writing it out as a sentence.",
+  "attributes": [
+    {
+      "name": "name",
+      "type": "str",
+      "required": true,
+      "description": "What it is called."
+    },
+    {
+      "name": "aliases",
+      "type": "list[str]",
+      "required": false,
+      "description": "Other names it goes by."
+    }
+  ],
+  "methods": []
+}

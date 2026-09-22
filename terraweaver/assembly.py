@@ -24,6 +24,12 @@ from terraweaver import facts as facts_module
 from terraweaver import matching, nameforms
 
 SAME_AS, NOT_SAME_AS = "same_as", "not_same_as"
+# What a subject turned out to be. A class lives in the image and in the code the host writes;
+# the record only says where the statements are kept, which is our business and never changes.
+# So a thing can become a Sport later without a row moving and without a basis reference going
+# stale — the world is told what it is, the way it is told everything else, and the image is
+# built again. Said later, it supersedes; retracted, the thing is a Thing again.
+IS_A = "is_a"
 
 # Slots that say "this is a different one" when two subjects disagree about them. A name can be
 # written half a dozen ways; an email address is either the same address or someone else's.
@@ -246,6 +252,15 @@ def resolve(statements: list, at: datetime | None = None):
     return best, rivals
 
 
+def became(facts, subjects: list[str]) -> str | None:
+    """The class a subject was later said to be, latest word winning."""
+    said = [s for subject in subjects for s in facts.about(subject, IS_A)]
+    if not said:
+        return None
+    said.sort(key=lambda s: (s.valid_from or s.stated_at or "", s.id))
+    return _text(said[-1].value) or None
+
+
 def assemble(facts, rule: Callable[[list, list], bool] = same_name, at: datetime | None = None,
              specs: dict | None = None) -> dict[str, Image]:
     """Build every image from every fact. Cheap enough to do from scratch; the same code path
@@ -259,14 +274,21 @@ def assemble(facts, rule: Callable[[list, list], bool] = same_name, at: datetime
         by_slot: dict[str, list] = {}
         for subject in image.subjects:
             for statement in facts.about(subject):
-                if statement.slot in (SAME_AS, NOT_SAME_AS):
+                if statement.slot in (SAME_AS, NOT_SAME_AS, IS_A):
                     continue
                 # Free text had three names once, and worlds recorded before that still hold
                 # statements under the other two. They are read as what they always were.
                 slot = ONE_WORD_FOR_TEXT.get(statement.slot, statement.slot)
                 by_slot.setdefault(slot, []).append(statement)
-        class_name = next((facts.class_of(s) for s in image.subjects if facts.class_of(s)), None)
+        class_name = became(facts, image.subjects) or next(
+            (facts.class_of(s) for s in image.subjects if facts.class_of(s)), None)
         name_slot = matching.NAME_KEYS.get(class_name or "")
+        # Whatever it was called before is what it is called now: a Thing's `name` read as a
+        # Vacancy's `title`. Without this the one thing every entity has would be the one thing
+        # lost in becoming something else.
+        for was, statements in list(by_slot.items()):
+            if name_slot and was != name_slot and was in matching.NAME_KEYS.values():
+                by_slot.setdefault(name_slot, []).extend(statements)
         for slot, statements in by_slot.items():
             if slot == name_slot:
                 image.names, image.proposed_names = name_forms(statements, at or datetime.utcnow())

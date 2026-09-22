@@ -30,6 +30,7 @@ NAME_KEYS = {
     "Vacancy": "title",
     "Event": "title",
     "Idea": "title",
+    "Thing": "name",
 }
 
 # Names compared word by word as well as whole: people and places are called by one part of

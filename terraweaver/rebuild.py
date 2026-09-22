@@ -49,6 +49,9 @@ def rebuild(world, rule=None, at: datetime | None = None) -> dict:
 
 
 def _class_of(world, image) -> str | None:
+    became = assembly.became(world.facts, image.subjects)
+    if became and became in world.classes:
+        return became
     for subject in image.subjects:
         known = world.facts.class_of(subject)
         if known:
