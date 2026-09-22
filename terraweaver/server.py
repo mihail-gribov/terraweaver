@@ -254,6 +254,9 @@ def main() -> None:
     parser.add_argument("--rebuild", action="store_true", help="rebuild from the fixture on start")
     parser.add_argument("--blank", action="store_true",
                         help="no classes at all: the host defines the ontology (docs/open-ontology.md)")
+    parser.add_argument("--base", action="store_true",
+                        help="start with the base classes only (Thing, Related) and the "
+                             "definition calls — what the fixed classes are measured against")
     parser.add_argument("--specs", default=None,
                         help="a directory of class specs to open a host-built world with")
     parser.add_argument("--host", default="127.0.0.1", help="0.0.0.0 to serve the local network (token required)")
@@ -271,6 +274,15 @@ def main() -> None:
                  for path in sorted(Path(args.specs).glob("*.json"))}
         runtime = WorldRuntime(args.db, fixture=None, specs=specs, selves=False)
         authoring.install(runtime.world, Path(args.specs))
+    elif args.base:
+        # The base and nothing else: somewhere to put a thing, a link with no type yet, and the
+        # calls to name what turns out to have a name. What our fixed classes are worth is the
+        # difference between this run and one with them.
+        from terraweaver import authoring, ontology as ont
+
+        here = Path(__file__).resolve().parent.parent / "ontology" / "core"
+        runtime = WorldRuntime(args.db, fixture=None, specs=ont.base_specs(here), selves=False)
+        authoring.install(runtime.world, Path(args.db).with_suffix("").parent / "grown")
     elif args.blank:
         # A world with the mechanism and no vocabulary. The host defines the classes; the world
         # keeps them uniform and answers "is there already something for this?".

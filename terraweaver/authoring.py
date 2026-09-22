@@ -168,9 +168,17 @@ class Authoring:
     # --- looking before inventing ---
 
     def classes_like(self, text: str, limit: int = 5) -> list[tuple[str, str]]:
-        """(class name, its description) for what already exists and reads like this."""
+        """(class name, its description) for what already exists and reads like this.
+
+        The base is left out of the answer. A Thing is by construction like everything — saying
+        so of every class anyone defines is not a warning, it is noise, and noise in a warning
+        is how warnings stop being read.
+        """
+        from terraweaver import ontology
+
         return self._like(text, {name: cls._spec.get("description", "")
-                                 for name, cls in self.world.classes.items()}, limit)
+                                 for name, cls in self.world.classes.items()
+                                 if name not in ontology.BASE_CLASSES}, limit)
 
     def attributes_like(self, text: str, limit: int = 8) -> list[tuple[str, str]]:
         """(Class.attribute, its description) for attributes that already mean roughly this."""

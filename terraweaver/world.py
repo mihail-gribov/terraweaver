@@ -433,6 +433,18 @@ class World:
 
         return periods.happening(self, since, until, limit)
 
+    def wanted(self, least: int = 2) -> list[dict]:
+        """The types this world keeps needing and hasn't got — counted from its own free links."""
+        from terraweaver import relations
+
+        return relations.free_shapes(self, least=least)
+
+    def take_in(self, kind, idea: str | None = None) -> list:
+        """Move the free links that were waiting for a type into the one just defined."""
+        from terraweaver import relations
+
+        return relations.take_in(self, kind, idea)
+
     def repeats(self) -> list[str]:
         """Everything cyclic in this world, in words — one line per rule (periods.py)."""
         from terraweaver import periods, recurrence

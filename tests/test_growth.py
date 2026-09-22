@@ -117,6 +117,37 @@ def main() -> int:
     check("and nothing had to move to make it true",
           any(slot == "descriptions" for slot, _ in said), str(said))
 
+    # --- the whole of it: a world with only the base, and a host that ends with a vocabulary ---
+    from pathlib import Path as _Path
+    from terraweaver import ontology as _ont
+
+    import tempfile as _tempfile
+
+    room = _Path(_tempfile.mkdtemp(prefix="tw-base-"))
+    base = WorldRuntime(str(room / "base.db"), fixture=None, selves=False,
+                        specs=_ont.base_specs(ONTOLOGY_DIR))
+    authoring.install(base.world, room / "grown")
+    wrote = base.run('for who, what in [("Ferdowsi", "Shahnameh"), ("Le Guin", "Earthsea"),\n'
+                     '                  ("Watsuki", "Kenshin")]:\n'
+                     '    Thing.ensure(name=who).relate(Thing.ensure(name=what), "related",\n'
+                     '                                  label="author of")', "host")
+    check("a base world takes a link it has no type for", wrote["ok"], str(wrote["error"]))
+    check("and says so once the word is a habit",
+          any("has been written 3 times" in h for h in wrote.get("hints", [])),
+          str(wrote.get("hints")))
+    asked = base.world.wanted()
+    check("naming the shape it keeps needing",
+          [(s["asked"], s["from"], s["to"], s["seen"]) for s in asked]
+          == [("author of", "Thing", "Thing", 3)], str(asked))
+    closed = base.run('made = world.define_relation("authorship", "who wrote what",\n'
+                      '                             subject=Thing, object=Thing,\n'
+                      '                             cardinality="one-to-many", over_time=False)\n'
+                      'print(len(world.take_in(made)), len(Related.all(limit=None)))', "host")
+    check("and the links already written join the type it defines",
+          closed["output"].strip() == "3 0", closed["output"] + str(closed["error"]))
+    check("after which the world asks for nothing", base.world.wanted() == [],
+          str(base.world.wanted()))
+
     print()
     if failures:
         print(f"{len(failures)} failed: {', '.join(failures)}")

@@ -231,6 +231,21 @@ def trusted_writes():
         _TRUSTED = previous
 
 
+# What a world cannot do without, as against what we guessed it would need. A Thing is somewhere
+# to put anything at all, so nothing waits for a class to exist; a Related is a link with no type
+# yet, so no fact waits for a relation type. Everything else — Person, Organization, Place — is
+# filling: useful, probably, but it has to earn its place by making the work easier than the base
+# alone, or it is not help but noise. `Idea` was noise: seventy things were forced into a class
+# meant for notes, and ten were lost saying so.
+BASE_CLASSES = ("Thing", "Related")
+
+
+def base_specs(ontology_dir: Path) -> dict[str, dict[str, Any]]:
+    """The base and nothing else: the classes a world needs to be a world."""
+    return {name: spec for name, spec in load_specs(ontology_dir, grown_dir=Path("/nonexistent")).items()
+            if name in BASE_CLASSES}
+
+
 def load_specs(ontology_dir: Path, grown_dir: Path | None = None) -> dict[str, dict[str, Any]]:
     """The classes we fixed, plus whatever the world has added to them.
 
@@ -619,7 +634,9 @@ class Entity:
         world.facts.state(self.subject_id, assembly.IS_A, name, valid_from=when,
                           class_name=type(self).__name__)
         world.rebuild()
-        return world.classes[name].get(**{matching_name(name): self.display_name()})
+        # By id, not by name: a link has no name, and an entity's name is exactly the thing most
+        # likely to be spelt differently under a class that calls it something else.
+        return world.store.load(self.id, world.classes)
 
     def describe(self, text: str, when=None, tentative: bool = False, until=None, ttl=None,
                  starts=None, permanent: bool = False):
@@ -1141,12 +1158,6 @@ def _as_written(values) -> list:
         if said not in out:
             out.append(said)
     return out
-
-
-def matching_name(class_name: str) -> str:
-    from terraweaver import matching
-
-    return matching.NAME_KEYS.get(class_name, "name")
 
 
 def did_you_mean(word: str, options, extra: dict | None = None) -> str | None:

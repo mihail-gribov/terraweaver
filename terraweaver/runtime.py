@@ -131,6 +131,17 @@ class WorldView:
         """Everything in this world that happens again and again, in words."""
         return self._world.repeats()
 
+    def wanted(self, least: int = 2) -> list[dict]:
+        """The types this world keeps needing and hasn't got, counted from its own free links.
+
+        Each one is a link written again and again with no type, always between the same two
+        kinds of thing — a word that has become a habit. Define it and take them in."""
+        return self._world.wanted(least)
+
+    def take_in(self, kind, idea: str | None = None) -> list:
+        """Move the free links that were waiting for a type into the one just defined."""
+        return self._world.take_in(kind, idea)
+
     def tags(self) -> dict:
         """Every tag in this world: how often it is used, on what, and how it has been written."""
         return self._world.tags()

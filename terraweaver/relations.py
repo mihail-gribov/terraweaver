@@ -24,7 +24,7 @@ married in 2022 is no conflict. Design: docs/relations.md.
 """
 from typing import Any
 
-from terraweaver import ontology, timeutil
+from terraweaver import assembly, ontology, timeutil
 from terraweaver.ontology import Entity
 
 
@@ -415,7 +415,97 @@ def relate(world, a, b, kind: str, period: dict, attrs: dict, basis: list | None
     if period:
         world.apply_period(created, period)
     _note_same_label(world, name, rel, subject, obj, attrs, start, end, created)
+    if rel.get("free"):
+        _note_a_type_is_wanted(world, created)
     return created
+
+
+# How many times one idea has to be written without a type before the world says so. Twice is a
+# coincidence; the third is a habit, and a habit with stable ends is a type.
+WANTED_AFTER = 3
+
+
+def _note_a_type_is_wanted(world, created) -> None:
+    """Say when the same untyped link keeps being written, and hand over the call that ends it.
+
+    This is the world's half of the work. The host records what it can; the world counts, and
+    when a word turns into a habit it says so with the definition already written out. Left to
+    ask, a host never asks — it has no way of knowing it has said the same thing three times.
+
+    The counting here is exact spelling, not meaning: it runs on every write, and a census that
+    embeds is for `free_shapes()`, which is asked rather than triggered.
+    """
+    idea, _ = _asked(getattr(created, "label", "") or "")
+    if not idea:
+        return
+    ends = {type(created.subject).__name__, type(created.object).__name__}
+    kin = [r for r in world.all(type(created).__name__, limit=None)
+           if _asked(getattr(r, "label", "") or "")[0] == idea
+           and {type(r.subject).__name__, type(r.object).__name__} == ends]
+    if len(kin) < WANTED_AFTER:
+        return
+    a, b = type(created.subject).__name__, type(created.object).__name__
+    ontology.note_hint(
+        f"'{idea}' has been written {len(kin)} times as a link with no type, always between "
+        f"{a} and {b}. That is a type this world hasn't got: "
+        f"world.define_relation(\"{idea.replace(' ', '_')}\", \"<what it is>\", subject={a}, "
+        f"object={b}, cardinality=\"many-to-many\", over_time=<one at a time?>). "
+        f"Then world.take_in(<the type>, \"{idea}\") moves the ones already written into "
+        f"it — nothing is "
+        f"re-read, they were structured all along."
+    )
+
+
+def take_in(world, kind, idea: str | None = None) -> list:
+    """Move the free links that were waiting for this type into it.
+
+    The other half of defining a type. A host that defines one and leaves the links behind has
+    two vocabularies for one idea, which is the state the type was meant to end. Nothing is
+    interpreted and nothing moves on disk: each link is told what it is, the same statement a
+    thing gets when the world learns its name.
+    """
+    name = kind if isinstance(kind, str) else getattr(kind, "__name__", str(kind))
+    if name not in world.classes:
+        raise ValueError(f"there is no relation type {name!r} here")
+    rel = spec(world.classes[name])
+    ends = {*rel.get("from", []), *rel.get("to", [])}
+    free = [n for n, c in relation_classes(world.classes).items() if spec(c).get("free")]
+    waiting = [link for n in free for link in world.all(n, limit=None)
+               if not ends or {type(link.subject).__name__,
+                               type(link.object).__name__} <= ends]
+    asked = _asked(idea or rel.get("kind") or name)[0]
+    theirs = {link.id: _asked(getattr(link, "label", "") or "")[0] for link in waiting}
+    mine = {i for i, said in theirs.items() if said == asked}
+    if not mine and waiting:
+        # A type is rarely called what its links were called: `authorship` was written as
+        # "author of", and no spelling rule crosses that. So the type is read as what it says it
+        # is — its name and its description together — and the labels are ranked against that.
+        # A looser bar than the one that groups labels with each other: taking them in is a
+        # thing the host asked for, not a guess the world made on its own.
+        ideas = sorted({said for said in theirs.values() if said})
+        says = f"{rel.get('kind') or name}. {rel.get('description') or spec(world.classes[name]).get('description', '')}"
+        vectors = world.meanings.model.embed([says] + ideas)
+        close = {idea for idea, v in zip(ideas, vectors[1:])
+                 if sum(a * b for a, b in zip(vectors[0], v)) >= _ONE_KIND}
+        mine = {i for i, said in theirs.items() if said in close}
+    # Told all at once and read again once. Becoming one at a time would rebuild the world
+    # between each, and every link still in hand would be a stale copy of a thing that moved.
+    moving = [link for link in waiting if link.id in mine]
+    one_way = list(rel.get("from", [])) != list(rel.get("to", []))
+    for link in moving:
+        if one_way and _asked(getattr(link, "label", "") or "")[1]:
+            # Written from the far end — "authored by" starts at the book. A type that runs one
+            # way would take it in backwards, and a backwards link is a wrong fact, not an
+            # untidy one. Turn it round first; the word that turned it is kept in a remark.
+            with ontology.trusted_writes():
+                link.subject, link.object = link.object, link.subject
+            link.describe(f"turned round on becoming {name}: it was written "
+                          f"'{getattr(link, 'label', '')}'")
+        world.facts.state(getattr(link, "subject_id", None) or link.id, assembly.IS_A, name,
+                          class_name=type(link).__name__)
+    if moving:
+        world.rebuild()
+    return [world.store.load(link.id, world.classes) for link in moving]
 
 
 def _note_gap(world, name: str, obj, label: str, start, created) -> None:
@@ -1028,6 +1118,9 @@ _INVERTING = ("by", "from")
 # How close two labels must read to count as one word for one thing. 0.8 keeps "author of" with
 # "authored by" (0.92) and away from unrelated prose (0.62) on the model we use.
 _ONE_IDEA = 0.8
+# How close a label has to read to the type a host is taking it into. Looser, because the host
+# has already said these belong together; the world is only deciding which ones it meant.
+_ONE_KIND = 0.65
 
 
 def _asked(label: str) -> tuple[str, bool]:
