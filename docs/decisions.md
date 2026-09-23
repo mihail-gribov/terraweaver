@@ -1134,3 +1134,42 @@ by the fourth batch of twenty, $0.19–0.65 a batch, and the world no worse at 2
 
 **How we would know it was wrong.** Tasks held open over names that genuinely belong to two
 things — Chanel the person and Chanel the company are both in this slice, and both are right.
+
+---
+
+## 2026-09-23 · The whole slice, measured
+
+455 facts, ten at a time, into one accumulating world, with a recorder agent and no help.
+
+    356/455 facts joined          78%
+    1378 turns, $11.44, 107 min
+
+And the slice's actual subject, the 51 pairs where one fact replaces another:
+
+    holds the later telling       33   64%
+    holds the earlier              0    0%
+    holds neither                 18   35%
+
+**Nothing holds a superseded value.** The correction and handover work; what the world gets
+wrong, it gets wrong by not having the fact at all. That is the whole of the 36%: 18 pairs
+where the second telling never landed. Of those, exactly one is the duplicate-entity problem
+fixed earlier — the theory that explained the day's most visible defect accounts for a
+eighteenth of this one.
+
+**Two hypotheses tested and dropped.** The world's self-description was supposed to swell as
+the world grew and crowd the agent out: it grows 8% (8.7k tokens to 9.4k) and the late batches
+score as well as the early ones. And the lost facts are disproportionately the second of a
+pair, whose replacement values the benchmark makes deliberately absurd — "Christianity was
+founded in the city of Taipei" — so the recorder might have been refusing what it disbelieved.
+Reading everything it said: one "incorrect" in 455 facts, and that about its own slip. It was
+not censoring; it was running out of turns.
+
+**Where the facts go.** Batch scores ran 9, 8, 4, 5, 0, 9, 10, 7 … and settled at 7–10. The
+bad batches are runs where the agent lost its footing on the API — `world.add`, `world.all()`,
+`world.describe_world()` — and spent forty turns recovering. One batch cost 72 turns and
+recorded nothing at all; the check that refuses to close a recording that recorded nothing is
+what caught it, and its own words in that run were "The world says nothing was actually
+recorded."
+
+**What this measures.** Recording only. No questions were asked of the world, so this is the
+floor: whatever the answering side can do, it can only do with what is here.
