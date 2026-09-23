@@ -161,12 +161,18 @@ def main() -> int:
     args = parser.parse_args()
 
     runtime = open_world(args.run.resolve())
+    # Whatever each class calls the thing, read from its own declaration. Reading `name` and
+    # `full_name` only made thirty-six works invisible — they are `ArtisticWork`, and a work has
+    # a title — so every fact about an author, a performer or what somebody is famous for read
+    # as a fact the world had lost.
     by_name: dict = {}
     for cls in runtime.world.classes.values():
         if cls._spec.get("relation"):
             continue
+        declared = [a["name"] for a in cls._spec.get("attributes", [])]
+        keys = [k for k in ("name", "full_name", "title", "label") if k in declared]
         for entity in runtime.world.all(cls.__name__, limit=None, history=True):
-            said = getattr(entity, "name", None) or getattr(entity, "full_name", None)
+            said = next((getattr(entity, k, None) for k in keys if getattr(entity, k, None)), None)
             if said:
                 by_name.setdefault(said, []).append(entity)
 

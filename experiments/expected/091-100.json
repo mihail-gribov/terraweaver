@@ -102,7 +102,9 @@
         "subject": "English",
         "predicate": "official language of",
         "object": "England",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "reads right from either end; the type's name does not settle it"
       }
     }
   ]

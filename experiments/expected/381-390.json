@@ -46,7 +46,9 @@
         "predicate": "official language of",
         "object": "Moscow",
         "subject_first": true,
-        "replaces": "United States of America"
+        "replaces": "United States of America",
+        "either": true,
+        "corrected": "reads right from either end; the type's name does not settle it"
       },
       "why": "says it again with a different value: the world should hold 'Moscow' and keep 'United States of America' as history"
     },

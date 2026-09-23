@@ -74,7 +74,9 @@
         "predicate": "official language of",
         "object": "Australia",
         "subject_first": true,
-        "replaces": "England"
+        "replaces": "England",
+        "either": true,
+        "corrected": "reads right from either end; the type's name does not settle it"
       },
       "why": "says it again with a different value: the world should hold 'Australia' and keep 'England' as history"
     },

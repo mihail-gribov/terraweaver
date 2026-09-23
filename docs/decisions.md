@@ -1319,3 +1319,39 @@ the runtime and was never put where the host could reach it.
 **How we would know it was wrong.** The guide's examples passing while a host still cannot
 follow them — the test runs each line alone, and a sequence that only works in order would slip
 through.
+
+---
+
+## 2026-09-23 · Reading the facts that did not land, and finding the check had lost them
+
+**Looked at the 68 the check said were missing.** Fourteen were "the author of X is Y", the
+largest group by far, and the world had them: `WrittenBy: The Birth of Tragedy → Friedrich
+Nietzsche` sat there while the check reported the book missing from the world.
+
+**The check reads `name` and `full_name`.** The recorder had defined `ArtisticWork`, whose
+things have a **title** — thirty-six of them — so every fact about an author, a performer or
+what somebody is famous for read as a fact the world had lost. It reads whatever each class
+declares now, from the class's own spec.
+
+**And two predicates read right from either end.** "The official language of Australia is
+Arabic" and "Australia's official language is Arabic" say the same thing; the type is named
+`OfficialLanguage`, which does not settle it. Picking a side and calling the other backwards is
+the expectation being wrong, not the world. Fifteen expectations are marked as either-way, by
+hand, in the files that exist to be corrected.
+
+**What the whole slice actually came to:**
+
+|  | as owed | backwards | no link | missing |
+|---|---|---|---|---|
+| as first reported | 249 (78%) | 9 | 31 | 27 |
+| once the check could read the world | **286 (90%)** | 1 | 25 | 4 |
+
+**And the story about where facts are lost was wrong too.** I had said the losses concentrate
+in the few runs where the agent loses its footing. On the corrected reading they are spread:
+21 of 46 batches miss one to three, and only one batch (41-50) is a total failure. The
+citizenship misses — Henry Ford, Elton John, Bob Iger — are plain omissions, one fact each,
+in batches that otherwise went fine.
+
+**Four times in one day my own measurement was the thing that was wrong**, and every time I
+looked at the world first. The pattern is always the same shape: the check knows less about the
+world than the world does, and reports the difference as the world's fault.

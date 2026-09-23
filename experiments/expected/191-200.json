@@ -22,7 +22,9 @@
         "subject": "Nicomachus",
         "predicate": "is a child of",
         "object": "Aristotle",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "reads right from either end; the type's name does not settle it"
       }
     },
     {

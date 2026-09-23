@@ -62,7 +62,9 @@
         "subject": "German",
         "predicate": "official language of",
         "object": "United States of America",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "reads right from either end; the type's name does not settle it"
       }
     },
     {

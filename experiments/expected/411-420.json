@@ -24,7 +24,9 @@
         "subject": "Shapur I",
         "predicate": "is a child of",
         "object": "Ardashir I",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "reads right from either end; the type's name does not settle it"
       }
     },
     {

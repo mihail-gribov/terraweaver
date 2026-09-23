@@ -98,7 +98,9 @@
         "subject": "Russian",
         "predicate": "official language of",
         "object": "Moscow",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "reads right from either end; the type's name does not settle it"
       }
     }
   ]

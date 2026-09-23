@@ -24,7 +24,9 @@
         "subject": "Charles Frederick, Duke of Holstein-Gottorp",
         "predicate": "is a child of",
         "object": "Walter Chrysler",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "reads right from either end; the type's name does not settle it"
       }
     },
     {
