@@ -29,7 +29,39 @@ def main() -> int:
     parser.add_argument("--port", type=int, default=7300)
     parser.add_argument("--model", default="haiku")
     parser.add_argument("--into", type=Path, default=None)
+    parser.add_argument("--repeat", type=int, default=1,
+                        help="run the whole thing this many times, into separate worlds")
     args = parser.parse_args()
+
+    if args.repeat > 1:
+        # Every number this measurement produced today came from one run, and one batch scored
+        # 4, 9, 10, 0, 3 and 0 out of ten on unchanged code. A single run cannot tell a change
+        # from a bad afternoon; repeats can, and they are the cheapest thing that can.
+        base = (args.into or ROOT / "experiments" / "results" / "batches" /
+                f"{datetime.now():%Y%m%d-%H%M%S}-repeat").resolve()
+        runs = []
+        for turn in range(args.repeat):
+            where = base.parent / f"{base.name}-{turn + 1}"
+            run = subprocess.run(
+                [sys.executable, __file__, "--facts", str(args.facts), "--batch", str(args.batch),
+                 "--from", str(args.start), "--port", str(args.port + turn), "--model", args.model,
+                 "--into", str(where)], cwd=ROOT, capture_output=True, text=True)
+            print(run.stdout.rstrip(), flush=True)
+            runs.append(where)
+        print("\n--- the same batches across runs")
+        per: dict = {}
+        for where in runs:
+            for line in open(where / "batches.jsonl"):
+                one = json.loads(line)
+                if "/" in one["scored"]:
+                    per.setdefault(one["from"], []).append(int(one["scored"].split("/")[0]))
+        for first, got in sorted(per.items()):
+            got = sorted(got)
+            middle = got[len(got) // 2]
+            print(f"  {first:>3}-{first + args.batch - 1:<3}  {'  '.join(str(g) for g in got)}"
+                  f"   median {middle}   spread {got[-1] - got[0]}")
+        print(f"\nworlds: {', '.join(str(r) for r in runs)}")
+        return 0
 
     work = (args.into or ROOT / "experiments" / "results" / "batches" /
             f"{datetime.now():%Y%m%d-%H%M%S}-full-{args.model}").resolve()
