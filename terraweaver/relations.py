@@ -34,16 +34,26 @@ class Relation(Entity):
     """Common ancestor of relation types: an instance linking a subject and an object."""
 
     def display_name(self) -> str:
-        """The relation as a sentence, so a reversed one is easy to spot: "Greg Hunt is
-        Michael's landlord (service)", not an arrow whose direction has to be remembered."""
+        """The relation as a sentence, so a reversed one is easy to spot.
+
+        Two shapes, because there are two kinds of link. A role is possessed — "Greg Hunt is
+        Michael's landlord (service)" — and reads that way. A predicate is not: rendered the
+        same way, `born_in` came out as "Thomas Kyd is London's born_in", which is not English
+        and reads like a mistake. A recorder shown that at the close of its task concluded the
+        link was backwards, wrote *"the relations need to be reversed"*, expired every correct
+        one and recorded them the other way round. The sentence the world uses to make a
+        reversal visible was itself producing reversals.
+        """
         subject, obj = getattr(self, "subject", None), getattr(self, "object", None)
         kind = type(self)._spec["relation"]["kind"]
-        what = self.__dict__.get("label") or (self.__dict__.get("role") or "").replace("_", " ") or kind
+        said = self.__dict__.get("label") or (self.__dict__.get("role") or "").replace("_", " ")
         left = subject.display_name() if isinstance(subject, Entity) else "?"
         right = obj.display_name() if isinstance(obj, Entity) else "?"
-        # "you's dentist" is nobody's English: the owner reads as a person being spoken to.
-        whose = "your" if right.lower() in ("you", "yourself") else f"{right}'s"
-        return f"{left} is {whose} {what} ({kind})"
+        if said:
+            # "you's dentist" is nobody's English: the owner reads as a person being spoken to.
+            whose = "your" if right.lower() in ("you", "yourself") else f"{right}'s"
+            return f"{left} is {whose} {said} ({kind})"
+        return f"{left} {kind.replace('_', ' ')} {right} ({kind})"
 
     def both_ways(self) -> str:
         """The link said from each end. A reversed relation is caught here or not at all: the

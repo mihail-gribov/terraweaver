@@ -289,8 +289,10 @@ def main() -> int:
     check("the rest of the block survives a question at the far end", isinstance(alongside, Person))
     settled = world.settle(unsettled, Organization.get(name="TechCorp"))
     made = [r.display_name() for r in Person.get(email="vera@holt.example").relations("membership")]
+    # A membership carries no label here, so it reads as the predicate it is rather than as
+    # something TechCorp possesses — what matters is that Vera is the subject.
     check("and the held link is made pointing the way it was written",
-          any("Vera Holt is TechCorp's" in line for line in made), str(made))
+          any(line.startswith("Vera Holt ") and "TechCorp" in line for line in made), str(made))
 
     # --- an unanswered question is not an entity to link, so the link waits for the answer ---
     asked = Person.new(full_name="Darren")  # resembles Darren Liu: a question, not a person
