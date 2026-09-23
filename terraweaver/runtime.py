@@ -478,8 +478,13 @@ class WorldRuntime:
         """
         if not session.touched:
             return False
+        # `descriptions` is among these now, and that is the point: the world asks for one on
+        # every Thing and every link, so every entity has one and "did this task say anything"
+        # answered yes for a world holding nothing but names and the lines describing them. A
+        # recorder created forty-three entities, defined four relation types, made **no links
+        # at all**, and closed reporting "all ten facts are successfully recorded".
         marks = {"name", "full_name", "title", "aliases", "created_at", "accessed_at",
-                 "valid_from", "valid_until", "from_is", "until_is", "tags"}
+                 "valid_from", "valid_until", "from_is", "until_is", "tags", "descriptions"}
         placed = ",".join("?" * len(session.touched))
         for table in self.store.conn.execute(
                 "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'facts_%'"):
@@ -593,8 +598,9 @@ class WorldRuntime:
             if not self._anything_said(session):
                 return (
                     "Not closed: this is a recording task and nothing about anything was "
-                    "recorded. There are entities, but no links between them and nothing said "
-                    "about them — names alone are not the facts. Either record them, or "
+                    "recorded. There are entities, and lines describing them, and no links "
+                    "between them and nothing else said — a name and an account of it are not "
+                    "a fact about anything. Either record them, or "
                     "finish_task(abandon=\"why\") if they could not be recorded, but do not "
                     "report work that is not in the world."
                 )
