@@ -11,7 +11,7 @@ from typing import Any
 from terraweaver import matching, ontology, resolution, timeutil
 from terraweaver.comments import Comments
 from terraweaver.history import ValueHistory
-from terraweaver.facts import Facts
+from terraweaver.facts import Facts, THE_PARTIES
 from terraweaver.meaning import Meanings
 from terraweaver.procedures import Procedures
 from terraweaver.questions import Questions
@@ -97,7 +97,7 @@ class World:
 
     # Fixed ids, so the two of them are the same rows in every world and can be found without
     # searching by name — and so nothing else can quietly take their place.
-    USER_ID, AGENT_ID = "person:user", "agent:self"
+    USER_ID, AGENT_ID = THE_PARTIES
 
     def ensure_selves(self) -> None:
         """Every world is between two parties, so every world holds both — the person it is
@@ -107,19 +107,29 @@ class World:
             return
         self._agent_was_called_agent()
         with ontology.not_recording():
-            try:
-                agent = self.store.load(self.AGENT_ID, self.classes)
-            except KeyError:
-                agent = None
-            if agent is None and self.store.load_all("AIAgent", self.classes):
+            agent, person = self._party(self.AGENT_ID), self._party(self.USER_ID)
+            if agent is None and person is None and self.store.load_all("AIAgent", self.classes):
                 return  # a fixture made its own pair; leave them be
-            if agent is None:
+            if person is None:
                 person = self.classes["Person"](full_name="you")
                 person.id = self.USER_ID
                 self.store.save(person)
+            if agent is None:
                 agent = self.classes["AIAgent"](name="assistant", owner=person)
                 agent.id = self.AGENT_ID
                 self.store.save(agent)
+            elif getattr(getattr(agent, "owner", None), "id", None) != person.id:
+                # The tie between them is not a statement — it is made here and nowhere else —
+                # so a rebuild, which knows only statements, leaves the assistant ownerless.
+                # Re-tying them is the whole of what "both parties survived" means.
+                agent.owner = person
+                self.store.save(agent)
+
+    def _party(self, entity_id: str):
+        try:
+            return self.store.load(entity_id, self.classes)
+        except KeyError:
+            return None
 
     def _agent_was_called_agent(self) -> None:
         """Worlds written before the class was renamed keep the assistant in an `Agent` table.
@@ -152,6 +162,8 @@ class World:
         Questions belong to identification — ensure, get, find — where a disagreement can mean
         a different entity. An assignment says which entity and what is now true.
         """
+        if ontology.filling():
+            return  # filling an image from the record replaces nothing; see filling_from_record
         if matching.label(existing) == matching.label(incoming):
             return
         # A list that only grows is accumulating: nothing was replaced.

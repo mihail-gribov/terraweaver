@@ -17,6 +17,7 @@ from typing import Any
 # Installed by the world layer; may raise to refuse the write. Kept as a hook rather
 # than an import so the object model stays independent of the consistency layer.
 _WRITE_GUARD = None
+_FILLING = False
 _TRUSTED = False
 # The world the classes currently belong to, so `Person.find(...)` can reach it without
 # every class having to be handed a store.
@@ -130,6 +131,28 @@ def not_recording():
         yield
     finally:
         _CHANGED = previous
+
+
+@contextmanager
+def filling_from_record():
+    """Attributes being filled from what is stored, so nothing written here replaced anything.
+
+    A rebuild sets every declared attribute to its empty form and then puts the record's value
+    on top, and a relation's class carries its own kind as a class attribute — so the value the
+    record's value "replaced" is scaffolding that was never true of anything. Written to the
+    history table it read as a past this thing never had, two rows deep and growing by two on
+    every rebuild.
+    """
+    global _FILLING
+    was, _FILLING = _FILLING, True
+    try:
+        yield
+    finally:
+        _FILLING = was
+
+
+def filling() -> bool:
+    return _FILLING
 
 
 def _note_changed(entity, attr: str | None = None) -> None:

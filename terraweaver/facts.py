@@ -90,6 +90,12 @@ TOLD, WORKED = "agent", "world"
 TRUST = {TOLD: 3, WORKED: 1}
 SOURCE_TRUST = 2  # anything else is a named source: a site, a register, a document
 
+# The two parties a world is between. Their ids are fixed rather than generated, because
+# everything else hangs on them: "me", "you", and every relation written to either. Kept here,
+# in the record layer, because assembly has to know them too — an image that swallows one of
+# these ids leaves the world with no owner, and nothing else in it can say whose world it is.
+THE_PARTIES = ("person:user", "agent:self")
+
 
 def trust(source: str) -> int:
     return TRUST.get(source, SOURCE_TRUST)

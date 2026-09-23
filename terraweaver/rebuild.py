@@ -18,20 +18,34 @@ after a bad merge, or on a hunch that something is off.
 """
 from datetime import datetime
 
-from terraweaver import assembly, ontology
+from terraweaver import assembly, ontology, tags
 
 
 def rebuild(world, rule=None, at: datetime | None = None) -> dict:
     """Throw away the images and build them again from the statements. Returns what was built."""
     images = assembly.assemble(world.facts, rule or assembly.same_name, at, world.specs)
     built: dict = {}
-    with world.store.transaction(), ontology.trusted_writes(), ontology.not_recording():
-        for class_name in world.classes:
+    with world.store.transaction(), ontology.trusted_writes(), ontology.not_recording(), \
+            ontology.filling_from_record():
+        for class_name, cls in world.classes.items():
+            # Not what the world is told — what the world keeps for itself. A Task is the one
+            # such class: it says where a piece of work started and stopped, which nobody ever
+            # states as a fact and which no statement can therefore put back. Clearing it here
+            # meant a rebuilt world had run no tasks at all, so every fact in it lost the one
+            # thing that said what it had been recorded for.
+            if cls._spec.get("own"):
+                continue
             world.store.clear(class_name)
         # Ids first, values second: an entity may refer to one that hasn't been built yet.
         for image in images.values():
             class_name = _class_of(world, image)
             if class_name not in world.classes:
+                continue
+            if world.classes[class_name]._spec.get("own"):
+                # Its table was left alone above, so there is nothing here to put back — and
+                # building it anyway would overwrite it with a partial reading. Two abandoned
+                # tasks carried a single statement each (the note saying why they were dropped)
+                # and came back as that note and nothing else: no `stated`, no mode, no work.
                 continue
             entity = object.__new__(world.classes[class_name])
             entity.id = image.id
@@ -81,7 +95,14 @@ def _fill(world, entity, image, built: dict) -> None:
         if slot in declared or slot in ("valid_from", "valid_until"):
             kind = declared.get(slot, {}).get("type", "datetime" if slot.startswith("valid_") else "")
             try:
-                setattr(entity, slot, _value(value, built, kind))
+                read = _value(value, built, kind)
+                if slot == "tags":
+                    # The record keeps a tag as it was said; the world keeps one form of it
+                    # (tags.canonical). Writing one puts the tidied form on the entity, and a
+                    # rebuild that skipped this step put the raw one back — so the same thing
+                    # read "looked at" after a rebuild and "looked-at" before it.
+                    read = tags.tidy(read)
+                setattr(entity, slot, read)
             except (TypeError, ValueError) as wrong:
                 # A class can be declared after the fact it disagrees with. The record is what
                 # was said and the image is a reading of it, so a reading that cannot be made

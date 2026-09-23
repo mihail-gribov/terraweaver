@@ -159,10 +159,23 @@ def clusters(facts, rule: Callable[[list, list], bool] = same_name) -> dict[str,
             subject = leader[subject]
         return subject
 
+    def leads(subject: str) -> tuple:
+        # The two parties lead whatever they are joined to. Everything else falls back on the
+        # id itself, so a merge of two ordinary subjects lands on the same leader every time.
+        #
+        # Without this, the user is merged away by the first entity the host records under their
+        # own name — and an id is a hex string, so which of the two survived was decided by
+        # which sorted first. A rebuilt world then had a person nobody could look up, an
+        # assistant with no owner, and `world.owner` returning None: the world no longer knew
+        # whose it was. It only showed up on a rebuild, because until then both sat in the
+        # images side by side.
+        return (subject not in facts_module.THE_PARTIES, subject)
+
     def union(a: str, b: str) -> None:
         ra, rb = find(a), find(b)
         if ra != rb:
-            leader[max(ra, rb)] = min(ra, rb)  # the older subject leads, so ids stay stable
+            first, second = sorted((ra, rb), key=leads)
+            leader[second] = first
 
     for a, b in told_same:  # what the user settled is not the rule's business
         if a in leader and b in leader:

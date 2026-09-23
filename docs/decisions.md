@@ -1386,3 +1386,50 @@ for, and what the live world would raise a question about.
 is a reading of the record, and the record is what is true. It had not been checked against a
 world anybody had actually built, only against fixtures. `tests/test_rebuild.py` checks it
 against a world with the names that broke it.
+
+---
+
+## 2026-09-24 · One of everything, then take the world apart three ways
+
+**The rebuild had been checked on the names that broke it, and on nothing else.** So: fill one
+maximally-loaded instance of every structure the world keeps — every value type the ontology can
+declare, every entity class, every relation type, descriptions dated and tentative and ending,
+tags with periods, questions open and answered, a procedure, pinned names of both lifetimes, a
+name choice settled by hand, both self files, a task abandoned part-way — and then do the three
+things that can lose it: **rebuild** the images from the statements, **reopen** the database,
+**move** the files elsewhere. `tests/test_round_trip.py`.
+
+Four things did not survive, and each was invisible until the whole thing was filled at once.
+
+**The world forgot whose world it was.** `person:user` and `agent:self` are fixed ids because
+everything hangs on them. The moment the host records a person under the name the user's own
+file gives, the two are one — correctly — and the merge kept whichever id sorted first. An id is
+a hex string, so that was a coin toss. Lose it and `world.owner` returns None, the assistant
+belongs to nobody, and the person is under an id no lookup reaches. The two parties now lead any
+cluster they are joined to (`assembly.clusters`), and `ensure_selves` re-ties them afterwards —
+the tie is not a statement, so a rebuild, which knows only statements, cannot put it back.
+
+**Tasks came back as the note that dropped them.** A task is the world's own bookkeeping, and
+the world clears every class table before rebuilding. An abandoned task's one statement is the
+sentence saying why, so it rebuilt into that sentence and nothing else: no `stated`, no mode, no
+work. A class marked `own: true` is now left out of the rebuild on both sides — its table is not
+cleared and no image is built for it. Fifty-eight tasks in the frozen world, two of them wrecked.
+
+**A tag read differently after a rebuild than before it.** The record keeps a tag as it was said
+and the world keeps one form of it; writing one tidied it and the rebuild put the raw form back,
+so `looked-at` became `looked at`.
+
+**The history table grew a past that never happened.** A rebuild sets each attribute to its empty
+form and puts the record's value on top, and a relation's class carries its own kind — so the
+"previous value" it wrote down was scaffolding. Two rows per rebuild, on the one table whose job
+is to say what really stopped being true. `ontology.filling_from_record()` names the difference.
+
+**What the test states rather than checks.** A rebuild reconstructs the class images and nothing
+else. Comments, questions, variables, name choices, procedures, meanings, value history, access
+counts, self-file digests and the run log are not statements; they survive because the rebuild
+does not touch them, not because it can restore them. That is the boundary, and the test asserts
+which side each table is on instead of assuming.
+
+**Where it stands:** 471 of 472 names and all 468 links survive a rebuild of the frozen 455-fact
+world, the owner with them. The one loss is still Walter Chrysler merging with Walter Percy
+Chrysler Jr. — the person rule doing what it is for.
