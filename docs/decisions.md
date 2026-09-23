@@ -741,3 +741,40 @@ world already read fact by fact, so what each one changes is attributable.
 
 **How we would know it was wrong.** Hand recording that cannot be made to work at all — then
 the automation was carrying something load-bearing and the order should be reversed.
+
+---
+
+## 2026-09-23 · The world answers structural questions; semantic ones are the host's
+
+**Seen.** Asked why the world could promise to work out what a word meant, the answer is that
+it held a model to do it with: `authoring.install` puts `world.meanings.model` within reach of
+the write path, so at the moment of recording a fact the world had semantics to hand and used
+them. Both fact-rewriting failures came from there.
+
+**The rule is not "deterministic only".** The worse of the two was `difflib` — wholly
+deterministic, no model, and it turned "worked in" into "born in" four times without a sound.
+The fault is not the method but the question: a semantic question answered by a deterministic
+method is still a semantic question the world had no standing to answer.
+
+So the line is drawn by what is being decided, not by how:
+
+- **Structural, the world's own, decided in the write** — does this type exist, does this value
+  fit what was declared, do these periods overlap, is this end of the right class, is this link
+  already here. Deterministic, checkable, and the world holds the evidence.
+- **Semantic, never the world's** — are these two words one idea, is this the same person, is
+  this word a misspelling of that one. The evidence is the sentence the user said, and the
+  world does not have it. The agent does.
+
+**Done.** Every remaining call to the meaning model is now either advisory or asked for:
+`_one_idea` and `look_alike` (listings), `_reads_like` (the pre-run reminder), `classes_like`
+and `take_in` (the agent calls them), and `_relation_like` inside `define_relation`, which with
+`MERGES_MEANING` off only says what it noticed. None of them acts unasked inside a write.
+
+**What this does not change.** The world still says everything it notices. With every switch
+off, defining `birthplace` next to `born_in` still answers: *"'birthplace' reads a lot like
+BornIn — I have made birthplace as you asked; if they are one idea, `world.take_in(BornIn,
+"birthplace")`."* Noticing is not deciding, and only the deciding was taken away.
+
+**How we would know it was wrong.** The world unable to refuse something it plainly should —
+if a real data check turns out to need semantics, the line is in the wrong place and the check
+belongs to the agent with the world stating the constraint.

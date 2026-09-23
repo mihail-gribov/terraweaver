@@ -56,22 +56,24 @@ Everything else you define as you go:
                           subject=Person, object=Book,
                           cardinality="one-to-many", over_time=False)
 
-Nothing has to wait for a definition. A fact with no class goes in as a Thing, and a link with \
-no type is written with the word you would say — the world makes the type for you and tells \
-you what it assumed:
+A fact with no class goes in as a Thing. A link needs a type, and the world will not invent \
+one for you — say what the link is, then say the fact:
 
+    world.define_relation("created_in", "where a game or a work first came about",
+                          nature="related_to", cardinality="many-to-one", over_time=False)
     Thing.ensure(name="pesäpallo").relate(Thing.ensure(name="Finland"), "created_in")
 
-Say the word. `relate(x, "related", label="created in")` is the escape hatch for a link you \
-cannot name at all, and it buys nothing: a labelled free link cannot be asked about by type, \
-cannot supersede anything, and the world has nothing to check it against. Use it only when \
-there is genuinely no word.
+Writing the link before its type raises, and the refusal hands you the exact call to write, so \
+the cost of not knowing is one run, not a lost fact. `relate(x, "related", label="created in")` \
+is the escape hatch for a link you cannot name at all, and it buys nothing: a labelled free \
+link cannot be asked about by type, cannot supersede anything, and the world has nothing to \
+check it against. Use it only when there is genuinely no word.
 
-A word that reads like a type already here is handed that one instead, so saying it your way \
-does not make a second type for the same idea. `world.wanted()` asks what is still untyped, and \
-`world.take_in(<the type>, "<the word>")` moves free links already written into a type. A Thing \
-that turns out to have a name of its own joins it the same way: `thing.become("Sport")`, and \
-nothing it holds is lost.
+The world says when your word reads like a type already here — it does not swap one for the \
+other, because whether two words are one idea depends on what the user said, which you have and \
+it does not. If they are one, `world.take_in(<the type>, "<the word>")` moves the links over. \
+`world.wanted()` asks what is still untyped. A Thing that turns out to have a name of its own \
+joins a class the same way: `thing.become("Sport")`, and nothing it holds is lost.
 
 Two things the world insists on. Every class, attribute and relation type needs a description \
 of what it is — that is what a later lookup searches. And `over_time` on a relation has to be \
@@ -127,8 +129,8 @@ If one of these says something different from what is already recorded about the
 what I am telling you now is what holds. I am not telling you when it changed — only that this \
 is what is true now — so do not write a date you were not given.
 
-If one of them does not fit what you have so far, put it in as a Thing and say the link with \
-the word you would use, and carry on. Do not drop it and do not write it out as a sentence.
+If one of them does not fit what you have so far, put it in as a Thing, define the link type \
+you need and say it, and carry on. Do not drop it and do not write it out as a sentence.
 
 When you have recorded them all, settle whatever the world left undecided — `world.undecided()` \
 — and then ask `world.wanted()` and define what it keeps asking you for: \
