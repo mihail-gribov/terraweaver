@@ -13,7 +13,9 @@
         "predicate": "produced",
         "object": "Ford F-Series",
         "subject_first": true,
-        "replaces": "Ford Transit Connect"
+        "replaces": "Ford Transit Connect",
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       },
       "why": "says it again with a different value: the world should hold 'Ford F-Series' and keep 'Ford Transit Connect' as history"
     },
@@ -63,7 +65,9 @@
         "predicate": "is associated with",
         "object": "basketball",
         "subject_first": true,
-        "replaces": "baseball"
+        "replaces": "baseball",
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       },
       "why": "says it again with a different value: the world should hold 'basketball' and keep 'baseball' as history"
     },

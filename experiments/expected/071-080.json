@@ -22,7 +22,9 @@
         "subject": "Rocket Man",
         "predicate": "was performed by",
         "object": "Elton John",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     },
     {
@@ -92,7 +94,9 @@
         "subject": "placekicker",
         "predicate": "is associated with",
         "object": "American football",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     },
     {

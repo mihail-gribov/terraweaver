@@ -54,7 +54,9 @@
         "subject": "Bill Frisell",
         "predicate": "was educated at",
         "object": "Berklee College of Music",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     },
     {
@@ -94,7 +96,9 @@
         "subject": "Bob Dylan",
         "predicate": "was educated at",
         "object": "University of Minnesota",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     },
     {
@@ -104,7 +108,9 @@
         "subject": "FC Irtysh Omsk",
         "predicate": "is associated with",
         "object": "association football",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     }
   ]

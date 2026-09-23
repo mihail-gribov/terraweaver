@@ -22,7 +22,9 @@
         "subject": "quarterback",
         "predicate": "is associated with",
         "object": "American football",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     },
     {
@@ -53,7 +55,9 @@
         "predicate": "was founded by",
         "object": "Andy Warhol",
         "subject_first": true,
-        "replaces": "Coco Chanel"
+        "replaces": "Coco Chanel",
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       },
       "why": "says it again with a different value: the world should hold 'Andy Warhol' and keep 'Coco Chanel' as history"
     },
@@ -64,7 +68,9 @@
         "subject": "Steve Sax",
         "predicate": "is associated with",
         "object": "baseball",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     },
     {

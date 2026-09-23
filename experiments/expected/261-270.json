@@ -57,7 +57,9 @@
         "predicate": "was founded by",
         "object": "Walter Chrysler",
         "subject_first": true,
-        "replaces": "Ardashir I"
+        "replaces": "Ardashir I",
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       },
       "why": "says it again with a different value: the world should hold 'Walter Chrysler' and keep 'Ardashir I' as history"
     },

@@ -44,7 +44,9 @@
         "subject": "Viva Las Vegas",
         "predicate": "was performed by",
         "object": "Elvis Presley",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     },
     {
@@ -54,7 +56,9 @@
         "subject": "F-22 Raptor",
         "predicate": "was developed by",
         "object": "Lockheed Martin",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     },
     {
@@ -81,7 +85,9 @@
         "predicate": "was developed by",
         "object": "ABB Group",
         "subject_first": true,
-        "replaces": "Valve Corporation"
+        "replaces": "Valve Corporation",
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       },
       "why": "says it again with a different value: the world should hold 'ABB Group' and keep 'Valve Corporation' as history"
     },
@@ -92,7 +98,9 @@
         "subject": "The Vampyre",
         "predicate": "was written in",
         "object": "English",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     },
     {
@@ -103,7 +111,9 @@
         "predicate": "is associated with",
         "object": "cricket",
         "subject_first": true,
-        "replaces": "association football"
+        "replaces": "association football",
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       },
       "why": "says it again with a different value: the world should hold 'cricket' and keep 'association football' as history"
     }

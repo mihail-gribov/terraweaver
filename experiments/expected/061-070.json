@@ -44,7 +44,9 @@
         "subject": "Joan Didion",
         "predicate": "was educated at",
         "object": "University of California, Berkeley",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     },
     {
@@ -64,7 +66,9 @@
         "subject": "Born in the U.S.A.",
         "predicate": "was performed by",
         "object": "Bruce Springsteen",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     },
     {
@@ -74,7 +78,9 @@
         "subject": "Rand al'Thor",
         "predicate": "was created by",
         "object": "Robert Jordan",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     },
     {
@@ -84,7 +90,9 @@
         "subject": "Buddhism",
         "predicate": "was founded by",
         "object": "Gautama Buddha",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     },
     {
@@ -104,7 +112,9 @@
         "subject": "point guard",
         "predicate": "is associated with",
         "object": "basketball",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     }
   ]

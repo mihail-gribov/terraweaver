@@ -93,7 +93,9 @@
         "predicate": "was educated at",
         "object": "University of Southern California",
         "subject_first": true,
-        "replaces": "Trinity College Dublin"
+        "replaces": "Trinity College Dublin",
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       },
       "why": "says it again with a different value: the world should hold 'University of Southern California' and keep 'Trinity College Dublin' as history"
     },

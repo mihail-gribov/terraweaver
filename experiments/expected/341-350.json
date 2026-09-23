@@ -13,7 +13,9 @@
         "predicate": "is associated with",
         "object": "association football",
         "subject_first": true,
-        "replaces": "baseball"
+        "replaces": "baseball",
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       },
       "why": "says it again with a different value: the world should hold 'association football' and keep 'baseball' as history"
     },
@@ -77,7 +79,9 @@
         "predicate": "is associated with",
         "object": "association football",
         "subject_first": true,
-        "replaces": "basketball"
+        "replaces": "basketball",
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       },
       "why": "says it again with a different value: the world should hold 'association football' and keep 'basketball' as history"
     },
@@ -110,7 +114,9 @@
         "subject": "Wilhelm II",
         "predicate": "was educated at",
         "object": "University of Bonn",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     }
   ]

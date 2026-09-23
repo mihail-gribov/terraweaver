@@ -23,7 +23,9 @@
         "predicate": "was performed by",
         "object": "Lou Reed",
         "subject_first": true,
-        "replaces": "Bob Dylan"
+        "replaces": "Bob Dylan",
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       },
       "why": "says it again with a different value: the world should hold 'Lou Reed' and keep 'Bob Dylan' as history"
     },

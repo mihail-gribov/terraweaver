@@ -12,7 +12,9 @@
         "subject": "Shingon Buddhism",
         "predicate": "was founded by",
         "object": "Kūkai",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     },
     {
@@ -42,7 +44,9 @@
         "subject": "Galwegians RFC",
         "predicate": "is associated with",
         "object": "rugby union",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     },
     {
@@ -62,7 +66,9 @@
         "subject": "Aladdin Sane",
         "predicate": "was performed by",
         "object": "David Bowie",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     },
     {

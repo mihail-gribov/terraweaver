@@ -13,7 +13,9 @@
         "predicate": "is associated with",
         "object": "Muay Thai",
         "subject_first": true,
-        "replaces": "American football"
+        "replaces": "American football",
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       },
       "why": "says it again with a different value: the world should hold 'Muay Thai' and keep 'American football' as history"
     },
@@ -36,7 +38,9 @@
         "subject": "Blood on the Tracks",
         "predicate": "was performed by",
         "object": "Bob Dylan",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     },
     {

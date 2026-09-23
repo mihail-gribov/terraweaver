@@ -60,7 +60,9 @@
         "predicate": "was developed by",
         "object": "Boeing",
         "subject_first": true,
-        "replaces": "Lockheed Martin"
+        "replaces": "Lockheed Martin",
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       },
       "why": "says it again with a different value: the world should hold 'Boeing' and keep 'Lockheed Martin' as history"
     },

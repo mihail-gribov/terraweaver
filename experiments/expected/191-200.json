@@ -44,7 +44,9 @@
         "subject": "Catholic Church",
         "predicate": "was founded by",
         "object": "Jesus Christ",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     },
     {
@@ -54,7 +56,9 @@
         "subject": "Bo Ryan",
         "predicate": "is associated with",
         "object": "basketball",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     },
     {
@@ -74,7 +78,9 @@
         "subject": "Westinghouse Electric",
         "predicate": "produced",
         "object": "AP1000",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     },
     {
@@ -108,7 +114,9 @@
         "subject": "The Wheel of Time",
         "predicate": "was written in",
         "object": "English",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     }
   ]

@@ -33,7 +33,9 @@
         "subject": "Ford Motor Company",
         "predicate": "was founded by",
         "object": "Henry Ford",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     },
     {
@@ -44,7 +46,9 @@
         "predicate": "is associated with",
         "object": "basketball",
         "subject_first": true,
-        "replaces": "association football"
+        "replaces": "association football",
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       },
       "why": "says it again with a different value: the world should hold 'basketball' and keep 'association football' as history"
     },
@@ -87,7 +91,9 @@
         "subject": "David Beckham",
         "predicate": "is associated with",
         "object": "association football",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     },
     {

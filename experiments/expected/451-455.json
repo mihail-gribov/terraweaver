@@ -49,7 +49,9 @@
         "predicate": "was educated at",
         "object": "Baldwin Wallace University",
         "subject_first": true,
-        "replaces": "University of Bonn"
+        "replaces": "University of Bonn",
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       },
       "why": "says it again with a different value: the world should hold 'Baldwin Wallace University' and keep 'University of Bonn' as history"
     },

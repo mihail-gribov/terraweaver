@@ -42,7 +42,9 @@
         "subject": "Darryl Strawberry",
         "predicate": "is associated with",
         "object": "baseball",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     },
     {
@@ -62,7 +64,9 @@
         "subject": "Sandy Alderson",
         "predicate": "is associated with",
         "object": "baseball",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     },
     {
@@ -94,7 +98,9 @@
         "subject": "Methodism",
         "predicate": "was founded by",
         "object": "John Wesley",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     },
     {
@@ -105,7 +111,9 @@
         "predicate": "is associated with",
         "object": "cricket",
         "subject_first": true,
-        "replaces": "basketball"
+        "replaces": "basketball",
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       },
       "why": "says it again with a different value: the world should hold 'cricket' and keep 'basketball' as history"
     }

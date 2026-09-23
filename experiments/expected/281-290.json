@@ -69,7 +69,9 @@
         "predicate": "was performed by",
         "object": "Yves Montand",
         "subject_first": true,
-        "replaces": "David Bowie"
+        "replaces": "David Bowie",
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       },
       "why": "says it again with a different value: the world should hold 'Yves Montand' and keep 'David Bowie' as history"
     },
@@ -80,7 +82,9 @@
         "subject": "Lou Reed",
         "predicate": "was educated at",
         "object": "Syracuse University",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     },
     {
@@ -91,7 +95,9 @@
         "predicate": "was founded by",
         "object": "Joseph Goebbels",
         "subject_first": true,
-        "replaces": "John Wesley"
+        "replaces": "John Wesley",
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       },
       "why": "says it again with a different value: the world should hold 'Joseph Goebbels' and keep 'John Wesley' as history"
     },
@@ -102,7 +108,9 @@
         "subject": "Back to Black",
         "predicate": "was performed by",
         "object": "Amy Winehouse",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     },
     {

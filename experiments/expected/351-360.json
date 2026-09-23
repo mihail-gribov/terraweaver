@@ -12,7 +12,9 @@
         "subject": "Free as a Bird",
         "predicate": "was performed by",
         "object": "The Beatles",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     },
     {
@@ -74,7 +76,9 @@
         "subject": "Canadair",
         "predicate": "produced",
         "object": "AP1000",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     },
     {

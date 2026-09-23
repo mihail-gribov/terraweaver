@@ -13,7 +13,9 @@
         "predicate": "is associated with",
         "object": "pesäpallo",
         "subject_first": true,
-        "replaces": "ice hockey"
+        "replaces": "ice hockey",
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       },
       "why": "says it again with a different value: the world should hold 'pesäpallo' and keep 'ice hockey' as history"
     },
@@ -66,7 +68,9 @@
         "predicate": "is associated with",
         "object": "basketball",
         "subject_first": true,
-        "replaces": "association football"
+        "replaces": "association football",
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       },
       "why": "says it again with a different value: the world should hold 'basketball' and keep 'association football' as history"
     },
@@ -98,7 +102,9 @@
         "predicate": "was performed by",
         "object": "Frank Zappa",
         "subject_first": true,
-        "replaces": "Amy Winehouse"
+        "replaces": "Amy Winehouse",
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       },
       "why": "says it again with a different value: the world should hold 'Frank Zappa' and keep 'Amy Winehouse' as history"
     },

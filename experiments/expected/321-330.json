@@ -25,7 +25,9 @@
         "predicate": "is associated with",
         "object": "rugby",
         "subject_first": true,
-        "replaces": "American football"
+        "replaces": "American football",
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       },
       "why": "says it again with a different value: the world should hold 'rugby' and keep 'American football' as history"
     },
@@ -48,7 +50,9 @@
         "subject": "cornerback",
         "predicate": "is associated with",
         "object": "American football",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     },
     {
@@ -68,7 +72,9 @@
         "subject": "midfielder",
         "predicate": "is associated with",
         "object": "association football",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     },
     {
@@ -79,7 +85,9 @@
         "predicate": "was created by",
         "object": "Ferdowsi",
         "subject_first": true,
-        "replaces": "Robert Jordan"
+        "replaces": "Robert Jordan",
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       },
       "why": "says it again with a different value: the world should hold 'Ferdowsi' and keep 'Robert Jordan' as history"
     },
@@ -103,7 +111,9 @@
         "predicate": "is associated with",
         "object": "cricket",
         "subject_first": true,
-        "replaces": "baseball"
+        "replaces": "baseball",
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       },
       "why": "says it again with a different value: the world should hold 'cricket' and keep 'baseball' as history"
     },

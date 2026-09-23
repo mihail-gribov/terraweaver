@@ -24,7 +24,9 @@
         "subject": "Past Masters",
         "predicate": "was performed by",
         "object": "The Beatles",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     },
     {
@@ -35,7 +37,9 @@
         "predicate": "is associated with",
         "object": "rugby",
         "subject_first": true,
-        "replaces": "American football"
+        "replaces": "American football",
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       },
       "why": "says it again with a different value: the world should hold 'rugby' and keep 'American football' as history"
     },
@@ -46,7 +50,9 @@
         "subject": "Ford Motor Company",
         "predicate": "produced",
         "object": "Ford Transit Connect",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     },
     {
@@ -76,7 +82,9 @@
         "subject": "Vito Corleone",
         "predicate": "was created by",
         "object": "Mario Puzo",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     },
     {
@@ -96,7 +104,9 @@
         "subject": "flanker",
         "predicate": "is associated with",
         "object": "rugby union",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     },
     {

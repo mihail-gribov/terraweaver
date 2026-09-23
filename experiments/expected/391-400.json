@@ -13,7 +13,9 @@
         "predicate": "was created by",
         "object": "Nobuhiro Watsuki",
         "subject_first": true,
-        "replaces": "Mario Puzo"
+        "replaces": "Mario Puzo",
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       },
       "why": "says it again with a different value: the world should hold 'Nobuhiro Watsuki' and keep 'Mario Puzo' as history"
     },
@@ -24,7 +26,9 @@
         "subject": "Shahnameh",
         "predicate": "was written in",
         "object": "Persian",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     },
     {
@@ -103,7 +107,9 @@
         "predicate": "was educated at",
         "object": "Fordham University",
         "subject_first": true,
-        "replaces": "Syracuse University"
+        "replaces": "Syracuse University",
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       },
       "why": "says it again with a different value: the world should hold 'Fordham University' and keep 'Syracuse University' as history"
     }

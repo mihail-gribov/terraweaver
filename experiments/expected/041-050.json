@@ -74,7 +74,9 @@
         "subject": "wide receiver",
         "predicate": "is associated with",
         "object": "American football",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     },
     {
@@ -94,7 +96,9 @@
         "subject": "Israel",
         "predicate": "was founded by",
         "object": "David Ben-Gurion",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     },
     {
@@ -105,7 +109,9 @@
         "predicate": "was founded by",
         "object": "Philippe, Duke of Orléans",
         "subject_first": true,
-        "replaces": "David Ben-Gurion"
+        "replaces": "David Ben-Gurion",
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       },
       "why": "says it again with a different value: the world should hold 'Philippe, Duke of Orléans' and keep 'David Ben-Gurion' as history"
     }

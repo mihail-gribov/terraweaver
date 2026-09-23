@@ -79,7 +79,9 @@
         "predicate": "is associated with",
         "object": "baseball",
         "subject_first": true,
-        "replaces": "association football"
+        "replaces": "association football",
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       },
       "why": "says it again with a different value: the world should hold 'baseball' and keep 'association football' as history"
     },

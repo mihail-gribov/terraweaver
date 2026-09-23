@@ -24,7 +24,9 @@
         "subject": "Philadelphia",
         "predicate": "was founded by",
         "object": "William Penn",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     },
     {
@@ -69,7 +71,9 @@
         "predicate": "was performed by",
         "object": "Kylie Minogue",
         "subject_first": true,
-        "replaces": "Emma Watson"
+        "replaces": "Emma Watson",
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       },
       "why": "says it again with a different value: the world should hold 'Kylie Minogue' and keep 'Emma Watson' as history"
     },
@@ -81,7 +85,9 @@
         "predicate": "was written in",
         "object": "German",
         "subject_first": true,
-        "replaces": "English"
+        "replaces": "English",
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       },
       "why": "says it again with a different value: the world should hold 'German' and keep 'English' as history"
     },

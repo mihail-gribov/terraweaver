@@ -24,7 +24,9 @@
         "subject": "Windows Phone",
         "predicate": "was developed by",
         "object": "Microsoft",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     },
     {
@@ -44,7 +46,9 @@
         "subject": "goaltender",
         "predicate": "is associated with",
         "object": "ice hockey",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     },
     {
@@ -54,7 +58,9 @@
         "subject": "Sasanian Empire",
         "predicate": "was founded by",
         "object": "Ardashir I",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     },
     {
@@ -109,7 +115,9 @@
         "predicate": "was performed by",
         "object": "Ayumi Hamasaki",
         "subject_first": true,
-        "replaces": "Elton John"
+        "replaces": "Elton John",
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       },
       "why": "says it again with a different value: the world should hold 'Ayumi Hamasaki' and keep 'Elton John' as history"
     }

@@ -92,7 +92,9 @@
         "subject": "center",
         "predicate": "is associated with",
         "object": "basketball",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     },
     {

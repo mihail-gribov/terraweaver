@@ -44,7 +44,9 @@
         "subject": "Elena Ceaușescu",
         "predicate": "was educated at",
         "object": "University of Bucharest",
-        "subject_first": true
+        "subject_first": true,
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       }
     },
     {
@@ -91,7 +93,9 @@
         "predicate": "was performed by",
         "object": "Dana International",
         "subject_first": true,
-        "replaces": "Bruce Springsteen"
+        "replaces": "Bruce Springsteen",
+        "either": true,
+        "corrected": "the type can be named from either end; both record the same fact"
       },
       "why": "says it again with a different value: the world should hold 'Dana International' and keep 'Bruce Springsteen' as history"
     },
