@@ -354,6 +354,37 @@ class WorldRuntime:
             lines.append("Read and report. Don't write facts: a question is not evidence.")
         return "\n".join(lines)
 
+    def _undescribed(self, session) -> list[str]:
+        """What this task put in the world and never said a word about.
+
+        A name is a handle, not a description. Twenty facts went in correctly and left three
+        universities filed as a place, an abstraction and an agent, and three football positions
+        as objects and an abstraction — nothing in the world could have caught it, because
+        nothing in the world said what any of them was. A line in the agent's own words is the
+        one piece of evidence the world does not write itself, and so the only one it can
+        honestly check its own structure against later.
+        """
+        if not session.touched:
+            return []
+        placed = ",".join("?" * len(session.touched))
+        described = set()
+        for (table,) in self.store.conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'facts_%'"):
+            for subject, in self.store.conn.execute(
+                    f"SELECT subject FROM '{table}' WHERE slot = 'descriptions' "
+                    f"AND subject IN ({placed}) AND value NOT IN ('[]', 'null', '\"\"')",
+                    tuple(session.touched)):
+                described.add(subject)
+        without = []
+        for one in sorted(session.touched - described):
+            try:
+                entity = self.store.load(one, self.classes)
+            except Exception:  # noqa: BLE001 - gone, or of a class this world no longer has
+                continue
+            if entity is not None:
+                without.append(entity.display_name())
+        return without
+
     def _anything_said(self, session) -> bool:
         """Whether this task put anything into the world beyond entities and their names.
 
@@ -426,6 +457,24 @@ class WorldRuntime:
             # success. One left a world holding eight bare names — no links, no attributes, no
             # remarks — and said "all ten facts have been recorded, the world kept everything".
             # The world knows what it was given, so it is the one thing it can say for certain.
+            bare = self._undescribed(session)
+            if bare and self._anything_said(session):
+                shown = "\n".join(f"    {one}" for one in bare[:10])
+                more = f"\n    … and {len(bare) - 10} more" if len(bare) > 10 else ""
+                return (
+                    f"Not closed: {len(bare)} thing(s) this task put in the world have a name "
+                    f"and nothing else said about them:\n{shown}{more}\n\n"
+                    f"Say what each one is here, in one line: "
+                    f"`camden.describe(\"the London borough Amy Winehouse died in\")` — what "
+                    f"it is in this world and why it turned up, not what you happen to know "
+                    f"about it. \"the capital city of the United States\" is an encyclopaedia "
+                    f"entry the user never said; \"the city Pedro Pierluisi worked in\" is the "
+                    f"reason it is here.\n"
+                    f"This line is the only account of the thing the world did not write "
+                    f"itself, so it is the only thing it can check its own structure against "
+                    f"later: three universities filed under three different natures is "
+                    f"invisible to a world that knows nothing about any of them but a name."
+                )
             if not self._anything_said(session):
                 return (
                     "Not closed: this is a recording task and nothing about anything was "

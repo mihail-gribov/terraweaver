@@ -869,3 +869,60 @@ have something — the word was accepted by the call and silently dropped. Now i
 **How we would know it was wrong.** Hosts declaring everything required and reading the hints
 as noise — then "required" has come to mean nothing, and the ones worth refusing over need to
 be said differently.
+
+---
+
+## 2026-09-23 · A task does not close over things it never described
+
+**Seen.** Twenty facts landed correctly and left three universities filed as a place, an
+abstraction and an agent, and three football positions as objects and an abstraction. Nothing
+in the world could have caught it: the only thing it knew about any of them was a name, and a
+name is a handle, not an account.
+
+**Done.** `finish_task` will not close a recording task while something it put in the world has
+no description — entities and links alike — and names what is bare. The primer and the refusal
+both say what the line is for: *what it is here and why it turned up*, not what the agent
+happens to know. "the capital city of the United States" is an encyclopaedia entry nobody said;
+"the city Pedro Pierluisi worked in" is the reason it is in this world.
+
+**Why a task check and not a required argument.** `new(...)` and `relate(...)` are called from
+268 places in this repository alone, and a refusal at the write would have meant rewriting all
+of them for an unvalidated change. The evidence also says a hint would be ignored — the date
+hint fired in 392 runs and was answered in none — while what blocks `finish_task` gets
+answered: a recorder settled eight of eight questions when it could not close without them.
+
+**What it bought, measured on the same ten facts.** With descriptions required, the agent's own
+classification came out more consistent unprompted: BBC and University of Minnesota both
+`agent` (before: agent and abstraction), goalkeeper and wide receiver both `abstraction`
+(before: object and object against `center` as abstraction). Having to say what a thing is
+makes one classify it the same way twice.
+
+**And the remaining error became visible.** `Fatah — abstraction — "a Palestinian political
+party"` beside `BBC — agent — "a major British broadcasting organization"`. Two organisations,
+two natures. Before, there was nothing to compare; now there is text the world did not write,
+which is the only kind it can honestly judge by — see "The world's own description was the
+evidence it judged by".
+
+**How we would know it was wrong.** Descriptions that restate the name ("London is London") or
+fill with general knowledge — then the check is being satisfied rather than answered, and what
+it buys is nothing.
+
+---
+
+## 2026-09-23 · `Agent` the class and `agent` the nature are two things with one name
+
+**Seen.** `Thing.nature` is `enum[place, agent, event, object, abstraction]`, and `Agent` is a
+base class holding exactly one instance — the assistant, the second of the two parties a world
+is between. A host reading `describe_world` sees both, and nothing distinguishes them. In the
+run measured, `nature="agent"` was given to the BBC and the University of Minnesota, correctly;
+putting them in the `Agent` class instead would have been just as well supported by what the
+world says about itself.
+
+**Not done yet** — it is a rename in the user's own ontology. The class carries an agreed
+meaning (`user` and `agent` are the two parties, in every namespace, unrebindable), so the
+nature value is the one to change. `organisation` covers everything that landed there (BBC,
+Fatah, Apple Inc., Alta IF, Slovakia national football team, Church of Scotland); `actor` is
+wider and vaguer.
+
+**How we would know it matters.** A host putting an organisation into the `Agent` class, or a
+question about "agents" answered with the assistant and a broadcaster in one list.

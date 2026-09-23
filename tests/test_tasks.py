@@ -70,6 +70,15 @@ def main() -> int:
 
     settled = rt.run('q = world.undecided()[0]\nq.for_the_user("only the user knows what they meant")', key)
     check("one it cannot settle is handed to the user", settled["ok"], str(settled.get("error"))[:120])
+
+    # A name is a handle, not an account of anything. A task does not close over things it put
+    # in the world and never said a word about — that line is the only description of them the
+    # world did not write itself, and so the only one it can check its own structure against.
+    bare = rt.finish_task(key)
+    check("a task will not close over things it never described",
+          bare.startswith("Not closed") and "name and nothing else" in bare, bare[:90])
+    rt.run('for one in (anna, acme):\n    one.describe("mentioned while recording the job history")\n'
+           'for link in anna.relations():\n    link.describe("as the user stated it")', key)
     left = rt.finish_task(key)
     check("and then it closes", not left.startswith("Not closed"), left[:90])
 
@@ -84,7 +93,8 @@ def main() -> int:
     # Giving up is allowed, and it is on the record — an agent with no way out of the check
     # would answer the doubts at random, which is worse than saying it could not do the task.
     rt.start_task(key, "record the user's address from the message", "recording")
-    rt.run('p = Person.new(full_name="Nobody Atall")\np.relate(Place.new(name="Somewhere"), "squats_at")', key)
+    rt.run('p = Person.new(full_name="Nobody Atall")\np.relate(Place.new(name="Somewhere"), "squats_at")\n'
+           'p.describe("somebody the message mentioned")', key)
     gave_up = rt.finish_task(key, abandon="the message never said whose address it was")
     check("a task can be abandoned, with the reason kept",
           "abandoned" in gave_up.lower() and "never said" in gave_up, gave_up[:100])
