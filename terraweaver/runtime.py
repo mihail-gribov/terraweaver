@@ -1324,12 +1324,22 @@ def _exec_by_statement(tree, namespace: dict, store) -> None:
                 break
     if broke:
         if len(broke) > 1 or ran_after:
-            others = "; ".join(f"{type(one).__name__}: {str(one)[:60]}" for one in broke[1:])
+            # A statement that fails leaves its name unbound, and everything downstream that
+            # was going to use it fails too — on the name, not on anything of its own. Listed
+            # as peers, one broken line reads as three broken lines: across 455 facts the
+            # world reported 110 NameErrors and 22 KeyErrors, and most of them were the wreck
+            # of a line already reported above them.
+            after = [one for one in broke[1:] if isinstance(one, (NameError, KeyError))]
+            own = [one for one in broke[1:] if not isinstance(one, (NameError, KeyError))]
+            others = "; ".join(f"{type(one).__name__}: {str(one)[:60]}" for one in own)
+            fallout = (f" {len(after)} more failed on a name the first one never bound "
+                       f"({'; '.join(str(one)[:40] for one in after)}) — those are the same "
+                       f"failure, not others." if after else "")
             ontology.note_hint(
                 f"{len(broke)} statement(s) in this block failed; the rest of the block ran, "
                 f"{ran_after} of them after the first failure — everything that did not raise is "
                 f"in the world. The first failure is reported below"
-                + (f"; the others: {others}." if others else ".")
+                + (f"; the others: {others}." if others else ".") + fallout
             )
         raise broke[0]
 
