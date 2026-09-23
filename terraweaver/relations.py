@@ -489,6 +489,28 @@ def relate(world, a, b, kind: str, period: dict, attrs: dict, basis: list | None
             f"{other['kind']}, which knows how that link behaves. Say it that way next time."
         )
         return relate(world, subject, obj, other["kind"], period, attrs, basis)
+    # The three base types are natures wearing a type's clothes: `part_of`, `kind_of` and
+    # `related` say how a link behaves and have no word of their own. Used directly as the type
+    # of a fact, the fact's word is gone — "the capital of France is Paris" recorded as part_of
+    # is true and unanswerable, because part_of is not one-per-object and Paris and Harare both
+    # stand as parts of France. Twenty-four facts in the slice measured, eight of them a pair.
+    # Sometimes "part of" really is the word, so this asks once per type per task rather than
+    # refusing.
+    if (rel["kind"] in ("part_of", "kind_of", "related") and not basis
+            and not world.all(name, limit=1, history=True)):
+        # Once, on the first link of this kind: the doubt is about the type, not about any one
+        # link, and asked per link it is asked per fact.
+        world.questions.raise_(
+            subject, f"a_name_for_{rel['kind']}",
+            f"You recorded this as {rel['kind']}, which says how the link behaves and not what "
+            f"it is called. If the fact has a word of its own — 'the capital of', 'a branch "
+            f"of' — define it and give it this nature, so the word can be asked about and can "
+            f"supersede: world.define_relation('capital_of', '<what it is>', "
+            f"nature='{rel['kind'] if rel['kind'] != 'related' else 'related_to'}', "
+            f"cardinality='one-to-one', over_time=False). If '{rel['kind'].replace('_', ' ')}' "
+            f"is the word, say so and I will not ask again.",
+            options=["it has its own word", "this is the word"],
+        )
     if rel.get("free"):
         # A label is what makes a free link readable; a description is prose about it. Requiring
         # the prose to accept the structure is backwards, and it refused four links in one run.
