@@ -266,7 +266,7 @@ class World:
                                   f"who answers to that, and nothing said disagrees with them")
         return self._determined(entity)
 
-    def _note_named_elsewhere(self, class_name: str, attrs: dict) -> None:
+    def _named_elsewhere(self, class_name: str, attrs: dict):
         """Something of this name already exists, under another class.
 
         Identity is declared per class, so nothing looks across them: in one run "rugby" ended
@@ -287,12 +287,8 @@ class World:
                 continue
             for entity in self.all(other, limit=None, any_time=True):
                 if matching.normalize(str(getattr(entity, key, "") or "")) == wanted:
-                    ontology.note_hint(
-                        f"{name!r} is already in this world as a {other} "
-                        f"({entity.display_name()}). Two things can share a name, so this may be "
-                        f"right — but if they are one thing, record it once under the class that "
-                        f"fits and say the rest about that one.")
-                    return
+                    return other, entity
+        return None
 
     def _same_by_strong_key(self, class_name: str, attrs: dict, twins: list):
         """An address nobody else has is not a resemblance — it is them.
@@ -446,7 +442,7 @@ class World:
             if period and not isinstance(outcome, NeedsResolution):
                 self.apply_period(outcome, period)
             return outcome
-        self._note_named_elsewhere(class_name, attrs)
+        elsewhere = self._named_elsewhere(class_name, attrs)
         if twins:
             needs = looks_existing(class_name, attrs, twins)
             needs.context["period"] = period
@@ -455,6 +451,25 @@ class World:
         created = self.create(class_name, attrs)
         if period:
             self.apply_period(created, period)
+        if elsewhere:
+            # This was a hint, and hints die with the run. The world noticed every one of
+            # twenty-three duplicate names in a 455-fact run and said so where nobody was
+            # reading: "University of California, Berkeley" ended up a Thing, a Place and an
+            # Organization, so the fact that should have superseded an earlier one landed on a
+            # different entity and superseded nothing. Identity is declared per class and
+            # nothing looks across them, which makes this the one thing no class can see from
+            # inside itself — and so the one worth holding a task open for.
+            other, twin = elsewhere
+            self.questions.raise_(
+                created, "named_elsewhere",
+                f"{created.display_name()} has the name of something already here: "
+                f"{twin.display_name()}, a {other}. Two things can share a name, so this may be "
+                f"right. If they are one thing, say so — everything said about the other one "
+                f"will otherwise be about somebody else, and a later telling will supersede "
+                f"nothing.",
+                options=["one thing", "two things that share a name"],
+                involves=[twin],
+            )
         return created
 
     def ensure(self, cls, starts=None, until=None, ttl=None, permanent: bool = False, **attrs):

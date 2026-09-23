@@ -289,8 +289,12 @@ def main() -> int:
     world.classes["Place"].new(name="Rugby", city="Rugby", category="other")
     with _o.record_changes() as across:
         world.classes["Organization"].new(name="Rugby", industry="Sport")
-    check("a name already used under another class is pointed out",
-          any("already in this world as a Place" in line for line in across.hints), str(across.hints))
+    # A question now, not a hint. The hint was right and nobody read it: in a 455-fact run the
+    # world noticed all twenty-three duplicate names this way and every one still went in, so
+    # a later telling superseded nothing because it landed on a different entity.
+    check("a name already used under another class is asked about",
+          any("has the name of something already here" in line for line in across.questions),
+          str(across.questions))
     with _o.record_changes() as apart:
         world.classes["Organization"].new(name="Quietwood Ltd", industry="Sport")
     check("and an unused name is left alone",
