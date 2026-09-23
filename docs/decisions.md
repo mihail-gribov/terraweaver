@@ -1095,3 +1095,42 @@ two superseding pairs in one batch, recorded by the agent with no help:
 **How we would know it was wrong.** Types multiplying per phrasing again — the pendulum has
 swung both ways in one day, and this is the wording that has to hold both ends: one word, one
 type, and a word that is already there is the one to use.
+
+---
+
+## 2026-09-23 · The world noticed every duplicate and told nobody
+
+**Seen.** The whole slice, ten facts at a time into one accumulating world. After 237 entities
+there were **23 duplicate names**, and the important ones were duplicated across classes:
+
+    University of California, Berkeley   →  Thing, Place, Organization
+    Australia                            →  Place, Place, Place
+
+Fact 115 ("the headquarters of UC Berkeley is in Botevgrad") landed on a different entity from
+fact 13, so it superseded nothing. That is the shape of most of the benchmark's superseding
+pairs — a hundred facts apart, and each landing wherever the agent's naming happened to fall.
+
+**And the world had already worked it out.** `world._note_named_elsewhere` looks across every
+class for the name and was written for exactly this, with a comment about "rugby" ending up
+four times over. It emitted a **hint**. Across the run the world held three questions and not
+one of them was about identity.
+
+**This is the third time in one day.** The date hint fired in 392 runs and was answered in none;
+`world_variables` offered a channel and held 0 rows; and now this. The lesson is not about any
+of the three: **what the world says in a hint, it says to nobody.** What holds a task open gets
+answered — a recorder settled eight of eight when it could not close without them.
+
+**Done.** A name already in the world under another class raises a question, on the new entity,
+naming the other one and what it costs to get it wrong: *"everything said about the other one
+will otherwise be about somebody else, and a later telling will supersede nothing."*
+
+**What it is not.** Not a refusal and not a merge. Two things can share a name — a town called
+after a sport is not the sport — and which it is depends on what the user said, which the world
+does not have.
+
+**Measured before the change,** so there is something to compare against: 150/200 facts joined
+by the fourth batch of twenty, $0.19–0.65 a batch, and the world no worse at 200 facts than at
+20 — the self-description grows 8% (8.7k tokens to 9.4k), not the explosion I expected.
+
+**How we would know it was wrong.** Tasks held open over names that genuinely belong to two
+things — Chanel the person and Chanel the company are both in this slice, and both are right.
