@@ -426,6 +426,18 @@ class World:
         """Create what the host says is new — asking first if its twin is already here."""
         ontology.note_world_call("world_writes")
         class_name = self._name(cls)
+        if class_name not in self.classes:
+            # `world.new("Kūkai")` — a name where a class belongs. It used to come back as a
+            # bare `KeyError: 'Kūkai'` from somewhere inside, which says nothing about what was
+            # wanted or what to write instead.
+            known = ", ".join(sorted(n for n, c in self.classes.items()
+                                     if not c._spec.get("relation"))[:12])
+            raise ValueError(
+                f"{class_name!r} is not a class in this world. The first thing you pass is what "
+                f"kind of thing it is; its name is an attribute: "
+                f"Thing.new(name={class_name!r}, nature=\"place\") — or one of {known}. "
+                f"world.define(...) makes a class that is not there yet."
+            )
         period = _period(starts, until, ttl, permanent)
         scored = matching.score_candidates(self._worth_loading(cls, attrs), class_name, attrs)
         # A twin (same email, same full name) — or someone whose name this is: "Darren" when
@@ -900,7 +912,9 @@ class World:
 
     @staticmethod
     def _name(cls) -> str:
-        return cls if isinstance(cls, str) else cls.__name__
+        if not isinstance(cls, str):
+            return cls.__name__
+        return cls
 
 
 def _period(starts, until, ttl, permanent: bool) -> dict:

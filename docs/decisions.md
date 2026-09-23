@@ -1173,3 +1173,37 @@ recorded."
 
 **What this measures.** Recording only. No questions were asked of the world, so this is the
 floor: whatever the answering side can do, it can only do with what is here.
+
+---
+
+## 2026-09-23 · What the agent actually got wrong, counted
+
+**Seen.** 358 errors across 455 facts — almost one per fact, and every bad batch was a run that
+lost its footing and spent forty turns recovering. Counted rather than guessed at:
+
+    110×  NameError          87×  ValueError      73×  AttributeError
+     56×  TypeError          22×  KeyError         7×  IndexError
+
+**The largest is not a mistake.** The names it tripped on — `shingon`, `alan`, `fact4`, `rel2`
+— are its own, and the shape is always the same:
+
+    things["Kūkai"] = Person.new(...)      ← this fails
+    shingon = things["Shingon Buddhism"]   ← KeyError: the dict was never filled
+    shingon.describe(...)                  ← NameError: never bound
+
+One broken line, three errors, reported as peers — *"the others: KeyError …; NameError …"*. The
+agent reads three problems and looks for three causes. Now the world separates them: the ones
+that failed on a name the first statement never bound are named as the same failure, not as
+others. That is 132 of the 358.
+
+**And two calls that were reached for and refused.** `world.all()` with no class was a TypeError
+about a missing argument — which says what the signature wants, not what the caller does; it
+now means everything in the world. `world.new("Kūkai")`, a name where a class belongs, came
+back as a bare `KeyError: 'Kūkai'` from somewhere inside; it now says what the first argument
+is and writes out `Thing.new(name="Kūkai", nature="place")`.
+
+**Not changed:** `world.all("Person")` was the single most common call, thirty-odd times, and
+works — it was never a failure, only my reading of the count.
+
+**How we would know it was wrong.** The same count, run again, with NameError still leading —
+then the cascade was not the cause and the agent is losing its variables some other way.

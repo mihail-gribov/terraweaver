@@ -88,7 +88,21 @@ class WorldView:
         """The NeedsResolution that the last refused write left behind, if any."""
         return self._world.pending
 
-    def all(self, cls, limit: int | None = World.DEFAULT_LIMIT, *, any_time: bool = False, history: bool = False):
+    def all(self, cls=None, limit: int | None = World.DEFAULT_LIMIT, *,
+            any_time: bool = False, history: bool = False):
+        """Entities of a class, or of every class when none is named.
+
+        `world.all()` used to be a TypeError about a missing argument, which says what the
+        signature wants and not what the caller does. Asking a world for everything in it is a
+        reasonable thing to ask.
+        """
+        if cls is None:
+            got = []
+            for name, klass in self._world.classes.items():
+                if klass._spec.get("relation") or name == "Task":
+                    continue
+                got += self._world.all(name, limit=None, history=history or any_time)
+            return got[:limit] if limit else got
         return self._world.all(cls, limit=limit, history=history or any_time)
 
     def find(self, cls, *, any_time: bool = False, history: bool = False, **attrs):
