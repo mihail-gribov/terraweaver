@@ -211,10 +211,11 @@ Every class below shares these, so they aren't repeated for each one:
         Persist that entity and everything it references.
 
     Relations link two entities and carry their own data (docs: "Relation types" below).
-    Say the link with the word you would say it with: anna.relate(london, "born_in"). If no type
-    has that word, the world makes one and tells you what it assumed about it — a word you have
-    is always better than a label, because a type can be asked about, superseded and checked,
-    and a label can do none of the three. `label=` is for naming a role inside a type that has
+    Say the link with the word you would say it with: anna.relate(london, "born_in"). A type
+    has to exist first — `world.define_relation(...)`, and the refusal writes the call for you
+    if you get there the other way round. A word you have is always better than a label,
+    because a type can be asked about, superseded and checked, and a label can do none of the
+    three. `label=` is for naming a role inside a type that has
     roles ("mother" inside kin, "dentist" inside service), never a type of its own.
     Direction is one rule: the subject is the one the link describes, so a.relate(b, kind)
     reads "a is b's kind". maria.relate(michael, "kin", label="mother") says Maria is
