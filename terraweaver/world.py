@@ -103,22 +103,44 @@ class World:
         """Every world is between two parties, so every world holds both — the person it is
         about and the assistant keeping it. A world without them has no "me" and no "you" to
         anchor a relationship to, and every fixture had to remember to invent them."""
-        if "Person" not in self.classes or "Agent" not in self.classes:
+        if "Person" not in self.classes or "AIAgent" not in self.classes:
             return
+        self._agent_was_called_agent()
         with ontology.not_recording():
             try:
                 agent = self.store.load(self.AGENT_ID, self.classes)
             except KeyError:
                 agent = None
-            if agent is None and self.store.load_all("Agent", self.classes):
+            if agent is None and self.store.load_all("AIAgent", self.classes):
                 return  # a fixture made its own pair; leave them be
             if agent is None:
                 person = self.classes["Person"](full_name="you")
                 person.id = self.USER_ID
                 self.store.save(person)
-                agent = self.classes["Agent"](name="assistant", owner=person)
+                agent = self.classes["AIAgent"](name="assistant", owner=person)
                 agent.id = self.AGENT_ID
                 self.store.save(agent)
+
+    def _agent_was_called_agent(self) -> None:
+        """Worlds written before the class was renamed keep the assistant in an `Agent` table.
+
+        Left alone, the world makes a fresh `AIAgent` beside it and the old one sits there
+        looking like a class of its own — which is what the rename was for. Whatever it held
+        (its character, anything said about it) moves with it.
+        """
+        held = {row[0] for row in self.store.conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name IN "
+            "('Agent', 'AIAgent', 'facts_Agent', 'facts_AIAgent')")}
+        for was, now in (("Agent", "AIAgent"), ("facts_Agent", "facts_AIAgent")):
+            if was not in held:
+                continue
+            if now in held:
+                self.store.conn.execute(f"INSERT OR IGNORE INTO '{now}' SELECT * FROM '{was}'")
+                self.store.conn.execute(f"DROP TABLE '{was}'")
+            else:
+                self.store.conn.execute(f"ALTER TABLE '{was}' RENAME TO '{now}'")
+        if held:
+            self.store.conn.commit()
 
     def is_protected(self, entity) -> bool:
         """The two parties are not the host's to remove or replace."""
@@ -144,7 +166,7 @@ class World:
     @property
     def me(self):
         """The assistant itself."""
-        agents = self.store.load_all("Agent", self.classes)
+        agents = self.store.load_all("AIAgent", self.classes)
         return agents[0] if agents else None
 
     @property

@@ -249,7 +249,7 @@ def trusted_writes():
 # Task is in the base because the boundary has to exist before any work does: a world
 # that could be written to without one is a world where facts land outside every task,
 # which is the state every check added here was built to end.
-BASE_CLASSES = ("Thing", "Related", "PartOf", "Kind", "Person", "Agent", "Task")
+BASE_CLASSES = ("Thing", "Related", "PartOf", "Kind", "Person", "AIAgent", "Task")
 
 
 # What each base class keeps. A Person in the base is a name, not a name with an employer and a
@@ -259,7 +259,7 @@ BASE_CLASSES = ("Thing", "Related", "PartOf", "Kind", "Person", "Agent", "Task")
 # says what it has no attribute for.
 BASE_KEEPS = {
     "Person": ("full_name", "aliases"),
-    "Agent": ("name", "owner", "character"),      # the soul file's body goes into character
+    "AIAgent": ("name", "owner", "character"),      # the soul file's body goes into character
     "Thing": ("name", "aliases", "nature"),
     "Related": ("label", "nature"),
     "PartOf": (),

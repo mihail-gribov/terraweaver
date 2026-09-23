@@ -45,7 +45,7 @@ def census(db: Path) -> dict:
                    and t not in {"instances", "values_", "comments", "runs", "questions", "texts",
                                  "periods", "said", "subjects", "meanings", "name_choices",
                                  "entity_access", "value_history", "world_variables", "procedures",
-                                 "self_files", "Thing", "Person", "Agent", "Related", "Task"})
+                                 "self_files", "Thing", "Person", "AIAgent", "Related", "Task"})
     return {
         "things": count("Thing"), "people": count("Person"), "free links": count("Related"),
         "typed links": sum(count(t) for t in grown), "types made": len(grown),

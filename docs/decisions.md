@@ -918,11 +918,16 @@ run measured, `nature="agent"` was given to the BBC and the University of Minnes
 putting them in the `Agent` class instead would have been just as well supported by what the
 world says about itself.
 
-**Not done yet** — it is a rename in the user's own ontology. The class carries an agreed
-meaning (`user` and `agent` are the two parties, in every namespace, unrebindable), so the
-nature value is the one to change. `organisation` covers everything that landed there (BBC,
-Fatah, Apple Inc., Alta IF, Slovakia national football team, Church of Scotland); `actor` is
-wider and vaguer.
+**Done.** The class is `AIAgent`. The nature keeps its five readable words, and the bound name
+`agent` still means the assistant in every namespace — what changed is the one thing that read
+as both: a class called `Agent` sitting in the same catalogue as a nature called `agent`.
+Renaming the nature instead would have meant arguing about `organisation` (too narrow for
+anything that acts) against `actor` (wider and vaguer), for a word the EvoOntology set gives us
+plainly.
 
-**How we would know it matters.** A host putting an organisation into the `Agent` class, or a
+Worlds written before it keep the assistant in an `Agent` table; opening one moves it and its
+statements into `AIAgent` rather than building a second assistant beside it and leaving the
+first behind looking like a class of its own.
+
+**How we would know it matters.** A host putting an organisation into the `AIAgent` class, or a
 question about "agents" answered with the assistant and a broadcaster in one list.

@@ -61,7 +61,7 @@ def check(world, purpose: str, query: str) -> str:
 def _personal(world, query: str) -> str | None:
     """Anything in the query that this world knows as a person — their name, in any of its forms."""
     words = set(matching.normalize(query).split())
-    for class_name in ("Person", "Agent"):
+    for class_name in ("Person", "AIAgent"):
         if class_name not in world.classes:
             continue
         name_key = matching.NAME_KEYS.get(class_name)

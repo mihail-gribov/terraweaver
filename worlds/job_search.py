@@ -128,13 +128,13 @@ def build(classes: dict[str, type], store) -> None:
         store.save(org)
         companies[name] = org
 
-    store.clear("Agent")
+    store.clear("AIAgent")
     Person = classes["Person"]
     # Every world already holds the two parties under fixed ids (world.ensure_selves); a fixture
     # fills them in rather than inventing a second pair.
     owner = Person(id=World.USER_ID, **OWNER)
     store.save(owner)
-    store.save_graph(classes["Agent"](id=World.AGENT_ID, owner=owner, **AGENT))
+    store.save_graph(classes["AIAgent"](id=World.AGENT_ID, owner=owner, **AGENT))
 
     # Where people work and what they are to the owner are relations, not fields: a job carries
     # a role and dates, and "former manager" is an Authority that ended.

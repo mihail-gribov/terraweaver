@@ -1,6 +1,6 @@
 {
-  "name": "Agent",
-  "description": "The assistant itself — who it is, how it speaks, and whose world it looks after.",
+  "name": "AIAgent",
+  "description": "The assistant itself — who it is, how it speaks, and whose world it looks after. Named AIAgent, not Agent, because `agent` is also one of the natures a thing can have (a thing that acts: a company, a team, an institution) and the two were one word in one world.",
   "attributes": [
     {
       "name": "name",
