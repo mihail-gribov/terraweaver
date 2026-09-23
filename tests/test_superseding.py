@@ -175,6 +175,21 @@ def main() -> int:
     check("and it says what it took back",
           any("hold again" in h for h in (got.get("hints") or [])), str(got.get("hints"))[:110])
 
+    # --- one moment on all of them, so the order they arrived is what is left to go on ---
+    # Taking the moment once is what the world asks for, and it makes every fact in a breath
+    # share a date. Which of them holds is then a question the dates cannot answer, and the
+    # record answers it: `stated_at` is kept per statement and rises with every one.
+    rt = world(chairs=True)
+    out, _ = ran(rt, 'org = Thing.ensure(name="Fatah", nature="agent")\nt = now()\n'
+                     'for n in ("First", "Second", "Third"):\n'
+                     '    Person.new(full_name=n).relate(org, "chairs", starts=t)\n'
+                     'print([p.display_name() for p in org.related("chairs_of")])\n'
+                     'print([p.display_name() for p in org.related("chairs_of", any_time=True)])')
+    holds, ever = out.splitlines() if "\n" in out else (out, "")
+    check("with one date on all of them, the last told holds", holds == "['Third']", holds)
+    check("and the rest are there, latest first",
+          ever == "['Third', 'Second', 'First']", ever)
+
     print("\n" + (f"{len(failures)} failed: " + ", ".join(failures) if failures
                   else "all superseding tests passed"))
     return 1 if failures else 0
