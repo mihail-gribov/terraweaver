@@ -159,6 +159,14 @@ def main() -> int:
     check("and the world asks whether it can have several at once",
           any("each ending the last" in q for q in (got.get("questions") or [])),
           str(got.get("questions"))[:110])
+    # Withdrawing the premise withdraws the conclusion. The ends were the world's, drawn from
+    # "there is one at a time"; told otherwise, it takes them back. What a person ended stays
+    # ended, because that was said rather than worked out.
+    out, got = ran(rt, 'citizen_of.one_per_object = False\n'
+                       'print(len(usa.related("citizen_of_of")))')
+    check("and saying it can brings back the ones the world ended", out == "5", out)
+    check("and it says what it took back",
+          any("hold again" in h for h in (got.get("hints") or [])), str(got.get("hints"))[:110])
 
     print("\n" + (f"{len(failures)} failed: " + ", ".join(failures) if failures
                   else "all superseding tests passed"))

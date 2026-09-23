@@ -1024,7 +1024,11 @@ def _hand_over(world, standing, held, start, name: str) -> None:
     holding at the moment the new one starts.
     """
     if start is not None:
-        with ontology.trusted_writes():
+        # Written as the world's own, not the host's. It is a conclusion drawn from what the
+        # type says about how many there can be — and when that is withdrawn, so is this: a
+        # country declared to have one citizen ended six of them, and `one_per_object = False`
+        # afterwards left every one of them ended, because nothing said who had ended them.
+        with ontology.trusted_writes(), ontology.stating("world"):
             standing.valid_until = timeutil.as_datetime(start)
             world.save(standing)
         ontology.note_hint(

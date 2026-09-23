@@ -1472,6 +1472,39 @@ def _derived_message(class_name: str, attr: dict) -> str:
             f"set {source_attr} on the {source_class} instead")
 
 
+def _reopen_what_the_world_ended(cls, side: str) -> None:
+    """Take back the ends the world wrote because it believed there could be only one.
+
+    Told a country has one citizen, the world ended one citizenship for every new one — six of
+    them in a 455-fact run. Told afterwards that it can have several, nothing came back: the
+    end dates stood, written by nobody anyone could name. They were the world's, drawn from a
+    premise it has now been told is wrong, so they go with it. Ends a host set itself are not
+    touched: those were said, not worked out.
+    """
+    world = current_world()
+    if world is None:
+        return
+    brought = 0
+    for link in world.all(cls.__name__, limit=None, history=True):
+        if getattr(link, "valid_until", None) is None:
+            continue
+        try:
+            said = world.facts.about(link.id)
+        except Exception:  # noqa: BLE001 - a world without the record keeps its dates
+            return
+        ended_by_us = [s for s in said if s.slot == "valid_until" and s.source == "world"]
+        if not ended_by_us:
+            continue
+        with trusted_writes(), stating("world"):
+            link.valid_until = None
+            world.save(link)
+        brought += 1
+    if brought:
+        note_hint(f"{brought} {cls.__name__} link(s) had been ended because one per {side} was "
+                  f"said; that is withdrawn, so they hold again. Anything a person ended "
+                  f"themselves stays ended.")
+
+
 def _keep_spec(spec: dict) -> None:
     """Write a grown type's spec back where it was read from, if it was grown at all."""
     world = current_world()
@@ -1531,8 +1564,11 @@ class _RelationClass(type):
 
     @one_per_subject.setter
     def one_per_subject(cls, value):
+        was = cls._spec["relation"].get("functional")
         cls._spec["relation"]["functional"] = _one_or_many(cls, value)
         _RelationClass._now_said(cls)
+        if was and not cls._spec["relation"]["functional"]:
+            _reopen_what_the_world_ended(cls, "subject")
 
     @property
     def one_per_object(cls):
@@ -1540,8 +1576,11 @@ class _RelationClass(type):
 
     @one_per_object.setter
     def one_per_object(cls, value):
+        was = cls._spec["relation"].get("inverse_functional")
         cls._spec["relation"]["inverse_functional"] = _one_or_many(cls, value)
         _RelationClass._now_said(cls)
+        if was and not cls._spec["relation"]["inverse_functional"]:
+            _reopen_what_the_world_ended(cls, "object")
 
     @property
     def changes(cls):
