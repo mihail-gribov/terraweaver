@@ -54,7 +54,7 @@ OWED = {
     "chairperson of":             ("A", True),
     "is employed by":             ("A", True),
     "was developed by":           ("A", False),
-    "was educated is University of": ("A", False),
+    "was educated at": ("A", False),
     "head of state of":           ("A", True),
     "worked in the city of":      ("A", True),
     "is a child of":              ("A", False),
@@ -69,14 +69,25 @@ _FRAME = re.compile(r"^(?:the\s+)?(?:city|continent|country|language|position|sp
                     r"field|type of music|music|genre|state|province|town)\s+of\s+", re.I)
 
 
+# "…is located in the city of Minneapolis" and "…where X was educated is University of Pisa"
+# put a whole clause where the name goes. Stripped from the front as well, or the name never
+# matches anything and the world is reported as missing a fact it holds.
+_LEAD = re.compile(r"^(?:is\s+)?(?:located|situated|based|headquartered)\s+in\s+", re.I)
+
+
 def bare(name: str) -> str:
-    """A thing's name without the frame the sentence put around it."""
-    return _FRAME.sub("", name.strip()).strip()
+    """A thing's name without the frame or the clause the sentence put around it."""
+    said = _LEAD.sub("", name.strip()).strip()
+    said = _FRAME.sub("", said).strip()
+    return _FRAME.sub("", said).strip()
 
 
 def read(fact: str):
     """(subject, predicate, object) as the sentence has it, or None."""
     text = fact.rstrip(".")
+    hit = re.match(r"^The univeristy where (.+?) was educated is (.+)$", text)
+    if hit:      # the slice spells it that way, 6 times
+        return bare(hit.group(1)), "was educated at", bare(hit.group(2))
     hit = re.match(r"^The ([\w\s]+?) of (.+?) is (.+)$", text)
     if hit:
         return bare(hit.group(3)), f"{hit.group(1).strip()} of", bare(hit.group(2))
