@@ -33,6 +33,11 @@ class Session:
         # but it can see a task, because a task is opened out loud.
         self.task_id: int | None = None
         self.runs: int = 0
+        # The sentence the world reads each new type's first link as, gathered over the task
+        # and put to the host once, at the close.
+        self.readings: dict[str, str] = {}
+        # Which of them have already been put to the host, so the close asks once.
+        self.read_back: set[str] = set()
 
         for name, value in (seed or {}).items():
             self.bind(name, value, "pre-loaded data")

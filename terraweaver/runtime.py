@@ -528,6 +528,20 @@ class WorldRuntime:
             # success. One left a world holding eight bare names — no links, no attributes, no
             # remarks — and said "all ten facts have been recorded, the world kept everything".
             # The world knows what it was given, so it is the one thing it can say for certain.
+            unread = {t: line for t, line in session.readings.items()
+                      if t not in session.read_back}
+            if unread:
+                shown = "\n".join(f"    {line}" for line in unread.values())
+                session.read_back |= set(unread)
+                return (
+                    f"Not closed yet — read these back first. Each is the first link of a type "
+                    f"this task made, as the world reads it:\n{shown}\n\n"
+                    f"`a.relate(b, kind)` reads \"a is b's kind\", so the holder of the role "
+                    f"comes first: the capital, the author, the chairperson. If any of them "
+                    f"says the opposite of the fact, record it the other way round and retract "
+                    f"the one that went in backwards. Then finish_task again — I will not ask "
+                    f"a second time."
+                )
             crossed = self._links_against_their_type(session)
             if crossed:
                 shown = "\n".join(f"    {name}" for name, _, _ in crossed)
@@ -944,6 +958,8 @@ class WorldRuntime:
         }
         self.idle_reset.discard(key)
         session.runs += 1
+        if recording is not None:
+            session.readings.update(recording.readings)
         if (session.task_id is None and "Task" in self.classes
                 and (result.get("created") or result.get("updated"))):
             # Work began without anybody saying what it was. The boundary is opened anyway,

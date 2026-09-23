@@ -44,6 +44,11 @@ def ran(rt, code):
     return (got["output"] or "").strip(), got
 
 
+def settle_direction(rt):
+    """Take the read-back the close asks for first — not what these tests are about."""
+    rt.finish_task("k")
+
+
 def main() -> int:
     # --- a correction: one value and no more, and no date is invented ---
     rt = world(hq_in=False)
@@ -121,6 +126,7 @@ def main() -> int:
             'b2.relate(p2, "author_of")\n'
             'for x in (p1, b1, b2, p2): x.describe("mentioned while recording")\n'
             'for l in AuthorOf.all(limit=None): l.describe("as the user stated it")')
+    settle_direction(rt)
     left = str(rt.finish_task("k"))
     check("a task does not close over a type written both ways",
           left.startswith("Not closed") and "both ways" in left, left[:90])

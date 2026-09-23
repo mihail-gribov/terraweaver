@@ -511,6 +511,14 @@ def relate(world, a, b, kind: str, period: dict, attrs: dict, basis: list | None
             f"is the word, say so and I will not ask again.",
             options=["it has its own word", "this is the word"],
         )
+    # The first link of a type is where its direction is settled, and the world knows the
+    # sentence that link makes. "The capital of Germany is Berlin" went in as
+    # `Germany -> CapitalOf -> Berlin`, which reads "Germany is Berlin's capital", and every
+    # later link followed it — consistently backwards, so nothing that compares links with each
+    # other can see it. Read back once, it is obvious; the world has the reading and the host
+    # has the sentence, so the world shows its reading and asks.
+    first_of_its_kind = (rel["kind"] not in ("part_of", "kind_of", "related") and not basis
+                         and not world.all(name, limit=1, history=True))
     if rel.get("free"):
         # A label is what makes a free link readable; a description is prose about it. Requiring
         # the prose to accept the structure is backwards, and it refused four links in one run.
@@ -611,6 +619,12 @@ def relate(world, a, b, kind: str, period: dict, attrs: dict, basis: list | None
         )
     if rel.get("free"):
         _note_a_type_is_wanted(world, created)
+    if first_of_its_kind:
+        # Not a question of its own. Three blocking questions per task is ceremony, and the
+        # sentence is already printed with every link the run makes — what is missing is a
+        # moment when the host has to read them rather than skim past. That moment is the
+        # close, where they are shown together, once.
+        ontology.note_first_reading(name, created.display_name())
     return created
 
 

@@ -104,6 +104,8 @@ class Recording:
         self.hints: list[str] = []  # what the world suggests about a write that went through
         self.questions: list[str] = []  # doubts recorded about an entity, open until the user answers
         self.ask_now: list[str] = []  # doubts this run's reads actually depend on
+        # The first link of each type made in this run, as the sentence the world reads it as.
+        self.readings: dict[str, str] = {}
 
 
 @contextmanager
@@ -154,6 +156,12 @@ def note_found(entity) -> None:
 def note_assumed(text: str) -> None:
     if _CHANGED is not None and text not in _CHANGED.assumed:
         _CHANGED.assumed.append(text)
+
+
+def note_first_reading(type_name: str, sentence: str) -> None:
+    """The sentence a type's first link makes — read back together when the task closes."""
+    if _CHANGED is not None:
+        _CHANGED.readings[type_name] = sentence
 
 
 def note_hint(text: str) -> None:

@@ -71,6 +71,8 @@ def main() -> int:
     settled = rt.run('q = world.undecided()[0]\nq.for_the_user("only the user knows what they meant")', key)
     check("one it cannot settle is handed to the user", settled["ok"], str(settled.get("error"))[:120])
 
+    rt.finish_task(key)      # the read-back the close asks for first
+
     # A name is a handle, not an account of anything. A task does not close over things it put
     # in the world and never said a word about — that line is the only description of them the
     # world did not write itself, and so the only one it can check its own structure against.
