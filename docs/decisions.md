@@ -971,3 +971,43 @@ in all three.
 **How we would know it was wrong.** A host that means "it began this very moment" and finds no
 start recorded. It has `starts="today"`, and if the instant matters it has a datetime; what it
 cannot have is the word that also means "I am telling you now".
+
+---
+
+## 2026-09-23 · When a link began is said, and the nature decides which links must say it
+
+**Seen.** Requiring a start wherever the cardinality said "one at a time" reached `part_of` and
+`kind_of` — a department is part of a company and nobody states the day that began — and
+refused facts nobody had a date for. The requirement was inferred from the wrong thing.
+
+**Done, and the shape of it matters more than the rule.** `starts_required` is a `BY_NATURE`
+entry, beside `transitive` and `symmetric`, which is what the natures were introduced for:
+
+| nature | start required |
+|---|---|
+| `part_of`, `kind_of`, `same_as` | no — an arrangement, not an event |
+| `derived_from` | no — it holds from the moment of what it was drawn from |
+| `related_to` | when the type holds one at a time |
+
+**And the old refusal had to go with it.** "A dated link is not ours to end" was written when
+ending one meant inventing its end date. With starts required, every handover carries two dates
+and the rule refused every one of them. It no longer has to invent anything: **the new link's
+own start is where the old one ends**, and that is a date the host gave. A start *earlier* than
+the standing one is still refused — that is a claim about a stretch already spoken for, and
+which of the two is wrong is not the world's to pick. Symmetry is checked first and no date
+overrules it: ending a partnership is a claim about both people.
+
+**Measured, all seven cases at once:**
+
+| | |
+|---|---|
+| `related_to` that changes, no date | refused, with the call to write |
+| one moment taken once, passed to both | hands over, both kept |
+| two separate `now()` calls | hands over — the second is later |
+| the second starts later | hands over at the new start |
+| the second starts earlier | refused |
+| `part_of` with no date | recorded |
+| symmetric partner, both dated | refused |
+
+**How we would know it was wrong.** A `related_to` type that genuinely has no beginning worth
+stating — then `over_time` is doing two jobs and the type needs to say this one itself.

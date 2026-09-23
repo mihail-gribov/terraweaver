@@ -54,8 +54,12 @@ def main() -> int:
 
     # --- a relation that ended is history, not a deletion ---
     olga = Person.new(full_name="Olga Gribova")
-    marriage = olga.relate(michael, "partner", label="wife")
-    marriage.expire()
+    # The marriages below are a sequence and have to read as one: Nadia 2010-2015, Olga
+    # 2016-2018, Vera from 2019. Overlapping them is the conflict this section is about, so
+    # they must not overlap by accident. Ended on a date rather than with `expire()`, which
+    # puts the end at this moment — after everything that follows.
+    marriage = olga.relate(michael, "partner", label="wife", starts=date(2016, 1, 1))
+    marriage.keep(until=date(2018, 1, 1))
     with ontology.record_changes() as run:
         partners = michael.related("partner")
     check("an ended relation is out of ordinary reads", partners == [])
@@ -64,10 +68,10 @@ def main() -> int:
 
     # --- overlapping periods, not "now", make a conflict ---
     vera = Person.new(full_name="Vera Ilyina")
-    vera.relate(michael, "partner", label="wife")
+    vera.relate(michael, "partner", label="wife", starts=date(2019, 7, 6))
     check("a new partner after the old one ended goes through", vera in michael.related("partner"))
     another = Person.new(full_name="Zoya Belova")
-    refusal = refused(lambda: another.relate(michael, "partner", label="wife"))
+    refusal = refused(lambda: another.relate(michael, "partner", label="wife", starts=date(2019, 7, 6)))
     check("a second partner at the same time is refused", refusal is not None, str(refusal))
     past = Person.new(full_name="Nadia Orlova")
     past.relate(michael, "partner", label="wife", starts=date(2010, 1, 1), until=date(2015, 1, 1))
@@ -140,7 +144,7 @@ def main() -> int:
     # second outright, losing it. "now" is when you are being told, not when it began.
     from terraweaver import authoring as _authoring
     import tempfile
-    for said in ("", ', starts="now"', ', starts="2020-01-01"'):
+    for said in (", starts=held", ', starts="2020-01-01"'):
         where = Path(tempfile.mkdtemp())
         own = build_classes(load_specs(ONTOLOGY_DIR), IMPLS)
         own_store = Store(str(where / "w.db"))
@@ -153,13 +157,19 @@ def main() -> int:
         org = own["Organization"].new(name="Fatah")
         first = own["Person"].new(full_name="Mahmoud Abbas")
         second = own["Person"].new(full_name="Someone Else")
-        exec(f'first.relate(org, "chairs"{said})', {"first": first, "org": org})
+        from terraweaver import timeutil as _t
+        held = _t.now()          # taken once, as a host should: two now() calls are not one moment
+        undated = refused(lambda: first.relate(org, "chairs"))
+        check("a type that changes will not take a link with no start",
+              undated is not None and "when it began is part of the fact" in (undated or ""),
+              str(undated)[:90])
+        exec(f'first.relate(org, "chairs"{said})', {"first": first, "org": org, "held": held})
         kept = refused(lambda: exec(f'second.relate(org, "chairs"{said})',
-                                    {"second": second, "org": org}))
+                                    {"second": second, "org": org, "held": held}))
         holds = [p.display_name() for p in org.related("chairs_of")]
-        check(f"a second one hands over, said as {said or '(no date)'}",
+        check(f"a second one hands over, said as {said}",
               kept is None and holds == ["Someone Else"], f"{kept or holds}")
-        check(f"and the first stays in the record, said as {said or '(no date)'}",
+        check(f"and the first stays in the record, said as {said}",
               first in org.related("chairs_of", any_time=True))
     ontology.set_world(world)
 

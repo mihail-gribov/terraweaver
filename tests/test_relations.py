@@ -84,7 +84,7 @@ def main() -> int:
     chen = Person.new(full_name="Kevin Chen", email="kchen@meridian.example")
     job = chen.relate(b04, "membership", title="vendor logistics lead", starts=date(2026, 1, 15))
     linda = Person.new(full_name="Linda Zhao", email="lzhao@meridian.example")
-    linda.relate(b04, "authority", label="manager")
+    linda.relate(b04, "authority", label="manager", starts=date(2025, 6, 1))
     check("read from the object's end by the reverse name", b04.related("members") == [chen])
     check("a membership extends along part_of", chen.related("membership") == [b04, company],
           str(chen.related("membership")))
@@ -93,7 +93,7 @@ def main() -> int:
     # A department's manager changing is a handover, not a conflict: authority runs one way, so
     # the role moved and nobody is displaced by it. What the world refuses to decide alone is a
     # symmetric link — a partnership is a state two people are in together.
-    chen.relate(b04, "authority")
+    chen.relate(b04, "authority", starts=date(2026, 3, 1))
     check("a new manager takes over from the last", b04.related("managed_by") == [chen],
           str(b04.related("managed_by")))
     check("and the one before is still in the record",
@@ -157,7 +157,7 @@ def main() -> int:
     sister = Person.new(full_name="Olga Gribova", email="olga@example.com")
     owner.relate(sister, "kin", label="brother")
     mark = Person.new(full_name="Mark Stone", email="mark@example.com")
-    mark.relate(sister, "partner", label="husband")
+    mark.relate(sister, "partner", label="husband", starts=date(2021, 5, 8))
     check("a chain is named", (owner.how_related(mark) or "").startswith("Mark Stone is Michael's sibling in law"),
           str(owner.how_related(mark)))
     meridian = Organization.get(name="Meridian Corp")

@@ -136,13 +136,33 @@ def same(a, b) -> bool:
 # What a nature means, in one place. The rules are read from it, never copied beside it: a type
 # that carried both `nature` and its own `transitive`/`symmetric` fields would be two statements
 # of one thing, and two statements of one thing is how supersession was lost earlier today.
+# What follows from each nature. `starts_required` is here rather than on the type because it
+# is a property of the kind of link, not of the particular one: a department is part of a
+# company and a chief executive is a kind of head, and nobody states the day either began —
+# those are how things are arranged, not events. Something related_to another and holding one
+# at a time is the opposite: which of two holds now is a question about when each began, and
+# with no date the only answer left is the order they happened to be typed in. Inferred from
+# the cardinality instead, the requirement reached `part_of` and refused facts nobody had a
+# date for; the nature is the thing that tells these apart, which is what it is for.
 BY_NATURE = {
-    "part_of": {"transitive": True, "acyclic": True, "irreflexive": True},
-    "kind_of": {"transitive": True, "acyclic": True, "irreflexive": True},
-    "same_as": {"symmetric": True, "transitive": True},
-    "derived_from": {"acyclic": True, "irreflexive": True},
-    "related_to": {},
+    "part_of": {"transitive": True, "acyclic": True, "irreflexive": True,
+                "starts_required": False},
+    "kind_of": {"transitive": True, "acyclic": True, "irreflexive": True,
+                "starts_required": False},
+    "same_as": {"symmetric": True, "transitive": True, "starts_required": False},
+    # A conclusion holds from the moment of what it was drawn from, which the world takes from
+    # the basis rather than asking the host for.
+    "derived_from": {"acyclic": True, "irreflexive": True, "starts_required": False},
+    "related_to": {"starts_required": "when_it_changes"},
 }
+
+
+def _wants_a_start(rel: dict) -> bool:
+    """Whether this kind of link is one whose beginning has to be said."""
+    wanted = rule(rel, "starts_required", False)
+    if wanted == "when_it_changes":
+        return "at_any_time" in (rel.get("functional"), rel.get("inverse_functional"))
+    return bool(wanted)
 
 
 def rule_for(link, name: str, default=None):
@@ -516,6 +536,23 @@ def relate(world, a, b, kind: str, period: dict, attrs: dict, basis: list | None
             world.apply_period(found, period)
         return found
 
+    if period.get("valid_from") is None and _wants_a_start(rel):
+        # Required because the type says so, not because the world worked it out from the
+        # cardinality. Inferred, it reached `part_of` and `partner` — a department is part of a
+        # company and nobody states the day that began — and refused facts nobody had a date
+        # for. Whoever defines the type is the one who knows whether its start is part of it;
+        # `define_relation(over_time=True)` says yes, and a core type says so in its own file.
+        # It is a required argument like any other, and it is checked where the others are.
+        raise ValueError(
+            f"{name} holds one at a time, so when it began is part of the fact and I will not "
+            f"invent it. Say when:\n"
+            f"    t = now()                       # or date(2006, 1, 1), or \"3 years ago\"\n"
+            f"    a.{rel['kind']}(b, starts=t)\n"
+            f"Take the moment once and pass the same value to everything you record in this "
+            f"breath: two calls to now() are microseconds apart, and I would read that as two "
+            f"deliberate overlapping claims. If all you know is which side of something it "
+            f"falls on, starts=before(now()) and starts=after(date(2006, 1, 1)) say that."
+        )
     start = period.get("valid_from") or timeutil.now()
     end = period.get("valid_until")
     if basis:
@@ -537,7 +574,7 @@ def relate(world, a, b, kind: str, period: dict, attrs: dict, basis: list | None
     if period:
         world.apply_period(created, period)
     _note_same_label(world, name, rel, subject, obj, attrs, start, end, created)
-    if start is None and "at_any_time" in (rel.get("functional"), rel.get("inverse_functional")):
+    if False:  # asked for before the link is made now, not noted after
         # A type that changes is a type with a time, so here the time is part of the fact and
         # not decoration on it. The world used to fill it in with today, which reads back a year
         # later as the day the job began — a date nobody said, indistinguishable from one
@@ -833,15 +870,48 @@ def _not_ours_to_end(link, start=None) -> bool:
     date the handover works and both are kept; with `starts="now"` on both the second was
     refused and nowhere in the world afterwards.
     """
-    when = getattr(link, "valid_from", None)
-    if when is not None and not (start is not None
-                                 and timeutil.as_datetime(start) == timeutil.as_datetime(when)):
+    # Symmetry first, and it is not overruled by any date. A partnership is a state two people
+    # are in together: ending it is a claim about both of them, and a date on one side does not
+    # make it one side's to decide. Checked after the date, it stopped being checked at all.
+    if rule(spec(type(link)), "symmetric"):
         return True
-    return bool(rule(spec(type(link)), "symmetric"))
+    when = getattr(link, "valid_from", None)
+    if when is not None:
+        if start is None:
+            return True          # nothing to end it at but a date nobody gave
+        # The new one's own start is where the old one ends. That is not the world deciding
+        # anything: the boundary is a date the host gave, on the link it gave it for. The rule
+        # this replaces was written when ending a dated link meant inventing its end, and it
+        # refused every handover the moment starts became required — which is every handover.
+        # A start *earlier* than the standing one is a different matter: it is a claim about a
+        # stretch already spoken for, and which of them is wrong is not ours to pick.
+        return timeutil.as_datetime(start) < timeutil.as_datetime(when)
+    return False
 
 
-def _why_not_to_assume(link) -> str:
-    if getattr(link, "valid_from", None) is not None:
+# Two starts this close were meant to be the same moment. A host writing `starts=now()` on each
+# line gets timestamps microseconds apart, and the world, reading them as two deliberate and
+# overlapping claims, refuses the second and the fact is gone. The distance is the giveaway:
+# nobody says "this began 300 microseconds after that one did".
+_MEANT_THE_SAME_MOMENT = 2.0        # seconds
+
+
+def _why_not_to_assume(link, start=None) -> str:
+    when = getattr(link, "valid_from", None)
+    if when is not None:
+        if start is not None:
+            apart = abs((timeutil.as_datetime(start) - timeutil.as_datetime(when)).total_seconds())
+            if apart <= _MEANT_THE_SAME_MOMENT:
+                return (
+                    f"That one starts {apart:.3f}s before this one, which is not a difference "
+                    f"anybody meant — it is `now()` called twice. If the two begin at the same "
+                    f"moment, take it once and pass the same value to both:\n"
+                    f"    t = now()\n"
+                    f"    a.relate(x, kind, starts=t)\n"
+                    f"    b.relate(x, kind, starts=t)\n"
+                    f"Then the later telling hands over and both stay in the record. If they "
+                    f"really do begin at different times, say when each one does."
+                )
         return "That one was given a date, so ending it is not something to assume."
     return ("That kind of link is a state the two of them are in together, so ending it is not "
             "something to decide from one side.")
@@ -964,7 +1034,7 @@ def _check_functional(world, name, rel, subject, obj, start, end, attrs) -> None
                 if _not_ours_to_end(r, start):
                     raise ValueError(
                         f"{subject.display_name()} already has a {name} for that time: "
-                        f"{r.display_name()}. {_why_not_to_assume(r)} {_how_to_make_room(start)}."
+                        f"{r.display_name()}. {_why_not_to_assume(r, start)} {_how_to_make_room(start)}."
                     )
                 _hand_over(world, r, subject, start, name)
     if rule(rel, "functional") is True:          # one ever, not one at a time
@@ -981,7 +1051,7 @@ def _check_functional(world, name, rel, subject, obj, start, end, attrs) -> None
                 if _not_ours_to_end(r, start):
                     raise ValueError(
                         f"{obj.display_name()} already has a {name} for that time: "
-                        f"{r.display_name()}. {_why_not_to_assume(r)} {_how_to_make_room(start)}."
+                        f"{r.display_name()}. {_why_not_to_assume(r, start)} {_how_to_make_room(start)}."
                     )
                 _hand_over(world, r, obj, start, name)
     if name == "Membership" and attrs.get("primary"):

@@ -199,18 +199,11 @@ def show(value) -> str:
 class Bound:
     """A moment and which side of it the fact is on."""
 
-    __slots__ = ("moment", "side", "is_telling_time")
+    __slots__ = ("moment", "side")
 
-    def __init__(self, moment, side: str = EXACT, is_telling_time: bool = False):
+    def __init__(self, moment, side: str = EXACT):
         self.moment = as_datetime(moment) if moment is not None else None
         self.side = side
-        # "now" answers "when are you telling me this", not "when did it begin". The two live
-        # in different fields, and writing the first into the second is the invention this
-        # world stopped making — moved one step out, to the agent, when the agent was told to
-        # say when and had not been told. Measured: two facts both written `starts="now"` and
-        # the second was refused and lost, because two `now()` calls differ by microseconds and
-        # the world read that as two deliberate, overlapping claims.
-        self.is_telling_time = is_telling_time
 
     def __repr__(self) -> str:
         return f"Bound({show(self.moment)}, {self.side!r})"
@@ -278,9 +271,9 @@ def from_span(low, high) -> "Bound":
 # The words a person actually uses for a time, and what each one is a bound on. "Earlier" is not
 # vagueness to be rejected — it is a real constraint, and the constraint is what ordering needs.
 _WORDS = {
-    "now": lambda: Bound(now(), EXACT, is_telling_time=True),
+    "now": lambda: Bound(now(), EXACT),
     "today": lambda: Bound(_midnight(now()), EXACT),
-    "just now": lambda: Bound(now(), EXACT, is_telling_time=True),
+    "just now": lambda: Bound(now(), EXACT),
     "yesterday": lambda: Bound(_midnight(now()) - timedelta(days=1), EXACT),
     "the day before yesterday": lambda: Bound(_midnight(now()) - timedelta(days=2), EXACT),
     "tomorrow": lambda: Bound(_midnight(now()) + timedelta(days=1), EXACT),
