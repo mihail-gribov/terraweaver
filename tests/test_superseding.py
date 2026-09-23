@@ -109,6 +109,25 @@ def main() -> int:
                      'print([p.display_name() for p in org.related("led_by_of")])')
     check("and once it is said, the later one supersedes", out == "['Three']", out)
 
+    # --- a link written from the wrong end is a different fact, and the world had the check ---
+    # `relations.verify` worked this out from the day it was written and nothing called it, so
+    # the world noticed a type running both ways and told nobody.
+    rt = world(author_of=False)
+    ran(rt, 'p1 = Person.new(full_name="Ursula K. Le Guin")\n'
+            'b1 = Thing.ensure(name="A Wizard of Earthsea", nature="object")\n'
+            'p1.relate(b1, "author_of")\n'
+            'b2 = Thing.ensure(name="Starship Troopers", nature="object")\n'
+            'p2 = Person.new(full_name="Robert A. Heinlein")\n'
+            'b2.relate(p2, "author_of")\n'
+            'for x in (p1, b1, b2, p2): x.describe("mentioned while recording")\n'
+            'for l in AuthorOf.all(limit=None): l.describe("as the user stated it")')
+    left = str(rt.finish_task("k"))
+    check("a task does not close over a type written both ways",
+          left.startswith("Not closed") and "both ways" in left, left[:90])
+    check("and at a tie it names both rather than accusing one",
+          "Ursula" in left and "Starship" in left and "nothing says which is right" in left,
+          left[:150])
+
     print("\n" + (f"{len(failures)} failed: " + ", ".join(failures) if failures
                   else "all superseding tests passed"))
     return 1 if failures else 0

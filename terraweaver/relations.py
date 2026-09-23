@@ -1726,13 +1726,23 @@ def verify(world, least: int = 3) -> list[dict]:
                 continue
             if len(these) * 2 > len(links):      # no majority to be against
                 continue
+            # With the same number each way there is no majority, and which of the two is
+            # backwards is not something counting can tell. Naming one of them anyway picked
+            # the right link and called it the wrong one — a coin toss dressed as a finding.
+            tied = len(these) == len(shapes[usual])
             found.append({
                 "about": "against the run of its type", "type": name,
-                "links": [r.id for r in these], "seen": len(these),
-                "said": f"{len(these)} {name} link(s) go {shape[0]} → {shape[1]} where "
-                        f"{len(shapes[usual])} go {usual[0]} → {usual[1]}. "
-                        f"{rel.get('reads', '')}".strip(),
-                "settled_by": "turn them round, or say the type goes both ways",
+                "links": [r.id for r in these] + ([r.id for r in shapes[usual]] if tied else []),
+                "seen": len(these), "usual": len(shapes[usual]), "tied": tied,
+                "said": (f"{name} has been written both ways: {len(these)} go "
+                         f"{shape[0]} → {shape[1]} and {len(shapes[usual])} go {usual[0]} → "
+                         f"{usual[1]}, and nothing says which is right. {rel.get('reads', '')}"
+                         if tied else
+                         f"{len(these)} {name} link(s) go {shape[0]} → {shape[1]} where "
+                         f"{len(shapes[usual])} go {usual[0]} → {usual[1]}. "
+                         f"{rel.get('reads', '')}").strip(),
+                "settled_by": ("say which way it reads and turn the others round" if tied
+                               else "turn them round, or say the type goes both ways"),
             })
         # A car where a person always stands. Not reversed and not outside the declaration —
         # simply odd, which no rule catches and a reader sees at once. So the world counts what

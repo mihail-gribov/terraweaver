@@ -372,6 +372,39 @@ class WorldRuntime:
             lines.append("Read and report. Don't write facts: a question is not evidence.")
         return "\n".join(lines)
 
+    def _links_against_their_type(self, session) -> list[str]:
+        """Links this task made whose ends are the reverse of how the type otherwise runs.
+
+        `relations.verify` has worked this out since it was written and nothing ever called it,
+        so the world noticed and told nobody. Read by eye, one type in a three-batch world held
+        `Le Guin -> A Wizard of Earthsea` beside `Starship Troopers -> Heinlein`; the world had
+        found that one and a second I had missed.
+
+        Only what this task touched, and only this finding of the several `verify` makes: a
+        link running backwards is a wrong fact and cheap to turn round, while "these two types
+        are one idea" has an innocent reading and is reported rather than held against.
+        """
+        from terraweaver import relations
+
+        try:
+            found = relations.verify(self.world, least=2)
+        except Exception:  # noqa: BLE001 - a check must never be what stops a task closing
+            return []
+        against = []
+        for one in found:
+            if one.get("about") != "against the run of its type":
+                continue
+            for link_id in one.get("links", []):
+                if link_id not in session.touched:
+                    continue
+                try:
+                    link = self.store.load(link_id, self.classes)
+                except Exception:  # noqa: BLE001
+                    continue
+                if link is not None:
+                    against.append((link.display_name(), one.get("said", ""), one.get("tied")))
+        return against
+
     def _undescribed(self, session) -> list[str]:
         """What this task put in the world and never said a word about.
 
@@ -495,6 +528,19 @@ class WorldRuntime:
             # success. One left a world holding eight bare names — no links, no attributes, no
             # remarks — and said "all ten facts have been recorded, the world kept everything".
             # The world knows what it was given, so it is the one thing it can say for certain.
+            crossed = self._links_against_their_type(session)
+            if crossed:
+                shown = "\n".join(f"    {name}" for name, _, _ in crossed)
+                why = crossed[0][1]
+                return (
+                    f"Not closed: {why}\n{shown}\n\n"
+                    f"A link written from the wrong end is a different fact, not an untidy one: "
+                    f"a.relate(b, kind) reads \"a is b's kind\", so the author is the subject "
+                    f"of author_of and the book is the object. Record it the way the sentence "
+                    f"reads and retract the one that went in backwards — or say it from the far "
+                    f"end with the reverse name, which puts it round for you: "
+                    f"book.relate(person, \"author_of_of\")."
+                )
             bare = self._undescribed(session)
             if bare and self._anything_said(session):
                 shown = "\n".join(f"    {one}" for one in bare[:10])
