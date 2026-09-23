@@ -217,6 +217,11 @@ Every class below shares these, so they aren't repeated for each one:
     because a type can be asked about, superseded and checked, and a label can do none of the
     three. `label=` is for naming a role inside a type that has
     roles ("mother" inside kin, "dentist" inside service), never a type of its own.
+    A nature is not a name. part_of, kind_of, same_as and related_to say how a link behaves;
+    what it is called is the fact's own word. "The capital of France is Paris" is a part_of link
+    and recorded as `part_of` the word "capital" is lost, so define capital_of and give it that
+    nature. Likewise do not reach for a type you made earlier because it is roughly the area:
+    "is a citizen of" is not "is associated with the sport of".
     Direction is one rule: the subject is the one the link describes, so a.relate(b, kind)
     reads "a is b's kind". maria.relate(michael, "kin", label="mother") says Maria is
     Michael's mother; nina.relate(michael, "service", label="dentist") says Nina is Michael's

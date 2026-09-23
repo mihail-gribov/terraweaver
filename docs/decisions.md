@@ -1053,3 +1053,45 @@ silent: a fact goes nowhere and only a host that happened to use the return valu
 **How we would know the first one was wrong.** A host that wants both readings current —
 but that is what a type with more than one value is for, and saying `one_per_subject = False`
 gets it.
+
+---
+
+## 2026-09-23 · A nature is not a name
+
+**Seen.** Batch three fell to 4/10. "The capital of Germany is Berlin" went in as `PartOf`,
+"is a citizen of" and "was performed by" both went into `AssociatedWith` — a type whose own
+description was about a football team and a sport. The type had become a dump, the way free
+links used to be, and the predicate was gone: `part_of` is not functional, so Paris and Harare
+would both stand as parts of France and "what is the capital" could not be asked at all. Across
+the slice that is 24 facts and 8 superseding pairs.
+
+**And the diagnosis I reached for was wrong.** Berlin *is* part of Germany — the nature was
+right. The only fault was that the link had no name: `capital_of` with `nature="part_of"` is
+the correct record, and it keeps both readings. Measured on the benchmark's own pair: Paris,
+then Harare supersedes, the record keeps both, and Paris is still part of France.
+
+**Two mechanisms measured and rejected first.** Comparing a link's description with its type's
+description does not separate — the two are different genres, a statement against a definition,
+and "Thomas Kyd's birthplace" against a correct type scores 0.348 while "Berlin is the capital
+of Germany" against `PartOf` scores 0.420. Comparing link descriptions with each other inside
+one type does not separate either: the dump averaged 0.308 and a coherent type 0.368. No
+threshold divides them, and no more embeddings were tried on it.
+
+**Done — with words, not machinery.** The world's guide and the primer now say it plainly: a
+nature says how a link behaves, its name is the fact's own word, and reaching for a type made
+earlier because it is roughly the area is the same mistake. One text change, one run:
+
+| | batch three, clean world |
+|---|---|
+| before | 4/10 — `PartOf` for capitals, `AssociatedWith` for citizenship |
+| after | **9/10** — `CapitalOf` (nature part_of, one per object), `CitizenOf`, `PerformedBy` |
+
+**And then supersession worked, for the first time on real material.** Facts 41/44 and 49/50,
+two superseding pairs in one batch, recorded by the agent with no help:
+
+    founded in, holds : ['Taipei']                     founded by, holds : ['Philippe']
+    founded in, all   : ['Taipei', 'Jerusalem']        founded by, all   : ['Philippe', 'Ben-Gurion']
+
+**How we would know it was wrong.** Types multiplying per phrasing again — the pendulum has
+swung both ways in one day, and this is the wording that has to hold both ends: one word, one
+type, and a word that is already there is the one to use.

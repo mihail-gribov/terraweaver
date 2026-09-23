@@ -69,6 +69,19 @@ is the escape hatch for a link you cannot name at all, and it buys nothing: a la
 link cannot be asked about by type, cannot supersede anything, and the world has nothing to \
 check it against. Use it only when there is genuinely no word.
 
+A nature is not a name. `part_of`, `kind_of`, `same_as`, `related_to` say how a link behaves; \
+what the link is *called* is the fact's own word. "The capital of France is Paris" is a part_of \
+link — Paris is part of France, that much is true — but recorded as `part_of` the word "capital" \
+is gone, and the question it answers can no longer be asked. Define the word and give it the \
+nature:
+
+    world.define_relation("capital_of", "the city that is a country's seat of government",
+                          nature="part_of", cardinality="one-to-one", over_time=False)
+
+The same goes for reaching for a type you defined earlier because it is roughly the area: \
+"is a citizen of" is not "is associated with the sport of". One word, one type; a type that \
+collects several ideas answers for none of them.
+
 The world says when your word reads like a type already here — it does not swap one for the \
 other, because whether two words are one idea depends on what the user said, which you have and \
 it does not. If they are one, `world.take_in(<the type>, "<the word>")` moves the links over. \
