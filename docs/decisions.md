@@ -778,3 +778,62 @@ BornIn — I have made birthplace as you asked; if they are one idea, `world.tak
 **How we would know it was wrong.** The world unable to refuse something it plainly should —
 if a real data check turns out to need semantics, the line is in the wrong place and the check
 belongs to the agent with the world stating the constraint.
+
+---
+
+## 2026-09-23 · A world was writing down the types it grew and never reading them back
+
+**Seen.** The second batch of ten facts, into the world the first had built, recorded a
+marriage as `Kin` while an unused `MarriedTo` sat in the same world, and made `Plays` beside
+`PlaysPosition`. Twenty facts, sixteen types, twelve of them holding a single link. The agent
+had called `describe_world` and the catalogue it got back did not contain `married_to`,
+`plays_position`, `died_in` or `chairperson`. It could not reuse what it was not shown.
+
+**Cause, in two parts.** `--base` built the world from `base_specs`, which loads with
+`grown_dir=Path("/nonexistent")` — right for making a base world, wrong for reopening one that
+had grown. And underneath that, `growth.apply_growth` only understood an *extension* of a core
+class (`extends: "Person"`); a whole new class, which is exactly what `define_relation` writes,
+was refused. So types were saved on definition and **never read back by anything**: reopened,
+the world held the tables and the files and none of the classes.
+
+**Done.** `apply_growth` takes a whole class as itself, and `--base` starts from the base specs
+plus whatever that world was taught. "Base" is what the world ships with, not an instruction to
+forget.
+
+**Measured, same two batches, same agent.**
+
+| | types for 20 facts | holding one link | duplicate ideas |
+|---|---|---|---|
+| before | 16 | 12 | `Plays`/`PlaysPosition`, `Kin`/`MarriedTo`, `WorksFor`/`ChiefExecutiveOfficerOf` |
+| after | 14 | 9 | none |
+
+and the facts themselves went from 8/10 to **10/10**, with batch one at 10/10 both times.
+
+**How we would know it was wrong.** A world that cannot be given a genuinely fresh base because
+an old `grown/` beside the database keeps being picked up — the directory is chosen from the
+database path, so a new database in an old folder inherits its vocabulary.
+
+---
+
+## 2026-09-23 · Two refusals that cost a run each, and a success reported over an empty world
+
+**Seen.** `define_relation` refused one missing argument at a time. A recorder that gave none of
+`nature`, `cardinality`, `over_time` spent **forty-one runs** collecting them one refusal per
+run, gave up on links, and finished by reporting "all ten facts have been recorded into your
+world — the world kept everything." The world held eight bare names: no links, no attributes,
+no remarks. Every count agreed with the agent.
+
+**Done.** Two things, both the world's own business and both deterministic:
+
+- `define_relation` names everything missing in one refusal and writes out the call to send.
+- `finish_task` will not close a **recording** task that recorded nothing — entities and their
+  names are not facts about anything. It says so and offers `abandon="why"` instead.
+
+**Why the second one matters more.** A refused write is visible; a task that recorded nothing
+and said otherwise is not. The world cannot check whether what was recorded is *true*, but it
+can always check whether anything was recorded at all, and that is the difference between a
+failure and a silent one.
+
+**How we would know it was wrong.** A recording task that legitimately records only names —
+if "add these six people, I will say what about them later" is a real request, this refuses it,
+and the check should look for the entities being new rather than for statements about them.

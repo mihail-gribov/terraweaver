@@ -94,6 +94,12 @@ def ask(host, prompt: str, flags: list[str], resume: str | None, log: Path,
                          stdin=subprocess.DEVNULL, timeout=timeout)
     with open(log, "a") as fh:
         fh.write(run.stdout)
+    if not run.stdout.strip():
+        # A host that produced nothing is not a host that answered nothing: the process failed,
+        # and until now the only sign of it was a run costing $0.00 with an empty transcript.
+        raise RuntimeError(
+            f"the host produced nothing (exit {run.returncode}). stderr: "
+            f"{(run.stderr or '').strip()[:800] or '(empty)'}")
     outcome = {"text": "", "session": resume, "turns": 0, "cost": 0.0,
                "seconds": time.monotonic() - started}
     for line in run.stdout.splitlines():

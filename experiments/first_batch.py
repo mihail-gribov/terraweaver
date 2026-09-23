@@ -76,13 +76,27 @@ def fact_by_fact(db: Path, facts: list[str]) -> list[tuple]:
             out.setdefault(iid, {})[attr] = value
         return out
 
+    # Every entity class, not a list of three. The agent builds its own — City, Continent,
+    # Organization, Position — and a check that only reads Thing and Person cannot find London
+    # in a world that holds it, then reports the fact missing. A table is a relation when it
+    # holds subjects and objects; everything else is a kind of thing.
+    plumbing = {"instances", "values_", "comments", "runs", "questions", "texts", "periods",
+                "said", "subjects", "meanings", "name_choices", "entity_access", "value_history",
+                "world_variables", "procedures", "self_files", "Task"}
+    entity_tables, link_tables = [], []
+    for table in sorted(tables):
+        if table in plumbing or table.startswith(("facts_", "reasoning_", "sqlite_", "idx_")):
+            continue
+        held = {a for _, a, _ in conn.execute(f"SELECT * FROM '{table}' LIMIT 0") or []}
+        attrs_here = {r[0] for r in conn.execute(f"SELECT DISTINCT attr FROM '{table}'")}
+        (link_tables if {"subject", "object"} <= attrs_here else entity_tables).append(table)
+
     names: dict = {}
-    for table in ("Thing", "Person", "Agent"):
-        if table in tables:
-            for iid, held in rows(table).items():
-                raw = held.get("name") or held.get("full_name")
-                if raw:
-                    names[iid] = json.loads(raw) if raw.startswith('"') else raw
+    for table in entity_tables:
+        for iid, held in rows(table).items():
+            raw = (held.get("name") or held.get("full_name") or held.get("title"))
+            if raw:
+                names[iid] = json.loads(raw) if raw.startswith('"') else raw
 
     def ref(raw):
         if not raw:
@@ -91,12 +105,7 @@ def fact_by_fact(db: Path, facts: list[str]) -> list[tuple]:
         return value.get("$ref") if isinstance(value, dict) else value
 
     links = []          # (subject name, type, object name)
-    skip = {"instances", "values_", "comments", "runs", "questions", "texts", "periods", "said",
-            "subjects", "meanings", "name_choices", "entity_access", "value_history",
-            "world_variables", "procedures", "self_files", "Thing", "Person", "Agent", "Task"}
-    for table in sorted(tables):
-        if table in skip or table.startswith(("facts_", "reasoning_", "sqlite_")):
-            continue
+    for table in link_tables:
         for held in rows(table).values():
             if "subject" not in held:
                 continue
@@ -108,10 +117,26 @@ def fact_by_fact(db: Path, facts: list[str]) -> list[tuple]:
     known = sorted((n for n in names.values() if n), key=len, reverse=True)
     checked = []
     for fact in facts:
-        mentioned, rest = [], fact
-        for name in known:            # longest first, so "Washington, D.C." wins over "D.C."
-            if name.lower() in rest.lower() and not any(name in m for m in mentioned):
-                mentioned.append(name)
+        # Longest first, and each match claims the characters it covers, so "Coco Chanel" takes
+        # its own span and "Chanel" is still found at the other place it occurs. Skipping every
+        # name contained in one already matched lost the shorter of two overlapping names
+        # entirely — "Chanel was founded by Coco Chanel" read as one entity, and the fact was
+        # reported missing from a world that held it.
+        mentioned, taken = [], []
+        low = fact.lower()
+        for name in known:
+            start = 0
+            while True:
+                at = low.find(name.lower(), start)
+                if at < 0:
+                    break
+                span = (at, at + len(name))
+                if not any(a < span[1] and span[0] < b for a, b in taken):
+                    taken.append(span)
+                    if name not in mentioned:
+                        mentioned.append(name)
+                    break
+                start = at + 1
         if len(mentioned) < 2:
             checked.append((fact, "MISSING", f"only found: {', '.join(mentioned) or 'nothing'}"))
             continue
@@ -198,17 +223,35 @@ def tasks_of(db: Path) -> list[tuple]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--facts", type=int, default=10, help="how many, from the top of the list")
+    parser.add_argument("--facts", type=int, default=10, help="how many to give it")
+    parser.add_argument("--from", dest="start", type=int, default=1,
+                        help="the first fact, counting from 1")
+    parser.add_argument("--into", type=Path, default=None,
+                        help="a run directory to carry on in, so the world already holds what "
+                             "the last batch put there")
     parser.add_argument("--model", default="haiku")
     parser.add_argument("--port", type=int, default=7093)
     args = parser.parse_args()
 
-    facts = fc.load("sh", "6k").facts[: args.facts]
-    work = RESULTS / f"{datetime.now():%Y%m%d-%H%M%S}-{args.facts}facts-{args.model}"
-    work.mkdir(parents=True, exist_ok=True)
+    every = fc.load("sh", "6k").facts
+    facts = every[args.start - 1: args.start - 1 + args.facts]
+    if args.into:
+        # The same world, one batch after another: the only way to see whether a type made for
+        # the first batch is reused by the second or written again under another name.
+        # Absolute: the host runs in a folder of its own and resolves the MCP config path
+        # against it, so a relative one becomes <host folder>/<relative path> and is not found.
+        work = args.into.resolve()
+        work.mkdir(parents=True, exist_ok=True)
+    else:
+        work = RESULTS / f"{datetime.now():%Y%m%d-%H%M%S}-{args.facts}facts-{args.model}"
+        work.mkdir(parents=True, exist_ok=True)
     db, log = work / "world.db", work / "dialogue.jsonl"
+    carried = census(db) if db.exists() else None
 
-    print(f"{len(facts)} facts to a recorder agent ({args.model}).")
+    print(f"facts {args.start}-{args.start + len(facts) - 1} to a recorder agent ({args.model}).")
+    if carried:
+        print(f"carrying on in a world that already holds {carried['typed links']} typed link(s) "
+              f"in {carried['types made']} type(s).")
     print(f"kept in {work}\n", flush=True)
     for i, fact in enumerate(facts, 1):
         print(f"  {i:>2}. {fact}")
@@ -243,7 +286,7 @@ def main() -> int:
         print(f"  {name:<16} {number}")
     print("\n--- each fact against what the world holds")
     verdicts = fact_by_fact(db, facts)
-    for number, (fact, verdict, what) in enumerate(verdicts, 1):
+    for number, (fact, verdict, what) in enumerate(verdicts, args.start):
         mark = "OK  " if verdict == "ok" else f"{verdict:<4}"
         print(f"  {mark} {number:>2}. {fact[:52]:<54} {what[:70]}")
     wrong = [v for v in verdicts if v[1] != "ok"]
@@ -257,6 +300,12 @@ def main() -> int:
           f"{(time.monotonic() - started) / 60:.1f} min")
     print(f"dialogue: {log}")
     (work / "census.json").write_text(json.dumps(census(db), indent=2))
+    if carried:
+        after = census(db)
+        print("\n--- what this batch added")
+        for name in ("things", "people", "typed links", "types made", "free links"):
+            before, now = carried.get(name, 0), after.get(name, 0)
+            print(f"  {name:<14} {before} -> {now}  ({now - before:+d})")
     return 0
 
 

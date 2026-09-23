@@ -48,6 +48,16 @@ def apply_growth(core: dict[str, dict], grown: list[dict]) -> dict[str, dict]:
     specs = {name: json.loads(json.dumps(spec)) for name, spec in core.items()}  # never mutate the core
     for addition in grown:
         base = addition.get("extends")
+        if base is None and addition.get("name"):
+            # A whole class of its own, not an addition to one — what `define` and
+            # `define_relation` write. Only extensions were handled here, so a world's own
+            # types were saved on definition and never read back: reopened, it had the tables
+            # and the files and none of the classes, showed a host a vocabulary without them,
+            # and watched it build the same ideas again under new names. Twenty facts came to
+            # sixteen types, twelve holding one link each.
+            if addition["name"] not in specs:
+                specs[addition["name"]] = json.loads(json.dumps(addition))
+            continue
         if base not in specs:
             raise GrowthRefused(f"{addition.get('name', '<unnamed>')} extends {base!r}, which isn't a core class")
         unknown = set(addition) - ALLOWED

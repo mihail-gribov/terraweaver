@@ -187,30 +187,29 @@ class Authoring:
         kind = _clean(name).lower()
         if not kind:
             raise Refused("a relation type needs a name")
-        if over_time is None:
-            raise Refused(
-                f"say whether {kind} holds one at a time: over_time=True when a thing has one "
-                "current holder and a new one ends the last (an employer, a spouse, a "
-                "citizenship somebody changes), over_time=False when they simply accumulate "
-                "(everything a person has ever written). Without it, asking later gives you the "
-                "first answer you were ever told.")
-        nature = AS_WRITTEN.get(str(nature or "").strip().lower(), nature)
-        if nature not in NATURES:
-            raise Refused(
-                "say what kind of link this is — its nature, one of: "
-                + "; ".join(f"{k} ({v})" for k, v in NATURES.items())
-                + ". Everything particular — husband and wife, director and company — is a "
-                  "type of its own with a nature behind it; the nature is what the world knows "
-                  "how to behave about, the name is what you and the user call it.")
+        # Everything missing, in one refusal, with the call written out. Refusing one argument
+        # at a time costs a run each: a recorder that gave none of the three spent forty-one
+        # runs collecting them, then reported ten facts recorded into a world that held eight
+        # bare names and nothing else.
         if nature in ("part_of", "kind_of") and cardinality is None:
-            cardinality = "many-to-one"      # a part has one whole, a kind has what it is a kind of
+            cardinality = "many-to-one"   # a part has one whole, a kind has what it is a kind of
+        wants = []
+        if over_time is None:
+            wants.append("over_time=False      # True when one holds at a time and a new one "
+                         "ends the last (an employer, a spouse)")
+        if nature not in NATURES:
+            wants.append(f'nature="related_to"  # one of {", ".join(NATURES)}')
         if cardinality is None:
+            wants.append(f'cardinality="many-to-one"  # one of {", ".join(CARDINALITY)}')
+        if wants:
+            written = ",\n        ".join(w.split("  #")[0].rstrip() for w in wants)
             raise Refused(
-                f"say how many of these there may be: cardinality is one of "
-                f"{', '.join(CARDINALITY)}. It used to default to many-to-many, and a default "
-                f"nobody chose is a guess the world then treats as an answer — that one switched "
-                f"supersession off for most types defined here and had the world answering "
-                f"'which one now' with the first thing it was ever told.")
+                f"{kind} needs {'this' if len(wants) == 1 else 'these'} said, and I will not "
+                f"guess {'it' if len(wants) == 1 else 'them'}:\n    "
+                + "\n    ".join(wants)
+                + f"\n\nwrite:\n    world.define_relation(\"{kind}\", \"{description}\",\n"
+                  f"        {written})"
+            )
         if cardinality not in CARDINALITY:
             raise Refused(f"cardinality is one of {', '.join(CARDINALITY)}")
         one_subject, one_object = CARDINALITY[cardinality]

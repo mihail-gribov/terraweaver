@@ -336,13 +336,22 @@ def main() -> None:
         # The least a world can be: somewhere to put a thing, a link with no type yet, the two
         # parties the world is between, and the calls to name what turns out to have a name.
         # What our other classes are worth is the difference between this run and one with them.
-        from terraweaver import authoring, ontology as ont
+        from terraweaver import authoring, growth, ontology as ont
 
         here = Path(__file__).resolve().parent.parent / "ontology" / "core"
+        grown_dir = Path(args.db).with_suffix("").parent / "grown"
         # Both parties are in it, because a world is between two parties and a base without them
         # is not a smaller world but a different kind of thing.
-        runtime = WorldRuntime(args.db, fixture=None, specs=ont.base_specs(here), selves=True)
-        authoring.install(runtime.world, Path(args.db).with_suffix("").parent / "grown")
+        #
+        # Plus whatever this world was taught. "Base" means what the world ships with, not
+        # "forget what you learned": starting from the bare base against a database that already
+        # holds grown types left them in the file and in the tables but out of `world.classes`,
+        # so the next batch was shown a vocabulary without them and built its own again. Twenty
+        # facts came to sixteen types, twelve of them holding one link each, with `Plays`
+        # alongside `PlaysPosition` and a marriage recorded as kin next to an unused MarriedTo.
+        specs = growth.apply_growth(ont.base_specs(here), growth.load_grown(grown_dir))
+        runtime = WorldRuntime(args.db, fixture=None, specs=specs, selves=True)
+        authoring.install(runtime.world, grown_dir)
     elif args.blank:
         # A world with the mechanism and no vocabulary. The host defines the classes; the world
         # keeps them uniform and answers "is there already something for this?".

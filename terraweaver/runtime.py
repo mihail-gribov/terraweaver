@@ -354,6 +354,26 @@ class WorldRuntime:
             lines.append("Read and report. Don't write facts: a question is not evidence.")
         return "\n".join(lines)
 
+    def _anything_said(self, session) -> bool:
+        """Whether this task put anything into the world beyond entities and their names.
+
+        A name is how a thing is referred to, not something known about it. The record is the
+        place to ask: a statement whose slot is not the class's own naming attribute is a fact.
+        """
+        if not session.touched:
+            return False
+        marks = {"name", "full_name", "title", "aliases", "created_at", "accessed_at",
+                 "valid_from", "valid_until", "from_is", "until_is", "tags"}
+        placed = ",".join("?" * len(session.touched))
+        for table in self.store.conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'facts_%'"):
+            rows = self.store.conn.execute(
+                f"SELECT slot FROM '{table[0]}' WHERE subject IN ({placed})",
+                tuple(session.touched)).fetchall()
+            if any(slot not in marks for (slot,) in rows):
+                return True
+        return False
+
     def unresolved(self, key: str) -> list:
         """The doubts this task raised and nobody has decided anything about."""
         session = self.sessions.get(key)
@@ -401,6 +421,19 @@ class WorldRuntime:
             )
         if abandon:
             closing = "abandoned"
+        elif task is not None and getattr(task, "mode", None) == "recording":
+            # A recording task that recorded nothing is the failure that reports itself as a
+            # success. One left a world holding eight bare names — no links, no attributes, no
+            # remarks — and said "all ten facts have been recorded, the world kept everything".
+            # The world knows what it was given, so it is the one thing it can say for certain.
+            if not self._anything_said(session):
+                return (
+                    "Not closed: this is a recording task and nothing about anything was "
+                    "recorded. There are entities, but no links between them and nothing said "
+                    "about them — names alone are not the facts. Either record them, or "
+                    "finish_task(abandon=\"why\") if they could not be recorded, but do not "
+                    "report work that is not in the world."
+                )
         left = self.world.questions.open_(limit=5, here=set(session.touched)) if session.touched else []
         if task is not None:
             with ontology.trusted_writes():
