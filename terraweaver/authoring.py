@@ -77,6 +77,18 @@ def _clean(name: str) -> str:
     return re.sub(r"[^0-9A-Za-z_]+", "_", (name or "").strip()).strip("_")
 
 
+def _type_name(kind: str) -> str:
+    """`keeps_bees_for` -> `KeepsBeesFor`: a class named the way the world's classes are named.
+
+    The word a host says the link with is one thing, and the class it lands in is another. They
+    were the same string, so a world grown at runtime ended up with `employment` sitting beside
+    `Membership` — and a host reading the catalogue has to guess which of the two spellings the
+    next one will use. The kind keeps the host's word; only the class is renamed.
+    """
+    cleaned = _clean(kind)
+    return "".join(part[:1].upper() + part[1:] for part in cleaned.split("_") if part) or cleaned
+
+
 def _described(what: str, description: str) -> str:
     text = (description or "").strip()
     if len(text) < 12:
@@ -209,19 +221,28 @@ class Authoring:
         holds_now_only = "at_any_time" if over_time else True
         one_object_ever = over_time or one_object
         one_subject_ever = over_time or one_subject
-        already = self._relation_like(f"{kind.replace('_', ' ')}. {description}")
+        already = self._relation_like(f"{kind.replace('_', ' ')}. {description}", word=kind)
         if already:
-            # The world looks, because the host does not. Forty-six relation types were defined
-            # in one run and `classes_like` was never called once — an instruction to look before
-            # inventing is an instruction, and instructions are what this world stopped relying
-            # on. Where the match is plain the existing type is handed back and the reading is
-            # announced, the same bargain `take_as` makes for a misspelt word.
+            # Said, not done. The world used to hand back the type it thought was meant, and
+            # the reading was a guess dressed as a fact: "director of" came back as
+            # ChairpersonOf and Tony Hall went into the world as the BBC's chairperson, with
+            # nothing but a printed note to say a word had been swapped. Whether two words are
+            # one idea is the agent's to judge — it has the sentence the user said and the
+            # world has a number. The world says what it noticed and makes what was asked for.
             name_of, description_of, _ = already[0]
-            print(f"[note] {kind} reads as {name_of} ({description_of}) — that type, not a "
-                  f"second one. If they differ, say how and define it under a name that says so.")
-            return self.world.classes[name_of]
+            from terraweaver import initiative, ontology as _ontology
+            if initiative.MERGES_MEANING:
+                print(f"[note] {kind} reads as {name_of} ({description_of}) — that type, not a "
+                      f"second one. If they differ, say how and define it under a name that "
+                      f"says so.")
+                return self.world.classes[name_of]
+            _ontology.note_hint(
+                f"'{kind.replace('_', ' ')}' reads a lot like {name_of} ({description_of}). I "
+                f"have made {kind} as you asked — if they are one idea, say so and move the "
+                f"links over: world.take_in({name_of}, \"{kind}\"). If they are two, nothing "
+                f"to do.")
         spec = {
-            "name": _clean(name),
+            "name": _type_name(name),
             "description": _described(f"the relation {kind}", description),
             "relation": {
                 "kind": kind,
@@ -253,24 +274,44 @@ class Authoring:
         self._save(spec)
         return built
 
-    def _relation_like(self, text: str, limit: int = 1) -> list[tuple[str, str, float]]:
-        """Relation types that read like this, closest first, with how close."""
-        known = {}
+    def _relation_like(self, text: str, limit: int = 1,
+                       word: str = "") -> list[tuple[str, str, float]]:
+        """Relation types that read like this, closest first, with how close.
+
+        Two readings have to agree: the whole text, and the word on its own. The second is
+        there because a type the world invents gets a description built from a template — "one
+        person director of one thing" — and the template is the same for every type, so the
+        part that differs is a few characters in a sentence that is otherwise identical. It
+        inflates everything: "director of" against "chairperson of" scores 0.708 as words and
+        0.853 inside the frame, which is over the bar. Tony Hall went into the world as the
+        BBC's chairperson because of those two numbers, and nothing said so.
+
+        The word alone separates cleanly — real synonyms 0.83 to 0.95 ("born in"/"birthplace"
+        0.840, "married to"/"spouse of" 0.834), different roles 0.66 to 0.77. Missing a synonym
+        costs a second type, which `wanted()` and `take_in` exist to mend. A wrong merge
+        changes what a fact says, and nothing mends that.
+        """
+        known, words = {}, {}
         for name, cls in self.world.classes.items():
             rel = cls._spec.get("relation")
             if rel and not rel.get("free"):
                 known[name] = f"{rel['kind'].replace('_', ' ')}. {cls._spec.get('description', '')}"
+                words[name] = rel["kind"].replace("_", " ")
         if not known:
             return []
         names = list(known)
-        vectors = self.world.meanings.model.embed([text] + [known[n] for n in names])
+        said = (word or text.split(".", 1)[0]).replace("_", " ").strip()
+        vectors = self.world.meanings.model.embed(
+            [text] + [known[n] for n in names] + [said] + [words[n] for n in names])
+        half = 1 + len(names)
+        near = lambda a, b: sum(x * y for x, y in zip(a, b))
         scored = sorted(((n, self.world.classes[n]._spec.get("description", ""),
-                          sum(a * b for a, b in zip(vectors[0], v)))
-                         for n, v in zip(names, vectors[1:])), key=lambda one: -one[2])
-        # Only where it is plain. A looser bar names an unrelated type as a near miss — "married
-        # to" against "associated with sport" — and a warning that cries wolf stops being read,
-        # which costs more than the duplicate it was meant to prevent.
-        return [one for one in scored[:limit] if one[2] >= SAME_IDEA]
+                          near(vectors[0], vectors[1 + i]),
+                          near(vectors[half], vectors[half + 1 + i]))
+                         for i, n in enumerate(names)), key=lambda one: -one[2])
+        # Only where it is plain, and only where both readings say so.
+        return [(n, d, full) for n, d, full, alone in scored[:limit]
+                if full >= SAME_IDEA and alone >= SAME_IDEA]
 
     # --- looking before inventing ---
 
@@ -428,6 +469,7 @@ def install(world, specs_dir=None) -> Authoring:
     not started this way is exactly the world it always was.
     """
     authoring = Authoring(world, specs_dir)
+    world.grown_dir = Path(specs_dir) if specs_dir else None   # where a type made on the fly goes
     extras = getattr(world, "extras", None)
     if extras is None:
         raise Refused("this world has no `extras` — the facade cannot reach the definition calls")

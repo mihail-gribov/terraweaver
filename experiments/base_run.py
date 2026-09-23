@@ -56,22 +56,56 @@ Everything else you define as you go:
                           subject=Person, object=Book,
                           cardinality="one-to-many", over_time=False)
 
-Nothing has to wait for a definition. A fact with no class goes in as a Thing; a link with no \
-type goes in as a free one with your own word as its label:
+Nothing has to wait for a definition. A fact with no class goes in as a Thing, and a link with \
+no type is written with the word you would say — the world makes the type for you and tells \
+you what it assumed:
 
-    Thing.ensure(name="pesäpallo").relate(Thing.ensure(name="Finland"), "related",
-                                          label="created in")
+    Thing.ensure(name="pesäpallo").relate(Thing.ensure(name="Finland"), "created_in")
 
-The world counts those words. When one keeps coming back it tells you, with the definition \
-written out — and `world.take_in(<the type>, "<the word>")` moves the links already written \
-into it. `world.wanted()` asks the same question yourself. A Thing that turns out to have a \
-name of its own joins it the same way: `thing.become("Sport")`, and nothing it holds is lost.
+Say the word. `relate(x, "related", label="created in")` is the escape hatch for a link you \
+cannot name at all, and it buys nothing: a labelled free link cannot be asked about by type, \
+cannot supersede anything, and the world has nothing to check it against. Use it only when \
+there is genuinely no word.
+
+A word that reads like a type already here is handed that one instead, so saying it your way \
+does not make a second type for the same idea. `world.wanted()` asks what is still untyped, and \
+`world.take_in(<the type>, "<the word>")` moves free links already written into a type. A Thing \
+that turns out to have a name of its own joins it the same way: `thing.become("Sport")`, and \
+nothing it holds is lost.
 
 Two things the world insists on. Every class, attribute and relation type needs a description \
 of what it is — that is what a later lookup searches. And `over_time` on a relation has to be \
 said: True when a thing has one current holder and a new one ends the last (an employer, a \
 spouse), False when they simply accumulate. Without it, asking later gives the first answer you \
 were ever told.
+
+How this goes, every time:
+
+    start_task("record what I am about to tell you about X", "recording")
+    ... your runs ...
+    finish_task
+
+The world answers every fact. It says what it assumed, what it could not tell apart, and what \
+it still needs — and it will not let the task close while any of that is still nobody's \
+decision. `[undecided N]` on a run is the running count; `world.undecided()` reaches them all \
+(they hang on the links you made, not on one entity). Settle each:
+
+    q.answer("...")          you know
+    q.for_the_user("...")    you genuinely cannot — it goes to the user and stops blocking
+    q.drop("...")            it was never a real doubt, and say why
+
+Handing one to the user is not failing. Guessing at it is.
+
+Time is said, never assumed. A relation that holds one at a time is a relation with a date in \
+it, and the world no longer fills that in for you. Say when, in whatever words you have: \
+`starts="now"`, `"yesterday"`, `"3 years ago"`, `"in 2006"`, `date(2006, 1, 1)` — or, when all \
+you know is which side of something it falls on, `starts=before(now())`, \
+`starts=after(date(2006, 1, 1))`. If the fact came with no time at all, say nothing and the \
+world records it undated rather than dating it today.
+
+A name you want to keep at hand goes in with `world.pin(x, value, "what it is", keep=False)` \
+for this task, or `keep=True` to outlive it. There is no default — the world will not choose \
+for you.
 
 Before you record anything, learn what is already here: call `classes()` for the whole list, \
 and `describe_classes([...])` for the ones you are about to use. Do it once, now — what you know \
@@ -90,12 +124,14 @@ RECORD = """\
 It is {when}. Here are facts I am telling you, in the order I learned them. Record all of them.
 
 If one of these says something different from what is already recorded about the same thing, \
-what I am telling you now is what holds, and the earlier one stopped holding today.
+what I am telling you now is what holds. I am not telling you when it changed — only that this \
+is what is true now — so do not write a date you were not given.
 
-If one of them does not fit what you have so far, put it in as a Thing or a free link and carry \
-on. Do not drop it and do not write it out as a sentence.
+If one of them does not fit what you have so far, put it in as a Thing and say the link with \
+the word you would use, and carry on. Do not drop it and do not write it out as a sentence.
 
-When you have recorded them all, ask `world.wanted()` and define what it keeps asking you for: \
+When you have recorded them all, settle whatever the world left undecided — `world.undecided()` \
+— and then ask `world.wanted()` and define what it keeps asking you for: \
 each shape there is a word you have now written several times with no type behind it, always \
 between the same two kinds of thing. Define the type, then `world.take_in(<the type>, "<the \
 word>")` so the links already written join it. A word left untyped is a question you will not \

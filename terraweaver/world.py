@@ -41,6 +41,26 @@ class NotInWorld(LookupError):
     """get() found nothing: the entity the host meant isn't in the world."""
 
 
+def _ask_its_nature(instance, class_name: str, attrs: dict) -> None:
+    """A thing whose sort is unknown is asked about, with the answer written out.
+
+    The world can say a great deal about a place and nothing at all about "a thing": that a place
+    contains places, that an event has a time, that nothing owns an abstraction. Left unasked it
+    is never said, because a host records the fact and moves on — so the question comes with the
+    line that answers it.
+    """
+    declared = next((a for a in type(instance)._spec["attributes"] if a["name"] == "nature"), None)
+    if declared is None or attrs.get("nature") or getattr(instance, "nature", None):
+        return
+    choices = declared["type"][len("enum["):-1]
+    ontology.note_hint(
+        f"{instance.display_name()} is new and I don't know what sort of thing it is. "
+        f"{class_name}.ensure(name=..., nature=...) takes one of: {choices} — or say it now: "
+        f"{instance.display_name().split()[0].lower()}.nature = \"place\". Knowing it is what "
+        f"lets me answer about where something is, when it was, and what can own what."
+    )
+
+
 class World:
     def __init__(self, store, classes: dict[str, type], specs: dict | None = None, *,
                  selves: bool = True):
@@ -702,6 +722,7 @@ class World:
                                  source=source, run_id=run_id, class_name=class_name)
         if isinstance(attrs.get("tags"), list) and attrs["tags"]:
             instance._set_tags(attrs["tags"])
+        _ask_its_nature(instance, class_name, attrs)
         self._apply_deferred(instance)
         return instance  # brand new, so created_at and accessed_at already coincide
 
@@ -848,11 +869,32 @@ class World:
 def _period(starts, until, ttl, permanent: bool) -> dict:
     """The validity attributes a caller asked for; empty if they said nothing about time."""
     period = {}
-    begin = timeutil.check_start(starts)
+    bound, sure = timeutil.told(starts)
+    begin = bound.moment if bound is not None else None
     if begin is not None:
         period["valid_from"] = begin
+        if not bound.exact:
+            period["from_is"] = bound.side
+    low, high = getattr(starts, "low", None), getattr(starts, "high", None)
+    if low is not None and high is not None and timeutil.as_datetime(low) != timeutil.as_datetime(high):
+        # A start known only to a window is two facts, and a period keeps one date and a side.
+        # The side that survives is the one that answers "had it started by then"; the other is
+        # said out loud rather than dropped quietly, because a bound nobody mentions losing is
+        # the same as a bound nobody had.
+        ontology.note_hint(
+            f"I kept that start as {bound.describe()} — by then it had certainly begun. That it "
+            f"was also not before {timeutil.show(low)} is not something a period can hold "
+            f"alongside; if that edge matters, record it as its own fact.")
+    if bound is not None and not sure:
+        ontology.note_hint(
+            f"I took that as {bound.describe()} and noted you were not certain. If it matters "
+            f"to the answer, ask; if it does not, it is recorded as said.")
     end = timeutil.period_end(until, ttl, permanent, base=begin)
     if end is not timeutil.NO_END_GIVEN:
+        if isinstance(end, timeutil.Bound):
+            if not end.exact:
+                period["until_is"] = end.side
+            end = end.moment
         period["valid_until"] = end
     return period
 

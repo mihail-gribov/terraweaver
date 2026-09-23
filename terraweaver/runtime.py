@@ -17,10 +17,11 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from terraweaver import onboarding, ontology, sandbox
+from terraweaver import initiative, onboarding, ontology, sandbox
 from terraweaver.impls import IMPLS
 from terraweaver.describe import (COMMON_MEMBERS, HOST_GUIDE, catalogue, describe_for_prompt, short,
                                   describe_methods)
+from terraweaver import timeutil
 from terraweaver.ontology import Entity, build_classes, load_specs
 from terraweaver.resolution import NeedsResolution
 from terraweaver.session import Session
@@ -115,6 +116,21 @@ class WorldView:
         touched = self._touched() if here else None
         return self._world.questions.open_(limit, here=touched)
 
+    def undecided(self, limit: int = 50) -> list:
+        """The doubts this task raised that nobody has decided anything about yet.
+
+        These are what `finish_task` refuses to close over, and they hang on the links and the
+        entities the task made — not all on the one entity you started from, which is why
+        reaching them through any single entity misses most of them. Settle each:
+
+            for q in world.undecided():
+                print(q.line())
+            q.answer("...")           you know
+            q.for_the_user("...")     you cannot; it goes to the user and stops blocking
+            q.drop("...")             it was never a real doubt
+        """
+        return self._world.questions.unresolved(here=self._touched(), limit=limit)
+
     def where(self, cls=None, **conditions) -> list:
         """Attributes, links, tags and meaning in one ask; without a class, things of any kind."""
         return self._world.where(cls, **conditions)
@@ -182,10 +198,47 @@ class WorldView:
         return self._world.comments.search(since=since, until=until, contains=contains, limit=limit,
                                            include_expired=include_expired or any_time)
 
-    def pin(self, name: str, value, description: str) -> None:
-        """Keep a named value for every session: an entity (by id), entities, or plain data."""
-        self._variables.pin(name, value, description, set_by=self._session_key)
-        print(f"[pinned] {name}")
+    @property
+    def now(self):
+        """What time the world thinks it is. Set it and everything recorded is recorded then."""
+        return timeutil.now()
+
+    @now.setter
+    def now(self, moment) -> None:
+        was = timeutil.shifted()
+        moved = timeutil.set_now(moment)
+        if moved is None:
+            ontology.note_hint("the world's now is the clock again.")
+        else:
+            ontology.note_hint(
+                f"the world's now is {timeutil.show(moved)}"
+                + (f" (it was {timeutil.show(was)})" if was else "")
+                + ". Everything recorded from here is recorded as happening then, until it is "
+                  "moved again or set to None."
+            )
+
+    def pin(self, name: str, value, description: str, keep: bool | None = None) -> None:
+        """Keep a named value at hand: an entity (by id), entities, or plain data.
+
+        Say which of the two it is, because the world cannot tell and will not guess:
+
+            keep=False  for this task — it goes when the task does. Most things.
+            keep=True   past this task, until you unpin it — where the person lives, the
+                        project they are in the middle of, the calendar they keep.
+
+        There is no default. A name that outlives the conversation that made it is how a world
+        fills with things nobody meant to keep, and a name that quietly disappears is a
+        NameError for something you pinned on purpose. Both are cheap to avoid and expensive to
+        find, and you are the one who knows which this is.
+        """
+        if keep is None:
+            raise TypeError(
+                f"world.pin({name!r}, ...) — say how long: keep=False for this task, keep=True "
+                f"for something that should still be here next week. I have no way to tell "
+                f"which, and picking one for you is how the wrong one gets picked quietly."
+            )
+        self._variables.pin(name, value, description, set_by=self._session_key, keep=keep)
+        print(f"[pinned] {name}" + (" — kept past this task" if keep else " — for this task"))
 
     def unpin(self, *names: str) -> None:
         """Remove world variables: world.unpin("anna", "stats")."""
@@ -270,6 +323,111 @@ class WorldRuntime:
         session.last_used = time.time()
         return session
 
+    def start_task(self, key: str, stated: str, mode: str) -> str:
+        """Open a task: say what this piece of work is before doing it.
+
+        The world has no other way to see where work starts and stops. Everything that hangs on
+        that boundary — which names are still yours, what was left unanswered, what a fact was
+        recorded for — hangs on this call.
+        """
+        stated = (stated or "").strip()
+        if len(stated) < 12:
+            raise ValueError(
+                "say what the task is, as a sentence — 'record what the user said about their "
+                "job history', not 'facts'. It is what the world holds the work against when "
+                "you close it, and what the next task reads if you leave something open.")
+        if mode not in ("recording", "answering"):
+            raise ValueError("mode is 'recording' (putting something in) or 'answering' "
+                             "(finding something out). A task is one or the other.")
+        left = self.finish_task(key, closing="abandoned") if key in self.sessions else ""
+        task = self.classes["Task"].new(stated=stated, mode=mode, runs=0)
+        session = self.session(key)
+        session.task_id = task.id
+        lines = [f"Task {task.id} open: {stated} ({mode})."]
+        if left:
+            lines.append("The task before it was dropped. " + left)
+        if mode == "recording":
+            lines.append("Write it, read what the world says back, answer that, then "
+                         "finish_task. A fact recorded with the world's reply unanswered is a "
+                         "guess filed under the user's name.")
+        else:
+            lines.append("Read and report. Don't write facts: a question is not evidence.")
+        return "\n".join(lines)
+
+    def unresolved(self, key: str) -> list:
+        """The doubts this task raised and nobody has decided anything about."""
+        session = self.sessions.get(key)
+        if session is None or not session.touched:
+            return []
+        return self.world.questions.unresolved(here=set(session.touched))
+
+    def finish_task(self, key: str, closing: str | None = None, abandon: str = "") -> str:
+        """Close the task — but only once nothing it touched is still undecided.
+
+        How it closed is computed, not declared. A batch of facts raises a doubt per fact, and
+        an agent working through the batch will pass some of them: not out of carelessness, but
+        because each one arrives while it is busy with the next. So the check is here, where it
+        cannot be walked past, and it is made every time rather than once at the end — the
+        run-by-run count says how many are standing, and this refuses while any remain.
+
+        Three ways past it, and all three are somebody's decision on the record: answer it,
+        hand it to the user with `for_the_user` because you genuinely cannot know, or abandon
+        the task and say why.
+        """
+        session = self.sessions.get(key)
+        if session is None or session.task_id is None:
+            # None, not "": nothing was closed because nothing was open, and a caller that
+            # cannot tell those apart reports a clean finish over work nobody checked.
+            return None
+        task = self.store.load(session.task_id, self.classes)
+        standing = self.unresolved(key)
+        if standing and not abandon and closing is None:
+            lines = "\n".join(f"    {q.line()}" for q in standing[:8])
+            more = f"\n    … and {len(standing) - 8} more" if len(standing) > 8 else ""
+            return (
+                f"Not closed: {len(standing)} thing(s) this task raised are still nobody's "
+                f"decision. They came up as you worked and each one is about a fact you "
+                f"recorded, so they are the task, not leftovers from it:\n"
+                f"{lines}{more}\n\n"
+                f"Reach them all with `world.undecided()` — they hang on the links "
+                f"this task made, not on one entity — and settle each:\n"
+                f"    q.answer(\"she meant the London one\")        — you know\n"
+                f"    q.for_the_user(\"two people share this name\") — you cannot know; it goes\n"
+                f"                                                   to the user and stops\n"
+                f"                                                   blocking\n"
+                f"    q.drop(\"the link was a typo, now retracted\") — it was never a real doubt\n"
+                f"Then finish_task again. If the task cannot be done at all, "
+                f"finish_task(abandon=\"why\")."
+            )
+        if abandon:
+            closing = "abandoned"
+        left = self.world.questions.open_(limit=5, here=set(session.touched)) if session.touched else []
+        if task is not None:
+            with ontology.trusted_writes():
+                task.runs = session.runs
+                touched = [self.store.load(i, self.classes) for i in sorted(session.touched)]
+                task.touched = [e for e in touched if e is not None]
+                # `closed_as` is what ends it. Giving it a valid_until as well would say the
+                # task stopped being true, and a task that was done is still a task that was
+                # done — it would drop out of every ordinary read, which is where anybody
+                # looking for what a fact was recorded for would go.
+                # "done" is not "nothing is open" — it is "nothing was left undecided". A
+                # question handed to the user is not a loose end; it is the one honest outcome
+                # for a doubt the agent could not settle, and calling that left_open would
+                # punish the agent for saying so.
+                task.closed_as = closing or ("for_the_user" if left else "done")
+                if abandon:
+                    task.describe(f"abandoned: {abandon.strip()}")
+                self.world.save(task)
+        self.reset_session(key)
+        if abandon:
+            return f"Task abandoned: {abandon.strip()}. What it did record stays in the world."
+        if not left:
+            return ("Nothing was left open about what that task touched."
+                    if task is not None else "")
+        return ("Settled, and put to the user — these wait for them, not for you:\n"
+                + "\n".join(f"    {q.line()}" for q in left))
+
     def reset_session(self, key: str) -> str:
         """Drop a session's variables: the next call starts with a clean namespace.
 
@@ -279,6 +437,10 @@ class WorldRuntime:
         """
         session = self.sessions.pop(key, None)
         self.idle_reset.discard(key)
+        # Names pinned in that session go with it. Nothing is promoted on its own: what should
+        # outlive a conversation is a judgement the host makes at the time, with keep=True, not
+        # something the world infers from a name having been useful once.
+        self.variables.session_ended(key)
         if session is None or not session.touched:
             return ""
         left = self.world.questions.open_(limit=3, here=set(session.touched))
@@ -387,6 +549,11 @@ class WorldRuntime:
         return describe_methods(self.live_specs(), names)
 
     def _learn_name_choice(self, session, recording, before: dict) -> list[str]:
+        if not initiative.LEARNS_NAMES:
+            return []
+        return self._remember_name_choice(session, recording, before)
+
+    def _remember_name_choice(self, session, recording, before: dict) -> list[str]:
         """Take the answer to "which Annie?" in the form a host actually gives it.
 
         The world only ever learned a name choice through `world.settle(...)`, and hosts rarely
@@ -584,6 +751,23 @@ class WorldRuntime:
             if recording is not None:
                 with self.store.transaction():
                     effects["assumed"] += self._learn_name_choice(session, recording, before)
+        # A class the world made during the run has to be nameable in the next one. It was not:
+        # the namespace is filled with the classes that existed when the session opened, so a
+        # type the world invented from the host's own word could not be reached by any spelling
+        # — and the world went on asking the host to amend a thing it had no name for. One
+        # recorder spent ten runs trying `BornIn`, `born_in` and `Person.born_in` in turn, got
+        # NameError twice and a silent no-op on the method the third time, and finally handed
+        # every question to the user. It was right to give up; nothing it could have written
+        # would have worked.
+        for name, cls in self.world.classes.items():
+            if name not in session.namespace:
+                session.namespace[name] = cls
+                session.preset.add(name)
+            kind = ((getattr(cls, "_spec", {}) or {}).get("relation") or {}).get("kind")
+            if kind and kind not in session.namespace:
+                # Under both spellings, because the host says the word and reads the class.
+                session.namespace[kind] = cls
+                session.preset.add(kind)
         new_names = session.sync()
         result = {
             "session_reset": key in self.idle_reset,
@@ -601,6 +785,30 @@ class WorldRuntime:
             "duration_ms": int((time.monotonic() - started) * 1000),
         }
         self.idle_reset.discard(key)
+        session.runs += 1
+        if (session.task_id is None and "Task" in self.classes
+                and (result.get("created") or result.get("updated"))):
+            # Work began without anybody saying what it was. The boundary is opened anyway,
+            # because facts landing outside every task is the state this was built to end — the
+            # benchmark ran 392 times that way and no check ever fired. It is opened unnamed and
+            # said so: the world can hold work it was not told the name of, but it will not
+            # pretend there was no work.
+            with ontology.trusted_writes():
+                opened = self.classes["Task"].new(
+                    stated="(not said — work began before start_task)", mode="recording", runs=0)
+            session.task_id = opened.id
+            result["hints"] = list(result.get("hints") or []) + [
+                "you began recording without start_task, so I opened a task without a name for "
+                "it. Say what this work is with start_task(stated, mode) — what it is is what "
+                "the world holds it against when you finish."]
+        if session.task_id is not None and session.touched:
+            # Counted every run, not once at the end. A doubt raised on the third fact of a
+            # batch of forty is read while the host is already writing the fourth, and by the
+            # fortieth nobody remembers it was raised. The running total is what makes it
+            # impossible to lose track of rather than merely possible to notice.
+            standing = self.world.questions.unresolved(here=set(session.touched))
+            if standing:
+                result["undecided"] = len(standing)
         self._log(key, code, result)
         return result
 
@@ -1018,6 +1226,12 @@ def format_result(result: dict) -> str:
     if result.get("questions"):
         parts.append("[open questions] " + "; ".join(result["questions"])
                      + " — put them to the user if they're here; entity.questions() to answer or drop them")
+    if result.get("undecided"):
+        count = result["undecided"]
+        parts.append(f"[undecided] {count} thing(s) this task raised are still nobody's decision. "
+                     f"finish_task will not close until each is answered, handed to the user with "
+                     f"q.for_the_user(why), or dropped. Settling them as you go is cheaper than "
+                     f"finding {count} of them at the end.")
     if result["new_variables"]:
         parts.append("[new variables] " + "; ".join(f"{k}: {v}" for k, v in result["new_variables"].items()))
     return "\n".join(parts)

@@ -43,7 +43,13 @@ log = logging.getLogger("terraweaver")
 
 server = MCPServer(
     "terraweaver",
-    instructions="The user's personal world as a Python object model. Call describe_world first. " + HOST_GUIDE,
+    instructions=(
+        "The user's personal world as a Python object model, worked with over several `run` "
+        "calls. It is meant for an agent sent here for one task — either to record something "
+        "into the world or to answer something from it — and it talks back: it says what it "
+        "assumed and asks what it needs, and expects those answered in the next call. Send an "
+        "agent that can finish that exchange, not a single call. Call describe_world first. "
+    ) + HOST_GUIDE,
 )
 runtime: WorldRuntime | None = None
 
@@ -167,11 +173,55 @@ async def unset_variables(names: str, ctx: Context) -> str:
 
 
 @server.tool()
-async def reset_session(ctx: Context) -> str:
-    """Start a new task with a clean namespace: drops every variable of this session. Call it
-    when the user moves on to something new, so nothing from the earlier task carries over."""
+async def start_task(stated: str, mode: str, ctx: Context) -> str:
+    """Open a task before working. `stated` says what this piece of work is, in your own words,
+    as a sentence. `mode` is "recording" — putting something into the world — or "answering" —
+    finding something out of it.
+
+    Call this first, every time the user moves on to something new. The world cannot see a
+    conversation start or end, so this is the only boundary it has: what is still yours to use,
+    what was left unanswered, and what the next task inherits all hang on it. Finish with
+    finish_task."""
     key = _session_key(ctx)
-    left_open = runtime.reset_session(key)
+    try:
+        opened = runtime.start_task(key, stated, mode)
+    except ValueError as wrong:
+        return str(wrong)
+    except Exception as broke:  # noqa: BLE001 - an opaque tool error tells the agent nothing
+        # This exact case cost a whole run: a world built without the Task class answered
+        # "Error executing tool start_task" twice, with no reason, and the agent — rightly —
+        # carried on without a task. A tool that fails has to say what failed.
+        log.exception("start_task failed in session %s", key)
+        return (f"The task could not be opened: {type(broke).__name__}: {broke}. Carry on "
+                f"without one if you must — what you record is still kept — but say so in what "
+                f"you report back, because nothing will check it at the end.")
+    log.info("task opened in session %s: %s (%s)", key, stated[:60], mode)
+    return opened
+
+
+@server.tool()
+async def finish_task(ctx: Context, abandon: str = "") -> str:
+    """Close the task. It will not close while anything it raised is still undecided.
+
+    How it closed is worked out, not taken on your word. Every doubt the world raised about
+    what you recorded has to be answered, handed to the user with `q.for_the_user(why)`, or
+    dropped with a reason — `world.undecided()` reaches them. `abandon="why"` gives up on the
+    task instead; what it did record stays, and the reason is kept with it."""
+    key = _session_key(ctx)
+    left_open = runtime.finish_task(key, abandon=abandon)
+    log.info("task finished in session %s", key)
+    if left_open is None:
+        return ("There was no task open, so nothing was closed. What you recorded is in the "
+                "world; nothing checked it. Open one with start_task before the work, not after.")
+    done = "Task closed: the namespace is clean. The world itself keeps everything it was told."
+    return f"{done}\n\n{left_open}" if left_open else done
+
+
+@server.tool()
+async def reset_session(ctx: Context) -> str:
+    """Older name for finish_task. Prefer finish_task, which also records what the task was."""
+    key = _session_key(ctx)
+    left_open = runtime.finish_task(key)
     log.info("session %s reset by the host", key)
     done = "Session reset: the namespace is clean. The world itself is unchanged."
     return f"{done}\n\n{left_open}" if left_open else done

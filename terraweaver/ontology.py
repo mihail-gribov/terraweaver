@@ -23,7 +23,8 @@ _TRUSTED = False
 _WORLD = None
 
 # Held by every entity, outside the JSON specs, and maintained by the machinery itself.
-_MANAGED_ATTRS = ("id", "created_at", "accessed_at", "valid_from", "valid_until")
+_MANAGED_ATTRS = ("id", "created_at", "accessed_at", "valid_from", "valid_until",
+                  "from_is", "until_is")
 
 # Counts what a running script actually touched. "Did the answer come from the world, or was
 # it typed?" can't be judged from the text — but it can be measured at the source.
@@ -34,7 +35,12 @@ ACCESS = {"entity_reads": 0, "world_queries": 0, "world_writes": 0}
 # Keyed by object identity because an entity's hash changes once it receives an id.
 _CHANGED: "Recording | None" = None
 # The ones that are stored as values (id is the row key, not a value).
-MANAGED_VALUE_ATTRS = ("created_at", "accessed_at", "valid_from", "valid_until")
+# `from_is`/`until_is` say which side of its date a bound is on: "exact" unless somebody said
+# "before" or "after". Kept beside the date rather than folded into it, because a date that
+# has swallowed a "before" is indistinguishable from one that was known, and the whole point
+# of taking the word was not to lose it.
+MANAGED_VALUE_ATTRS = ("created_at", "accessed_at", "valid_from", "valid_until",
+                       "from_is", "until_is")
 
 
 def set_write_guard(guard) -> None:
@@ -240,7 +246,10 @@ def trusted_writes():
 # has to earn its place by making the work easier than the base alone, or it is not help but
 # noise. `Idea` was noise: seventy things were forced into a class meant for notes, ten were lost
 # saying so, and the rest got through by inventing what the host did not know.
-BASE_CLASSES = ("Thing", "Related", "PartOf", "Kind", "Person", "Agent")
+# Task is in the base because the boundary has to exist before any work does: a world
+# that could be written to without one is a world where facts land outside every task,
+# which is the state every check added here was built to end.
+BASE_CLASSES = ("Thing", "Related", "PartOf", "Kind", "Person", "Agent", "Task")
 
 
 # What each base class keeps. A Person in the base is a name, not a name with an employer and a
@@ -251,10 +260,11 @@ BASE_CLASSES = ("Thing", "Related", "PartOf", "Kind", "Person", "Agent")
 BASE_KEEPS = {
     "Person": ("full_name", "aliases"),
     "Agent": ("name", "owner", "character"),      # the soul file's body goes into character
-    "Thing": ("name", "aliases"),
-    "Related": ("label",),
+    "Thing": ("name", "aliases", "nature"),
+    "Related": ("label", "nature"),
     "PartOf": (),
     "Kind": (),
+    "Task": ("stated", "mode", "touched", "runs", "closed_as"),
 }
 _ALWAYS = ("descriptions", "tags", "notes", "description")
 
@@ -1352,6 +1362,10 @@ def _period_text(starts, until) -> str:
 
 def _brief(value) -> str:
     """How a value appears inside an entity's repr — references by label, never expanded."""
+    if callable(value) and not isinstance(value, type):
+        # A method's own repr names the object it is bound to, which sends us straight back
+        # here. Nothing about a function belongs in a picture of the facts anyway.
+        return f"<{getattr(value, '__name__', 'callable')}()>"
     if isinstance(value, Entity):
         return f"<{type(value).__name__} {value.display_name()}>"
     if isinstance(value, list) and any(isinstance(v, Entity) for v in value):
@@ -1448,6 +1462,158 @@ def _derived_message(class_name: str, attr: dict) -> str:
     source_class, source_attr = attr["derived"].split(".", 1)
     return (f"{class_name}.{attr['name']} is derived from {attr['derived']} and can't be set directly; "
             f"set {source_attr} on the {source_class} instead")
+
+
+def _keep_spec(spec: dict) -> None:
+    """Write a grown type's spec back where it was read from, if it was grown at all."""
+    world = current_world()
+    where = getattr(world, "grown_dir", None) if world is not None else None
+    if not where:
+        return
+    path = Path(where) / f"{spec['name']}.json"
+    if path.exists():           # only types this world grew; the core ontology is not ours
+        path.write_text(json.dumps(spec, indent=2))
+
+
+class _RelationClass(type):
+    """A relation type is a class, so what it is is said the way anything else is: by assignment.
+
+    `london.nature = "place"` on a thing and `born_in.nature = "related_to"` on a type read the
+    same because they are the same act — the one on an instance, the other on a class. A call of
+    its own for the second (`world.relation_is(...)`) was a second vocabulary for one idea, which
+    is what this world spends its days undoing.
+    """
+
+    @staticmethod
+    def _now_said(cls):
+        """Mark the type as one somebody has ruled on, and keep the ruling.
+
+        Confirming a guess sets the same value the guess held, so the spec alone cannot tell
+        "nobody has looked at this" from "somebody looked and agreed" — and a check that cannot
+        tell them apart either asks forever or never asks at all.
+
+        Written out, too. A type amended only in memory answers correctly until the process
+        ends and then goes back to what the world guessed, which is the worst of both: the
+        agent was asked, it answered, and the answer was thrown away without anybody being
+        told.
+        """
+        cls._spec["relation"]["said_by_hand"] = True
+        _keep_spec(cls._spec)
+
+    @property
+    def nature(cls):
+        return cls._spec["relation"].get("nature")
+
+    @nature.setter
+    def nature(cls, value):
+        from terraweaver import authoring
+
+        word = authoring.AS_WRITTEN.get(str(value).strip().lower(), value)
+        if word not in authoring.NATURES:
+            raise ValueError("nature is one of: " + ", ".join(authoring.NATURES))
+        cls._spec["relation"]["nature"] = word
+        _RelationClass._now_said(cls)
+        note_hint(f"{cls.__name__} is a {word} link now"
+                  + (f", so: {', '.join(k for k in _relation_rules(word))}"
+                     if _relation_rules(word) else ""))
+
+    @property
+    def one_per_subject(cls):
+        return bool(cls._spec["relation"].get("functional"))
+
+    @one_per_subject.setter
+    def one_per_subject(cls, value):
+        cls._spec["relation"]["functional"] = _one_or_many(cls, value)
+        _RelationClass._now_said(cls)
+
+    @property
+    def one_per_object(cls):
+        return bool(cls._spec["relation"].get("inverse_functional"))
+
+    @one_per_object.setter
+    def one_per_object(cls, value):
+        cls._spec["relation"]["inverse_functional"] = _one_or_many(cls, value)
+        _RelationClass._now_said(cls)
+
+    @property
+    def changes(cls):
+        return cls._spec["relation"].get("functional") == "at_any_time"
+
+    @changes.setter
+    def changes(cls, value):
+        rel = cls._spec["relation"]
+        for side in ("functional", "inverse_functional"):
+            if rel.get(side):
+                rel[side] = "at_any_time" if value else True
+        _RelationClass._now_said(cls)
+        note_hint(f"{cls.__name__}: a new one "
+                  + ("ends the last, both true in their turn"
+                     if value else "corrects the last, only one of them so"))
+
+
+def _one_or_many(cls, value):
+    """True/False on a side, keeping whether a new one ends the last or corrects it."""
+    if not value:
+        return False
+    return "at_any_time" if cls._spec["relation"].get("functional") == "at_any_time" else True
+
+
+def _relation_rules(nature: str) -> list[str]:
+    from terraweaver import relations
+
+    return sorted(relations.BY_NATURE.get(nature, {}))
+
+
+def _lend_relations(classes: dict, defined: str) -> None:
+    """Give every class the relations it can stand in, as methods of its own.
+
+    `anna.born_in(london)` reads as the sentence and turns up where a host actually looks — in
+    the class, beside its attributes. `anna.relate(london, "born_in")` says the same thing and
+    is what stays for a link with no type yet, but nothing in a class's description ever
+    mentioned it, so a host had to know the type existed before it could find out that it did.
+
+    Called after any class is built, for that class and for anything already here, because a
+    relation type may be defined before or after the classes it runs between.
+    """
+    from terraweaver import relations as rel_module
+
+    types = {name: cls._spec["relation"] for name, cls in classes.items()
+             if cls._spec.get("relation") and not cls._spec["relation"].get("free")}
+    touched = [defined] if defined not in types else list(classes)
+    for class_name in touched:
+        cls = classes.get(class_name)
+        if cls is None or cls._spec.get("relation"):
+            continue
+        for type_name, rel in types.items():
+            for side, other in (("from", "to"), ("to", "from")):
+                ends = rel.get(side) or ["any"]
+                if class_name not in ends and "any" not in ends:
+                    continue
+                word = rel["kind"] if side == "from" else (rel.get("reverse") or "")
+                # A declared attribute lives in the instance, so `hasattr(cls, word)` does not
+                # see it and the method would be lent over the top of it — invisibly, until the
+                # attribute happened to be unset and `vacancy.location` handed back a function.
+                declared = {a["name"] for a in cls._spec.get("attributes", [])}
+                if not word or hasattr(cls, word) or word in declared:
+                    continue
+                setattr(cls, word, _relation_method(type_name, rel, backwards=side == "to"))
+
+
+def _relation_method(type_name: str, rel: dict, backwards: bool):
+    """`anna.born_in(london)` — the same as `anna.relate(london, "born_in")`, said as a sentence."""
+    kind = rel["kind"]
+
+    def say(self, other=None, **attrs):
+        world = current_world()
+        if other is None:                       # asked with no other end: read, don't write
+            return self.related(rel.get("reverse") if backwards else kind)
+        a, b = (other, self) if backwards else (self, other)
+        return world.relate(a, b, kind, **attrs)
+
+    say.__name__ = rel.get("reverse") if backwards else kind
+    say.__doc__ = (f"{rel.get('reads') or kind}. Written: "
+                   f"a.{kind}(b). With no argument, reads instead of writing.")
+    return say
 
 
 def _relation_property(class_name: str, attr: dict):
@@ -1654,5 +1820,7 @@ def define_class(classes: dict[str, type], spec: dict[str, Any], name: str | Non
             namespace[mname] = _intentional(impl) if impl else _make_stub(name, mname)
         # Everything shared comes from Entity; a generated class carries only its own
         # spec and methods.
-        classes[name] = type(name, (base,), namespace)
+        made = _RelationClass if spec.get("relation") else type
+        classes[name] = made(name, (base,), namespace)
+        _lend_relations(classes, name)
         return classes[name]

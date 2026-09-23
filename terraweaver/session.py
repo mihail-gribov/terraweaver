@@ -28,6 +28,11 @@ class Session:
         # Entities this session has worked with: what "the questions left over from this task"
         # means when the task is done.
         self.touched: set[str] = set()
+        # The task this session is working through, if one was started. The world cannot see a
+        # conversation begin or end — a session key comes from the host's connection settings —
+        # but it can see a task, because a task is opened out loud.
+        self.task_id: int | None = None
+        self.runs: int = 0
 
         for name, value in (seed or {}).items():
             self.bind(name, value, "pre-loaded data")

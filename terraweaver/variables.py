@@ -29,9 +29,21 @@ CREATE TABLE IF NOT EXISTS world_variables (
     value TEXT NOT NULL,         -- JSON: an id, a list of ids, or the value itself
     description TEXT NOT NULL,
     set_by TEXT,
-    set_at TEXT NOT NULL
+    set_at TEXT NOT NULL,
+    turns_left INTEGER,         -- left from when names had a term; nothing writes it now
+    outlives_session INTEGER NOT NULL DEFAULT 0
 );
 """
+
+# A pinned name lives as long as the session and no shorter. Names used to be kept for three
+# turns, which meant a host could pin something on purpose and get a NameError for it in the
+# middle of the thought that needed it — the world quietly forgetting what it was told to hold.
+# The session is the unit the host actually thinks in, so it is the unit the name lives in.
+#
+# Some names are worth more than a session: the person's own home, the project they are in the
+# middle of, the calendar they keep. `keep=True` says so, and those stay until they are
+# unpinned. The two are kept apart on purpose — a name that survives a conversation nobody
+# remembers having is how a world fills with things nobody meant to keep.
 
 
 class VariableError(Exception):
@@ -45,6 +57,14 @@ class WorldVariables:
         # Names already taken in every namespace: classes, `world`, helpers, modules.
         self.reserved = reserved
         store.conn.executescript(SCHEMA)
+        # Worlds written before names had a term keep their table; the column is added to it
+        # rather than the table being rebuilt, because what is pinned in them is still pinned.
+        held = {row[1] for row in store.conn.execute("PRAGMA table_info(world_variables)")}
+        for column, declared in (("turns_left", "INTEGER"),
+                                 ("outlives_session", "INTEGER NOT NULL DEFAULT 0")):
+            if column not in held:
+                store.conn.execute(f"ALTER TABLE world_variables ADD COLUMN {column} {declared}")
+        store.conn.commit()
 
     def names(self) -> set[str]:
         return {row[0] for row in self.store.conn.execute("SELECT name FROM world_variables")}
@@ -54,7 +74,9 @@ class WorldVariables:
         return {name: self._value(kind, raw) for name, kind, raw in self.store.conn.execute(
             "SELECT name, kind, value FROM world_variables ORDER BY name")}
 
-    def pin(self, name: str, value: Any, description: str, set_by: str | None = None) -> None:
+    def pin(self, name: str, value: Any, description: str, set_by: str | None = None,
+            keep: bool = False) -> None:
+        """Keep a name in the world — for this session, or past it with `keep=True`."""
         if not isinstance(name, str) or not name.isidentifier() or keyword.iskeyword(name) or name.startswith("_"):
             raise VariableError(f"{name!r} can't be a variable name")
         if name in self.reserved:
@@ -68,10 +90,21 @@ class WorldVariables:
             )
         kind, raw = self._encode(value)
         self.store.conn.execute(
-            "INSERT OR REPLACE INTO world_variables (name, kind, value, description, set_by, set_at) "
-            "VALUES (?, ?, ?, ?, ?, ?)",
-            (name, kind, raw, description.strip(), set_by, datetime.now(timezone.utc).isoformat()),
+            "INSERT OR REPLACE INTO world_variables (name, kind, value, description, set_by, "
+            "set_at, outlives_session) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (name, kind, raw, description.strip(), set_by,
+             datetime.now(timezone.utc).isoformat(), int(keep)),
         )
+
+    def session_ended(self, key: str | None) -> list[str]:
+        """Let go of the names that belonged to that session. Returns what went."""
+        rows = [row[0] for row in self.store.conn.execute(
+            "SELECT name FROM world_variables WHERE outlives_session = 0 AND set_by IS ?", (key,))]
+        if rows:
+            self.store.conn.execute(
+                "DELETE FROM world_variables WHERE outlives_session = 0 AND set_by IS ?", (key,))
+            self.store.conn.commit()
+        return rows
 
     def unpin(self, *names: str) -> None:
         """Remove world variables. All or nothing: an unknown name removes none of them."""
@@ -83,19 +116,24 @@ class WorldVariables:
 
     def describe(self) -> str:
         rows = list(self.store.conn.execute(
-            "SELECT name, kind, value, description, set_at FROM world_variables ORDER BY name"))
+            "SELECT name, kind, value, description, set_at, outlives_session "
+            "FROM world_variables "
+            "ORDER BY name"))
         if not rows:
             return ""
         lines = [
-            "\nWorld variables — shared by every session, kept until unpinned. Use them as they are;",
-            "don't look these up again. Change one with world.pin(name, value, \"description\"):",
+            "\nWorld variables — yours for this whole session, however the conversation moves.",
+            "Use them as they are; don't look these up again. Change one with",
+            "world.pin(name, value, \"description\"), drop one with world.unpin(name). Add",
+            "keep=True for something that should still be here in a week:",
         ]
-        for name, kind, raw, description, set_at in rows:
+        for name, kind, raw, description, set_at, outlives in rows:
             value = self._value(kind, raw)
             shown = _show(value)
             if kind == "value":
                 shown += f" (snapshot taken {set_at[:16].replace('T', ' ')} UTC)"
-            lines.append(f"- {name}: {shown} — {description}")
+            lines.append(f"- {name}: {shown} — {description}"
+                         + (" — kept past this session" if outlives else ""))
         return "\n".join(lines) + "\n"
 
     # --- internals ---

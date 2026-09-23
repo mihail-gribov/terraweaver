@@ -10,6 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from terraweaver.impls import IMPLS
 from terraweaver.ontology import build_classes, load_specs
+from terraweaver import initiative
 from terraweaver.store import Store
 from terraweaver.world import World
 from worlds.job_search import build
@@ -104,8 +105,20 @@ def main() -> int:
     kept = b04.relate(chen, "kin")
     check("an endpoint of another class is recorded all the same",
           type(kept).__name__ == "Kin" and kept.subject is b04, repr(kept))
-    check("and an unknown type is kept the same way",
-          getattr(b04.relate(chen, "keeps_bees_for"), "label", None) == "keeps_bees_for")
+    # Something the world does on its own, so the test says so: initiative.MAKES_TYPES is off
+    # by default and the switch is turned on here and put back after.
+    initiative.MAKES_TYPES = True
+    # A word with no type behind it makes one, rather than being filed as a labelled link that
+    # nobody ever comes back to name. The host's word stays the kind; the class is named the
+    # way this world names classes, so the catalogue reads as one vocabulary.
+    grown = type(b04.relate(chen, "keeps_bees_for"))
+    check("and an unknown word makes the type it needs",
+          grown.__name__ == "KeepsBeesFor" and grown._spec["relation"]["kind"] == "keeps_bees_for",
+          f"{grown.__name__} / {grown._spec['relation']['kind']}")
+    check("and the world says what it assumed about it",
+          grown._spec["relation"]["nature"] == "related_to",
+          str(grown._spec["relation"].get("nature")))
+    initiative.MAKES_TYPES = False
 
     # --- a relation is an instance: attributes, history, comments ---
     job.title = "team lead"

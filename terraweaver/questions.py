@@ -41,13 +41,14 @@ CREATE TABLE IF NOT EXISTS questions (
     answer TEXT,                 -- what settled it, in words
     answered_by TEXT,            -- 'user', or where it came from: a rule, a source, its url
     closed_at TEXT,
-    closed_as TEXT               -- answered | settled_itself | dropped
+    closed_as TEXT,              -- answered | settled_itself | dropped
+    put_to_user_at TEXT          -- when an agent handed it on, being unable to settle it itself
 );
 CREATE INDEX IF NOT EXISTS idx_questions_entity ON questions(entity_id, closed_at);
 """
 
 _COLUMNS = ("id, entity_id, kind, text, options, involves, touches, raised_at, raised_by, "
-            "answer, answered_by, closed_as")
+            "answer, answered_by, closed_as, put_to_user_at")
 
 
 @dataclass
@@ -66,6 +67,7 @@ class Question:
     answer_text: str | None = None
     answered_by: str | None = None
     closed_as: str | None = None
+    put_to_user_at: str | None = None
     _book: "Questions" = field(repr=False, compare=False, default=None)
 
     @property
@@ -88,8 +90,63 @@ class Question:
         against an accepted norm doesn't need the user's attention; a doubt about whose life it
         is always does. What settled it is kept, so a later reader can weigh it.
         """
+        if self.kind.startswith("nature_of_"):
+            untouched = self._type_still_as_assumed(said)
+            if untouched:
+                raise ValueError(untouched)
         self._book.close(self, "answered", said, by)
         self.answer_text, self.answered_by, self.closed_as = said, by, "answered"
+
+    def _type_still_as_assumed(self, said: str = "") -> str | None:
+        """For a question about a type the world invented: has the type actually been amended?
+
+        An answer in words settles nothing on its own. A recorder wrote "one spouse at a time,
+        can change" and moved on, and the type kept `functional: True` — which means the world
+        reads a second marriage as a correction of the first rather than as one that ended.
+        The prose was right and the world was unchanged, and nothing connected the two. So the
+        answer is not accepted until the type says what the answer says.
+        """
+        from terraweaver import ontology
+
+        kind = self.kind[len("nature_of_"):]
+        world = ontology.current_world()
+        if world is None:
+            return None
+        for cls in world.classes.values():
+            rel = (getattr(cls, "_spec", {}) or {}).get("relation") or {}
+            if rel.get("kind") != kind:
+                continue
+            assumed = not rel.get("said_by_hand")
+            if not assumed:
+                return None
+            read = _reads_as(kind, said)
+            lines = "\n".join(f"    {line}" for line in read["lines"])
+            return (
+                f"I have your words and they are kept — but {cls.__name__} still holds what I "
+                f"guessed, and words do not change a type. {read['because']}\n{lines}\n"
+                f"Run that, then answer again. If I read you wrong, write what is actually true "
+                f"instead — any of these settles it, and setting one to what it already is says "
+                f"my guess was right:\n"
+                f"    {kind}.nature = \"related_to\"    # or part_of / kind_of / same_as / derived_from\n"
+                f"    {kind}.changes = True          # one at a time, a new one ends the last\n"
+                f"    {kind}.one_per_subject = False  # several can hold at once"
+            )
+        return None
+
+    def for_the_user(self, why: str = "") -> None:
+        """You cannot settle this one — hand it on, and say why.
+
+        The honest third answer. An agent sent to record facts often genuinely cannot know
+        whether two people with one name are one person; guessing puts a fabrication in under
+        the user's name, and dropping it pretends the doubt was never real. This keeps the
+        question open for whoever can answer it, and stops it standing in the way of finishing
+        the task — but only because you said so, in writing.
+        """
+        stamp = datetime.now(timezone.utc).isoformat()
+        self._book.store.conn.execute(
+            "UPDATE questions SET put_to_user_at = ?, answered_by = ? WHERE id = ?",
+            (stamp, why.strip() or None, self.id))
+        self.put_to_user_at, self.answered_by = stamp, why.strip() or None
 
     def drop(self, why: str = "") -> None:
         """It doesn't matter after all — the user isn't going to be asked this."""
@@ -121,6 +178,8 @@ class Questions:
             store.conn.execute("ALTER TABLE questions ADD COLUMN touches TEXT")
         if "answered_by" not in columns:
             store.conn.execute("ALTER TABLE questions ADD COLUMN answered_by TEXT")
+        if "put_to_user_at" not in columns:
+            store.conn.execute("ALTER TABLE questions ADD COLUMN put_to_user_at TEXT")
         store.conn.commit()
 
     # --- writing ---
@@ -170,6 +229,20 @@ class Questions:
         where = "entity_id = ?" if include_closed else "entity_id = ? AND closed_at IS NULL"
         return self._query(where, (entity.id,), verify=not include_closed)
 
+    def unresolved(self, here: set | None = None, limit: int = 50) -> list[Question]:
+        """Open, about these entities, and nobody has said what to do with them.
+
+        Apart from `open_` because the two answer different questions. `open_` asks what could
+        usefully be put to the user; this asks what is still nobody's decision — the doubts an
+        agent raised and walked past. A question handed on with `for_the_user` is still open,
+        and still shown to the user, but it is no longer unresolved: somebody looked at it and
+        said it was not theirs to settle.
+        """
+        found = [q for q in self._query("closed_at IS NULL AND put_to_user_at IS NULL", (), verify=True)
+                 if here is None or q.about.id in here
+                 or any(getattr(e, "id", None) in here for e in q.involves)]
+        return found[:limit]
+
     def open_(self, limit: int = 20, here: set | None = None) -> list[Question]:
         """Everything open, worth-asking first — what could be cleared up while the user is here.
 
@@ -217,7 +290,7 @@ class Questions:
         if row is None:
             return None
         (qid, entity_id, kind, text, options, involves, touches, raised_at, by, answer,
-         answered_by, closed_as) = row
+         answered_by, closed_as, put_to_user_at) = row
         try:
             about = self.store.load(entity_id, self.classes)
         except KeyError:  # the entity is gone; so is the question
@@ -231,7 +304,7 @@ class Questions:
                 continue
         return Question(qid, about, kind, text, json.loads(options or "[]"), others,
                         json.loads(touches or "[]"), datetime.fromisoformat(raised_at), by,
-                        answer, answered_by, closed_as, self)
+                        answer, answered_by, closed_as, put_to_user_at, self)
 
     def _still_stands(self, question: Question) -> bool:
         """Whether the reason for the question is still there. A host-raised one always is —
@@ -295,3 +368,39 @@ CHECKS = {
     "two_at_once": _both_current,
     "maybe_the_same": _still_alike,
 }
+
+
+# What a sentence about a relation type comes to, in the type's own terms. Reading the words is
+# a guess and is said to be one — but repeating the question with the line the answer already
+# implies costs the agent one edit instead of a fresh reading of the manual, and an agent that
+# has just explained a thing in its own words should not have to work out how to say it again.
+_SAYS = (
+    (("at a time", "one at a time", "ends the last", "can change", "may change", "changes over",
+      "over time", "current", "at any one time", "succeed"), "changes", "True",
+     "You said it holds one at a time and changes, which is:"),
+    (("several", "many", "more than one", "multiple", "accumulate", "one or many", "any number"),
+     "one_per_subject", "False", "You said several can hold at once, which is:"),
+    (("part of", "a part", "belongs to"), "nature", '"part_of"',
+     "You described one thing being part of another, which is:"),
+    (("kind of", "a sort of", "a type of"), "nature", '"kind_of"',
+     "You described one thing being a kind of another, which is:"),
+    (("the same", "same thing", "same as", "an alias"), "nature", '"same_as"',
+     "You described two names for one thing, which is:"),
+    (("follows from", "derived", "worked out", "concluded"), "nature", '"derived_from"',
+     "You described one thing following from another, which is:"),
+)
+
+
+def _reads_as(kind: str, said: str) -> dict:
+    """The lines a prose answer about a type most likely means."""
+    text = " ".join((said or "").lower().split())
+    lines, because = [], []
+    for words, attr, value, why in _SAYS:
+        if any(w in text for w in words):
+            lines.append(f"{kind}.{attr} = {value}")
+            because.append(why)
+    if not lines:
+        return {"lines": [f'{kind}.nature = "related_to"'],
+                "because": "I could not tell from that which of the three it changes. If my "
+                           "guess was right as it stands, confirm it:"}
+    return {"lines": lines, "because": " ".join(dict.fromkeys(because))}

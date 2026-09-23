@@ -8,7 +8,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from terraweaver import ontology
+from terraweaver import initiative, ontology
 from terraweaver.impls import IMPLS
 from terraweaver.ontology import build_classes, load_specs
 from terraweaver.store import Store
@@ -102,8 +102,12 @@ def main() -> int:
           all(m.when.date() >= date(2026, 9, 1) for m in ada.timeline(since=date(2026, 9, 1))))
 
     # --- a label that belongs to another type ---
+    # The world moving a link to the type its label belongs to is something it does on its own,
+    # so the test turns that on and puts it back.
+    initiative.REROUTES_BY_LABEL = True
     sister = Person.new(full_name="Lena Gribova")
     refusal = refused(lambda: sister.relate(michael, "kin", label="wife"))
+    initiative.REROUTES_BY_LABEL = False
     check("a partner label is refused inside kin", refusal is not None and "partner" in (refusal or ""),
           str(refusal))
     check("the fitting label still goes through", sister.relate(michael, "kin", label="sister") is not None)

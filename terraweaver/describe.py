@@ -18,20 +18,58 @@ This is the user's personal world: a Python object model backed by storage. You 
 by sending Python code to the `run` tool. Print what you need to see — stdout is what you get
 back. Variables persist between `run` calls in this session, so build on earlier results.
 
+You are here for one task, in one of two modes. Open it with `start_task`, saying which mode
+and what the task is, and stay in it until `finish_task`:
+
+  RECORDING — you were sent to put something into the world. Write it, read what the world
+  says back, and answer it. The world does not accept a fact and fall silent: it tells you what
+  it assumed, what it could not tell apart, and what it needs said. Those replies are the task,
+  not noise around it. A recording that leaves them unanswered has put a guess into the world
+  under the user's name.
+
+  A batch of facts raises a doubt per fact, and each one arrives while you are already writing
+  the next — so `finish_task` will not close while any of them is still undecided. `[undecided
+  N]` on a run is the running count. `world.undecided()` reaches them all; they hang on the
+  links you made, not on one entity, so no single entity finds them. Settle each:
+
+      q.answer("...")          you know the answer
+      q.for_the_user("...")    you genuinely cannot — it goes to the user and stops blocking
+      q.drop("...")            it was never a real doubt, and say why
+
+  Handing one to the user is not failing. Guessing at it is.
+
+  ANSWERING — you were sent to find something out. Read, follow the links, and say what the
+  world holds. Where it holds nothing, say that; where what it holds is uncertain, say that
+  too. Do not write facts while answering: a question is not evidence of anything.
+
+Either way this is a conversation with the world across several `run` calls, not one call that
+either works or doesn't. Expect two or three turns of back-and-forth, and finish them. Nothing
+you leave open is picked up by anybody else — the person who sent you is not reading this.
+
 In the namespace: every class below, `world`, `NeedsResolution`, and the two this world is
 between — `user`, the person it belongs to, and `agent`, you. Those two are always there, in
 every session, and can't be rebound; `owner` and `me` are older names for the same two.
 
-World variables (listed below, if any) are the few named things every session shares: use
-them as they are instead of looking them up again. Set or change one with
-`world.pin(anna, value, "description")`, remove with `world.unpin(anna, stats)` — name them as
-variables, no quotes needed. Pin only what will
-matter beyond this task, and describe what it is.
+World variables (listed below, if any) are named things at hand: use them as they are instead
+of looking them up again. Set or change one with
+`world.pin(anna, value, "description", keep=False)`, remove with `world.unpin(anna, stats)` —
+name them as variables, no quotes needed, and describe what each one is.
 
-Variables are working memory for one task. Starting a new task, call `reset_session` first, so
-nothing from an earlier task — an entity settled for another conversation, a stale query
-result — carries over. After a long pause the session is reset for you. Anything that must
-outlive the task belongs in the world, not in a variable.
+`keep` has no default, because there are two kinds and only you know which this is:
+
+  keep=False  for this task. It goes when the task does — a candidate you are comparing, a
+              query result you are working through. Most things.
+  keep=True   past this task, until you unpin it — where the person lives, the project they
+              are in the middle of. Few things, and never something you can look up again.
+
+Open the task with `start_task` before the first `run`, and close it with `finish_task`. That
+is the only boundary the world has — it cannot see a conversation begin or end — and the
+keep=False names, what was left unanswered, and what the next task inherits all hang on it.
+`finish_task` works out how the task closed rather than taking your word: done when nothing is
+left open about what it touched, left_open otherwise, and what is open is named back to you.
+
+Facts belong in the world, not in a variable: a variable is a name for something, never the
+record of it.
 
 Rules the world enforces:
 - A run stops where it breaks, and keeps what it had already done. Each statement stands on
@@ -173,8 +211,13 @@ Every class below shares these, so they aren't repeated for each one:
         Persist that entity and everything it references.
 
     Relations link two entities and carry their own data (docs: "Relation types" below).
-    Direction is one rule: the subject is the one the label describes, so a.relate(b, kind,
-    label=X) reads "a is b's X". maria.relate(michael, "kin", label="mother") says Maria is
+    Say the link with the word you would say it with: anna.relate(london, "born_in"). If no type
+    has that word, the world makes one and tells you what it assumed about it — a word you have
+    is always better than a label, because a type can be asked about, superseded and checked,
+    and a label can do none of the three. `label=` is for naming a role inside a type that has
+    roles ("mother" inside kin, "dentist" inside service), never a type of its own.
+    Direction is one rule: the subject is the one the link describes, so a.relate(b, kind)
+    reads "a is b's kind". maria.relate(michael, "kin", label="mother") says Maria is
     Michael's mother; nina.relate(michael, "service", label="dentist") says Nina is Michael's
     dentist. Read the sentence before you write the call — "my dentist is Nina" puts Nina first,
     not the owner. From the other end, use the reverse name: michael.relate(greg, "served_by",
@@ -185,9 +228,9 @@ Every class below shares these, so they aren't repeated for each one:
     refused with the alternatives (stepmother). relation.role_of(entity) says what an end is to
     the other ("child" for Michael). a.how_related(b) walks the relations and names the chain
     ("sister's husband" -> sibling in law).
-        kevin.relate(b04, "membership", title="vendor logistics lead", starts=date(2026, 1, 15))
-        kevin.relate(darren, "kin", label="older brother")
-        linda.relate(b04, "authority", label="manager")
+        anna.relate(london, "born_in")                      # no such type yet — it is made
+        kevin.relate(b04, "membership", title="vendor logistics lead", starts="3 years ago")
+        kevin.relate(darren, "kin", label="older brother")   # a role inside a type that has them
         b04.relate(company, "part_of")
     entity.relations(kind)[i].counterpart is the end that isn't the entity you asked from.
     descriptions — every class has them, relations included, and the type is list[text]: not one
@@ -254,7 +297,8 @@ Every class below shares these, so they aren't repeated for each one:
     describe it, end it (m.expire()). entity.relations(kind) gives the relations themselves;
     entity.related(kind) the entities at the other end — also by the reverse name (b04.related(
     "members")) and along chains (kevin.related("membership") includes the company B04 is part
-    of). What no type fits: a.relate(b, "related", label="godfather", description="…").
+    of). What you have no word for at all, and only then: a.relate(b, "related",
+    label="godfather", description="…") — a last resort, not the general case.
     Person.organization / job_title / relationship read from these relations and can be assigned.
 
     What the world holds to. It doesn't mind how you write your code — import what you like of
@@ -489,24 +533,40 @@ def catalogue(specs: dict[str, dict[str, Any]]) -> str:
     per class is there to choose by, not to work from.
     """
     entities = [f"{n} — {s.get('description', '').strip()}" for n, s in specs.items()
-                if "relation" not in s]
+                if "relation" not in s and not s.get("own")]
+    # The world's own bookkeeping is listed apart from the person's life. A host asked "what is
+    # in this world" and got the world's record-keeping back mixed in with the people in it,
+    # which is a different question wearing the same words.
+    own = [f"{n} — {s.get('description', '').strip().split('.')[0]}." for n, s in specs.items()
+           if s.get("own")]
     links = []
     for name, spec in specs.items():
         rel = spec.get("relation")
         if not rel:
             continue
         reverse = f" / '{rel['reverse']}'" if rel.get("reverse") else ""
-        links.append(f"{name} ('{rel['kind']}'{reverse}): "
-                     f"{' / '.join(rel['from'])} → {' / '.join(rel['to'])}")
+        line = (f"{name} ('{rel['kind']}'{reverse}): "
+                f"{' / '.join(rel['from'])} → {' / '.join(rel['to'])}")
+        if rel.get("free"):
+            # Listed like the rest, it reads like the general-purpose one — and a host that
+            # takes it as the default writes every link under one type with a label, which
+            # cannot be asked about by type and cannot supersede anything.
+            line += "  — last resort, for a link you have no word for at all; prefer saying the word"
+        links.append(line)
     return "\n".join(
         ["Classes in this world — names only. Before writing code that touches one, call",
          "describe_classes([\"Person\", \"Event\"]) for its attributes, methods and relations.",
          ""]
         + [f"  {line}" for line in entities]
-        + ["", "Relation types — a.relate(b, kind, label=X) reads as the sentence \"a is b's X\", so the",
+        + ["", "Relation types — a.relate(b, \"kind\") reads as the sentence \"a is b's kind\", so the",
            "dentist, the manager, the mother stands first. The reverse name reads it from the other end.",
+           "A word that is not below is not a refusal: say it anyway — a.relate(b, \"born_in\") — and",
+           "the type is made, with what was assumed about it said back to you. `label=` names a role",
+           "inside a type that has roles, never a type of its own.",
            ""]
         + [f"  {line}" for line in links]
+        + (["", "The world's own, not the person's — how it keeps track of the work done on it:", ""]
+           + [f"  {line}" for line in own] if own else [])
         + [""])
 
 

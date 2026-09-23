@@ -67,9 +67,13 @@ def now() -> datetime:
 
     Every stored time is that form, so `now()` is comparable with all of them — and with a
     plain `datetime(2026, 10, 1)` a host writes by hand, which is the comparison that used to
-    raise "can't compare offset-naive and offset-aware datetimes" in the middle of a task."""
-    return datetime.now(timezone.utc).replace(tzinfo=None)
+    raise "can't compare offset-naive and offset-aware datetimes" in the middle of a task.
+
+    It is the world's now, not the machine's: a world told it is 2020 has to mean 2020 in the
+    host's arithmetic as well as in its own records, or the two disagree in the one place the
+    disagreement is invisible."""
+    return timeutil.now()
 
 
 def today() -> date:
-    return date.today()
+    return timeutil.now().date()

@@ -423,3 +423,321 @@ three places to look, and anything that reads free text had to know all three.
 
 **How we would know it was wrong.** Hosts wanting a single summary line that is not the latest
 description — then `notes` is a real attribute and not a spelling of this one.
+
+---
+
+## 2026-09-23 · A time is said, never assumed
+
+**Seen.** Superseding a one-at-a-time relation wrote `valid_until = today`. Today is when
+somebody *mentioned* it, not when it ended, and the two are stored in the same field — so a
+fabricated date became indistinguishable from a known one. The evidence: across 392 runs the
+host passed a date zero times, and 0 of 1319 statements carried a `valid_from`.
+
+**Done.** Nothing is dated unless a date was given. What holds is decided by what was said
+last, as it always was for an attribute. `starts=` takes words — `'now'`, `'yesterday'`,
+`'3 years ago'`, `'in 2006'` — and takes a bound where only one edge is known:
+`before(now())`, `after(date(2006, 1, 1))`, the same words the host already asks questions
+with. A bound is stored as its date plus `from_is` / `until_is`, so "before" survives storage
+instead of collapsing into a date that looks certain. `holds_at()` has three answers, and the
+third is *nobody knows*. An unreadable time is refused with the vocabulary in the message.
+
+**Why this.** Writing a date the world was never told is the one error that cannot be found
+later: it reads exactly like a fact. Refusing the statement would lose it; taking words keeps
+it at the precision it was said at.
+
+**Not this.** Requiring an exact date — most of what people say about time has no exact date,
+and the requirement would be met with an invented one.
+
+**How we would know it was wrong.** Hosts writing `starts='now'` on everything to get past the
+ask — then the ask has become a toll rather than a question, and it belongs only where the
+missing date changes which fact holds.
+
+---
+
+## 2026-09-23 · What the world guessed outlives the run that guessed it
+
+**Seen.** A type invented for an unknown word, and a handover decided by statement order, were
+announced as hints. Hints live for one run. The assumption lives in the world for good, and the
+next task had no way to learn one had been made.
+
+**Done.** Both raise a question, which persists: once per invented type (its nature, the
+options listed), and on the link where a missing date decided which of two holds.
+
+**How we would know it was wrong.** The open-questions list filling with the same shape faster
+than anybody answers it — then the world is talking to itself.
+
+---
+
+## 2026-09-23 · A pinned name lives for the task, or past it, and says which
+
+**Seen.** Names were kept for three turns and then dropped, so a host could pin something on
+purpose and get a `NameError` for it mid-thought. Meanwhile `world_variables` held 0 rows
+across 392 runs — the channel existed and nobody used it.
+
+**Done.** The term in turns is gone. `world.pin(name, value, "...", keep=...)` has no default:
+`keep=False` lives as long as the task, `keep=True` until it is unpinned. Nothing is promoted
+on its own.
+
+**Why this.** The world cannot see a conversation start or end — the session key comes from a
+header the host sets once in its connection config, or from the client app's name. So the
+boundary has to be one the host states, and what survives it has to be a judgement somebody
+made, not one the world inferred from a name having been useful once.
+
+**How we would know it was wrong.** `keep=True` on everything, or on nothing — either means the
+question is being answered by reflex instead of judgement.
+
+---
+
+## 2026-09-23 · A task is the only boundary the world can see
+
+**Seen.** Everything that needs to know where one piece of work stops — which pinned names are
+still yours, what was left unanswered, what a fact was recorded for — was hanging on the
+session, and the session is not a conversation: its key comes from a header the host sets once
+in its connection config, or from the client application's name. It outlives conversations and
+is shared between windows.
+
+**Done.** `Task` is an entity, marked `own: true` — the world's own bookkeeping, listed apart
+from the person's life in the catalogue. `start_task(stated, mode)` opens one at the tool
+level, before any `run`: `stated` is what the work is, in a sentence, and `mode` is *recording*
+or *answering*. `finish_task` closes it and works out how it closed rather than taking the
+agent's word: **done** when nothing is open about what it touched, **left_open** otherwise,
+with what is open named back. The task keeps `runs`, `touched` and `closed_as`, and stays
+readable after it closes.
+
+**Why this.** The world had no way to ask "did that work finish cleanly", and no way to know
+why it was being written to. A stated task gives it both, and a computed close makes the answer
+something it checks instead of something it is told.
+
+**Not this.** A `tasks` table beside `runs` — cheaper, and it keeps the user's world purely
+about the user, but then a task cannot be reached with the same means as everything else and
+needs an API of its own. `own: true` gets the separation without the second vocabulary.
+
+**How we would know it was wrong.** Tasks opened per `run` rather than per piece of work, or
+`stated` filled with the same sentence every time — then it has become a ritual, and the
+boundary it marks is not a real one.
+
+---
+
+## 2026-09-23 · A task does not close over what it left undecided
+
+**Seen.** `finish_task` reported what was still open and closed anyway — which is the failure
+the entry above warned about, one paragraph after writing it down. A batch of facts raises a
+doubt per fact, and each one is read while the agent is already writing the next; by the
+fortieth nobody remembers the third was raised. Reporting is not checking.
+
+**Done.** `finish_task` refuses while any doubt about what the task touched is still nobody's
+decision, and names them with how to settle each. Every run carries `[undecided N]`, so the
+count is in front of the agent as it works rather than only at the end.
+`world.undecided()` reaches them — they hang on the links the task made, not on one entity, so
+no single entity finds them. Three ways past, all of them somebody's decision on the record:
+`q.answer(said)`, `q.for_the_user(why)`, `q.drop(why)`; and `finish_task(abandon="why")` for a
+task that cannot be done, which keeps what was recorded and the reason with it.
+
+**Why `for_the_user` is a third state.** An agent sent to record facts often genuinely cannot
+know whether two people with one name are one person. Guessing files a fabrication under the
+user's name; dropping pretends the doubt was never real. So the question stays open and visible
+to the user, and stops blocking — because somebody looked at it and said it was not theirs to
+settle. A task closing that way is `for_the_user`, not `left_open`: handing one on is not
+failing, and the world should not name it as if it were.
+
+**How we would know it was wrong.** `q.drop` used on doubts that were real — the reason is kept
+with each one, so this is checkable. Or tasks abandoned rather than settled, which would mean
+the check has become a wall instead of a question.
+
+---
+
+## 2026-09-23 · What the first batch of facts showed
+
+**Seen.** Ten facts to a recorder agent, against a base world. The result: 11 Things, 10 People,
+**8 free links, 0 types made, 0 tasks recorded**. None of the machinery built that day fired.
+Three separate causes, each invisible on its own:
+
+1. **`Task` was not in `BASE_CLASSES`**, so `start_task` raised `KeyError` — and the MCP tool
+   reported `Error executing tool start_task`, with no reason. The agent called it twice, got
+   nothing back either time, and sensibly carried on without a task. Then `finish_task`
+   answered *"Task closed"* over a task that had never existed.
+2. **The primer taught the wrong default.** It showed `relate(x, "related", label="created in")`
+   as the way to write a link with no type — an instruction written when free links were the
+   answer, and left standing after unknown words began making types. The agent followed it
+   exactly, so no type was ever made and no question was ever raised.
+3. **The census counted rows, not entities.** Image tables are key-value, so ten facts read as
+   "100 people" and the first run could not be read at all.
+
+**Done.** `Task` is in the base — the boundary has to exist before any work does. A failing
+tool says what failed and what it means for the work. `finish_task` returns `None` rather than
+`""` when no task was open, and the tool says so plainly. The primer says: write the word you
+would say, and the world makes the type; `relate(..., "related", label=...)` is the escape
+hatch for a link that genuinely has no word, and it buys nothing.
+
+**Why this is worth an entry.** Every one of the three was a default nobody chose — the class
+list, the error text, the old example — and all three pointed the same way: the agent did
+exactly what it was told, and what it was told was out of date. The lesson is not about tasks.
+It is that a run which produces *no* failures is not evidence that the machinery works; only a
+run where the machinery visibly fires is.
+
+**How we would know it was wrong.** A second batch that still makes no types — then the primer
+is not the reason and the type-making itself is unreachable from where the agent stands.
+
+---
+
+## 2026-09-23 · The world asked for a thing it had no name for
+
+**Seen.** Eight runs of the same ten facts, each fixing what the last one exposed. Run 5 and 6:
+the recorder made every type correctly, then spent ten runs trying to amend them —
+`BornIn.nature`, `born_in.nature`, `Person.born_in.nature` — and finally handed all eight
+questions to the user. It was right to give up. Nothing it could have written would have
+worked:
+
+- **A class the world grows mid-session is never put in the namespace.** It is filled with the
+  classes that existed when the session opened, so a type invented from the host's own word
+  could not be reached by any spelling. Two spellings gave `NameError`.
+- **The third spelling was worse than an error.** `Person.born_in` is the lent relation
+  *method*; setting `.nature` on a function succeeds and does nothing.
+- **An amendment was never written back.** `nature`/`changes`/`one_per_subject` mutated the
+  spec in memory only, so a ruling survived until the process ended and then quietly reverted
+  to the world's guess.
+
+**Done.** Every class the world holds is put into the namespace after each run, under its class
+name and under the word the host says it with. Amending a type marks it `said_by_hand` and
+writes the spec back to the grown directory.
+
+**Also: a prose answer is repeated, not refused.** Answering "one spouse at a time, can change"
+used to be rejected outright, and the recorder responded by handing every question to the user
+rather than working out the call. Now the words are read for what they imply and the question
+comes back with the line they mean — `married_to.changes = True` — so the agent edits one line
+instead of rereading the manual. The type must still be amended; only the tone changed, and the
+tone was the difference between a recorder that settles eight questions and one that punts all
+eight.
+
+**Where it got to.** 0 free links, 10 typed, 8 types made, all 8 ruled on and kept, task closed
+`done`, 14 runs, $0.18. From: 0 types, 10 free links, 0 tasks.
+
+**Still standing.** Every type came out `functional: True` — nobody set `changes=True` on
+`married_to` or `worked_in`, so a second spouse reads as a correction of the first rather than
+one that ended. It gives the right current answer and the wrong history, and it is the next
+thing to look at.
+
+**How we would know it was wrong.** A recorder that amends types it has no opinion about, just
+to clear the question — the ruling is kept with its answer, so this is checkable.
+
+---
+
+## 2026-09-23 · Reading ten facts one by one, which counting could not do
+
+**Seen.** The counts said the batch was clean: 0 free links, 10 typed, 8 types, task closed
+`done`. Read fact by fact, one in ten was recorded as something else — "The director of the
+BBC is Tony Hall" went in as `ChairpersonOf` — and two more were backwards: the world itself
+printed *"Fatah is Mahmoud Abbas's chairperson"* and nobody read it. A later run had Amy
+Winehouse **born** in Camden Town and Pedro Pierluisi **born** in Washington, from a recorder
+that wrote `died_in_city` and `worked_in_city` correctly four times each.
+
+**Cause — the world's own reasoning, in two places, both silent.**
+
+1. `define_relation` handed back the nearest existing type instead of making the one asked for.
+   The auto-description is a template — "one person *director* of one thing" — so every type's
+   description is the same sentence with a word swapped, which inflates every comparison:
+   "director of" against "chairperson of" is 0.708 as words and **0.853 inside the frame**,
+   over the 0.82 bar.
+2. `resolve_kind` fell back to `did_you_mean` and took the near word as the type:
+   "worked_in_city" scores 0.769 against "born_in_city", "died_in_city" 0.667. Four correct
+   writes, four silent rewrites.
+
+**Done.** Neither substitutes any more. A word with no type makes its own type, and where
+something similar exists the world *says so* and offers `take_in` — the agent has the sentence
+the user said, the world has a number, and the number was wrong twice out of ten. The
+type-made question now quotes the sentence the world read it as, so the direction is something
+to answer rather than something printed past.
+
+**Measuring it.** `experiments/first_batch.py` reads each fact against the world every run:
+both ends joined, the type's word against the fact's own words, and the direction where the
+sentence shape makes it plain ("The <role> of <A> is <B>" — B holds the role). It catches
+exactly the three failures above and nothing else on this material.
+
+**What is not settled.** Direction errors and whether a task gets opened vary run to run, and
+a single run of ten facts cannot tell an agent's bad turn from a world's defect. The two world
+defects above are settled because they are in the code path, not in a score.
+
+**How we would know it was wrong.** Types multiplying for one idea — "born_in", "was_born_in",
+"birthplace" all held apart with nobody merging them. `world.wanted()` and `take_in` exist for
+that, and the near-neighbour hint points at it; if they go unused, the merge belonged
+somewhere after all — but later, and said out loud, not inside the write.
+
+---
+
+## 2026-09-23 · The world's own description was the evidence it judged by
+
+**The case, kept because the shape of it will come back.**
+
+An agent wrote `relate(tony_hall, bbc, "director_of")`. The world recorded Tony Hall as the
+BBC's **chairperson**. Nothing failed; every count said the run was clean.
+
+The world invents a description for a type it makes, from a template:
+
+    f"one {subject class} {word} one {object class}"
+
+So the two strings compared were:
+
+    A: director of. one person director of one thing
+    B: chairperson of. one person chairperson of one thing
+
+Nine words, eight of them identical. The embedding measures the whole string, so the shared
+frame carries the score and the one word that differs barely moves it:
+
+| | similarity |
+|---|---|
+| the two framed sentences | **0.853** — over the 0.82 bar, so: merge |
+| the two words alone | 0.708 — under it |
+
+**The template was that morning's fix for the opposite failure.** Descriptions used to be built
+from the entities in front of the world — "Thomas Kyd is to London" against "Amy Winehouse is
+to Camden" — which read as far apart, because they are, so one idea got four types. Taking the
+names out fixed under-merging by making every description the same sentence, and created
+over-merging in the same stroke. One threshold, two opposite errors, hours apart.
+
+**The general fault.** The world was comparing text it had written itself. There is no
+independent evidence in an auto-generated description — only a restatement of what the world
+had already assumed — so the number measured the template, not the words. A threshold over
+self-generated text cannot be tuned into correctness; it can only be moved between the two
+failures.
+
+**The rule taken from it.** Where the world would decide something from a similarity, check
+what the text being compared is made of. If the world wrote it, the number is about the world.
+Say what was noticed and let whoever has the real evidence — the agent, who has the sentence
+the user said — decide.
+
+**Where it is written down.** `terraweaver/initiative.py`, one switch per thing the world does
+on its own, all off — this one as `MERGES_MEANING`, and the spelling-distance substitution in
+`resolve_kind` as `TAKES_NEAR_WORD`. Both were deleted first and put back behind switches on
+the user's point that a switch costs nothing and deletion throws away the ability to reproduce
+the failure. `tests/test_initiative.py` does exactly that: with `TAKES_NEAR_WORD` on,
+`worked_in_city` lands in `BornInCity`; with it off, the write is refused and the agent is
+handed the `define_relation` call to write. The argument against turning them on stands; it was
+never an argument for having no switch.
+
+---
+
+## 2026-09-23 · Nothing automatic, so that adding facts can be watched
+
+**Seen.** Every defect found reading the batch fact by fact was the world acting on its own,
+and each was invisible in the counts. Debugging them together is guesswork: an error can be the
+agent's turn, the world's refusal, or something the world did quietly in between.
+
+**Done.** `terraweaver/initiative.py` holds every action the world takes unasked, one named
+switch each, **all off**:
+
+- `MAKES_TYPES` — an unknown word makes a type. Off: `relate` raises and names the
+  `define_relation` call to write.
+- `REROUTES_BY_LABEL` — a label moves a link to the type that label belongs to.
+- `LEARNS_NAMES` — a name settled once is applied later without asking.
+- `MERGES_MEANING` — two words read as one idea by embedding similarity.
+- `TAKES_NEAR_WORD` — an unknown word read as the nearest one by spelling distance.
+
+Each test that exercises one turns that switch on for its own block and puts it back, so both
+the plain world and the automation stay covered.
+
+**Why this order.** Recording facts by hand is the thing everything else is measured against,
+and there is no baseline for it yet. Automation goes back on one switch at a time, against a
+world already read fact by fact, so what each one changes is attributable.
+
+**How we would know it was wrong.** Hand recording that cannot be made to work at all — then
+the automation was carrying something load-bearing and the order should be reversed.

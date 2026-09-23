@@ -26,7 +26,7 @@ from typing import Any
 
 import difflib
 
-from terraweaver import assembly, matching, ontology, timeutil
+from terraweaver import assembly, initiative, matching, ontology, timeutil
 from terraweaver.ontology import Entity
 
 
@@ -145,6 +145,20 @@ BY_NATURE = {
 }
 
 
+def rule_for(link, name: str, default=None):
+    """One link's behaviour: its own nature if it named one, else its type's.
+
+    A free link carries its nature itself, because it is written before any type exists and the
+    nature is the only thing about it the world can act on — that a part is part of a whole all
+    the way up, that a kind is a kind of a kind. Waiting for a type to be defined before behaving
+    correctly would mean the first dozen of them behave wrongly.
+    """
+    mine = getattr(link, "nature", None)
+    if mine and name in BY_NATURE.get(mine, {}):
+        return BY_NATURE[mine][name]
+    return rule(spec(type(link)), name, default)
+
+
 def rule(rel: dict, name: str, default=None):
     """A relation's behaviour: what its nature says, unless the type states otherwise itself.
 
@@ -182,10 +196,18 @@ def resolve_kind(classes: dict[str, type], kind: str) -> tuple[str, bool]:
     for name, cls in relation_classes(classes).items():
         rel = spec(cls)
         known.append(rel["kind"] + (f" / {rel['reverse']}" if rel.get("reverse") else ""))
-    words = [w.strip() for line in known for w in line.split(" / ")]
-    near = ontology.did_you_mean(wanted, words)
-    if near:
-        return resolve_kind(classes, ontology.take_as("relation type", kind, near))
+    if initiative.TAKES_NEAR_WORD:
+        words = [w.strip() for line in known for w in line.split(" / ")]
+        near = ontology.did_you_mean(wanted, words)
+        if near:
+            return resolve_kind(classes, ontology.take_as("relation type", kind, near))
+    # A word this world has no type for makes one; it is not quietly read as the nearest word
+    # that does. The nearest word is a number, and the number was wrong: "worked_in_city" stood
+    # at 0.769 against "born_in_city" and "died_in_city" at 0.667, so a recorder that wrote
+    # both correctly, four times each, had Pedro Pierluisi born in Washington and Amy Winehouse
+    # born in Camden Town. Whether two words are one idea is not the world's to decide — it has
+    # a similarity, the agent has the sentence the user said. The near one is named where the
+    # type is made, and `take_in` moves the links if the agent agrees.
     raise ValueError(f"no relation type {kind!r}; the types are: {', '.join(known)}")
 
 
@@ -198,6 +220,8 @@ def _type_the_label_belongs_to(world, name: str, cls, rel: dict, attrs: dict) ->
     often prose as the corrected call. Where the correction is unambiguous the world applies it
     and says so, the same bargain `take_as` makes for a misspelt word.
     """
+    if not initiative.REROUTES_BY_LABEL:
+        return None
     label = str(attrs.get("label") or "").strip()
     if not label or rel.get("free"):
         return None
@@ -302,31 +326,83 @@ def _overlaps(rel, start, end) -> bool:
 
 # --- writing ---
 
-def _as_free_link(world, subject, obj, kind: str, period: dict, attrs: dict, basis, why: str):
-    """A link the named type cannot hold is still a link: record it free rather than refuse it.
+def _make_the_type(world, subject, obj, kind: str, period: dict, attrs: dict, basis, why: str):
+    """A word with no type behind it makes one, and the world says what it assumed.
 
-    Refusing cost far more than it protected. A host told that `located_in` goes Place → Continent
-    does not look for a better type — it writes the fact into a description, and prose cannot be
-    superseded, so the later correction settles beside the old sentence instead of replacing it.
-    Half the notes in a 455-fact run arrived that way. The word the host reached for is kept as
-    the label, which is also how restructuring finds the type the world is missing: a label that
-    keeps turning up is a type waiting to be declared.
+    Free links were the answer before: keep the fact, count the word, and wait for somebody to
+    define a type on the third showing. It kept the fact, but it left the host with a vocabulary
+    that grew only when it remembered to look — and it never looked. Making the type at once is
+    what the host meant by using the word, and everything guessed in the making is said out loud
+    so it can be corrected: the nature, and that nothing is known yet about how many there may be.
+
+    Nothing here is narrow. The ends stay open, because a type named after its first example
+    refusing its second is what filled one run with `X_thing_to_thing`. And a word that reads
+    like a type already here is handed that one instead, which is what keeps this from making a
+    type per phrasing.
     """
-    free = next((n for n, c in relation_classes(world.classes).items() if spec(c).get("free")), None)
-    if free is None:                                   # a world without the free type has no room
-        raise ValueError(why)
-    label = str(attrs.get("label") or "").strip() or str(kind).strip()
-    extras = {k: v for k, v in attrs.items() if k not in ("label", "description")}
-    said = str(attrs.get("description") or "").strip()
-    described = said or (f"{subject.display_name()} {label.replace('_', ' ')} {obj.display_name()}"
-                         + (f" ({', '.join(f'{k}: {v}' for k, v in extras.items())})" if extras else ""))
-    ontology.note_hint(
-        f"{why} — recorded as a free link labelled '{label}' instead, so the fact is kept and can "
-        f"be superseded later. Don't write it out as a description as well: that would be the "
-        f"same fact twice, and the sentence would outlive any correction."
-    )
-    return relate(world, subject, obj, spec(world.classes[free])["kind"], period,
-                  {"label": label, "description": described}, basis)
+    from terraweaver import authoring
+
+    word = str(kind).strip().lower().replace(" ", "_").replace("-", "_")
+    made = None
+    try:
+        made = authoring.Authoring(world, getattr(world, "grown_dir", None)).define_relation(
+            word,
+            # About the relation, never about the two things in front of it. Built from their
+            # names, four spellings of one idea read as four ideas — the check that compares
+            # descriptions saw "Thomas Kyd is to London" against "Amy Winehouse is to Camden"
+            # and found them far apart, which they are, and made a type for each.
+            str(attrs.get("description") or "").strip()
+            or f"one {type(subject).__name__.lower()} {word.replace('_', ' ')} "
+               f"one {type(obj).__name__.lower()}",
+            nature="related_to", subject=None, object=None,
+            # One value per subject, and a later telling corrects an earlier one. Made with no
+            # limit, a person was born in two cities and played two positions at once: the type
+            # the world invents is the type most of what a person says needs, and saying "as many
+            # as you like" is not the cautious choice — it is a claim that nothing supersedes.
+            cardinality="many-to-one", over_time=False)
+    except Exception as refused:               # noqa: BLE001 - a world with no authoring, or a bad word
+        free = next((n for n, c in relation_classes(world.classes).items()
+                     if spec(c).get("free")), None)
+        if free is None:
+            raise ValueError(f"{why}; and no type could be made of {kind!r}: {refused}") from None
+        label = str(attrs.get("label") or "").strip() or word.replace("_", " ")
+        ontology.note_hint(f"{why} — kept as an untyped link labelled '{label}'.")
+        return relate(world, subject, obj, spec(world.classes[free])["kind"], period,
+                      {"label": label, "description": f"{subject.display_name()} {label} "
+                                                      f"{obj.display_name()}"}, basis)
+
+    theirs = spec(made)
+    if theirs["kind"] != word:
+        pass       # nothing swaps a word now; the near neighbour is said when the type is made
+    else:
+        ontology.note_hint(
+            f"there was no type for '{kind}', so I made one: nature=related_to, between "
+            f"anything and anything, one value per subject — saying it again with something "
+            f"else corrects it, and the first stays in the record. If there can be several at "
+            f"once (everything somebody has written, every place they have lived), or if it is "
+            f"a part, a kind or the same thing, say so the way you would of anything: "
+            f"{word}.nature = \"part_of\" (or kind_of / same_as / derived_from / related_to), "
+            f"{word}.one_per_subject = False, {word}.changes = True — changes means a new one "
+            f"ends the last instead of correcting it."
+        )
+    kept = {k: v for k, v in attrs.items()
+            if k in {a["name"] for a in theirs.get("attributes", [])}}
+    link = relate(world, subject, obj, theirs["kind"], period, kept, basis)
+    if theirs["kind"] == word:
+        # The hint above says this in the run that made the type, and a hint lives for that run
+        # only. The assumption outlives it: the type is in the world for good with a nature
+        # nobody confirmed, and the next task has no way of knowing one was guessed. A question
+        # is the part that has to survive — raised once, on the link that caused the type.
+        world.questions.raise_(
+            link, f"nature_of_{theirs['kind']}",
+            f"I made the type '{theirs['kind']}' for this and read it as: "
+            f"\"{link.display_name()}\". Does that sentence say what you meant? If the two ends "
+            f"are the wrong way round, write it from the other end — the subject is the one the "
+            f"word describes. And I guessed at the rest: nature related_to, one per subject, no "
+            f"time to it. Is that what the word means?",
+            options=["related_to", "part_of", "kind_of", "same_as", "derived_from"],
+        )
+    return link
 
 
 def relate(world, a, b, kind: str, period: dict, attrs: dict, basis: list | None = None):
@@ -336,7 +412,19 @@ def relate(world, a, b, kind: str, period: dict, attrs: dict, basis: list | None
     except ValueError as unknown:                      # no such type: the link is still a link
         if not isinstance(a, Entity) or not isinstance(b, Entity):
             raise
-        return _as_free_link(world, a, b, kind, period, attrs, basis, str(unknown))
+        if not initiative.MAKES_TYPES:
+            word = str(kind).strip().lower().replace(" ", "_").replace("-", "_")
+            # The instruction first, the list of what exists after it. The other way round the
+            # list is thirty types long and the one line that says what to do is off the end.
+            raise ValueError(
+                f"There is no relation type {word!r}. Define it, then say this again:\n"
+                f"    world.define_relation(\"{word}\", \"<what this link is>\", "
+                f"nature=\"related_to\", cardinality=\"many-to-one\", over_time=False)\n"
+                f"nature is one of related_to / part_of / kind_of / same_as / derived_from. "
+                f"over_time=True when one holds at a time and a new one ends the last (an "
+                f"employer, a spouse); False when they simply accumulate.\n{unknown}"
+            ) from None
+        return _make_the_type(world, a, b, kind, period, attrs, basis, str(unknown))
     subject, obj = (b, a) if reverse else (a, b)
     cls = world.classes[name]
     rel = spec(cls)
@@ -449,6 +537,19 @@ def relate(world, a, b, kind: str, period: dict, attrs: dict, basis: list | None
     if period:
         world.apply_period(created, period)
     _note_same_label(world, name, rel, subject, obj, attrs, start, end, created)
+    if start is None and "at_any_time" in (rel.get("functional"), rel.get("inverse_functional")):
+        # A type that changes is a type with a time, so here the time is part of the fact and
+        # not decoration on it. The world used to fill it in with today, which reads back a year
+        # later as the day the job began — a date nobody said, indistinguishable from one
+        # somebody did. So it asks, and it takes words: nobody knows the day they started
+        # caring about something, and "before now" is a true sentence about it.
+        ontology.note_hint(
+            f"{name} holds one at a time, so when it began is part of the fact — and none was "
+            f"said, so this one has no start. Say when, in whatever words you have: "
+            f"starts='now', 'yesterday', '3 years ago', '2006-01-01', or, when that is all you "
+            f"know, starts=before(now) / starts=after(date(2006, 1, 1)). Until then I cannot "
+            f"tell this from the one before it except by which you told me last."
+        )
     if rel.get("free"):
         _note_a_type_is_wanted(world, created)
     return created
@@ -735,6 +836,24 @@ def _why_not_to_assume(link) -> str:
             "something to decide from one side.")
 
 
+def _correct(world, standing, name: str, instead) -> None:
+    """A second value for something that has only one, ever: the later reading is taken.
+
+    A handover and a correction are not the same thing and the world had only the first. Work
+    changes — both employers are true, in their turn. A birthplace does not: only one of the two
+    is so, and the later telling is the one to believe, because it is the one the person said
+    last. The earlier stays in the record as what was said, marked as no longer held, so the
+    change is visible and reversible. Nothing is erased; `functional: True` was simply never
+    checked at all, and a person could be born in two cities.
+    """
+    ontology.note_hint(
+        f"{name} has one value and no more: {standing.display_name()} was recorded and this says "
+        f"{instead.display_name()} instead. Taking the later as a correction — what was said "
+        f"earlier stays in the record and is not what holds. Nothing is dated by this: a "
+        f"correction is not a change, and saying it ended today would be inventing a day."
+    )
+
+
 def _hand_over(world, standing, held, start, name: str) -> None:
     """A new holder of a one-at-a-time relation ends the last one, rather than being refused.
 
@@ -748,14 +867,32 @@ def _hand_over(world, standing, held, start, name: str) -> None:
     What was said is not erased. The old link keeps its period and its history; it simply stops
     holding at the moment the new one starts.
     """
-    when = timeutil.as_datetime(start) if start is not None else timeutil.now()
-    with ontology.trusted_writes():
-        standing.valid_until = when
-        world.save(standing)
+    if start is not None:
+        with ontology.trusted_writes():
+            standing.valid_until = timeutil.as_datetime(start)
+            world.save(standing)
+        ontology.note_hint(
+            f"{held.display_name()} had {standing.display_name()}, and {name} holds one at a "
+            f"time, so that one ends {timeutil.show(start)} — the date this one starts."
+        )
+        return
+    # No date, so none is written. Ending it today would say the world changed today, when all
+    # that happened today is that somebody mentioned it; the two live in different fields and
+    # putting the telling time into the other one invents an event. What holds is decided by what
+    # was said last, the way it has always been decided for an attribute.
+    #
+    # This is the one case where the missing date changed the answer — it decided which of two
+    # holds — so it is worth more than a hint that dies with the run.
+    world.questions.raise_(
+        standing, "when_it_changed",
+        f"{held.display_name()} had {standing.display_name()} and now has this instead. Neither "
+        f"was dated, so I am going by which I was told last. When did it change?",
+    )
     ontology.note_hint(
-        f"{held.display_name()} had {standing.display_name()} and {name} holds one at a time, so "
-        f"that one now ends {timeutil.show(when)} and this is what holds. Both are in the record; "
-        f"ask with history=True for the one that ended."
+        f"{held.display_name()} had {standing.display_name()} and now has "
+        f"{'this' if True else ''} — {name} holds one at a time, so the later telling is what "
+        f"holds. Neither is dated: if you know when it changed, say starts=... and I will put "
+        f"the boundary there."
     )
 
 
@@ -819,6 +956,14 @@ def _check_functional(world, name, rel, subject, obj, start, end, attrs) -> None
                         f"{r.display_name()}. {_why_not_to_assume(r)} {_how_to_make_room(start)}."
                     )
                 _hand_over(world, r, subject, start, name)
+    if rule(rel, "functional") is True:          # one ever, not one at a time
+        for r in candidates:
+            if same(r.subject, subject) and not same(r.object, obj):
+                _correct(world, r, name, obj)
+    if rule(rel, "inverse_functional") is True:
+        for r in candidates:
+            if same(r.object, obj) and not same(r.subject, subject):
+                _correct(world, r, name, subject)
     if rel.get("inverse_functional") == "at_any_time":
         for r in candidates:
             if same(r.object, obj) and not same(r.subject, subject):

@@ -9,6 +9,12 @@
       "description": "What it is called."
     },
     {
+      "name": "nature",
+      "type": "enum[place, agent, event, object, abstraction]",
+      "required": false,
+      "description": "What sort of thing this is, so the world can reason about it: place (a city, a country — places contain places, and what happened in one happened in the ones around it), agent (somebody or something that acts, holds roles, employs), event (it happens in time, so periods and before-and-after apply), object (a physical thing — it can be owned, and be part of another), abstraction (a language, a sport, a genre, a religion — no place, no time, nothing owns it, and it has kinds)."
+    },
+    {
       "name": "aliases",
       "type": "list[str]",
       "required": false,

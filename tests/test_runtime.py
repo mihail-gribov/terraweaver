@@ -8,6 +8,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from terraweaver import initiative
 from terraweaver.runtime import WorldRuntime
 
 failures: list[str] = []
@@ -113,6 +114,9 @@ def main() -> int:
     check("printing an entity shows it carries remarks", "1 remark" in marked["output"], marked["output"])
 
     # --- the answer to "which one?" arrives as what the host does next ---
+    # Remembering which entity a name meant is the world acting on its own, so it is off by
+    # default and this block turns it on for what it checks.
+    initiative.LEARNS_NAMES = True
     choice = WorldRuntime(str(Path(tempfile.mkdtemp()) / "choice.db"), fixture="job_search", rebuild=True)
     choice.run('annie = Person.find(full_name="Annie")', "one")
     told = choice.run('anna = Person.get(full_name="Anna Sullivan"); print(anna.full_name)', "one")
@@ -182,6 +186,7 @@ def main() -> int:
           str(unrelated["assumed"]))
     check("so the question is still open",
           "False" in (apart.run('print(Person.find(full_name="Annie").matched)', "two")["output"] or ""))
+    initiative.LEARNS_NAMES = False
 
     print()
     if failures:
