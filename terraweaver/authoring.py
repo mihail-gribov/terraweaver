@@ -143,12 +143,24 @@ class Authoring:
         return built
 
     def attribute(self, cls, name: str, description: str, type: str = "str",
-                  changes: bool = True):
-        """Declare an attribute on a class defined here. `changes=True` means it supersedes."""
+                  changes: bool = True, required: bool = False):
+        """Declare an attribute on a class defined here. `changes=True` means it supersedes.
+
+        `required=True` says the class is not itself without it. The spec builder took this all
+        along and this call did not pass it, so a host building its own vocabulary could not
+        say that a thing must have something — the word was accepted and quietly dropped.
+
+        Required here means the world says so when it is missing, not that it refuses: only the
+        attribute that names a thing is worth losing a fact over, because an entity nothing can
+        identify breeds duplicates that no later telling repairs. For the rest the gap is left
+        open and named, since a host that must fill a field to get past a check fills it with
+        its own knowledge, and the record cannot tell that from what the person said.
+        """
         from terraweaver import ontology
 
         spec = self._spec_of(cls)
-        attr = self._attribute_spec(name, description, type=type, changes=changes)
+        attr = self._attribute_spec(name, description, type=type, changes=changes,
+                                    required=required)
         if any(a["name"] == attr["name"] for a in spec["attributes"]):
             raise Refused(f"{spec['name']}.{attr['name']} is already declared")
         spec["attributes"].append(attr)

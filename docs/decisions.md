@@ -837,3 +837,35 @@ failure and a silent one.
 **How we would know it was wrong.** A recording task that legitimately records only names —
 if "add these six people, I will say what about them later" is a real request, this refuses it,
 and the check should look for the entities being new rather than for statements about them.
+
+---
+
+## 2026-09-23 · Required attributes: a check that was there, and a word that was not
+
+**Asked.** Does the world check that required attributes are filled when a relation or an
+entity is created — a deterministic check, nothing to do with the reasoning that was switched
+off?
+
+**It does, and it always did.** `Entity.__init__` collects every declared `required` attribute
+that was not given, for relations as for entities, and none of it goes through
+`initiative.py`. What varies is not whether the check runs but what it does:
+
+| | on a missing required attribute |
+|---|---|
+| the attribute that names the thing (`name`, `full_name`) | **refuses** |
+| `Related.label` | **refuses** — a free link nobody can name is unidentifiable |
+| everything else | **left empty, and said out loud** |
+
+The last row is a measured decision, not a lapse. On a 455-fact run `Idea` required `content`:
+of seventy things the host tried to record, ten were lost outright and the rest got through by
+inventing one — "Novel by Robert A. Heinlein" for one, an empty string for eight — and the
+inventions entered the record as `source=agent`, indistinguishable from what the person said.
+A field that must be filled to get past a check gets filled with the host's own knowledge.
+
+**What was actually missing.** `Authoring.attribute()` had no `required` parameter at all, while
+`_attribute_spec` took one. A host building its own vocabulary could not say that a thing must
+have something — the word was accepted by the call and silently dropped. Now it passes through.
+
+**How we would know it was wrong.** Hosts declaring everything required and reading the hints
+as noise — then "required" has come to mean nothing, and the ones worth refusing over need to
+be said differently.
