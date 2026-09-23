@@ -1,0 +1,109 @@
+{
+  "batch": [
+    91,
+    100
+  ],
+  "note": "Drafted from the sentences; read it and correct it. `expect: null` means nobody has said what this fact owes yet, and it is not counted.",
+  "facts": [
+    {
+      "fact": 91,
+      "said": "The type of music that John McVie plays is rock music.",
+      "expect": {
+        "subject": "John McVie",
+        "predicate": "plays music",
+        "object": "rock music",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 92,
+      "said": "Nobuhiro Watsuki is famous for Rurouni Kenshin.",
+      "expect": {
+        "subject": "Nobuhiro Watsuki",
+        "predicate": "is famous for",
+        "object": "Rurouni Kenshin",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 93,
+      "said": "The company that produced Il-2 Shturmovik is Ilyushin.",
+      "expect": {
+        "subject": "Ilyushin",
+        "predicate": "produced",
+        "object": "Il-2 Shturmovik",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 94,
+      "said": "Gala RFC is associated with the sport of rugby union.",
+      "expect": {
+        "subject": "Gala RFC",
+        "predicate": "is associated with",
+        "object": "rugby union",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 95,
+      "said": "Princess Alice, Duchess of Gloucester is affiliated with the religion of Anglicanism.",
+      "expect": {
+        "subject": "Princess Alice, Duchess of Gloucester",
+        "predicate": "is affiliated with",
+        "object": "Anglicanism",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 96,
+      "said": "sumo was created in the country of Japan.",
+      "expect": {
+        "subject": "sumo",
+        "predicate": "was created in",
+        "object": "Japan",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 97,
+      "said": "Meredith Grey was performed by Ellen Pompeo.",
+      "expect": {
+        "subject": "Meredith Grey",
+        "predicate": "was performed by",
+        "object": "Ellen Pompeo",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 98,
+      "said": "The univeristy where Samuel Beckett was educated is Trinity College Dublin.",
+      "expect": {
+        "subject": "Samuel Beckett",
+        "predicate": "was educated at",
+        "object": "Trinity College Dublin",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 99,
+      "said": "Israel is located in the continent of Asia.",
+      "expect": {
+        "subject": "Israel",
+        "predicate": "is located in",
+        "object": "Asia",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 100,
+      "said": "The official language of England is English.",
+      "expect": {
+        "subject": "English",
+        "predicate": "official language of",
+        "object": "England",
+        "subject_first": true
+      }
+    }
+  ]
+}

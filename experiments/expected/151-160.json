@@ -1,0 +1,113 @@
+{
+  "batch": [
+    151,
+    160
+  ],
+  "note": "Drafted from the sentences; read it and correct it. `expect: null` means nobody has said what this fact owes yet, and it is not counted.",
+  "facts": [
+    {
+      "fact": 151,
+      "said": "cricket was created in the country of Australia.",
+      "expect": {
+        "subject": "cricket",
+        "predicate": "was created in",
+        "object": "Australia",
+        "subject_first": true,
+        "replaces": "England"
+      },
+      "why": "says it again with a different value: the world should hold 'Australia' and keep 'England' as history"
+    },
+    {
+      "fact": 152,
+      "said": "The official language of Australia is Arabic.",
+      "expect": {
+        "subject": "Arabic",
+        "predicate": "official language of",
+        "object": "Australia",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 153,
+      "said": "Stephen McNeil works in the field of politician.",
+      "expect": {
+        "subject": "Stephen McNeil",
+        "predicate": "works in the field of",
+        "object": "politician",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 154,
+      "said": "Adalbert of Prague is affiliated with the religion of Catholic Church.",
+      "expect": {
+        "subject": "Adalbert of Prague",
+        "predicate": "is affiliated with",
+        "object": "Catholic Church",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 155,
+      "said": "Transcendental Meditation movement was founded by Maharishi Mahesh Yogi.",
+      "expect": {
+        "subject": "Transcendental Meditation movement",
+        "predicate": "was founded by",
+        "object": "Maharishi Mahesh Yogi",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 156,
+      "said": "Charlie Hebdo was created in the country of France.",
+      "expect": {
+        "subject": "Charlie Hebdo",
+        "predicate": "was created in",
+        "object": "France",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 157,
+      "said": "The capital of Soviet Union is Moscow.",
+      "expect": {
+        "subject": "Moscow",
+        "predicate": "capital of",
+        "object": "Soviet Union",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 158,
+      "said": "Kylie Minogue speaks the language of German.",
+      "expect": {
+        "subject": "Kylie Minogue",
+        "predicate": "speaks language of",
+        "object": "German",
+        "subject_first": true,
+        "replaces": "English"
+      },
+      "why": "says it again with a different value: the world should hold 'German' and keep 'English' as history"
+    },
+    {
+      "fact": 159,
+      "said": "The capital of India is New Delhi.",
+      "expect": {
+        "subject": "New Delhi",
+        "predicate": "capital of",
+        "object": "India",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 160,
+      "said": "The name of the current head of state in Soviet Union is Mikhail Gorbachev.",
+      "expect": {
+        "subject": "Mikhail Gorbachev",
+        "predicate": "head of state of",
+        "object": "Soviet Union",
+        "subject_first": true
+      }
+    }
+  ]
+}

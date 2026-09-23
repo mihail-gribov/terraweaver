@@ -1,0 +1,123 @@
+{
+  "batch": [
+    381,
+    390
+  ],
+  "note": "Drafted from the sentences; read it and correct it. `expect: null` means nobody has said what this fact owes yet, and it is not counted.",
+  "facts": [
+    {
+      "fact": 381,
+      "said": "The headquarters of Berklee College of Music is located in the city of Boston.",
+      "expect": {
+        "subject": "Berklee College of Music",
+        "predicate": "headquarters in",
+        "object": "Boston",
+        "subject_first": true,
+        "corrected": "the organisation has the headquarters; the city is where it is"
+      }
+    },
+    {
+      "fact": 382,
+      "said": "Elton John is a citizen of United Kingdom.",
+      "expect": {
+        "subject": "Elton John",
+        "predicate": "is a citizen of",
+        "object": "United Kingdom",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 383,
+      "said": "baseball was created in the country of Japan.",
+      "expect": {
+        "subject": "baseball",
+        "predicate": "was created in",
+        "object": "Japan",
+        "subject_first": true,
+        "replaces": "United States of America"
+      },
+      "why": "says it again with a different value: the world should hold 'Japan' and keep 'United States of America' as history"
+    },
+    {
+      "fact": 384,
+      "said": "The official language of Moscow is German.",
+      "expect": {
+        "subject": "German",
+        "predicate": "official language of",
+        "object": "Moscow",
+        "subject_first": true,
+        "replaces": "United States of America"
+      },
+      "why": "says it again with a different value: the world should hold 'Moscow' and keep 'United States of America' as history"
+    },
+    {
+      "fact": 385,
+      "said": "F-22 Raptor was developed by Boeing.",
+      "expect": {
+        "subject": "F-22 Raptor",
+        "predicate": "was developed by",
+        "object": "Boeing",
+        "subject_first": true,
+        "replaces": "Lockheed Martin"
+      },
+      "why": "says it again with a different value: the world should hold 'Boeing' and keep 'Lockheed Martin' as history"
+    },
+    {
+      "fact": 386,
+      "said": "Ron Dennis is employed by Pakistan International Airlines.",
+      "expect": {
+        "subject": "Ron Dennis",
+        "predicate": "is employed by",
+        "object": "Pakistan International Airlines",
+        "subject_first": true,
+        "replaces": "McLaren Automotive"
+      },
+      "why": "says it again with a different value: the world should hold 'Pakistan International Airlines' and keep 'McLaren Automotive' as history"
+    },
+    {
+      "fact": 387,
+      "said": "Ferdinand von Richthofen is a citizen of Canada.",
+      "expect": {
+        "subject": "Ferdinand von Richthofen",
+        "predicate": "is a citizen of",
+        "object": "Canada",
+        "subject_first": true,
+        "replaces": "Germany"
+      },
+      "why": "says it again with a different value: the world should hold 'Canada' and keep 'Germany' as history"
+    },
+    {
+      "fact": 388,
+      "said": "The headquarters of The University of the Arts is located in the city of Philadelphia.",
+      "expect": {
+        "subject": "The University of the Arts",
+        "predicate": "headquarters in",
+        "object": "Philadelphia",
+        "subject_first": true,
+        "corrected": "the organisation has the headquarters; the city is where it is"
+      }
+    },
+    {
+      "fact": 389,
+      "said": "The capital of Australia is Oderzo.",
+      "expect": {
+        "subject": "Oderzo",
+        "predicate": "capital of",
+        "object": "Australia",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 390,
+      "said": "association football was created in the country of Italy.",
+      "expect": {
+        "subject": "association football",
+        "predicate": "was created in",
+        "object": "Italy",
+        "subject_first": true,
+        "replaces": "England"
+      },
+      "why": "says it again with a different value: the world should hold 'Italy' and keep 'England' as history"
+    }
+  ]
+}

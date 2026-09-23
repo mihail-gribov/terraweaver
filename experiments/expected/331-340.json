@@ -1,0 +1,119 @@
+{
+  "batch": [
+    331,
+    340
+  ],
+  "note": "Drafted from the sentences; read it and correct it. `expect: null` means nobody has said what this fact owes yet, and it is not counted.",
+  "facts": [
+    {
+      "fact": 331,
+      "said": "Robert Parish plays the position of center.",
+      "expect": {
+        "subject": "Robert Parish",
+        "predicate": "plays position of",
+        "object": "center",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 332,
+      "said": "Maharishi Mahesh Yogi is affiliated with the religion of Hinduism.",
+      "expect": {
+        "subject": "Maharishi Mahesh Yogi",
+        "predicate": "is affiliated with",
+        "object": "Hinduism",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 333,
+      "said": "Aristotle's child is George Alexander Kohut.",
+      "expect": {
+        "subject": "George Alexander Kohut",
+        "predicate": "is a child of",
+        "object": "Aristotle",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 334,
+      "said": "The univeristy where Elena Ceaușescu was educated is University of Bucharest.",
+      "expect": {
+        "subject": "Elena Ceaușescu",
+        "predicate": "was educated at",
+        "object": "University of Bucharest",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 335,
+      "said": "Robert Parish plays the position of quarterback.",
+      "expect": {
+        "subject": "Robert Parish",
+        "predicate": "plays position of",
+        "object": "quarterback",
+        "subject_first": true,
+        "replaces": "center"
+      },
+      "why": "says it again with a different value: the world should hold 'quarterback' and keep 'center' as history"
+    },
+    {
+      "fact": 336,
+      "said": "Charles Darwin is married to Amala Paul.",
+      "expect": {
+        "subject": "Charles Darwin",
+        "predicate": "is married to",
+        "object": "Amala Paul",
+        "subject_first": true,
+        "replaces": "Emma Darwin"
+      },
+      "why": "says it again with a different value: the world should hold 'Amala Paul' and keep 'Emma Darwin' as history"
+    },
+    {
+      "fact": 337,
+      "said": "William Waynflete speaks the language of Latin.",
+      "expect": {
+        "subject": "William Waynflete",
+        "predicate": "speaks language of",
+        "object": "Latin",
+        "subject_first": true,
+        "replaces": "English"
+      },
+      "why": "says it again with a different value: the world should hold 'Latin' and keep 'English' as history"
+    },
+    {
+      "fact": 338,
+      "said": "Born in the U.S.A. was performed by Dana International.",
+      "expect": {
+        "subject": "Born in the U.S.A.",
+        "predicate": "was performed by",
+        "object": "Dana International",
+        "subject_first": true,
+        "replaces": "Bruce Springsteen"
+      },
+      "why": "says it again with a different value: the world should hold 'Dana International' and keep 'Bruce Springsteen' as history"
+    },
+    {
+      "fact": 339,
+      "said": "Andrew Carnegie is a citizen of United States of America.",
+      "expect": {
+        "subject": "Andrew Carnegie",
+        "predicate": "is a citizen of",
+        "object": "United States of America",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 340,
+      "said": "Adalbert of Prague is affiliated with the religion of atheism.",
+      "expect": {
+        "subject": "Adalbert of Prague",
+        "predicate": "is affiliated with",
+        "object": "atheism",
+        "subject_first": true,
+        "replaces": "Catholic Church"
+      },
+      "why": "says it again with a different value: the world should hold 'atheism' and keep 'Catholic Church' as history"
+    }
+  ]
+}

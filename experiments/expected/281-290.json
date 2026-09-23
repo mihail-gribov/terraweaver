@@ -1,0 +1,119 @@
+{
+  "batch": [
+    281,
+    290
+  ],
+  "note": "Drafted from the sentences; read it and correct it. `expect: null` means nobody has said what this fact owes yet, and it is not counted.",
+  "facts": [
+    {
+      "fact": 281,
+      "said": "India is located in the continent of Africa.",
+      "expect": {
+        "subject": "India",
+        "predicate": "is located in",
+        "object": "Africa",
+        "subject_first": true,
+        "replaces": "Asia"
+      },
+      "why": "says it again with a different value: the world should hold 'Africa' and keep 'Asia' as history"
+    },
+    {
+      "fact": 282,
+      "said": "The type of music that Dana International plays is Australian hip hop.",
+      "expect": {
+        "subject": "Dana International",
+        "predicate": "plays music",
+        "object": "Australian hip hop",
+        "subject_first": true,
+        "replaces": "pop music"
+      },
+      "why": "says it again with a different value: the world should hold 'Australian hip hop' and keep 'pop music' as history"
+    },
+    {
+      "fact": 283,
+      "said": "John Walsh is affiliated with the religion of Catholic Church.",
+      "expect": {
+        "subject": "John Walsh",
+        "predicate": "is affiliated with",
+        "object": "Catholic Church",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 284,
+      "said": "Pius XII died in the city of Wolverhampton.",
+      "expect": {
+        "subject": "Pius XII",
+        "predicate": "died in the city of",
+        "object": "Wolverhampton",
+        "subject_first": true,
+        "replaces": "Castel Gandolfo"
+      },
+      "why": "says it again with a different value: the world should hold 'Wolverhampton' and keep 'Castel Gandolfo' as history"
+    },
+    {
+      "fact": 285,
+      "said": "The capital of Australia is Canberra.",
+      "expect": {
+        "subject": "Canberra",
+        "predicate": "capital of",
+        "object": "Australia",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 286,
+      "said": "Aladdin Sane was performed by Yves Montand.",
+      "expect": {
+        "subject": "Aladdin Sane",
+        "predicate": "was performed by",
+        "object": "Yves Montand",
+        "subject_first": true,
+        "replaces": "David Bowie"
+      },
+      "why": "says it again with a different value: the world should hold 'Yves Montand' and keep 'David Bowie' as history"
+    },
+    {
+      "fact": 287,
+      "said": "The univeristy where Lou Reed was educated is Syracuse University.",
+      "expect": {
+        "subject": "Lou Reed",
+        "predicate": "was educated at",
+        "object": "Syracuse University",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 288,
+      "said": "Methodism was founded by Joseph Goebbels.",
+      "expect": {
+        "subject": "Methodism",
+        "predicate": "was founded by",
+        "object": "Joseph Goebbels",
+        "subject_first": true,
+        "replaces": "John Wesley"
+      },
+      "why": "says it again with a different value: the world should hold 'Joseph Goebbels' and keep 'John Wesley' as history"
+    },
+    {
+      "fact": 289,
+      "said": "Back to Black was performed by Amy Winehouse.",
+      "expect": {
+        "subject": "Back to Black",
+        "predicate": "was performed by",
+        "object": "Amy Winehouse",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 290,
+      "said": "The type of music that Michael Mantler plays is jazz.",
+      "expect": {
+        "subject": "Michael Mantler",
+        "predicate": "plays music",
+        "object": "jazz",
+        "subject_first": true
+      }
+    }
+  ]
+}

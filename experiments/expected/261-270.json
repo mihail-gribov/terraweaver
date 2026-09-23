@@ -1,0 +1,119 @@
+{
+  "batch": [
+    261,
+    270
+  ],
+  "note": "Drafted from the sentences; read it and correct it. `expect: null` means nobody has said what this fact owes yet, and it is not counted.",
+  "facts": [
+    {
+      "fact": 261,
+      "said": "Kingdom of Ireland is affiliated with the religion of Zoroastrianism.",
+      "expect": {
+        "subject": "Kingdom of Ireland",
+        "predicate": "is affiliated with",
+        "object": "Zoroastrianism",
+        "subject_first": true,
+        "replaces": "Catholic Church"
+      },
+      "why": "says it again with a different value: the world should hold 'Zoroastrianism' and keep 'Catholic Church' as history"
+    },
+    {
+      "fact": 262,
+      "said": "pesäpallo was created in the country of Philippines.",
+      "expect": {
+        "subject": "pesäpallo",
+        "predicate": "was created in",
+        "object": "Philippines",
+        "subject_first": true,
+        "replaces": "Finland"
+      },
+      "why": "says it again with a different value: the world should hold 'Philippines' and keep 'Finland' as history"
+    },
+    {
+      "fact": 263,
+      "said": "Mahmoud Abbas works in the field of politician.",
+      "expect": {
+        "subject": "Mahmoud Abbas",
+        "predicate": "works in the field of",
+        "object": "politician",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 264,
+      "said": "George W. Bush is affiliated with the religion of United Methodist Church.",
+      "expect": {
+        "subject": "George W. Bush",
+        "predicate": "is affiliated with",
+        "object": "United Methodist Church",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 265,
+      "said": "Sasanian Empire was founded by Walter Chrysler.",
+      "expect": {
+        "subject": "Sasanian Empire",
+        "predicate": "was founded by",
+        "object": "Walter Chrysler",
+        "subject_first": true,
+        "replaces": "Ardashir I"
+      },
+      "why": "says it again with a different value: the world should hold 'Walter Chrysler' and keep 'Ardashir I' as history"
+    },
+    {
+      "fact": 266,
+      "said": "Canadair was founded in the city of Tucson.",
+      "expect": {
+        "subject": "Canadair",
+        "predicate": "was founded in",
+        "object": "Tucson",
+        "subject_first": true,
+        "replaces": "Montreal"
+      },
+      "why": "says it again with a different value: the world should hold 'Tucson' and keep 'Montreal' as history"
+    },
+    {
+      "fact": 267,
+      "said": "Karen Armstrong is affiliated with the religion of Catholic Church.",
+      "expect": {
+        "subject": "Karen Armstrong",
+        "predicate": "is affiliated with",
+        "object": "Catholic Church",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 268,
+      "said": "post-punk was created in the country of Canada.",
+      "expect": {
+        "subject": "post-punk",
+        "predicate": "was created in",
+        "object": "Canada",
+        "subject_first": true,
+        "replaces": "United Kingdom"
+      },
+      "why": "says it again with a different value: the world should hold 'Canada' and keep 'United Kingdom' as history"
+    },
+    {
+      "fact": 269,
+      "said": "Ellen Pompeo is a citizen of United States of America.",
+      "expect": {
+        "subject": "Ellen Pompeo",
+        "predicate": "is a citizen of",
+        "object": "United States of America",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 270,
+      "said": "Daniele De Rossi plays the position of midfielder.",
+      "expect": {
+        "subject": "Daniele De Rossi",
+        "predicate": "plays position of",
+        "object": "midfielder",
+        "subject_first": true
+      }
+    }
+  ]
+}

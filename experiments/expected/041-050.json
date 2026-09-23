@@ -1,0 +1,113 @@
+{
+  "batch": [
+    41,
+    50
+  ],
+  "note": "Drafted from the sentences; read it and correct it. `expect: null` means nobody has said what this fact owes yet, and it is not counted.",
+  "facts": [
+    {
+      "fact": 41,
+      "said": "Christianity was founded in the city of Jerusalem.",
+      "expect": {
+        "subject": "Christianity",
+        "predicate": "was founded in",
+        "object": "Jerusalem",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 42,
+      "said": "Germany is located in the continent of Europe.",
+      "expect": {
+        "subject": "Germany",
+        "predicate": "is located in",
+        "object": "Europe",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 43,
+      "said": "Vijay Mallya is a citizen of India.",
+      "expect": {
+        "subject": "Vijay Mallya",
+        "predicate": "is a citizen of",
+        "object": "India",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 44,
+      "said": "Christianity was founded in the city of Taipei.",
+      "expect": {
+        "subject": "Christianity",
+        "predicate": "was founded in",
+        "object": "Taipei",
+        "subject_first": true,
+        "replaces": "Jerusalem"
+      },
+      "why": "says it again with a different value: the world should hold 'Taipei' and keep 'Jerusalem' as history"
+    },
+    {
+      "fact": 45,
+      "said": "Kūkai speaks the language of Japanese.",
+      "expect": {
+        "subject": "Kūkai",
+        "predicate": "speaks language of",
+        "object": "Japanese",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 46,
+      "said": "Friedrich Nietzsche is famous for Thus Spoke Zarathustra.",
+      "expect": {
+        "subject": "Friedrich Nietzsche",
+        "predicate": "is famous for",
+        "object": "Thus Spoke Zarathustra",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 47,
+      "said": "wide receiver is associated with the sport of American football.",
+      "expect": {
+        "subject": "wide receiver",
+        "predicate": "is associated with",
+        "object": "American football",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 48,
+      "said": "Ron Dennis is employed by McLaren Automotive.",
+      "expect": {
+        "subject": "Ron Dennis",
+        "predicate": "is employed by",
+        "object": "McLaren Automotive",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 49,
+      "said": "Israel was founded by David Ben-Gurion.",
+      "expect": {
+        "subject": "Israel",
+        "predicate": "was founded by",
+        "object": "David Ben-Gurion",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 50,
+      "said": "Israel was founded by Philippe, Duke of Orléans.",
+      "expect": {
+        "subject": "Israel",
+        "predicate": "was founded by",
+        "object": "Philippe, Duke of Orléans",
+        "subject_first": true,
+        "replaces": "David Ben-Gurion"
+      },
+      "why": "says it again with a different value: the world should hold 'Philippe, Duke of Orléans' and keep 'David Ben-Gurion' as history"
+    }
+  ]
+}

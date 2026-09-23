@@ -1,0 +1,113 @@
+{
+  "batch": [
+    211,
+    220
+  ],
+  "note": "Drafted from the sentences; read it and correct it. `expect: null` means nobody has said what this fact owes yet, and it is not counted.",
+  "facts": [
+    {
+      "fact": 211,
+      "said": "Cédric Klapisch is a citizen of France.",
+      "expect": {
+        "subject": "Cédric Klapisch",
+        "predicate": "is a citizen of",
+        "object": "France",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 212,
+      "said": "England is located in the continent of Europe.",
+      "expect": {
+        "subject": "England",
+        "predicate": "is located in",
+        "object": "Europe",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 213,
+      "said": "jazz was created in the country of United States of America.",
+      "expect": {
+        "subject": "jazz",
+        "predicate": "was created in",
+        "object": "United States of America",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 214,
+      "said": "Darryl Strawberry is associated with the sport of baseball.",
+      "expect": {
+        "subject": "Darryl Strawberry",
+        "predicate": "is associated with",
+        "object": "baseball",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 215,
+      "said": "William Waynflete speaks the language of English.",
+      "expect": {
+        "subject": "William Waynflete",
+        "predicate": "speaks language of",
+        "object": "English",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 216,
+      "said": "Sandy Alderson is associated with the sport of baseball.",
+      "expect": {
+        "subject": "Sandy Alderson",
+        "predicate": "is associated with",
+        "object": "baseball",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 217,
+      "said": "basketball was created in the country of United States of America.",
+      "expect": {
+        "subject": "basketball",
+        "predicate": "was created in",
+        "object": "United States of America",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 218,
+      "said": "Narendra Modi is a citizen of Australia.",
+      "expect": {
+        "subject": "Narendra Modi",
+        "predicate": "is a citizen of",
+        "object": "Australia",
+        "subject_first": true,
+        "replaces": "India"
+      },
+      "why": "says it again with a different value: the world should hold 'Australia' and keep 'India' as history"
+    },
+    {
+      "fact": 219,
+      "said": "Methodism was founded by John Wesley.",
+      "expect": {
+        "subject": "Methodism",
+        "predicate": "was founded by",
+        "object": "John Wesley",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 220,
+      "said": "point guard is associated with the sport of cricket.",
+      "expect": {
+        "subject": "point guard",
+        "predicate": "is associated with",
+        "object": "cricket",
+        "subject_first": true,
+        "replaces": "basketball"
+      },
+      "why": "says it again with a different value: the world should hold 'cricket' and keep 'basketball' as history"
+    }
+  ]
+}

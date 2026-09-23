@@ -1,0 +1,112 @@
+{
+  "batch": [
+    111,
+    120
+  ],
+  "note": "Drafted from the sentences; read it and correct it. `expect: null` means nobody has said what this fact owes yet, and it is not counted.",
+  "facts": [
+    {
+      "fact": 111,
+      "said": "Mike D'Antoni plays the position of point guard.",
+      "expect": {
+        "subject": "Mike D'Antoni",
+        "predicate": "plays position of",
+        "object": "point guard",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 112,
+      "said": "Westinghouse Electric was founded in the city of Pittsburgh.",
+      "expect": {
+        "subject": "Westinghouse Electric",
+        "predicate": "was founded in",
+        "object": "Pittsburgh",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 113,
+      "said": "Mario Puzo is famous for The Godfather.",
+      "expect": {
+        "subject": "Mario Puzo",
+        "predicate": "is famous for",
+        "object": "The Godfather",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 114,
+      "said": "London is located in the continent of Europe.",
+      "expect": {
+        "subject": "London",
+        "predicate": "is located in",
+        "object": "Europe",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 115,
+      "said": "The headquarters of University of California, Berkeley is located in the city of Botevgrad.",
+      "expect": {
+        "subject": "University of California, Berkeley",
+        "predicate": "headquarters in",
+        "object": "Botevgrad",
+        "subject_first": true,
+        "corrected": "the organisation has the headquarters; the city is where it is"
+      }
+    },
+    {
+      "fact": 116,
+      "said": "The name of the current head of state in United States of America is Donald Trump.",
+      "expect": {
+        "subject": "Donald Trump",
+        "predicate": "head of state of",
+        "object": "United States of America",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 117,
+      "said": "The official language of Australia is English.",
+      "expect": {
+        "subject": "English",
+        "predicate": "official language of",
+        "object": "Australia",
+        "subject_first": true,
+        "replaces": "England"
+      },
+      "why": "says it again with a different value: the world should hold 'Australia' and keep 'England' as history"
+    },
+    {
+      "fact": 118,
+      "said": "Pius XII died in the city of Castel Gandolfo.",
+      "expect": {
+        "subject": "Pius XII",
+        "predicate": "died in the city of",
+        "object": "Castel Gandolfo",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 119,
+      "said": "Jack Dorsey is a citizen of United States of America.",
+      "expect": {
+        "subject": "Jack Dorsey",
+        "predicate": "is a citizen of",
+        "object": "United States of America",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 120,
+      "said": "Sarit Thanarat is affiliated with the religion of Buddhism.",
+      "expect": {
+        "subject": "Sarit Thanarat",
+        "predicate": "is affiliated with",
+        "object": "Buddhism",
+        "subject_first": true
+      }
+    }
+  ]
+}

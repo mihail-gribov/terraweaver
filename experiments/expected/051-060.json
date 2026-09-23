@@ -1,0 +1,113 @@
+{
+  "batch": [
+    51,
+    60
+  ],
+  "note": "Drafted from the sentences; read it and correct it. `expect: null` means nobody has said what this fact owes yet, and it is not counted.",
+  "facts": [
+    {
+      "fact": 51,
+      "said": "quarterback is associated with the sport of Muay Thai.",
+      "expect": {
+        "subject": "quarterback",
+        "predicate": "is associated with",
+        "object": "Muay Thai",
+        "subject_first": true,
+        "replaces": "American football"
+      },
+      "why": "says it again with a different value: the world should hold 'Muay Thai' and keep 'American football' as history"
+    },
+    {
+      "fact": 52,
+      "said": "Frank Zappa died in the city of Berlin.",
+      "expect": {
+        "subject": "Frank Zappa",
+        "predicate": "died in the city of",
+        "object": "Berlin",
+        "subject_first": true,
+        "replaces": "Los Angeles"
+      },
+      "why": "says it again with a different value: the world should hold 'Berlin' and keep 'Los Angeles' as history"
+    },
+    {
+      "fact": 53,
+      "said": "Blood on the Tracks was performed by Bob Dylan.",
+      "expect": {
+        "subject": "Blood on the Tracks",
+        "predicate": "was performed by",
+        "object": "Bob Dylan",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 54,
+      "said": "Ursula K. Le Guin died in the city of Portland.",
+      "expect": {
+        "subject": "Ursula K. Le Guin",
+        "predicate": "died in the city of",
+        "object": "Portland",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 55,
+      "said": "The chairperson of Congolese Party of Labour is Denis Sassou-Nguesso.",
+      "expect": {
+        "subject": "Denis Sassou-Nguesso",
+        "predicate": "chairperson of",
+        "object": "Congolese Party of Labour",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 56,
+      "said": "Colin Irwin is a citizen of United Kingdom.",
+      "expect": {
+        "subject": "Colin Irwin",
+        "predicate": "is a citizen of",
+        "object": "United Kingdom",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 57,
+      "said": "Canada is located in the continent of North America.",
+      "expect": {
+        "subject": "Canada",
+        "predicate": "is located in",
+        "object": "North America",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 58,
+      "said": "cricket was created in the country of England.",
+      "expect": {
+        "subject": "cricket",
+        "predicate": "was created in",
+        "object": "England",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 59,
+      "said": "Nicolae Ceaușescu is married to Elena Ceaușescu.",
+      "expect": {
+        "subject": "Nicolae Ceaușescu",
+        "predicate": "is married to",
+        "object": "Elena Ceaușescu",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 60,
+      "said": "pesäpallo was created in the country of Finland.",
+      "expect": {
+        "subject": "pesäpallo",
+        "predicate": "was created in",
+        "object": "Finland",
+        "subject_first": true
+      }
+    }
+  ]
+}

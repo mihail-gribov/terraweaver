@@ -1253,3 +1253,34 @@ now.
 21-30, scored 4, 9, 10, 0 and 3 out of 10 on unchanged code. The agent's variance is wider than
 most of the differences I attributed to changes. What makes 52 → 81 believable is its size —
 larger than a whole batch — not the fact that it was measured once.
+
+---
+
+## 2026-09-23 · The recorder was reading our notes
+
+**Seen.** A batch of ten facts scored 4, 9, 10, 0, 3 and 0 out of ten on unchanged code, and I
+had written the variance down to the agent. Digging into the last 0, its answer to the primer
+began:
+
+> "I've read the memory files: the project pivoted to an MCP world server in September 2026,
+> recent work measured 78% fact coverage and 64% supersession accuracy, and I know about the
+> working principles…"
+
+Those are this session's own notes, written between runs of this very measurement. The host's
+working folder sat under `experiments/results/batches/…/host-batch`, inside the repository, and
+Claude Code walks up from its working directory, recognises the project and loads its memory.
+
+**So the contaminant was moving.** Runs early in the day saw nothing; runs after each write of
+`docs/decisions.md` and the memory files saw more, including the numbers they were producing.
+Every comparison made across the day has that in it.
+
+**Done.** The host runs in a temporary folder outside the repository, and its per-folder memory
+is dropped after as before. The same batch, same code, uncontaminated: **10/10**, and no mention
+of any memory file in the transcript.
+
+**What it costs to believe.** One run. The batch's history is 4, 9, 10, 0, 3, 0, 10 — the last
+being the clean one — so this is the best of the seven, and could be luck. What is not luck is
+the transcript: the recorder said it had read the project's notes, and now it does not.
+
+**How we would know it was wrong.** The same spread on repeated clean runs — then the variance
+is the agent's after all, and the contamination was only noise on top of it.

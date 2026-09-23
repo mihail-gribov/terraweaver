@@ -56,6 +56,12 @@ OWED = {
     "was developed by":           ("A", False),
     "was educated at": ("A", False),
     "head of state of":           ("A", True),
+    "was created by": ("A", False),
+    "works in the field of": ("A", False),
+    "plays music": ("A", False),
+    "head of government of": ("A", True),
+    "is a child of": ("A", False),
+    "produced": ("A", False),
     "worked in the city of":      ("A", True),
     "is a child of":              ("A", False),
     "was written in":             ("A", False),
@@ -85,6 +91,29 @@ def bare(name: str) -> str:
 def read(fact: str):
     """(subject, predicate, object) as the sentence has it, or None."""
     text = fact.rstrip(".")
+    # The shapes the slice uses that the general patterns below do not reach. Each is here
+    # because it turned up in the 49 the draft could not read, counted rather than guessed at.
+    for pattern, predicate, holder in (
+            (r"^The company that produced (.+?) is (.+)$", "produced", "B"),
+            (r"^(.+?)'s child is (.+)$", "is a child of", "B"),
+            (r"^The name of the current head of state in (.+?) is (.+)$", "head of state of", "B"),
+            (r"^The name of the current head of the (.+?) government is (.+)$",
+             "head of government of", "B"),
+            (r"^The type of music that (.+?) plays is (.+)$", "plays music", "A"),
+            (r"^(.+?) works in the field of (.+)$", "works in the field of", "A"),
+            (r"^(.+?) was created by (.+)$", "was created by", "A"),
+            (r"^The (?:name of the )?(?:current )?head of the (.+?) of (.+?) government is (.+)$",
+             "head of government of", "last"),
+    ):
+        hit = re.match(pattern, text)
+        if not hit:
+            continue
+        parts = [bare(g) for g in hit.groups()]
+        if holder == "A":
+            return parts[0], predicate, parts[1]
+        if holder == "B":
+            return parts[-1], predicate, parts[0]
+        return parts[-1], predicate, parts[-2]
     hit = re.match(r"^The univeristy where (.+?) was educated is (.+)$", text)
     if hit:      # the slice spells it that way, 6 times
         return bare(hit.group(1)), "was educated at", bare(hit.group(2))
@@ -127,6 +156,8 @@ def main() -> int:
     parser.add_argument("run", type=Path)
     parser.add_argument("--upto", type=int, default=None)
     parser.add_argument("--show", type=int, default=8)
+    parser.add_argument("--by", type=int, default=0,
+                        help="also report in batches of this many facts")
     args = parser.parse_args()
 
     runtime = open_world(args.run.resolve())
@@ -206,6 +237,17 @@ def main() -> int:
           f"({tally['unparsed']} sentences not parsed)\n")
     for how in ("as owed", "backwards", "no link", "missing"):
         print(f"   {how:<10} {tally[how]:>4}   {100 * tally[how] // max(scored, 1)}%")
+    if args.by:
+        # Per batch, on the same expectation as the whole — so "which batches went badly" is
+        # asked of what the world owes and not of whether some link happened to join two names.
+        print("\n   by batch:")
+        for lo in range(1, (args.upto or len(facts)) + 1, args.by):
+            here = [k for k in order if lo <= final[k][0] < lo + args.by]
+            if not here:
+                continue
+            right = sum(1 for k in here if k not in {(w[0], w[1]) for w in []}
+                        and final[k][0] not in {n for n, _, _ in wrong})
+            print(f"     {lo:>3}-{lo + args.by - 1:<3}  {right}/{len(here)}")
     print()
     for number, how, fact in wrong[: args.show]:
         print(f"   {number:>3} [{how}] {fact[:72]}")

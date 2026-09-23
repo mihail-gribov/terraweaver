@@ -10,6 +10,8 @@ thing being looked at is what the agent and the world said to each other.
 import argparse
 import json
 import re
+import shutil
+import tempfile
 import sqlite3
 import sys
 import time
@@ -330,7 +332,14 @@ def main() -> int:
     started = time.monotonic()
     try:
         server = start_base_server(db, args.port)
-        agent = hosting.World(work, "batch", args.port)
+        # The host runs outside this repository. Its working folder used to sit under
+        # experiments/results, and Claude Code walks up from there, recognises the project and
+        # loads its memory — a recorder answered the primer with "I've read the memory files …
+        # recent work measured 78% fact coverage and 64% supersession accuracy", which are the
+        # notes written between runs of this very measurement. Later runs saw them and earlier
+        # ones did not.
+        elsewhere = Path(tempfile.mkdtemp(prefix="tw-host-"))
+        agent = hosting.World(elsewhere, "batch", args.port)
 
         primed = hosting.ask(agent, PRIMER, agent.conversation(), None, log, args.model)
         spent["turns"] += primed["turns"]; spent["cost"] += primed["cost"]
@@ -348,6 +357,7 @@ def main() -> int:
             hosting.stop(server)
         if agent:
             hosting.forget_folder_memory(agent.cwd)
+            shutil.rmtree(elsewhere, ignore_errors=True)
 
     print("\n--- the world it built")
     for name, number in census(db).items():

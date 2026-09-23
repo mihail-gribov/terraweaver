@@ -1,0 +1,115 @@
+{
+  "batch": [
+    371,
+    380
+  ],
+  "note": "Drafted from the sentences; read it and correct it. `expect: null` means nobody has said what this fact owes yet, and it is not counted.",
+  "facts": [
+    {
+      "fact": 371,
+      "said": "Buddhism was founded by Mekere Morauta.",
+      "expect": {
+        "subject": "Buddhism",
+        "predicate": "was founded by",
+        "object": "Mekere Morauta",
+        "subject_first": true,
+        "replaces": "Gautama Buddha"
+      },
+      "why": "says it again with a different value: the world should hold 'Mekere Morauta' and keep 'Gautama Buddha' as history"
+    },
+    {
+      "fact": 372,
+      "said": "Charles the Bold is a citizen of France.",
+      "expect": {
+        "subject": "Charles the Bold",
+        "predicate": "is a citizen of",
+        "object": "France",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 373,
+      "said": "John Keats died in the city of Leipzig.",
+      "expect": null,
+      "why": "the draft could not read this sentence — say what it owes by hand"
+    },
+    {
+      "fact": 374,
+      "said": "Malaysia is located in the continent of Asia.",
+      "expect": {
+        "subject": "Malaysia",
+        "predicate": "is located in",
+        "object": "Asia",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 375,
+      "said": "Imelda Marcos is affiliated with the religion of atheism.",
+      "expect": {
+        "subject": "Imelda Marcos",
+        "predicate": "is affiliated with",
+        "object": "atheism",
+        "subject_first": true,
+        "replaces": "Catholicism"
+      },
+      "why": "says it again with a different value: the world should hold 'atheism' and keep 'Catholicism' as history"
+    },
+    {
+      "fact": 376,
+      "said": "The name of the current head of the Italy government is Giuseppe Conte.",
+      "expect": {
+        "subject": "Giuseppe Conte",
+        "predicate": "head of government of",
+        "object": "Italy",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 377,
+      "said": "New Firm is associated with the sport of baseball.",
+      "expect": {
+        "subject": "New Firm",
+        "predicate": "is associated with",
+        "object": "baseball",
+        "subject_first": true,
+        "replaces": "association football"
+      },
+      "why": "says it again with a different value: the world should hold 'baseball' and keep 'association football' as history"
+    },
+    {
+      "fact": 378,
+      "said": "The capital of United Kingdom is London.",
+      "expect": {
+        "subject": "London",
+        "predicate": "capital of",
+        "object": "United Kingdom",
+        "subject_first": true,
+        "replaces": "Great Britain"
+      },
+      "why": "says it again with a different value: the world should hold 'United Kingdom' and keep 'Great Britain' as history"
+    },
+    {
+      "fact": 379,
+      "said": "The capital of England is London.",
+      "expect": {
+        "subject": "London",
+        "predicate": "capital of",
+        "object": "England",
+        "subject_first": true,
+        "replaces": "United Kingdom"
+      },
+      "why": "says it again with a different value: the world should hold 'England' and keep 'United Kingdom' as history"
+    },
+    {
+      "fact": 380,
+      "said": "The chief executive officer of Lockheed Martin is Marillyn Hewson.",
+      "expect": {
+        "subject": "Marillyn Hewson",
+        "predicate": "chief executive officer of",
+        "object": "Lockheed Martin",
+        "subject_first": true
+      }
+    }
+  ]
+}

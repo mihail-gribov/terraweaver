@@ -1,0 +1,111 @@
+{
+  "batch": [
+    391,
+    400
+  ],
+  "note": "Drafted from the sentences; read it and correct it. `expect: null` means nobody has said what this fact owes yet, and it is not counted.",
+  "facts": [
+    {
+      "fact": 391,
+      "said": "Vito Corleone was created by Nobuhiro Watsuki.",
+      "expect": {
+        "subject": "Vito Corleone",
+        "predicate": "was created by",
+        "object": "Nobuhiro Watsuki",
+        "subject_first": true,
+        "replaces": "Mario Puzo"
+      },
+      "why": "says it again with a different value: the world should hold 'Nobuhiro Watsuki' and keep 'Mario Puzo' as history"
+    },
+    {
+      "fact": 392,
+      "said": "Shahnameh was written in the language of Persian.",
+      "expect": {
+        "subject": "Shahnameh",
+        "predicate": "was written in",
+        "object": "Persian",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 393,
+      "said": "The director of American Broadcasting Company is Ernst Heinkel.",
+      "expect": {
+        "subject": "Ernst Heinkel",
+        "predicate": "director of",
+        "object": "American Broadcasting Company",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 394,
+      "said": "The chief executive officer of Boeing is Adel al-Jubeir.",
+      "expect": {
+        "subject": "Adel al-Jubeir",
+        "predicate": "chief executive officer of",
+        "object": "Boeing",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 395,
+      "said": "Alan Jay Lerner died in the city of Mansourah, Algeria.",
+      "expect": {
+        "subject": "Alan Jay Lerner",
+        "predicate": "died in the city of",
+        "object": "Mansourah, Algeria",
+        "subject_first": true,
+        "replaces": "New York City"
+      },
+      "why": "says it again with a different value: the world should hold 'Mansourah, Algeria' and keep 'New York City' as history"
+    },
+    {
+      "fact": 396,
+      "said": "Joseph Goebbels worked in the city of Berlin.",
+      "expect": null,
+      "why": "the draft could not read this sentence — say what it owes by hand"
+    },
+    {
+      "fact": 397,
+      "said": "The capital of United States of America is Harrisville.",
+      "expect": {
+        "subject": "Harrisville",
+        "predicate": "capital of",
+        "object": "United States of America",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 398,
+      "said": "San Francisco is located in the continent of North America.",
+      "expect": {
+        "subject": "San Francisco",
+        "predicate": "is located in",
+        "object": "North America",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 399,
+      "said": "The author of The Marriage of Figaro is Thomas Kyd.",
+      "expect": {
+        "subject": "Thomas Kyd",
+        "predicate": "author of",
+        "object": "The Marriage of Figaro",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 400,
+      "said": "The univeristy where Lou Reed was educated is Fordham University.",
+      "expect": {
+        "subject": "Lou Reed",
+        "predicate": "was educated at",
+        "object": "Fordham University",
+        "subject_first": true,
+        "replaces": "Syracuse University"
+      },
+      "why": "says it again with a different value: the world should hold 'Fordham University' and keep 'Syracuse University' as history"
+    }
+  ]
+}

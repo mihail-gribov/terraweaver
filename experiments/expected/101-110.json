@@ -1,0 +1,110 @@
+{
+  "batch": [
+    101,
+    110
+  ],
+  "note": "Drafted from the sentences; read it and correct it. `expect: null` means nobody has said what this fact owes yet, and it is not counted.",
+  "facts": [
+    {
+      "fact": 101,
+      "said": "rugby union was created in the country of England.",
+      "expect": {
+        "subject": "rugby union",
+        "predicate": "was created in",
+        "object": "England",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 102,
+      "said": "The headquarters of Fordham University is located in the city of New York City.",
+      "expect": {
+        "subject": "Fordham University",
+        "predicate": "headquarters in",
+        "object": "New York City",
+        "subject_first": true,
+        "corrected": "the organisation has the headquarters; the city is where it is"
+      }
+    },
+    {
+      "fact": 103,
+      "said": "Club Nouveau was created in the country of United States of America.",
+      "expect": {
+        "subject": "Club Nouveau",
+        "predicate": "was created in",
+        "object": "United States of America",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 104,
+      "said": "The capital of Japan is Tokyo.",
+      "expect": {
+        "subject": "Tokyo",
+        "predicate": "capital of",
+        "object": "Japan",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 105,
+      "said": "FC Vorskla Poltava is associated with the sport of association football.",
+      "expect": {
+        "subject": "FC Vorskla Poltava",
+        "predicate": "is associated with",
+        "object": "association football",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 106,
+      "said": "United Kingdom is located in the continent of Europe.",
+      "expect": {
+        "subject": "United Kingdom",
+        "predicate": "is located in",
+        "object": "Europe",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 107,
+      "said": "Leonte Răutu is employed by University of Bucharest.",
+      "expect": {
+        "subject": "Leonte Răutu",
+        "predicate": "is employed by",
+        "object": "University of Bucharest",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 108,
+      "said": "The author of Our Mutual Friend is Charles Dickens.",
+      "expect": {
+        "subject": "Charles Dickens",
+        "predicate": "author of",
+        "object": "Our Mutual Friend",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 109,
+      "said": "Boston was founded by John Winthrop.",
+      "expect": {
+        "subject": "Boston",
+        "predicate": "was founded by",
+        "object": "John Winthrop",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 110,
+      "said": "The chief executive officer of Twitter is Jack Dorsey.",
+      "expect": {
+        "subject": "Jack Dorsey",
+        "predicate": "chief executive officer of",
+        "object": "Twitter",
+        "subject_first": true
+      }
+    }
+  ]
+}

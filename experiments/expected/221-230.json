@@ -1,0 +1,117 @@
+{
+  "batch": [
+    221,
+    230
+  ],
+  "note": "Drafted from the sentences; read it and correct it. `expect: null` means nobody has said what this fact owes yet, and it is not counted.",
+  "facts": [
+    {
+      "fact": 221,
+      "said": "Australia is located in the continent of South America.",
+      "expect": {
+        "subject": "Australia",
+        "predicate": "is located in",
+        "object": "South America",
+        "subject_first": true,
+        "replaces": "Oceania"
+      },
+      "why": "says it again with a different value: the world should hold 'South America' and keep 'Oceania' as history"
+    },
+    {
+      "fact": 222,
+      "said": "Windows Phone was developed by Microsoft.",
+      "expect": {
+        "subject": "Windows Phone",
+        "predicate": "was developed by",
+        "object": "Microsoft",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 223,
+      "said": "The chairperson of Harvard University is Peter Diamandis.",
+      "expect": {
+        "subject": "Peter Diamandis",
+        "predicate": "chairperson of",
+        "object": "Harvard University",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 224,
+      "said": "goaltender is associated with the sport of ice hockey.",
+      "expect": {
+        "subject": "goaltender",
+        "predicate": "is associated with",
+        "object": "ice hockey",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 225,
+      "said": "Sasanian Empire was founded by Ardashir I.",
+      "expect": {
+        "subject": "Sasanian Empire",
+        "predicate": "was founded by",
+        "object": "Ardashir I",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 226,
+      "said": "Henri Grégoire is a citizen of India.",
+      "expect": {
+        "subject": "Henri Grégoire",
+        "predicate": "is a citizen of",
+        "object": "India",
+        "subject_first": true,
+        "replaces": "France"
+      },
+      "why": "says it again with a different value: the world should hold 'India' and keep 'France' as history"
+    },
+    {
+      "fact": 227,
+      "said": "Dave Filoni is employed by British Broadcasting Corporation.",
+      "expect": {
+        "subject": "Dave Filoni",
+        "predicate": "is employed by",
+        "object": "British Broadcasting Corporation",
+        "subject_first": true,
+        "replaces": "Lucasfilm"
+      },
+      "why": "says it again with a different value: the world should hold 'British Broadcasting Corporation' and keep 'Lucasfilm' as history"
+    },
+    {
+      "fact": 228,
+      "said": "Irving Fryar plays the position of wide receiver.",
+      "expect": {
+        "subject": "Irving Fryar",
+        "predicate": "plays position of",
+        "object": "wide receiver",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 229,
+      "said": "India is located in the continent of Asia.",
+      "expect": {
+        "subject": "India",
+        "predicate": "is located in",
+        "object": "Asia",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 230,
+      "said": "Rocket Man was performed by Ayumi Hamasaki.",
+      "expect": {
+        "subject": "Rocket Man",
+        "predicate": "was performed by",
+        "object": "Ayumi Hamasaki",
+        "subject_first": true,
+        "replaces": "Elton John"
+      },
+      "why": "says it again with a different value: the world should hold 'Ayumi Hamasaki' and keep 'Elton John' as history"
+    }
+  ]
+}

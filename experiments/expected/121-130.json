@@ -1,0 +1,113 @@
+{
+  "batch": [
+    121,
+    130
+  ],
+  "note": "Drafted from the sentences; read it and correct it. `expect: null` means nobody has said what this fact owes yet, and it is not counted.",
+  "facts": [
+    {
+      "fact": 121,
+      "said": "Elvis Presley is married to Priscilla Presley.",
+      "expect": {
+        "subject": "Elvis Presley",
+        "predicate": "is married to",
+        "object": "Priscilla Presley",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 122,
+      "said": "Andy Warhol died in the city of New York City.",
+      "expect": {
+        "subject": "Andy Warhol",
+        "predicate": "died in the city of",
+        "object": "New York City",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 123,
+      "said": "Kylie Minogue speaks the language of English.",
+      "expect": {
+        "subject": "Kylie Minogue",
+        "predicate": "speaks language of",
+        "object": "English",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 124,
+      "said": "Madame du Barry is a citizen of Great Britain.",
+      "expect": {
+        "subject": "Madame du Barry",
+        "predicate": "is a citizen of",
+        "object": "Great Britain",
+        "subject_first": true,
+        "replaces": "France"
+      },
+      "why": "says it again with a different value: the world should hold 'Great Britain' and keep 'France' as history"
+    },
+    {
+      "fact": 125,
+      "said": "The author of Sidereus Nuncius is Galileo Galilei.",
+      "expect": {
+        "subject": "Galileo Galilei",
+        "predicate": "author of",
+        "object": "Sidereus Nuncius",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 126,
+      "said": "Olga of Kiev died in the city of Kyiv.",
+      "expect": {
+        "subject": "Olga of Kiev",
+        "predicate": "died in the city of",
+        "object": "Kyiv",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 127,
+      "said": "The name of the current head of state in United States of America is Connachta.",
+      "expect": {
+        "subject": "Connachta",
+        "predicate": "head of state of",
+        "object": "United States of America",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 128,
+      "said": "Israel is located in the continent of North America.",
+      "expect": {
+        "subject": "Israel",
+        "predicate": "is located in",
+        "object": "North America",
+        "subject_first": true,
+        "replaces": "Asia"
+      },
+      "why": "says it again with a different value: the world should hold 'North America' and keep 'Asia' as history"
+    },
+    {
+      "fact": 129,
+      "said": "Oscar Wilde died in the city of Paris.",
+      "expect": {
+        "subject": "Oscar Wilde",
+        "predicate": "died in the city of",
+        "object": "Paris",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 130,
+      "said": "Joe Hockey is a citizen of Australia.",
+      "expect": {
+        "subject": "Joe Hockey",
+        "predicate": "is a citizen of",
+        "object": "Australia",
+        "subject_first": true
+      }
+    }
+  ]
+}

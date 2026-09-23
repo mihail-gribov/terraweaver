@@ -1,0 +1,109 @@
+{
+  "batch": [
+    71,
+    80
+  ],
+  "note": "Drafted from the sentences; read it and correct it. `expect: null` means nobody has said what this fact owes yet, and it is not counted.",
+  "facts": [
+    {
+      "fact": 71,
+      "said": "Kingdom of Ireland is affiliated with the religion of Catholic Church.",
+      "expect": {
+        "subject": "Kingdom of Ireland",
+        "predicate": "is affiliated with",
+        "object": "Catholic Church",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 72,
+      "said": "Rocket Man was performed by Elton John.",
+      "expect": {
+        "subject": "Rocket Man",
+        "predicate": "was performed by",
+        "object": "Elton John",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 73,
+      "said": "Stephen Crane is famous for The Red Badge of Courage.",
+      "expect": {
+        "subject": "Stephen Crane",
+        "predicate": "is famous for",
+        "object": "The Red Badge of Courage",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 74,
+      "said": "Hal Needham is a citizen of United States of America.",
+      "expect": {
+        "subject": "Hal Needham",
+        "predicate": "is a citizen of",
+        "object": "United States of America",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 75,
+      "said": "The chief executive officer of Valve Corporation is Gabe Newell.",
+      "expect": {
+        "subject": "Gabe Newell",
+        "predicate": "chief executive officer of",
+        "object": "Valve Corporation",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 76,
+      "said": "Australia is located in the continent of Oceania.",
+      "expect": {
+        "subject": "Australia",
+        "predicate": "is located in",
+        "object": "Oceania",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 77,
+      "said": "The author of The Birth of Tragedy is Friedrich Nietzsche.",
+      "expect": {
+        "subject": "Friedrich Nietzsche",
+        "predicate": "author of",
+        "object": "The Birth of Tragedy",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 78,
+      "said": "The author of The Birth of Tragedy is Stephen Crane.",
+      "expect": {
+        "subject": "Stephen Crane",
+        "predicate": "author of",
+        "object": "The Birth of Tragedy",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 79,
+      "said": "placekicker is associated with the sport of American football.",
+      "expect": {
+        "subject": "placekicker",
+        "predicate": "is associated with",
+        "object": "American football",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 80,
+      "said": "The name of the current head of state in United Kingdom is Elizabeth II.",
+      "expect": {
+        "subject": "Elizabeth II",
+        "predicate": "head of state of",
+        "object": "United Kingdom",
+        "subject_first": true
+      }
+    }
+  ]
+}

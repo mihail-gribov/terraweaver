@@ -1,0 +1,109 @@
+{
+  "batch": [
+    61,
+    70
+  ],
+  "note": "Drafted from the sentences; read it and correct it. `expect: null` means nobody has said what this fact owes yet, and it is not counted.",
+  "facts": [
+    {
+      "fact": 61,
+      "said": "Leo Stein is a citizen of United States of America.",
+      "expect": {
+        "subject": "Leo Stein",
+        "predicate": "is a citizen of",
+        "object": "United States of America",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 62,
+      "said": "Walter Chrysler's child is Walter Percy Chrysler Jr..",
+      "expect": {
+        "subject": "Walter Percy Chrysler Jr",
+        "predicate": "is a child of",
+        "object": "Walter Chrysler",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 63,
+      "said": "Yves Montand is married to Simone Signoret.",
+      "expect": {
+        "subject": "Yves Montand",
+        "predicate": "is married to",
+        "object": "Simone Signoret",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 64,
+      "said": "The univeristy where Joan Didion was educated is University of California, Berkeley.",
+      "expect": {
+        "subject": "Joan Didion",
+        "predicate": "was educated at",
+        "object": "University of California, Berkeley",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 65,
+      "said": "The director of American Broadcasting Company is Bob Iger.",
+      "expect": {
+        "subject": "Bob Iger",
+        "predicate": "director of",
+        "object": "American Broadcasting Company",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 66,
+      "said": "Born in the U.S.A. was performed by Bruce Springsteen.",
+      "expect": {
+        "subject": "Born in the U.S.A.",
+        "predicate": "was performed by",
+        "object": "Bruce Springsteen",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 67,
+      "said": "Rand al'Thor was created by Robert Jordan.",
+      "expect": {
+        "subject": "Rand al'Thor",
+        "predicate": "was created by",
+        "object": "Robert Jordan",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 68,
+      "said": "Buddhism was founded by Gautama Buddha.",
+      "expect": {
+        "subject": "Buddhism",
+        "predicate": "was founded by",
+        "object": "Gautama Buddha",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 69,
+      "said": "Natalie Portman is affiliated with the religion of Judaism.",
+      "expect": {
+        "subject": "Natalie Portman",
+        "predicate": "is affiliated with",
+        "object": "Judaism",
+        "subject_first": true
+      }
+    },
+    {
+      "fact": 70,
+      "said": "point guard is associated with the sport of basketball.",
+      "expect": {
+        "subject": "point guard",
+        "predicate": "is associated with",
+        "object": "basketball",
+        "subject_first": true
+      }
+    }
+  ]
+}
