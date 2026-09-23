@@ -542,11 +542,14 @@ class WorldRuntime:
             # success. One left a world holding eight bare names — no links, no attributes, no
             # remarks — and said "all ten facts have been recorded, the world kept everything".
             # The world knows what it was given, so it is the one thing it can say for certain.
-            unread = {t: line for t, line in session.readings.items()
-                      if t not in session.read_back}
+            # Once per task, not once per type. Marking only what was shown meant a host that
+            # recorded more between close attempts was asked again about the new ones, and a
+            # batch that kept going kept being sent back: seven refusals to close in one, and
+            # it ran out of turns having recorded nothing that scored.
+            unread = session.readings if not session.read_back else {}
             if unread:
                 shown = "\n".join(f"    {line}" for line in unread.values())
-                session.read_back |= set(unread)
+                session.read_back |= set(unread) | {"*"}
                 return (
                     f"Not closed yet — read these back first. Each is the first link of a type "
                     f"this task made, as the world reads it:\n{shown}\n\n"
