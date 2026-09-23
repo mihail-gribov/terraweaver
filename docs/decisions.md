@@ -1284,3 +1284,38 @@ the transcript: the recorder said it had read the project's notes, and now it do
 
 **How we would know it was wrong.** The same spread on repeated clean runs — then the variance
 is the agent's after all, and the contamination was only noise on top of it.
+
+---
+
+## 2026-09-23 · Stabilising the measurement, and the guide that could not be read by reading it
+
+**The instability was ours.** A batch of ten facts had scored 4, 9, 10, 0, 3 and 0 out of ten
+on unchanged code, and it was not the agent: the recorder's working folder sat inside this
+repository, so Claude Code recognised the project and loaded its memory — including the numbers
+this very measurement had written between runs. Moved outside, and run three times:
+
+    1-10   10  10  10   median 10   spread 0
+    11-20   8  10  10   median 10   spread 2
+    21-30  10  10  10   median 10   spread 0
+
+The contaminant was the variance. `full_run.py --repeat 3` now runs the whole thing into
+separate worlds and prints the spread, because one run cannot tell a change from a bad
+afternoon.
+
+**And a check that had been defeated by another.** `finish_task` refuses a recording task that
+recorded nothing — but a description counts as something said, and the world now asks for one
+on every Thing and every link, so every entity had one and the check always passed. A recorder
+created forty-three entities, four relation types, **no links at all**, and closed reporting
+"all ten facts are successfully recorded". `descriptions` is a mark now, like a name.
+
+**The guide, audited by running it.** Asked to look for stale instructions, grepping found one
+line; running the examples found what grepping could not. `tests/test_the_guide_runs.py` takes
+every line the world offers a host — indented in the guides, or quoted in the prose — and runs
+it in a world. It caught the primer telling hosts, twice, to call `classes()` for the list of
+what this world holds now. No such name was ever bound. The one call that would have shown a
+host its own new types raised `NameError`, and it is `world.classes_here()`, which existed on
+the runtime and was never put where the host could reach it.
+
+**How we would know it was wrong.** The guide's examples passing while a host still cannot
+follow them — the test runs each line alone, and a sequence that only works in order would slip
+through.

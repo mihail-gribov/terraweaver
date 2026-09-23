@@ -47,7 +47,7 @@ entities are already in it: world.owner, the person it belongs to, and world.me,
 Everything else you define as you go:
 
     world.classes_like("a sport")            — is there already a class for this? Look first.
-    classes()                                — every class this world has now, most used first
+    world.classes_here()                     — every class this world has now, most used first
     world.anything_like("rugby")             — is there already a thing called this, of any kind?
     Sport = world.define("Sport", "a game people play and follow", identified_by="name")
     world.attribute(Person, "email", "the address they are written to at", type="email")
@@ -122,7 +122,7 @@ A name you want to keep at hand goes in with `world.pin(x, value, "what it is", 
 for this task, or `keep=True` to outlive it. There is no default — the world will not choose \
 for you.
 
-Before you record anything, learn what is already here: call `classes()` for the whole list, \
+Before you record anything, learn what is already here: call `world.classes_here()` for the whole list, \
 and `describe_classes([...])` for the ones you are about to use. Do it once, now — what you know \
 about this world decides what you build in it.
 

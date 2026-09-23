@@ -64,11 +64,13 @@ class WorldView:
     over would let host code run raw SQL past every check.
     """
 
-    def __init__(self, world: World, variables: WorldVariables, session_key: str, session=None):
+    def __init__(self, world: World, variables: WorldVariables, session_key: str, session=None,
+                 runtime=None):
         self._world = world
         self._variables = variables
         self._session_key = session_key
         self._session = session
+        self._runtime = runtime
 
     def _touched(self) -> set:
         return set(getattr(self._session, "touched", set()))
@@ -144,6 +146,16 @@ class WorldView:
             q.drop("...")             it was never a real doubt
         """
         return self._world.questions.unresolved(here=self._touched(), limit=limit)
+
+    def classes_here(self, like: str | None = None, limit: int = 0) -> str:
+        """Every class this world has now, with how much of it there is.
+
+        The opening description is what the world contained when the task began; this is what
+        it contains now, including whatever was defined five minutes ago. The primer told hosts
+        to call `classes()` for it, twice, and no such name was ever bound — so the one call
+        that would have shown a host its own new types raised NameError instead.
+        """
+        return self._runtime.classes_here(like, limit) if self._runtime else ""
 
     def where(self, cls=None, **conditions) -> list:
         """Attributes, links, tags and meaning in one ask; without a class, things of any kind."""
@@ -326,7 +338,7 @@ class WorldRuntime:
         if key not in self.sessions:
             session = Session(self.classes, world=self.world)
             namespace = session.namespace
-            namespace["world"] = WorldView(self.world, self.variables, key, session)
+            namespace["world"] = WorldView(self.world, self.variables, key, session, self)
             namespace["NeedsResolution"] = NeedsResolution
             namespace["NotInWorld"] = NotInWorld
             namespace["__builtins__"] = sandbox.BUILTINS
