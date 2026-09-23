@@ -1,0 +1,23 @@
+{
+  "name": "HeadOfState",
+  "description": "the head of state of a country",
+  "relation": {
+    "kind": "head_of_state",
+    "nature": "related_to",
+    "from": [
+      "any"
+    ],
+    "to": [
+      "any"
+    ],
+    "functional": "at_any_time",
+    "inverse_functional": "at_any_time",
+    "reverse": "head_of_state_of",
+    "labels": [],
+    "example": "a.relate(b, 'head_of_state')",
+    "reads": "a head of state b \u2014 whichever end you start from is the subject, so start from the one the sentence starts from",
+    "roles": []
+  },
+  "attributes": [],
+  "methods": []
+}

@@ -1,0 +1,23 @@
+{
+  "name": "LocatedIn",
+  "description": "A place or entity that is located within a geographic region.",
+  "relation": {
+    "kind": "located_in",
+    "nature": "part_of",
+    "from": [
+      "any"
+    ],
+    "to": [
+      "any"
+    ],
+    "functional": true,
+    "inverse_functional": false,
+    "reverse": "located_in_of",
+    "labels": [],
+    "example": "a.relate(b, 'located_in')",
+    "reads": "a located in b \u2014 whichever end you start from is the subject, so start from the one the sentence starts from",
+    "roles": []
+  },
+  "attributes": [],
+  "methods": []
+}

@@ -1,0 +1,23 @@
+{
+  "name": "Speaks",
+  "description": "speaks the language",
+  "relation": {
+    "kind": "speaks",
+    "nature": "related_to",
+    "from": [
+      "any"
+    ],
+    "to": [
+      "any"
+    ],
+    "functional": false,
+    "inverse_functional": false,
+    "reverse": "speaks_of",
+    "labels": [],
+    "example": "a.relate(b, 'speaks')",
+    "reads": "a speaks b \u2014 whichever end you start from is the subject, so start from the one the sentence starts from",
+    "roles": []
+  },
+  "attributes": [],
+  "methods": []
+}

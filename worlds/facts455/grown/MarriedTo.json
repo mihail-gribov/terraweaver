@@ -1,0 +1,23 @@
+{
+  "name": "MarriedTo",
+  "description": "A person who is married to another person.",
+  "relation": {
+    "kind": "married_to",
+    "nature": "related_to",
+    "from": [
+      "any"
+    ],
+    "to": [
+      "any"
+    ],
+    "functional": "at_any_time",
+    "inverse_functional": "at_any_time",
+    "reverse": "married_to_of",
+    "labels": [],
+    "example": "a.relate(b, 'married_to')",
+    "reads": "a married to b \u2014 whichever end you start from is the subject, so start from the one the sentence starts from",
+    "roles": []
+  },
+  "attributes": [],
+  "methods": []
+}

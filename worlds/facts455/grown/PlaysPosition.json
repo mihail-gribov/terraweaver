@@ -1,0 +1,49 @@
+{
+  "name": "PlaysPosition",
+  "description": "A person who plays a specific position in a sport.",
+  "relation": {
+    "kind": "plays_position",
+    "nature": "related_to",
+    "from": [
+      "any"
+    ],
+    "to": [
+      "any"
+    ],
+    "functional": true,
+    "inverse_functional": false,
+    "reverse": "plays_position_of",
+    "labels": [],
+    "example": "a.relate(b, 'plays_position')",
+    "reads": "a plays position b \u2014 whichever end you start from is the subject, so start from the one the sentence starts from",
+    "roles": [],
+    "said_by_hand": true
+  },
+  "attributes": [
+    {
+      "name": "subject",
+      "type": "ref:any",
+      "required": true,
+      "description": "Where the relation starts \u2014 a plays position b \u2014 whichever end you start from is the subject, so start from the one the sentence starts from"
+    },
+    {
+      "name": "object",
+      "type": "ref:any",
+      "required": true,
+      "description": "Where the relation leads."
+    },
+    {
+      "name": "descriptions",
+      "type": "list[text]",
+      "required": false,
+      "description": "How this one has been described, in whoever's words \u2014 several are normal."
+    },
+    {
+      "name": "tags",
+      "type": "list[str]",
+      "required": false,
+      "description": "Loose ties to other things, for what no attribute or relation says."
+    }
+  ],
+  "methods": []
+}

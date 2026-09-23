@@ -1,0 +1,23 @@
+{
+  "name": "EducatedAt",
+  "description": "was educated at",
+  "relation": {
+    "kind": "educated_at",
+    "nature": "related_to",
+    "from": [
+      "any"
+    ],
+    "to": [
+      "any"
+    ],
+    "functional": false,
+    "inverse_functional": false,
+    "reverse": "educated_at_of",
+    "labels": [],
+    "example": "a.relate(b, 'educated_at')",
+    "reads": "a educated at b \u2014 whichever end you start from is the subject, so start from the one the sentence starts from",
+    "roles": []
+  },
+  "attributes": [],
+  "methods": []
+}

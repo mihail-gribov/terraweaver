@@ -1,0 +1,23 @@
+{
+  "name": "CitizenOf",
+  "description": "is a citizen of",
+  "relation": {
+    "kind": "citizen_of",
+    "nature": "related_to",
+    "from": [
+      "any"
+    ],
+    "to": [
+      "any"
+    ],
+    "functional": "at_any_time",
+    "inverse_functional": "at_any_time",
+    "reverse": "citizen_of_of",
+    "labels": [],
+    "example": "a.relate(b, 'citizen_of')",
+    "reads": "a citizen of b \u2014 whichever end you start from is the subject, so start from the one the sentence starts from",
+    "roles": []
+  },
+  "attributes": [],
+  "methods": []
+}
