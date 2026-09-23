@@ -163,10 +163,12 @@ def main() -> int:
         # context and it is the agent's to bring, but the world does not lose the fact waiting
         # for it. Checked on a pair of its own so the dated pair below is not disturbed.
         spare = own["Organization"].new(name="Spare Body")
-        with ontology.record_changes() as undated:
-            own["Person"].new(full_name="Undated One").relate(spare, "chairs")
-        check("a type that changes takes a link with no start, and says so",
-              any("no start was said" in h for h in undated.hints), str(undated.hints)[:100])
+        undated = refused(lambda: own["Person"].new(full_name="Undated One").relate(spare, "chairs"))
+        check("a type that changes will not take a link with no start",
+              undated is not None and "when it began is part of the fact" in (undated or ""),
+              str(undated)[:90])
+        check("and says now() is an answer when the date does not matter",
+              "now()" in (undated or ""), str(undated)[:110])
         exec(f'first.relate(org, "chairs"{said})', {"first": first, "org": org, "held": held})
         kept = refused(lambda: exec(f'second.relate(org, "chairs"{said})',
                                     {"second": second, "org": org, "held": held}))

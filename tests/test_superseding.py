@@ -80,11 +80,14 @@ def main() -> int:
                      'a.relate(b, "authority", label="manager")')
     # Recorded, not refused. Refusing turned away sixty facts in a 455-fact run, and the facts
     # carry no dates — so the only thing the refusal could buy was one the host made up.
-    check("a related_to link that changes is recorded without a start", got["ok"],
+    # Asked for, with now() among the answers. Refusing and offering only real dates turned
+    # away sixty facts in a 455-fact run; taking now by itself is the world dating a fact
+    # nobody dated. The date is given, and "it does not matter, it is now" is a way of giving it.
+    check("a related_to link that changes will not be made without a start",
+          not got["ok"] and "when it began is part of the fact" in str(got.get("error")),
           str(got.get("error"))[:80])
-    check("and the world says it has none and what to say instead",
-          any("no start was said" in h for h in (got.get("hints") or [])),
-          str(got.get("hints"))[:110])
+    check("and the refusal offers now() as an answer",
+          "now()" in str(got.get("error")), str(got.get("error"))[:120])
     _, got = ran(rt, 'dept = Organization.new(name="Newsroom")\ndept.relate(b, "part_of")')
     check("a part_of link needs no start", got["ok"], str(got.get("error"))[:80])
 
