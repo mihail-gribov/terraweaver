@@ -65,6 +65,15 @@ def same_name(a_facts: list, b_facts: list) -> bool:
 
     Deliberately loose. Under the old architecture a wrong merge was a wound; here it is a guess
     that the next fact corrects."""
+    # What class each was recorded under, which the statement's own id carries. Two things
+    # recorded as different kinds are not one thing because they answer to one name: a city
+    # called Paris and a person called Paris merged on rebuild, and the city was gone — not
+    # corrected by the next fact, as a loose rule is supposed to be, but absent. A world that
+    # asks about a shared name while it is running must not merge on it while rebuilding.
+    a_classes = {f.id.split(":", 1)[0] for f in a_facts if ":" in str(f.id)}
+    b_classes = {f.id.split(":", 1)[0] for f in b_facts if ":" in str(f.id)}
+    if a_classes and b_classes and not (a_classes & b_classes):
+        return False
     for slot in DISTINGUISHING:
         a_values = {_text(f.value) for f in a_facts if f.slot == slot}
         b_values = {_text(f.value) for f in b_facts if f.slot == slot}
@@ -77,7 +86,17 @@ def same_name(a_facts: list, b_facts: list) -> bool:
                if f.slot in matching.NAME_KEYS.values() and f.source != facts_module.WORKED]
     # Both ways round: "Anna" asked against "Anna Sullivan" scores differently from the reverse,
     # and which of them the host happened to write down first shouldn't decide who someone is.
-    return any(max(matching.similarity(a, b), matching.similarity(b, a)) >= matching.PART_CEILING
+    #
+    # But a name inside another name is only a short form where names work that way. It scores
+    # exactly PART_CEILING, and applied to everything it merged Berkeley into the University of
+    # California, Berkeley, rugby into rugby union, Australia into the Australian Open and
+    # Bucharest into Bucharest Municipality — four cities and a sport, gone from the world on
+    # rebuild. The live world has always known this and restricts it to the classes where it
+    # holds; this did not, which is how the two disagreed about the same names.
+    by_parts = any(one.split("facts_", 1)[-1] in matching.PART_MATCH_CLASSES
+                   for one in (a_classes | b_classes))
+    bar = matching.PART_CEILING if by_parts else matching.CERTAIN
+    return any(max(matching.similarity(a, b), matching.similarity(b, a)) >= bar
                for a in a_names for b in b_names)
 
 

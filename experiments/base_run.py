@@ -111,8 +111,10 @@ decision. `[undecided N]` on a run is the running count; `world.undecided()` rea
 
 Handing one to the user is not failing. Guessing at it is.
 
-Time is said, never assumed. A relation that holds one at a time is a relation with a date in \
-it, and the world no longer fills that in for you. Say when, in whatever words you have: \
+Time is said, never assumed — and it is yours to say, because it is in what the user told you \
+and nowhere in the world. A relation that holds one at a time has a date in it; the world will \
+not invent one, and will not refuse the fact for want of one either — it records it undated and \
+says so. Say when, in whatever words you have: \
 `starts="now"`, `"yesterday"`, `"3 years ago"`, `"in 2006"`, `date(2006, 1, 1)` — or, when all \
 you know is which side of something it falls on, `starts=before(now())`, \
 `starts=after(date(2006, 1, 1))`. If the fact came with no time at all, say nothing and the \

@@ -19,7 +19,41 @@ def check(name: str, condition: bool, detail: str = "") -> None:
         failures.append(name)
 
 
+def nothing_lost(world, classes) -> tuple:
+    """Every name and every link the world holds, so a rebuild can be compared with itself."""
+    names, links = {}, 0
+    for cls in world.classes.values():
+        for entity in world.all(cls.__name__, limit=None, history=True):
+            if cls._spec.get("relation"):
+                links += 1
+                continue
+            said = (getattr(entity, "name", None) or getattr(entity, "full_name", None)
+                    or getattr(entity, "title", None))
+            if said:
+                names[said] = names.get(said, 0) + 1
+    return names, links
+
 def main() -> int:
+    # --- a rebuild keeps what the world holds: a city is not the university named after it ---
+    # Rebuilding a 455-fact world lost twelve things outright. A name inside another name
+    # scores exactly the part-match bar, and the bar was applied to everything: Berkeley went
+    # into the University of California, Berkeley, rugby into rugby union, Australia into the
+    # Australian Open. The live world restricts that to the classes where a short name is a
+    # short name; the rebuild did not, so the two disagreed about the same names.
+    apart = open_world()
+    apart.run('Thing.ensure(name="Berkeley", nature="place")\n'
+              'Thing.ensure(name="University of California, Berkeley", nature="agent")\n'
+              'Thing.ensure(name="rugby", nature="abstraction")\n'
+              'Thing.ensure(name="rugby union", nature="abstraction")\n'
+              'p = Person.new(full_name="Paris Hilton")\n'
+              'Thing.ensure(name="Paris", nature="place")', "host")
+    held_before, links_before = nothing_lost(apart.world, apart.classes)
+    apart.world.rebuild()
+    held_after, links_after = nothing_lost(apart.world, apart.classes)
+    gone = sorted(set(held_before) - set(held_after))
+    check("a rebuild keeps every name the world held", not gone, str(gone))
+    check("and every link", links_after == links_before, f"{links_before} -> {links_after}")
+
     w = open_world()
     Person, Organization = w.classes["Person"], w.classes["Organization"]
 

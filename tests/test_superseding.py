@@ -78,9 +78,13 @@ def main() -> int:
     rt = world()
     _, got = ran(rt, 'a = Person.new(full_name="A One")\nb = Organization.new(name="B Two")\n'
                      'a.relate(b, "authority", label="manager")')
-    check("a related_to link that changes will not be made without a start",
-          not got["ok"] and "when it began is part of the fact" in str(got.get("error")),
+    # Recorded, not refused. Refusing turned away sixty facts in a 455-fact run, and the facts
+    # carry no dates — so the only thing the refusal could buy was one the host made up.
+    check("a related_to link that changes is recorded without a start", got["ok"],
           str(got.get("error"))[:80])
+    check("and the world says it has none and what to say instead",
+          any("no start was said" in h for h in (got.get("hints") or [])),
+          str(got.get("hints"))[:110])
     _, got = ran(rt, 'dept = Organization.new(name="Newsroom")\ndept.relate(b, "part_of")')
     check("a part_of link needs no start", got["ok"], str(got.get("error"))[:80])
 

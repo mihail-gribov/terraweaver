@@ -576,22 +576,30 @@ def relate(world, a, b, kind: str, period: dict, attrs: dict, basis: list | None
             world.apply_period(found, period)
         return found
 
+    start_is_ours = False
     if period.get("valid_from") is None and _wants_a_start(rel):
-        # Required because the type says so, not because the world worked it out from the
-        # cardinality. Inferred, it reached `part_of` and `partner` — a department is part of a
-        # company and nobody states the day that began — and refused facts nobody had a date
-        # for. Whoever defines the type is the one who knows whether its start is part of it;
-        # `define_relation(over_time=True)` says yes, and a core type says so in its own file.
-        # It is a required argument like any other, and it is checked where the others are.
-        raise ValueError(
-            f"{name} holds one at a time, so when it began is part of the fact and I will not "
-            f"invent it. Say when:\n"
-            f"    t = now()                       # or date(2006, 1, 1), or \"3 years ago\"\n"
-            f"    a.{rel['kind']}(b, starts=t)\n"
-            f"Take the moment once and pass the same value to everything you record in this "
-            f"breath: two calls to now() are microseconds apart, and I would read that as two "
-            f"deliberate overlapping claims. If all you know is which side of something it "
-            f"falls on, starts=before(now()) and starts=after(date(2006, 1, 1)) say that."
+        # Asked for, not demanded. The principle is right — a link that holds one at a time has
+        # a time in it — and the refusal was not: across 455 facts it turned away sixty, and
+        # those facts carry no dates, so all it could buy was a date invented to get past it.
+        # Supersession does not need one: measured, an undated pair hands over by which was
+        # told last and both stay in the record. So the fact goes in, and the asking is done
+        # where an answer can still arrive — by `_hand_over`, as a question that outlives the
+        # run, when the missing date actually decides which of two holds.
+        # Taken as now, and written down as the world's own. This is the one place a date may
+        # be supplied without being said, and it is safe only because the record keeps who
+        # said it: `source="world"` on this statement, so a later reader can tell a date
+        # somebody knew from one the world assumed, and so the world can take it back if the
+        # host says the fact is older than the telling. Refusing instead turned away sixty
+        # facts in a 455-fact run; inventing it silently, which is what it did before today,
+        # left a date nobody could question.
+        period = dict(period, valid_from=timeutil.now())
+        start_is_ours = True
+        ontology.note_hint(
+            f"{name} holds one at a time and no start was said, so I have taken it as now "
+            f"({timeutil.show(timeutil.now())}) and marked the date as mine, not yours. If the "
+            f"fact is older than this telling, say when — starts=\"3 years ago\", "
+            f"date(2006, 1, 1), or starts=before(now()) when that is all you know — and the "
+            f"boundary goes there instead."
         )
     start = period.get("valid_from") or timeutil.now()
     end = period.get("valid_until")
@@ -612,7 +620,14 @@ def relate(world, a, b, kind: str, period: dict, attrs: dict, basis: list | None
         created.title = waiting          # the title that was set before there was a job
         object.__setattr__(subject, "_waiting_title", None)
     if period:
-        world.apply_period(created, period)
+        if start_is_ours:
+            # Said by the world, so the record says the world said it. Taken as the host's, an
+            # assumed date is indistinguishable from one somebody knew, and this world spent a
+            # day finding out what that costs.
+            with ontology.stating("world"):
+                world.apply_period(created, period)
+        else:
+            world.apply_period(created, period)
     _note_same_label(world, name, rel, subject, obj, attrs, start, end, created)
     if False:  # asked for before the link is made now, not noted after
         # A type that changes is a type with a time, so here the time is part of the fact and

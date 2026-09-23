@@ -1355,3 +1355,34 @@ in batches that otherwise went fine.
 **Four times in one day my own measurement was the thing that was wrong**, and every time I
 looked at the world first. The pattern is always the same shape: the check knows less about the
 world than the world does, and reports the difference as the world's fault.
+
+---
+
+## 2026-09-24 · The record did not rebuild the world it recorded
+
+**Asked whether a world saves and restores correctly.** Rebuilt a real 455-fact world from its
+statements and counted: **twelve names gone from the world entirely**, though every one of them
+had its statements in the record. Berkeley, Paris, Buddhism, Australia, Bucharest, rugby.
+
+**Two rules, both looser in the rebuild than in the running world.**
+
+- `assembly.same_name` compared names across everything. A city called Paris and a person
+  called Paris became one, and the city was the one that went. The world had spent the day
+  learning to *ask* about a name it already holds under another class; rebuilding it merged on
+  exactly that. The class a statement was recorded under is carried by its own id, so it is
+  now a distinguishing fact: two things recorded as different kinds are not one thing for
+  answering to one name.
+- A name inside another name scores exactly `PART_CEILING`, which is what makes "Anna" and
+  "Anna Sullivan" one person. Applied to everything it made Berkeley the University of
+  California, Berkeley; rugby, rugby union; Australia, the Australian Open; Bucharest,
+  Bucharest Municipality. `matching.PART_MATCH_CLASSES` has always said where that holds, and
+  the live world has always consulted it. The rebuild did not.
+
+**Now:** 411 of 412 names and all 468 links survive a rebuild. The one that does not is
+"Walter Chrysler" merging with "Walter Percy Chrysler Jr." — the person rule doing what it is
+for, and what the live world would raise a question about.
+
+**Worth saying plainly.** This is the promise the whole two-layer design rests on — the image
+is a reading of the record, and the record is what is true. It had not been checked against a
+world anybody had actually built, only against fixtures. `tests/test_rebuild.py` checks it
+against a world with the names that broke it.
