@@ -133,6 +133,36 @@ def main() -> int:
     check("and with a datetime, as before", when.start_time >= datetime(2026, 9, 30))
     check("and is still a datetime for everything else", isinstance(when.start_time, datetime))
 
+    # --- a handover survives the dates a recorder invents when told to say when ---
+    # The benchmark's whole subject. Two facts about one thing, recorded in one breath: with no
+    # date the later one holds and both are kept; with `starts="now"` on both, the world used
+    # to read two microsecond-apart timestamps as deliberate overlapping claims and refuse the
+    # second outright, losing it. "now" is when you are being told, not when it began.
+    from terraweaver import authoring as _authoring
+    import tempfile
+    for said in ("", ', starts="now"', ', starts="2020-01-01"'):
+        where = Path(tempfile.mkdtemp())
+        own = build_classes(load_specs(ONTOLOGY_DIR), IMPLS)
+        own_store = Store(str(where / "w.db"))
+        build(own, own_store)
+        own_world = World(own_store, own)
+        ontology.set_world(own_world)
+        _authoring.install(own_world, where / "grown").define_relation(
+            "chairs", "who leads an organisation, one at a time", nature="related_to",
+            cardinality="many-to-one", over_time=True)
+        org = own["Organization"].new(name="Fatah")
+        first = own["Person"].new(full_name="Mahmoud Abbas")
+        second = own["Person"].new(full_name="Someone Else")
+        exec(f'first.relate(org, "chairs"{said})', {"first": first, "org": org})
+        kept = refused(lambda: exec(f'second.relate(org, "chairs"{said})',
+                                    {"second": second, "org": org}))
+        holds = [p.display_name() for p in org.related("chairs_of")]
+        check(f"a second one hands over, said as {said or '(no date)'}",
+              kept is None and holds == ["Someone Else"], f"{kept or holds}")
+        check(f"and the first stays in the record, said as {said or '(no date)'}",
+              first in org.related("chairs_of", any_time=True))
+    ontology.set_world(world)
+
     print()
     if failures:
         print(f"{len(failures)} failed: {', '.join(failures)}")

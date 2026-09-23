@@ -207,6 +207,74 @@ def _said_word(fact: str, names: list[str]) -> list[str]:
     return words
 
 
+def said_about(db: Path) -> list[tuple]:
+    """Every entity and link with what the agent said it is — the world as a person would read it.
+
+    Descriptions come back as plain strings from one path and as {"text": ...} from another, and
+    a reader that handles only one of them shows an empty column over a world that is full.
+    """
+    conn = sqlite3.connect(db)
+    tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+    plumbing = {"instances", "values_", "comments", "runs", "questions", "texts", "periods",
+                "said", "subjects", "meanings", "name_choices", "entity_access", "value_history",
+                "world_variables", "procedures", "self_files"}
+
+    def rows(table):
+        out: dict = {}
+        for iid, attr, value in conn.execute(f"SELECT instance_id, attr, value FROM '{table}'"):
+            out.setdefault(iid, {})[attr] = value
+        return out
+
+    def read(raw, fallback=None):
+        if raw is None or raw == "null":
+            return fallback
+        try:
+            return json.loads(raw)
+        except (TypeError, ValueError):
+            return raw
+
+    def first_line(raw) -> str:
+        texts = read(raw, []) or []
+        if not texts:
+            return ""
+        one = texts[0]
+        return str(one.get("text", "") if isinstance(one, dict) else one)
+
+    entities, links = {}, []
+    for table in sorted(tables):
+        if table in plumbing or table.startswith(("facts_", "reasoning_", "sqlite_", "idx_")):
+            continue
+        attrs = {r[0] for r in conn.execute(f"SELECT DISTINCT attr FROM '{table}'")}
+        (links if {"subject", "object"} <= attrs else entities).__setitem__(table, rows(table))             if isinstance(entities, dict) and {"subject", "object"} > attrs else None
+        if {"subject", "object"} <= attrs:
+            links.append((table, rows(table)))
+        else:
+            entities[table] = rows(table)
+
+    names = {iid: read(held.get("name") or held.get("full_name") or held.get("stated"), "?")
+             for held in entities.values() for iid, held in held.items()} if False else {}
+    for table, held in entities.items():
+        for iid, one in held.items():
+            got = one.get("name") or one.get("full_name") or one.get("stated")
+            if got:
+                names[iid] = read(got, "?")
+
+    out = []
+    for table in sorted(entities):
+        for iid, one in sorted(entities[table].items(), key=lambda kv: str(names.get(kv[0], ""))):
+            out.append(("thing", table, str(names.get(iid, "?")), str(read(one.get("nature"), "—")),
+                        first_line(one.get("descriptions"))))
+    def ref(raw):
+        got = read(raw)
+        return got.get("$ref") if isinstance(got, dict) else got
+    for table, held in links:
+        for one in held.values():
+            out.append(("link", table, f"{names.get(ref(one.get('subject')), '?')} → "
+                                       f"{names.get(ref(one.get('object')), '?')}", "",
+                        first_line(one.get("descriptions"))))
+    return out
+
+
 def tasks_of(db: Path) -> list[tuple]:
     """How each task the agent opened ended — the one thing it cannot fake."""
     conn = sqlite3.connect(db)

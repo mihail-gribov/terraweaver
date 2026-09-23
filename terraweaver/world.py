@@ -892,6 +892,15 @@ def _period(starts, until, ttl, permanent: bool) -> dict:
     """The validity attributes a caller asked for; empty if they said nothing about time."""
     period = {}
     bound, sure = timeutil.told(starts)
+    if bound is not None and getattr(bound, "is_telling_time", False):
+        # Said "now": that is when I am being told, which the record keeps anyway. It is not a
+        # claim that the fact began at this instant, and stored as one it makes every pair of
+        # facts recorded in one breath look like two deliberate overlapping periods.
+        ontology.note_hint(
+            "I took \"now\" as when you are telling me, not as when it began, so this has no "
+            "start. If the fact itself began today, say starts=\"today\"; if it began earlier "
+            "and you do not know when, starts=before(now()).")
+        bound = None
     begin = bound.moment if bound is not None else None
     if begin is not None:
         period["valid_from"] = begin

@@ -381,9 +381,29 @@ class WorldRuntime:
                 entity = self.store.load(one, self.classes)
             except Exception:  # noqa: BLE001 - gone, or of a class this world no longer has
                 continue
-            if entity is not None:
-                without.append(entity.display_name())
+            if entity is None or not self._needs_describing(entity):
+                continue
+            without.append(entity.display_name())
         return without
+
+    @staticmethod
+    def _needs_describing(entity) -> bool:
+        """Whether the class already accounts for the thing, or a line is owed.
+
+        Asked of everything, the check produced the one thing this world forbids. Eleven of
+        twenty-two descriptions came back as the fact written out in prose — "Amy Winehouse:
+        died in the city of Camden Town", with the DiedIn link sitting right beside it. It was
+        the honest answer to an unanswerable question: of a Person called Amy Winehouse, "what
+        it is" is encyclopaedia the user never said, and "why it is here" is the fact.
+
+        A Thing is different, because `Thing` says nothing. Camden Town, wide receiver and the
+        BBC are all Things, and only the line tells them apart — which is exactly where the
+        world found three organisations filed under three natures. So the line is owed by the
+        catch-all class and by links, and by nothing that already has a class of its own.
+        """
+        from terraweaver.relations import Relation
+
+        return isinstance(entity, Relation) or type(entity).__name__ == "Thing"
 
     def _anything_said(self, session) -> bool:
         """Whether this task put anything into the world beyond entities and their names.

@@ -931,3 +931,43 @@ first behind looking like a class of its own.
 
 **How we would know it matters.** A host putting an organisation into the `AIAgent` class, or a
 question about "agents" answered with the assistant and a broadcaster in one list.
+
+---
+
+## 2026-09-23 · "Now" is when you are being told, not when it began
+
+**Seen.** Two facts about one thing, recorded in one breath — the shape of 143 of the
+benchmark's statements. With no date, the handover works: the later one holds and the first
+stays in the record. With `starts="now"` on both, **the second was refused and was nowhere in
+the world afterwards.** The fact was lost.
+
+Two things built the same day collided. "Time is said, never assumed" tells a recorder to say
+when; "a dated link is not ours to end" refuses to supersede one that carries a date. Between
+them, a recorder that does as it is told destroys every supersession — which is the whole
+subject of the material.
+
+**And the deeper fault is mine.** `starts="now"` is the same invented date the world stopped
+writing, moved one step out. I took the fabrication away from the world, which at least knew it
+was guessing, and handed it to the agent, which states it as fact. A default nobody chose is no
+better for having been typed by somebody else.
+
+**Done.** Two fixes, and they are different in kind:
+
+- **`"now"` is the telling time.** It answers "when are you telling me this", which the record
+  keeps anyway in `stated_at`; it is not a claim about when the fact began, so it no longer
+  becomes a `valid_from`. The world says what it did and what to write instead —
+  `starts="today"` if the fact really began today, `starts=before(now())` if it began earlier
+  and nobody knows when. `"today"` and a plain date are claims and still stored as such.
+- **Equal dates are not evidence of an overlap.** When the new link starts at the same moment
+  as the standing one, the dates carry no ordering at all, and refusing over them loses the
+  fact. Statement order decides, exactly as it does undated. Both the `functional` and the
+  `inverse_functional` branch of `_check_functional` had this, and only one of them was fixed
+  first — the second was found by the test, not by reading.
+
+**Pinned.** `tests/test_time.py` runs the handover three ways — no date, `starts="now"`,
+`starts="2020-01-01"` — and requires the later one to hold and the first to stay in the record
+in all three.
+
+**How we would know it was wrong.** A host that means "it began this very moment" and finds no
+start recorded. It has `starts="today"`, and if the instant matters it has a datetime; what it
+cannot have is the word that also means "I am telling you now".

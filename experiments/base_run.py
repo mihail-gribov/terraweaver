@@ -132,8 +132,10 @@ is what is true now — so do not write a date you were not given.
 If one of them does not fit what you have so far, put it in as a Thing, define the link type \
 you need and say it, and carry on. Do not drop it and do not write it out as a sentence.
 
-Say what each thing is here, in one line: `london.describe("the city Thomas Kyd was born in")`, \
-and the same for each link. What it is in this world and why it turned up — not what you happen \
+Say what each Thing is, in one line: `london.describe("the city Thomas Kyd was born in")`, and \
+what each link is: `born.describe("Thomas Kyd's birthplace")`. Not for entities of a class that \
+already says what they are — a Person called Amy Winehouse is accounted for, and a line about \
+her would either be the fact again or something nobody told you. What it is in this world and why it turned up — not what you happen \
 to know about it: "the capital city of the United States" is an encyclopaedia entry nobody \
 said, "the city Pedro Pierluisi worked in" is the reason it is here. A name is a handle, not an \
 account, and this line is the only description of the thing the world did not write itself — so \

@@ -806,7 +806,7 @@ def _between(rel, subject, obj, symmetric: bool) -> bool:
     return bool(symmetric) and same(rel.subject, obj) and same(rel.object, subject)
 
 
-def _not_ours_to_end(link) -> bool:
+def _not_ours_to_end(link, start=None) -> bool:
     """Whether ending this link is a thing the world may decide by itself.
 
     Nothing in the data tells a handover from a correction — "her partner is Lena" after "her
@@ -823,8 +823,19 @@ def _not_ours_to_end(link) -> bool:
     refused every change of job, because the person changing jobs is at one of them.
 
     Everything else hands over, which is what a one-at-a-time relation is for.
+
+    One exception to the date, and it decides the benchmark's whole subject: when the new link
+    starts at the same moment the standing one does, the dates carry no ordering at all. Two
+    equal timestamps are not a deliberate claim about overlapping stretches — they are the
+    absence of a claim, and refusing over them loses the fact outright. This is what a recorder
+    produces when it is told to say when and has not been told: `starts="now"` on both, which
+    is the same invented date the world stopped writing, moved one step out. Measured: with no
+    date the handover works and both are kept; with `starts="now"` on both the second was
+    refused and nowhere in the world afterwards.
     """
-    if getattr(link, "valid_from", None) is not None:
+    when = getattr(link, "valid_from", None)
+    if when is not None and not (start is not None
+                                 and timeutil.as_datetime(start) == timeutil.as_datetime(when)):
         return True
     return bool(rule(spec(type(link)), "symmetric"))
 
@@ -950,7 +961,7 @@ def _check_functional(world, name, rel, subject, obj, start, end, attrs) -> None
                     continue
                 if rule(rel, "symmetric") and same(r.object, subject) and same(r.subject, obj):
                     continue
-                if _not_ours_to_end(r):
+                if _not_ours_to_end(r, start):
                     raise ValueError(
                         f"{subject.display_name()} already has a {name} for that time: "
                         f"{r.display_name()}. {_why_not_to_assume(r)} {_how_to_make_room(start)}."
@@ -967,7 +978,7 @@ def _check_functional(world, name, rel, subject, obj, start, end, attrs) -> None
     if rel.get("inverse_functional") == "at_any_time":
         for r in candidates:
             if same(r.object, obj) and not same(r.subject, subject):
-                if _not_ours_to_end(r):
+                if _not_ours_to_end(r, start):
                     raise ValueError(
                         f"{obj.display_name()} already has a {name} for that time: "
                         f"{r.display_name()}. {_why_not_to_assume(r)} {_how_to_make_room(start)}."
