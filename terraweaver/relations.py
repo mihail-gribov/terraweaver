@@ -981,6 +981,35 @@ def _correct(world, standing, name: str, instead) -> None:
     )
 
 
+# How many times one end can be handed over before the type itself is in doubt. A thing that
+# changes hands three times may simply have changed hands three times; by the sixth the type is
+# more likely to be wrong about how many there can be.
+_HANDOVERS_BEFORE_ASKING = 3
+
+
+def _too_many_handovers(world, name: str, rel: dict, end, side: str) -> None:
+    """A type that keeps ending the last one on the same thing is a type that may be wrong.
+
+    `citizen_of` was declared one citizen per country. Every American in the slice ended the
+    last American's citizenship: twelve links to the United States, six of them still holding.
+    The world cannot know that a country has many citizens — that is what the word means — but
+    it can count the times it has ended one, and six is not a coincidence.
+    """
+    ended = [r for r in world.all(name, limit=None, history=True)
+             if getattr(r, "valid_until", None) is not None
+             and same(r.object if side == "object" else r.subject, end)]
+    if len(ended) < _HANDOVERS_BEFORE_ASKING:
+        return
+    world.questions.raise_(
+        end, f"one_{rel['kind']}_per_{side}_really",
+        f"{end.display_name()} has had {len(ended) + 1} of {name} in this world, each ending "
+        f"the last, because the type says there is one at a time. If a thing can have several "
+        f"at once — a country has many citizens, a company many employees — say so and the "
+        f"ones that were ended come back: {rel['kind']}.one_per_{side} = False.",
+        options=["one at a time is right", "it can have several at once"],
+    )
+
+
 def _hand_over(world, standing, held, start, name: str) -> None:
     """A new holder of a one-at-a-time relation ends the last one, rather than being refused.
 
@@ -1120,6 +1149,7 @@ def _check_functional(world, name, rel, subject, obj, start, end, attrs) -> None
                         f"{r.display_name()}. {_why_not_to_assume(r, start)} {_how_to_make_room(start)}."
                     )
                 _hand_over(world, r, obj, start, name)
+                _too_many_handovers(world, name, rel, obj, "object")
     if name == "Membership" and attrs.get("primary"):
         for r in candidates:
             if same(r.subject, subject) and getattr(r, "primary", False):

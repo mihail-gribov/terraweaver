@@ -147,6 +147,19 @@ def main() -> int:
     check("two links of two one-value types both stand",
           out == "['BornIn', 'Wrote']", out)
 
+    # --- a type that keeps ending the last one on the same thing is a type in doubt ---
+    # `citizen_of` was declared one citizen per country, so every American ended the last
+    # American's citizenship: twelve links to the United States, six still holding.
+    rt = world(citizen_of=True)
+    out, got = ran(rt, 'usa = Thing.ensure(name="United States", nature="place")\nt = now()\n'
+                       'for n in ("A One", "B Two", "C Three", "D Four", "E Five"):\n'
+                       '    Person.new(full_name=n).relate(usa, "citizen_of", starts=t)\n'
+                       'print(len(usa.related("citizen_of_of")))')
+    check("one per object leaves only the last", out == "1", out)
+    check("and the world asks whether it can have several at once",
+          any("each ending the last" in q for q in (got.get("questions") or [])),
+          str(got.get("questions"))[:110])
+
     print("\n" + (f"{len(failures)} failed: " + ", ".join(failures) if failures
                   else "all superseding tests passed"))
     return 1 if failures else 0
