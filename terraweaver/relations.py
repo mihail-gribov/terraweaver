@@ -1281,19 +1281,24 @@ def _only_what_still_holds(world, found: list) -> list:
     `history=True` (and `any_time=True`, which passes through it) still gives everything: what
     was said is never lost, it is only read as past.
     """
+    # Counted per type, not across them. Held in one set, a person with a birthplace and a book
+    # lost the book: both types say one value per subject, and the second link of the *second*
+    # type was taken for a second value of the first. It showed as "the fact is not in the
+    # world" while `relations("author_of")` returned it and its period was open.
     kept, seen_subject, seen_object = [], set(), set()
     for relation in found:              # already latest-first: stated over concluded, then time
         rel = spec(type(relation))
+        kind = rel["kind"]
         subject_id = getattr(relation.subject, "id", None)
         object_id = getattr(relation.object, "id", None)
         if rule(rel, "functional") is True and subject_id is not None:
-            if subject_id in seen_subject:
+            if (kind, subject_id) in seen_subject:
                 continue
-            seen_subject.add(subject_id)
+            seen_subject.add((kind, subject_id))
         if rule(rel, "inverse_functional") is True and object_id is not None:
-            if object_id in seen_object:
+            if (kind, object_id) in seen_object:
                 continue
-            seen_object.add(object_id)
+            seen_object.add((kind, object_id))
         kept.append(relation)
     return kept
 

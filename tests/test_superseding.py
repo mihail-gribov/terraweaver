@@ -134,6 +134,19 @@ def main() -> int:
           "Ursula" in left and "Starship" in left and "nothing says which is right" in left,
           left[:150])
 
+    # --- one value per subject is counted per type, not across a thing's whole life ---
+    # Held in one set, a person with a birthplace and a book lost the book: both types say one
+    # value per subject, and the second link of the second type was taken for a second value
+    # of the first. It read as "the fact is not in the world" while asking for it by name
+    # returned it with its period still open.
+    rt = world(born_in=False, wrote=False)
+    out, _ = ran(rt, 'p = Person.new(full_name="Ursula K. Le Guin")\n'
+                     'p.relate(Thing.ensure(name="Portland", nature="place"), "born_in")\n'
+                     'p.relate(Thing.ensure(name="Earthsea", nature="object"), "wrote")\n'
+                     'print(sorted(type(l).__name__ for l in p.relations()))')
+    check("two links of two one-value types both stand",
+          out == "['BornIn', 'Wrote']", out)
+
     print("\n" + (f"{len(failures)} failed: " + ", ".join(failures) if failures
                   else "all superseding tests passed"))
     return 1 if failures else 0
