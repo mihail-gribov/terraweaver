@@ -1207,3 +1207,49 @@ works — it was never a failure, only my reading of the count.
 
 **How we would know it was wrong.** The same count, run again, with NameError still leading —
 then the cascade was not the cause and the agent is losing its variables some other way.
+
+---
+
+## 2026-09-23 · Expectations folded from the facts, and what they then measured
+
+**Asked for.** A check per fact of what the world should look like, run automatically — because
+what was here asked only whether *some* link joined the two things a fact names, which passes a
+world where the director went in as the chairperson and where a later telling sits beside the
+one it replaced.
+
+**Built.** `experiments/expected.py` reads each sentence into (subject, predicate, object) —
+52 predicates cover 440 of the 455 — and then **folds them in order**: what is owed is the last
+telling for each thing and predicate, the ones before it owed as history.
+
+The folding is the part that matters, and it was learned by getting it wrong twice:
+
+- Checking every fact against the final world called the world wrong about fact 1. *"Thomas Kyd
+  was born in the city of London"* is superseded by fact 307, *"…the city of Leeds"*, and the
+  world holding Leeds is right.
+- "the city of London" is not the name of anything; the frame belongs to the predicate. Left
+  on, 44% of the slice read as missing from a world that held it.
+
+And one claim had to be narrowed: `Chanel -> FoundedBy -> Coco Chanel` and
+`Coco Chanel -> Founded -> Chanel` say the same thing, and only the type's name tells them
+apart, so "backwards" is claimed only where the name does not carry the direction. That alone
+moved 16 findings out of the wrong column.
+
+**What it then measured,** three worlds, same hundred facts, same expectations:
+
+| | as owed | backwards | no link | missing |
+|---|---|---|---|---|
+| before the day's last fixes | 45 (52%) | 2 | 24 | 15 |
+| mid-fix, with the read-back looping | 47 (54%) | 7 | 23 | 9 |
+| **after** | **70 (81%)** | **0** | 12 | 4 |
+
+261 turns and $2.26, against 369 and $3.22 for the middle state.
+
+**The loop that cost the middle state.** The read-back marked only the types it had shown, so a
+host that recorded more between close attempts was asked again about the new ones — seven
+refusals to close in one batch, fifty-three turns, nothing recorded. It is asked once per task
+now.
+
+**Said plainly, because it undercuts most of the day's readings:** one batch of ten facts,
+21-30, scored 4, 9, 10, 0 and 3 out of 10 on unchanged code. The agent's variance is wider than
+most of the differences I attributed to changes. What makes 52 → 81 believable is its size —
+larger than a whole batch — not the fact that it was measured once.
