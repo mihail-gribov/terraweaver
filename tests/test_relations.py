@@ -120,6 +120,22 @@ def main() -> int:
           str(grown._spec["relation"].get("nature")))
     initiative.MAKES_TYPES = False
 
+    # --- a correction has no date, and the earlier one is history, not a second answer ---
+    # Removing the invented end date left the correction announcing itself and changing
+    # nothing, so a thing had two head offices at once and every count agreed it was fine.
+    where = Organization.new(name="Acme Corp")
+    first_seat = Person.new(full_name="Dublin Seat")
+    later_seat = Person.new(full_name="Tallinn Seat")
+    where.relate(first_seat, "authority", label="manager", starts=date(2020, 1, 1))
+    check("one at a time: the later one holds",
+          [p.full_name for p in where.related("managed_by")] == ["Dublin Seat"],
+          str([p.full_name for p in where.related("managed_by")]))
+    thing = Person.new(full_name="Twice Told")
+    thing.relate(Organization.new(name="First Place"), "membership", title="a")
+    thing.relate(Organization.new(name="Second Place"), "membership", title="b")
+    both = [o.name for o in thing.related("membership", any_time=True)]
+    check("and what was said before is still in the record", len(both) >= 2, str(both))
+
     # --- a relation is an instance: attributes, history, comments ---
     job.title = "team lead"
     check("a relation's attribute keeps its history", [p.value for p in job.history("title")] == ["vendor logistics lead", "team lead"])

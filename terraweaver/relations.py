@@ -1041,6 +1041,26 @@ def _check_functional(world, name, rel, subject, obj, start, end, attrs) -> None
         for r in candidates:
             if same(r.subject, subject) and not same(r.object, obj):
                 _correct(world, r, name, obj)
+        # One per subject says nothing about the object, and that is where half of what people
+        # say lands: "the chairperson of Fatah is Mahmoud Abbas" makes the person the subject,
+        # so a later "the chairperson of Fatah is Yasser Arafat" is a different subject and
+        # nothing supersedes. Measured on the benchmark's own pair: the world held both. The
+        # world cannot know whether an organisation has one chairperson — that is what the word
+        # means, and it has only the shape — but it can count, and two holders at once is worth
+        # asking about once.
+        for r in candidates:
+            if same(r.object, obj) and not same(r.subject, subject):
+                world.questions.raise_(
+                    obj, f"one_{rel['kind']}_per_object",
+                    f"{obj.display_name()} now has two: {r.subject.display_name()} and "
+                    f"{subject.display_name()}, both {rel['kind'].replace('_', ' ')} it. If a "
+                    f"thing has only one at a time, say so and the later one will supersede "
+                    f"rather than join: {rel['kind']}.one_per_object = True. If it can have "
+                    f"several, nothing to do.",
+                    options=["one at a time", "several is right"],
+                    involves=[r.subject, subject],
+                )
+                break
     if rule(rel, "inverse_functional") is True:
         for r in candidates:
             if same(r.object, obj) and not same(r.subject, subject):
@@ -1193,9 +1213,43 @@ def relations_of(world, entity, kind: str | None = None, history: bool = False,
     found.sort(key=lambda r: (_stated_rank(world, r),
                               timeutil.as_datetime(r.valid_from or r.created_at), r.created_at),
                reverse=True)
+    if not history:
+        found = _only_what_still_holds(world, found)
     for relation in found:  # so rel.counterpart knows which end the host asked from
         relation.__dict__["_asked_from"] = entity
     return found
+
+
+def _only_what_still_holds(world, found: list) -> list:
+    """For a type with one value and no more, the latest telling — the rest is history.
+
+    A correction has no date to it: saying "its head office is Tallinn" after "…is Dublin" is
+    not news that it moved, it is being told the first was wrong, and writing an end date would
+    invent the day it moved. So the earlier one is not ended, it is simply not what holds — and
+    that is decided here, on the way out, the way a slot has always decided it.
+
+    It has to be decided somewhere. Removing the invented end date left `_correct` announcing a
+    correction and doing nothing, so a thing had two head offices and a person two birthplaces,
+    and every count agreed with the host that ten facts were recorded.
+
+    `history=True` (and `any_time=True`, which passes through it) still gives everything: what
+    was said is never lost, it is only read as past.
+    """
+    kept, seen_subject, seen_object = [], set(), set()
+    for relation in found:              # already latest-first: stated over concluded, then time
+        rel = spec(type(relation))
+        subject_id = getattr(relation.subject, "id", None)
+        object_id = getattr(relation.object, "id", None)
+        if rule(rel, "functional") is True and subject_id is not None:
+            if subject_id in seen_subject:
+                continue
+            seen_subject.add(subject_id)
+        if rule(rel, "inverse_functional") is True and object_id is not None:
+            if object_id in seen_object:
+                continue
+            seen_object.add(object_id)
+        kept.append(relation)
+    return kept
 
 
 def _stated_rank(world, relation) -> int:

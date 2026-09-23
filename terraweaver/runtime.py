@@ -320,8 +320,26 @@ class WorldRuntime:
             session.preset |= set(sandbox.MODULES) | {"__builtins__", "NotInWorld"}
             self.sessions[key] = session
         session = self.sessions[key]
+        self._bind_classes(session)
         session.last_used = time.time()
         return session
+
+    def _bind_classes(self, session) -> None:
+        """Every class this world has, under its class name and under the word it is said with.
+
+        Called when a session opens and after every run. Only after a run at first, which meant
+        a session that opened onto a world full of grown types could not name one until it had
+        written something — and the world was meanwhile asking it to amend a type by a name
+        that raised NameError.
+        """
+        for name, cls in self.world.classes.items():
+            if name not in session.namespace:
+                session.namespace[name] = cls
+                session.preset.add(name)
+            kind = ((getattr(cls, "_spec", {}) or {}).get("relation") or {}).get("kind")
+            if kind and kind not in session.namespace:
+                session.namespace[kind] = cls
+                session.preset.add(kind)
 
     def start_task(self, key: str, stated: str, mode: str) -> str:
         """Open a task: say what this piece of work is before doing it.
@@ -853,6 +871,7 @@ class WorldRuntime:
             if recording is not None:
                 with self.store.transaction():
                     effects["assumed"] += self._learn_name_choice(session, recording, before)
+        self._bind_classes(session)
         # A class the world made during the run has to be nameable in the next one. It was not:
         # the namespace is filled with the classes that existed when the session opened, so a
         # type the world invented from the host's own word could not be reached by any spelling
@@ -861,15 +880,6 @@ class WorldRuntime:
         # NameError twice and a silent no-op on the method the third time, and finally handed
         # every question to the user. It was right to give up; nothing it could have written
         # would have worked.
-        for name, cls in self.world.classes.items():
-            if name not in session.namespace:
-                session.namespace[name] = cls
-                session.preset.add(name)
-            kind = ((getattr(cls, "_spec", {}) or {}).get("relation") or {}).get("kind")
-            if kind and kind not in session.namespace:
-                # Under both spellings, because the host says the word and reads the class.
-                session.namespace[kind] = cls
-                session.preset.add(kind)
         new_names = session.sync()
         result = {
             "session_reset": key in self.idle_reset,

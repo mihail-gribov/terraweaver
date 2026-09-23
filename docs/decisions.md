@@ -1011,3 +1011,45 @@ overrules it: ending a partnership is a claim about both people.
 
 **How we would know it was wrong.** A `related_to` type that genuinely has no beginning worth
 stating — then `over_time` is doing two jobs and the type needs to say this one itself.
+
+---
+
+## 2026-09-23 · A correction that announced itself and changed nothing
+
+**Seen.** Asked what still needed fixing, the answer turned out to be the largest thing of the
+day, and it was a regression introduced that same morning. Removing the invented end date from
+`_correct` left it printing *"taking the later as a correction — what was said earlier stays in
+the record and is not what holds"* while doing nothing at all. Measured:
+
+    org.relate(Dublin,  "hq_in")
+    org.relate(Tallinn, "hq_in")
+    holds: ['Tallinn', 'Dublin']        # one organisation, two head offices
+
+Every type the recorder declared `over_time=False` — eight of nine in the run measured — did
+not supersede at all. Only `over_time=True` types, which end the previous one at the new one's
+start, worked. The counts agreed with the agent that ten facts were recorded, because ten were.
+
+**Done.** What holds is decided on the way out, where a slot has always decided it: for a type
+with one value and no more, the latest telling, the rest read as history. No date is written,
+because a correction is not a change — being told "its head office is Tallinn" after "…is
+Dublin" is not news that it moved. `history=True` and `any_time=True` still give everything.
+
+    holds: ['Tallinn']
+    any  : ['Tallinn', 'Dublin']
+
+**The second shape, and what the world can do about it.** Supersession also fails when the
+changing part is the *subject*: "the chairperson of Fatah is Mahmoud Abbas" then "…is Yasser
+Arafat" are two different subjects, and `functional` constrains only the object. The world
+cannot know that an organisation has one chairperson — that is what the word means and it has
+only the shape — but it can count, so a second holder of the same object now raises a question
+naming the fix (`chairperson_of.one_per_object = True`), once per type and object.
+
+**And two smaller things found while measuring it.** Grown classes were bound into a session's
+namespace only after a run, so a session opening onto a world full of types could not name one
+until it had written something — while the world was asking it to amend a type by a name that
+raised `NameError`. And `relate` returns `None` when an end is an unsettled question, which is
+silent: a fact goes nowhere and only a host that happened to use the return value finds out.
+
+**How we would know the first one was wrong.** A host that wants both readings current —
+but that is what a type with more than one value is for, and saying `one_per_subject = False`
+gets it.
