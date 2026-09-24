@@ -226,12 +226,13 @@ MODULES = {
     "before": conditions.before,
     "between": conditions.between,
     "now": conditions.now,
+    "long_ago": conditions.long_ago,
     "today": conditions.today,
 }
 
 AVAILABLE = (
     "Available without importing: math, statistics, re, json, collections, itertools (common "
-    "functions of each), datetime, date, timedelta, timezone, and now() / today(). No files, processes, network or "
+    "functions of each), datetime, date, timedelta, timezone, and now() / today() / long_ago(). No files, processes, network or "
     f"imports. A run is stopped after {TIMEOUT_SECONDS} seconds."
 )
 

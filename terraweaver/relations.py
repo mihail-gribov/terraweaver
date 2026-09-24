@@ -146,33 +146,21 @@ def same(a, b) -> bool:
 # What a nature means, in one place. The rules are read from it, never copied beside it: a type
 # that carried both `nature` and its own `transitive`/`symmetric` fields would be two statements
 # of one thing, and two statements of one thing is how supersession was lost earlier today.
-# What follows from each nature. `starts_required` is here rather than on the type because it
-# is a property of the kind of link, not of the particular one: a department is part of a
-# company and a chief executive is a kind of head, and nobody states the day either began —
-# those are how things are arranged, not events. Something related_to another and holding one
-# at a time is the opposite: which of two holds now is a question about when each began, and
-# with no date the only answer left is the order they happened to be typed in. Inferred from
-# the cardinality instead, the requirement reached `part_of` and refused facts nobody had a
-# date for; the nature is the thing that tells these apart, which is what it is for.
+# `starts_required` used to live here: one nature, related_to, demanded that a link holding one
+# at a time say when it began. The reasoning was that with no date the only answer left is the
+# order things were typed in — and the order things were typed in turned out to be the right
+# answer, measured. What the demand actually bought was a raise in the middle of a block, and a
+# raise stops the block: one un-dated marriage took twenty-eight lines of recording with it. A
+# time belongs to an event, and an event is a class with `start_time` required, not a link.
 BY_NATURE = {
-    "part_of": {"transitive": True, "acyclic": True, "irreflexive": True,
-                "starts_required": False},
-    "kind_of": {"transitive": True, "acyclic": True, "irreflexive": True,
-                "starts_required": False},
-    "same_as": {"symmetric": True, "transitive": True, "starts_required": False},
+    "part_of": {"transitive": True, "acyclic": True, "irreflexive": True},
+    "kind_of": {"transitive": True, "acyclic": True, "irreflexive": True},
+    "same_as": {"symmetric": True, "transitive": True},
     # A conclusion holds from the moment of what it was drawn from, which the world takes from
     # the basis rather than asking the host for.
-    "derived_from": {"acyclic": True, "irreflexive": True, "starts_required": False},
-    "related_to": {"starts_required": "when_it_changes"},
+    "derived_from": {"acyclic": True, "irreflexive": True},
+    "related_to": {},
 }
-
-
-def _wants_a_start(rel: dict) -> bool:
-    """Whether this kind of link is one whose beginning has to be said."""
-    wanted = rule(rel, "starts_required", False)
-    if wanted == "when_it_changes":
-        return "at_any_time" in (rel.get("functional"), rel.get("inverse_functional"))
-    return bool(wanted)
 
 
 def rule_for(link, name: str, default=None):
@@ -576,29 +564,17 @@ def relate(world, a, b, kind: str, period: dict, attrs: dict, basis: list | None
             world.apply_period(found, period)
         return found
 
-    if period.get("valid_from") is None and _wants_a_start(rel):
-        # Asked for, not demanded. The principle is right — a link that holds one at a time has
-        # a time in it — and the refusal was not: across 455 facts it turned away sixty, and
-        # those facts carry no dates, so all it could buy was a date invented to get past it.
-        # Supersession does not need one: measured, an undated pair hands over by which was
-        # told last and both stay in the record. So the fact goes in, and the asking is done
-        # where an answer can still arrive — by `_hand_over`, as a question that outlives the
-        # run, when the missing date actually decides which of two holds.
-        # Said, always — and `now()` is a thing to say. The first version of this refused and
-        # offered only real dates, so a recorder with no date had nothing to answer with and
-        # sixty facts were turned away in a 455-fact run. The second took now by itself, which
-        # is the world putting a date on a fact nobody dated. Between them is the rule: the
-        # date is part of the fact and has to be given, and when it does not matter, or is
-        # simply the moment of telling, `now()` says so — chosen by whoever has the sentence,
-        # not assumed by the world that does not.
-        raise ValueError(
-            f"{name} holds one at a time, so when it began is part of the fact. Say when:\n"
-            f"    a.{rel['kind']}(b, starts=t)   # t = now() — taken once, above\n"
-            f"If the user said when, give that: date(2006, 1, 1), \"3 years ago\", or "
-            f"before(now()) when that is all you know. If the date does not matter here, or it "
-            f"is simply now, say now() — that is an answer, not a blank. Take the moment once "
-            f"and pass the same value to everything you record in one breath."
-        )
+    # Nothing is asked here about when this began, and that is the settled answer after three
+    # attempts at the opposite. Refusing without offering a way to say "no date" turned away
+    # sixty facts in a 455-fact run; taking now() by itself put a date on a fact nobody dated;
+    # refusing while offering now() turned away the same facts again, because a raise stops the
+    # block and takes the rest of the batch with it.
+    #
+    # The principle survives in a better place. A link that merely *holds* has no beginning
+    # worth insisting on: supersession does not need one — measured, an undated pair hands over
+    # by which was told last, and both stay in the record. What does have a time is an event,
+    # and an event is a class, not a link: `Event.start_time` is required and always was. So
+    # the world insists on a date exactly where the date is the fact, and nowhere else.
     start = period.get("valid_from") or timeutil.now()
     end = period.get("valid_until")
     if basis:
@@ -1326,6 +1302,7 @@ def _only_what_still_holds(world, found: list) -> list:
     # type was taken for a second value of the first. It showed as "the fact is not in the
     # world" while `relations("author_of")` returned it and its period was open.
     kept, seen_subject, seen_object = [], set(), set()
+    undated: dict = {}
     for relation in found:              # already latest-first: stated over concluded, then time
         rel = spec(type(relation))
         kind = rel["kind"]
@@ -1333,14 +1310,45 @@ def _only_what_still_holds(world, found: list) -> list:
         object_id = getattr(relation.object, "id", None)
         if rule(rel, "functional") is True and subject_id is not None:
             if (kind, subject_id) in seen_subject:
+                _note_it_rests_on_order(undated, kind, kept, relation)
                 continue
             seen_subject.add((kind, subject_id))
         if rule(rel, "inverse_functional") is True and object_id is not None:
             if (kind, object_id) in seen_object:
+                _note_it_rests_on_order(undated, kind, kept, relation)
                 continue
             seen_object.add((kind, object_id))
         kept.append(relation)
+    for said in list(undated.values())[:2]:
+        ontology.note_hint(said)
     return kept
+
+
+def _note_it_rests_on_order(undated: dict, kind: str, kept: list, passed_over) -> None:
+    """Say when the answer rests on the order things arrived rather than on a date anybody gave.
+
+    Most links need no date and the world stopped asking for one — but some questions turn on
+    it, and those are the questions where the world has to say what its answer stands on. Two
+    tellings with no date between them are ordered by which arrived later, which is right far
+    more often than not and is still not the same as being told when. Said out loud, the host
+    can go back to the user for the date; said silently, an ordering artefact reads as a fact.
+
+    Only when it decided something: two links that both hold, or one dated pair, say nothing.
+    """
+    if kind in undated:
+        return
+    holding = next((r for r in kept if spec(type(r))["kind"] == kind), None)
+    if holding is None:
+        return
+    if any(getattr(one, "valid_from", None) is not None for one in (holding, passed_over)):
+        return                          # somebody gave a date; the answer stands on that
+    undated[kind] = (
+        f"{holding.display_name()} is what holds for {kind}, and {passed_over.display_name()} "
+        f"is read as the earlier telling — but neither was ever given a date, so that rests on "
+        f"the order they reached this world, not on anything anybody said. If which came first "
+        f"matters to the question you are answering, it is not settled here: ask, and record "
+        f"the date with starts= (now(), long_ago(), or the day itself)."
+    )
 
 
 def _stated_rank(world, relation) -> int:

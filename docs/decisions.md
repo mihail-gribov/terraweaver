@@ -1433,3 +1433,57 @@ which side each table is on instead of assuming.
 **Where it stands:** 471 of 472 names and all 468 links survive a rebuild of the frozen 455-fact
 world, the owner with them. The one loss is still Walter Chrysler merging with Walter Percy
 Chrysler Jr. — the person rule doing what it is for.
+
+---
+
+## 2026-09-24 · A time belongs to an event, and an event is a class
+
+**Measured first.** A full 455-fact run on the code as it stood: 303 joined, against 371 and 366
+for the two runs before it. The whole loss was one category — links that never landed went from
+26 and 23 to **82**. Entities arrived as before, direction improved, naming did not move.
+
+**The first diagnosis was wrong and is worth recording as wrong.** The losses looked like they
+sat on types that demand a start, and the shape seemed to confirm it: capitals 2 → 22, citizens
+4 → 13, chief executives 0 → 5. But `CapitalOf` in that world is `functional: True` and
+`CitizenOf` is not `at_any_time` — **neither demands a date**. The demand can account for at most
+sixteen of the eighty-two.
+
+**Two real causes, found by reading the record.**
+
+*A link with no ends.* All twenty-two capital facts became **two** `CapitalOf` rows holding a
+description ("Berlin is the capital of Germany"), an orphan attribute named after the link's own
+kind, and neither a subject nor an object. Nothing refused them. Reading either end raised
+`AttributeError: CapitalOf has no 'subject' — did you mean 'subject'?`, which took every other
+link of that type down with it, so the check reported them missing and was right. `World.new`
+now refuses a relation class without both ends and says to use `a.relate(b, kind)`.
+
+*A raise stops the block.* Host code runs statement by statement, and statements after the one
+that raised never run — the world reports `28 after it never ran`. So one un-dated marriage on
+line 5 of a 33-line block cost the whole rest of the batch. There were 52 such refusals.
+
+**The rule, after three attempts at it.** Refusing without a way to say "no date" turned away
+sixty facts. Taking `now()` silently put a date on a fact nobody dated. Refusing while offering
+`now()` turned away the same facts again, because of the paragraph above. What all three missed:
+**a link that merely holds has no beginning worth insisting on.** Supersession does not need one
+— measured, an undated pair hands over by which was told last. What does have a time is an
+*event*, and an event is a class with `start_time` required.
+
+So `starts_required` is gone from `BY_NATURE`, and **`Event` joins `BASE_CLASSES`**. A world is
+three kinds of thing — entities, the links between them, and events — and the recorder could
+only see two of them: neither built world contains a single Event, because the class was never in
+the base world at all.
+
+**And because nothing is demanded on the way in, the world speaks on the way out.** When a
+one-at-a-time type has two tellings and neither carries a date, the answer rests on the order
+they arrived. That is right more often than not and is not the same as having been told, so
+`_only_what_still_holds` now says which telling it took and what that rests on. Uncertainty is
+an outcome, not a refusal — and this is the read where the host can still go back and ask.
+
+**`long_ago()`** joins `now()` as something a host can say: `timeutil.NEVER`, the honest answer
+for a standing fact nobody dated — already so before this world began.
+
+**Where it stands.** Answering the same hundred questions of the two worlds: 77/100 for the world
+this run built, 81/100 for the frozen one. Published numbers on the task: Zep 7%, Mem0 18%,
+BM25 48%, HippoRAG-v2 54%, and a deterministic `max(serial)` recipe at 78% / 94.8%. At n=100 our
+interval is 68–84%, so clear of every memory system and both retrieval baselines — the first time
+that gap is wider than the interval — and not separable from `max(serial)` on gpt-4o-mini.

@@ -450,6 +450,22 @@ class World:
                 f"Thing.new(name={class_name!r}, nature=\"place\") — or one of {known}. "
                 f"world.define(...) makes a class that is not there yet."
             )
+        spec = self.classes[class_name]._spec
+        if spec.get("relation") and not (attrs.get("subject") and attrs.get("object")):
+            # A link with no ends is not a link. One recording run made two of these and lost
+            # every capital it was given: both rows held a description ("Berlin is the capital
+            # of Germany"), an orphan attribute named after the link's own kind, and neither a
+            # subject nor an object. Nothing refused them, so the fact read as recorded while
+            # the world held nothing that joined the two things — and reading either end raised,
+            # which took every other link of that type down with it.
+            kind = spec.get("relation", {}).get("kind", class_name)
+            raise ValueError(
+                f"{class_name} is a link, and a link is made from its ends, not on its own:\n"
+                f"    a.relate(b, \"{kind}\")     # reads \"a is b's {kind.replace('_', ' ')}\"\n"
+                f"`{class_name}.new(...)` with no subject and no object would put a row in the "
+                f"world that joins nothing — it would carry your description and connect no two "
+                f"things, and nothing later could tell it from a fact."
+            )
         period = _period(starts, until, ttl, permanent)
         scored = matching.score_candidates(self._worth_loading(cls, attrs), class_name, attrs)
         # A twin (same email, same full name) — or someone whose name this is: "Darren" when

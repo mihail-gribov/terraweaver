@@ -78,18 +78,40 @@ def main() -> int:
     rt = world()
     _, got = ran(rt, 'a = Person.new(full_name="A One")\nb = Organization.new(name="B Two")\n'
                      'a.relate(b, "authority", label="manager")')
-    # Recorded, not refused. Refusing turned away sixty facts in a 455-fact run, and the facts
-    # carry no dates — so the only thing the refusal could buy was one the host made up.
-    # Asked for, with now() among the answers. Refusing and offering only real dates turned
-    # away sixty facts in a 455-fact run; taking now by itself is the world dating a fact
-    # nobody dated. The date is given, and "it does not matter, it is now" is a way of giving it.
-    check("a related_to link that changes will not be made without a start",
-          not got["ok"] and "when it began is part of the fact" in str(got.get("error")),
-          str(got.get("error"))[:80])
-    check("and the refusal offers now() as an answer",
-          "now()" in str(got.get("error")), str(got.get("error"))[:120])
+    # Recorded, not refused, and that is the settled end of three attempts. Refusing turned away
+    # sixty facts in a 455-fact run; taking now() by itself dated a fact nobody dated; refusing
+    # while offering now() turned away the same facts again, because a raise stops the block and
+    # takes the rest of the batch with it — one un-dated marriage cost twenty-eight lines.
+    # A time belongs to an event, and Event.start_time is required. A link that merely holds
+    # needs no beginning: supersession orders an undated pair by which was told last.
+    check("a related_to link that changes is made without a start", got["ok"],
+          str(got.get("error"))[:120])
     _, got = ran(rt, 'dept = Organization.new(name="Newsroom")\ndept.relate(b, "part_of")')
     check("a part_of link needs no start", got["ok"], str(got.get("error"))[:80])
+
+    # Nothing is demanded on the way in, so on the way out the world says what its answer
+    # stands on. Two undated tellings are ordered by which arrived later — right more often
+    # than not, and not the same as having been told.
+    rt = world(led_by=False)          # over_time=False: a correction, decided on the way out
+    out, got = ran(rt, 'boss = Person.new(full_name="The Boss")\n'
+                       'boss.relate(Organization.new(name="Told First"), "led_by")\n'
+                       'boss.relate(Organization.new(name="Told Second"), "led_by")\n'
+                       'print([r.object.name for r in boss.relations("led_by")])')
+    said = " ".join(got.get("hints", []))
+    check("with no dates, the later telling holds", "Told Second" in out and "Told First" not in out,
+          out.replace("\n", " | ")[:100])
+    check("and the world says the answer rests on the order they arrived",
+          "the order they reached this world" in said, said[:140] or "(no hint)")
+    dated = world(led_by=False)
+    _, got = ran(dated, 'boss = Person.new(full_name="The Boss")\n'
+                        'boss.relate(Organization.new(name="Told First"), "led_by", '
+                        'starts=date(2019, 1, 1))\n'
+                        'boss.relate(Organization.new(name="Told Second"), "led_by", '
+                        'starts=date(2022, 1, 1))\n'
+                        'print(len(boss.relations("led_by")))')
+    check("and says nothing when somebody did give a date",
+          "the order they reached this world" not in " ".join(got.get("hints", [])),
+          " ".join(got.get("hints", []))[:140])
 
     # --- a date given earlier than the standing one is a conflict, not a handover ---
     rt = world(chairs=True)

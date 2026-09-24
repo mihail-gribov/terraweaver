@@ -132,6 +132,13 @@ Every class below shares these, so they aren't repeated for each one:
             Person.find(organization=acme)      — who works there
             Vacancy.find(remote=True, status="not_applied")
             Person.find(email="ada@example.com")
+        A date is asked for in one place only: Event.start_time, because an event without a
+        when is not an event. A link that merely holds — a capital, a language, an employer —
+        needs no beginning, and a later telling supersedes an earlier one without one. Give
+        `starts=` when somebody said a date, `starts=long_ago()` when the thing has been so
+        longer than anybody cares to say, and nothing at all when there is nothing to say. When
+        an answer then turns on which of two came first and neither was dated, the world says
+        so rather than passing off the order they arrived in as a fact you were told.
         Times and numbers take ranges — after(x), before(x), between(a, b) — which compare dates
         and datetimes safely whatever their time zone (use now() and today() for "now"):
             Event.find(start_time=after(now()))                               — upcoming

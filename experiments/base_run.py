@@ -40,9 +40,19 @@ from experiments.world_census import census  # noqa: E402
 RESULTS = ROOT / "benchmarks" / "results"
 
 PRIMER = """\
-This world holds four classes and nothing else: Thing (anything at all — it has a name and \
-whatever you say about it), Person, Agent, and Related (a link you have no type for yet). Two \
-entities are already in it: world.owner, the person it belongs to, and world.me, you.
+A world is made of three kinds of thing, and this one starts with the least of each: \
+**entities** — Thing (anything at all — it has a name and whatever you say about it) and \
+Person; **links** between them — Related (one you have no type for yet), PartOf, Kind; and \
+**events** — Event, the one kind whose time is part of what it is. Also Agent, which is you. \
+Two entities are already in it: world.owner, the person it belongs to, and world.me, you.
+
+What belongs in an Event is what *happened* at a moment — a meeting, a launch, a death, a \
+founding. `Event.new(title=..., start_time=...)`, and `start_time` is required, because an \
+event without a when is not an event. Nothing else in this world is asked for a date: a link \
+that merely holds — a capital, a language, an employer — needs no beginning, and a later \
+telling supersedes an earlier one without one. Say `starts=` when the user gave a date, \
+`starts=long_ago()` when the thing has been so longer than anybody cares to say, and nothing \
+at all when there is nothing to say.
 
 Everything else you define as you go:
 
@@ -92,7 +102,10 @@ Two things the world insists on. Every class, attribute and relation type needs 
 of what it is — that is what a later lookup searches. And `over_time` on a relation has to be \
 said: True when a thing has one current holder and a new one ends the last (an employer, a \
 spouse), False when they simply accumulate. Without it, asking later gives the first answer you \
-were ever told.
+were ever told. This is the decision that decides whether a correction can ever reach the \
+reader, and it is made once, from the first example — so make it for the word, not for the \
+sentence in front of you: a country has one capital and a person one current employer, however \
+the first fact you saw happened to read.
 
 How this goes, every time:
 

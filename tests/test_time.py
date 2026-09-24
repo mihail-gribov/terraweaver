@@ -159,16 +159,15 @@ def main() -> int:
         second = own["Person"].new(full_name="Someone Else")
         from terraweaver import timeutil as _t
         held = _t.now()          # taken once, as a host should: two now() calls are not one moment
-        # Recorded without a start rather than refused: the date may be in the agent's own
+        # Recorded without a start rather than refused. The date may be in the agent's own
         # context and it is the agent's to bring, but the world does not lose the fact waiting
-        # for it. Checked on a pair of its own so the dated pair below is not disturbed.
+        # for it — and a raise here stops the whole block, so one un-dated link used to cost
+        # every fact written after it. What has a time is an event, and Event.start_time is
+        # required. Checked on a pair of its own so the dated pair below is not disturbed.
         spare = own["Organization"].new(name="Spare Body")
         undated = refused(lambda: own["Person"].new(full_name="Undated One").relate(spare, "chairs"))
-        check("a type that changes will not take a link with no start",
-              undated is not None and "when it began is part of the fact" in (undated or ""),
-              str(undated)[:90])
-        check("and says now() is an answer when the date does not matter",
-              "now()" in (undated or ""), str(undated)[:110])
+        check("a type that changes takes a link with no start",
+              undated is None, str(undated)[:110])
         exec(f'first.relate(org, "chairs"{said})', {"first": first, "org": org, "held": held})
         kept = refused(lambda: exec(f'second.relate(org, "chairs"{said})',
                                     {"second": second, "org": org, "held": held}))

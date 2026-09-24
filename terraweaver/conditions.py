@@ -62,6 +62,19 @@ def between(start, end) -> Condition:
     return Condition(low=start, high=end, high_includes_day=_whole_day(end), text=f"between({start!r}, {end!r})")
 
 
+def long_ago() -> datetime:
+    """As far back as this world goes: a fact that has held longer than anybody cares to say.
+
+    The honest answer for a standing fact nobody dated — a country's capital, a language, where
+    a river runs. Not a guess at a real date and not the moment of telling: it says the thing
+    was already so before this world began, which is exactly what is known about it.
+
+    It is `timeutil.NEVER`, so every `holds_at` in the past answers True, and a later telling
+    with a real start still supersedes it — earliest possible beginning, not greatest claim.
+    """
+    return timeutil.NEVER
+
+
 def now() -> datetime:
     """The current moment, in the one form this world keeps time in: UTC, without a tzinfo.
 

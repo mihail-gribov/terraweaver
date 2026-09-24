@@ -280,7 +280,13 @@ def trusted_writes():
 # Task is in the base because the boundary has to exist before any work does: a world
 # that could be written to without one is a world where facts land outside every task,
 # which is the state every check added here was built to end.
-BASE_CLASSES = ("Thing", "Related", "PartOf", "Kind", "Person", "AIAgent", "Task")
+# Three kinds of thing, and a world is made of them: entities (Thing, Person), the links
+# between them (Related, PartOf, Kind), and events. An event is not an entity that happens to
+# have a date — it is the one kind whose time is part of what it is, which is why `start_time`
+# is required on it and required nowhere else. A world without Event has nowhere to put "when"
+# except on links that merely hold, and asking a link that merely holds when it began cost a
+# 455-fact run most of its capitals and every one of its marriages.
+BASE_CLASSES = ("Thing", "Related", "PartOf", "Kind", "Person", "AIAgent", "Event", "Task")
 
 
 # What each base class keeps. A Person in the base is a name, not a name with an employer and a
@@ -295,6 +301,10 @@ BASE_KEEPS = {
     "Related": ("label", "nature"),
     "PartOf": (),
     "Kind": (),
+    # `kind` and `status` are left out: their words (interview, call, offer, cancelled) are
+    # one world's vocabulary, and a base world is the one that has none yet. What stays is what
+    # makes an event an event — what it was, when it began, when it ended, what it was about.
+    "Event": ("title", "start_time", "end_time", "about"),
     "Task": ("stated", "mode", "touched", "runs", "closed_as"),
 }
 _ALWAYS = ("descriptions", "tags", "notes", "description")
