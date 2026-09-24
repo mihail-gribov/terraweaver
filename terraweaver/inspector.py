@@ -342,7 +342,8 @@ def look_at_types(world, limit: int = 20, can_ask: bool = True) -> dict[str, lis
     return out
 
 
-def name_the_ends(world, name: str, subject_is: str, object_is: str) -> bool:
+def name_the_ends(world, name: str, subject_is: str, object_is: str,
+                  said_by: str = "outside") -> bool:
     """Write what each end of a type is. Safe to do without asking, and this is why.
 
     A role is not a statement. Nothing in the record is written under it and nothing already
@@ -359,7 +360,13 @@ def name_the_ends(world, name: str, subject_is: str, object_is: str) -> bool:
     rel = cls._spec.get("relation") if cls else None
     if not rel or rel.get("roles") or not (subject_is and object_is):
         return False
-    rel["roles"] = [{"name": subject_is, "inverse": object_is}]
+    # Who said it, kept beside it. Not so the class can be treated as a lesser kind — a class
+    # is a class here and where it came from changes nothing about how it works — but because
+    # "read from outside" and "the person said so" are different weights of evidence, and the
+    # only place that difference can live is on the thing itself. What may honestly differ
+    # between two classes is how settled each is, and that is read from what has accumulated
+    # under it, not from who wrote it down first.
+    rel["roles"] = [{"name": subject_is, "inverse": object_is, "said_by": said_by}]
     grow = (world.extras or {}).get("define_relation")
     made = getattr(grow, "__self__", None)
     if made is not None and hasattr(made, "_save"):

@@ -137,6 +137,14 @@ world has, and drawing it was wrong: a type whose ends are not named cannot have
 checked, and it makes no difference who wrote it. `PartOf` came back "part" and "whole", which
 is right and useful; `Related` came back "entity" and "entity", which is vacuous and harmless.
 
+**A class shipped with the world and a class built out of facts are not two kinds of thing.**
+What may honestly differ between two of them is how *settled* each is — how much has
+accumulated under it, how long it has stood, how often it has been corrected — and that is read
+from the world, not from who wrote the class down first. Where something came from is worth
+**recording**, because "the person said so" and "read from outside" are different weights of
+evidence and the only place that difference can live is on the thing itself. A role the
+inspector wrote carries `said_by`, and a role the host named does not need to.
+
 Where an answer is worth keeping it goes *beside* the core file, never into it — which is what
 `growth` is for and has always been for: the core is read as it is and never written to, and
 additions live next to it and are merged in on the way.
