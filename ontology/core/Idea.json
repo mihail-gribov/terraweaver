@@ -40,5 +40,6 @@
     }
   ],
   "what_to_say": "what the idea is, whose it is, and where the user came across it",
-  "parent": "Thing"
+  "parent": "Thing",
+  "brief": "something thought or written rather than something that is \u2014 a book, a theory, a plan"
 }

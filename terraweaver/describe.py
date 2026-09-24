@@ -564,13 +564,20 @@ def _by_kind(specs: dict[str, dict[str, Any]]) -> list[str]:
         parent = spec.get("parent")
         if parent in kinds:
             children.setdefault(parent, []).append(name)
+    def line(name: str) -> str:
+        # `brief` is the class's own clause, written for this list. The full description is
+        # written for somebody reading about the class and runs to a paragraph — a paragraph
+        # paid for in front of every task, for every class the task never touches.
+        spec = kinds[name]
+        return f"{name} — {(spec.get('brief') or spec.get('description', '')).strip()}"
+
     lines = []
     for name, spec in kinds.items():
         if spec.get("parent") in kinds:
             continue                              # shown under its parent
-        lines.append(f"{name} — {spec.get('description', '').strip()}")
+        lines.append(line(name))
         for kid in sorted(children.get(name, [])):
-            lines.append(f"  {kid} — {kinds[kid].get('description', '').strip()}")
+            lines.append("  " + line(kid))
             # A third level is folded into its parent's line rather than dropped: the name has
             # to be reachable, and a class nothing mentions is a class nothing is recorded under.
             deeper = sorted(children.get(kid, []))

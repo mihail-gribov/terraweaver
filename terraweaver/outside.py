@@ -139,6 +139,26 @@ class TypecastLM(Closed):
 Local = TypecastLM
 
 
+def _one_of(options: dict, said: str) -> str | None:
+    """The option a reader meant, when it did not echo the name exactly.
+
+    A reader asked to repeat a name repeats it nearly: different case, a trailing full stop, the
+    name wrapped in a sentence. Insisting on the character-for-character match threw away every
+    answer and the walk never moved.
+    """
+    said = (said or "").strip()
+    if said in options:
+        return said
+    flat = {"".join(ch for ch in n.lower() if ch.isalnum()): n for n in options}
+    asked = "".join(ch for ch in said.lower() if ch.isalnum())
+    if asked in flat:
+        return flat[asked]
+    for key, name in flat.items():
+        if key and (key in asked or asked in key):
+            return name
+    return None
+
+
 class AsChoices(Closed):
     """A closed question put to a reader that answers in words, when no closed one is configured.
 
@@ -160,9 +180,7 @@ class AsChoices(Closed):
                 "You choose one of the named options and answer with JSON only.",
                 f"{state}\n\n{asked.get('instructions', '')}\n\n{shown}\n\n"
                 f'JSON only: {{"choice": "<exactly one of the option names above>"}}') or {}
-            picked = str(said.get("choice") or "").strip()
-            if picked not in options:
-                picked = next((n for n in options if n.lower() in picked.lower()), None)
+            picked = _one_of(options, str(said.get("choice") or ""))
             out[key] = {"probabilities": {picked: 1.0} if picked else {}}
         return out
 

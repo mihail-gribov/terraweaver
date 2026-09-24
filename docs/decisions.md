@@ -1948,3 +1948,44 @@ and until then the class honestly says what its parent says.
 **The world description shows two levels**, roots and their children, with a third folded into
 its parent's line. A flat list does not say that a Person is a Thing, so a host looking for
 somewhere to put a city reads past Place and reaches for Thing.
+
+### The same day, what the live runs corrected
+
+**The walk never moved, and two runs reported that as behaviour.** The option standing for "none
+of these" was named `— none of these: it needs a class of its own`, and a reader asked to echo a
+name echoes it nearly — different case, a trailing stop, the name inside a sentence. Insisting on
+the character-for-character match threw away every answer: `choose` came back empty, the walk
+returned where it started, and four things in a row were reported as staying `Thing`. Option
+names are now short and plain, and `outside._one_of` matches on the letters.
+
+**One attribute cost a whole class.** `define` wants a sentence per attribute and a reader writes
+labels — "Land area" — so `City` was refused over `area_sqkm`, the thing stayed a bare `Thing`,
+and every later city had nowhere to go. An attribute nobody described is now simply not taken;
+it can be declared later, when something is written into it. The class is what is being made.
+
+**What identifies one of these is not the reader's to choose.** Asked, it answered `population`
+for a `City` and wrote "Rome" into it. These things arrive under a name and are known by it, so
+the class gets `name` and the reader is told not to put the thing's name anywhere else.
+
+**A class is not named after its parent.** "A kind of Thing" called `Thing` is the walk handing
+back where it began, dressed as a new class.
+
+**Still wrong, and worth stating:** "Kreuzberg is a district of Berlin" was placed under `City`.
+The walk prefers an existing class to a new one and there is no threshold saying when it should
+not — with no `Place` in that world, `City` was born directly under `Thing` and `District` had
+nowhere to be except beside it.
+
+### A class is described in prose, by somebody, more than once
+
+`brief` is the one canonical line — how the class appears in the list every host reads. The
+account in sentences is a prose-fact among however many accumulate:
+
+    [{"text": "A populated place with a permanent community and defined boundaries.",
+      "source": "world"},
+     {"text": "Cities here are mostly ones the user has lived in or visited.",
+      "source": "world"}]
+
+One canonical sentence per class was a shape used nowhere else in this world, and it lost what it
+replaced: the first account is written when one of a kind has been seen, the next when there are
+twenty, and neither overrules the other. `source` is the word every statement here already
+carries (`ontology.stating`) — "agent", "world", "given" — rather than a second word for it.

@@ -61,5 +61,6 @@
     "hosts": "who lives, works or is kept here"
   },
   "what_to_say": "what sort of place it is \u2014 a city, a district, a country \u2014 where it is, and why it came up in this world",
-  "parent": "Thing"
+  "parent": "Thing",
+  "brief": "a city, a district, a country, an address"
 }

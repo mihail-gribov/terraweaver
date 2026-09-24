@@ -83,5 +83,6 @@
     }
   ],
   "what_to_say": "what the project is, whose it is, what state it is in",
-  "parent": "Thing"
+  "parent": "Thing",
+  "brief": "a piece of work with a life of its own"
 }

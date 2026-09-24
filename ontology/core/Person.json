@@ -116,5 +116,6 @@
     "service": "services they provide; served_by \u2014 their doctor, landlord, recruiter"
   },
   "what_to_say": "their full name as the user says it, who they are to the user, where they live, when they were born if it came up \u2014 enough to know them again when the name is said differently next time",
-  "parent": "Thing"
+  "parent": "Thing",
+  "brief": "a human being known to the user"
 }

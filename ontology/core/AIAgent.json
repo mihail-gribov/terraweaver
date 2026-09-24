@@ -47,5 +47,6 @@
   ],
   "methods": [],
   "what_to_say": "who this agent is and whose world it looks after",
-  "parent": "Thing"
+  "parent": "Thing",
+  "brief": "the assistant itself, and whose world it looks after"
 }

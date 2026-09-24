@@ -88,5 +88,6 @@
       "description": "Add a person to `participants`."
     }
   ],
-  "what_to_say": "when it is or was, where, who was in it, and what it was for"
+  "what_to_say": "when it is or was, where, who was in it, and what it was for",
+  "brief": "something that happens at a time \u2014 a meeting, an interview, a trip leg"
 }

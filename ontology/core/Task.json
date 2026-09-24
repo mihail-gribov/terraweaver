@@ -36,5 +36,6 @@
   ],
   "methods": [],
   "what_to_say": "what this piece of work was, in one line, as it would be read back later",
-  "parent": "Event"
+  "parent": "Event",
+  "brief": "one thing an agent was sent to do with this world"
 }

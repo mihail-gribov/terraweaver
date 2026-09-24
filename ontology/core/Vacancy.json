@@ -113,5 +113,6 @@
     }
   ],
   "what_to_say": "the role, the company, and where the user is with it",
-  "parent": "Thing"
+  "parent": "Thing",
+  "brief": "a role the user is or was considering"
 }

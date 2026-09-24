@@ -79,5 +79,6 @@
     "located": "its offices"
   },
   "what_to_say": "what it does, where it is, and how the user is connected to it \u2014 worked there, applied there, buys from it",
-  "parent": "Thing"
+  "parent": "Thing",
+  "brief": "a company, an institution, a team"
 }

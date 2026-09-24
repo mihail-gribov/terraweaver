@@ -109,8 +109,19 @@ class Authoring:
     # --- defining ---
 
     def define(self, name: str, description: str, identified_by: str,
-               attributes: list[dict] | None = None):
-        """A new class: what it is called, what kind of thing it is, what tells two apart."""
+               attributes: list[dict] | None = None, parent: str | None = None,
+               what_to_say: str | None = None, brief: str | None = None,
+               source: str = "agent"):
+        """A new class: what it is called, what kind of thing it is, what tells two apart.
+
+        `parent` is what it is a kind of, and it is how the world finds this class again:
+        placing a thing walks down from the widest class asking which child it is, so a class
+        with no parent is a leaf nobody ever descends to. `brief` is the clause it appears as
+        in the list every host reads before it writes. `what_to_say` is the line put to a host
+        that records one of these and says nothing about it — per class, because describing a
+        person and describing a place are not the same request; left out, it comes from the
+        parent, which is what having a parent means.
+        """
         from terraweaver import ontology
 
         class_name = _clean(name)
@@ -127,6 +138,15 @@ class Authoring:
             "attributes": [self._attribute_spec(**a) for a in (attributes or [])],
             "methods": [],
         }
+        for key, value in (("parent", parent if parent in self.world.classes else None),
+                           ("brief", brief), ("what_to_say", what_to_say)):
+            if value and str(value).strip():
+                spec[key] = str(value).strip()
+        # A class is described the way anything in this world is described: in prose, by
+        # somebody, with room for somebody else to say it differently later. `brief` is the one
+        # canonical line — what the class is called in the list every host reads — and the
+        # account in sentences is a prose-fact among however many accumulate.
+        spec["descriptions"] = [{"text": spec["description"], "source": source}]
         if not spec["identified_by"]:
             raise Refused("say what identifies one of these — the attribute that tells two "
                           "of them apart (a name, a title, a code)")
@@ -142,6 +162,30 @@ class Authoring:
             print(f"[note] {class_name} reads like {near[0][0]} ({near[0][1]}) — "
                   "merge them if they are the same idea")
         return built
+
+    def describe_class(self, cls, text: str, source: str = "agent") -> list:
+        """Another account of what this class is — prose, by somebody, alongside the others.
+
+        One canonical sentence per class was a shape the world does not use anywhere else, and
+        it lost what it replaced: the first account of a class is written when one thing of that
+        kind has been seen, and the next reader's is written when there are twenty. Both are
+        worth keeping and neither overrules the other, which is what `descriptions` means
+        everywhere else here.
+
+        `source` is the same word every statement in this world carries (`ontology.stating`):
+        "agent" for what arrived through the assistant, "world" for the world's own reading,
+        which stands lowest and comes off in one move. "given" is what a class opened with.
+        """
+        name = cls if isinstance(cls, str) else getattr(cls, "__name__", str(cls))
+        spec = self.world.classes[name]._spec
+        text = _described(f"the class {name}", text)
+        kept = spec.setdefault("descriptions", [{"text": spec.get("description", ""),
+                                                 "source": "given"}])
+        if not any(d.get("text") == text for d in kept):
+            kept.append({"text": text, "source": source})
+        self._register(spec)
+        self._save(spec)
+        return kept
 
     def attribute(self, cls, name: str, description: str, type: str = "str",
                   changes: bool = True, required: bool = False):

@@ -74,7 +74,10 @@ def count(world) -> tuple[int, int]:
     return asked, waiting
 
 
-NEW_ONE = "— none of these: it needs a class of its own"
+# The option names are what a reader has to echo back exactly, so they are short and plain.
+# This one read "— none of these: it needs a class of its own" and came back unmatched every
+# time: the walk never descended and nothing was ever placed.
+NEW_ONE = "none of these"
 
 # The widest classes: a thing is, an event happens. Everything else is a kind of one of them,
 # and finding the class is walking down from where the thing already sits, asking at each level
@@ -82,6 +85,10 @@ NEW_ONE = "— none of these: it needs a class of its own"
 # question is answered by a model an order of magnitude cheaper than one answering in words.
 # Only the last step is open, and only when nothing fitted: inventing the class.
 ROOTS = ("Thing", "Event")
+
+# What `authoring._described` insists on: a description shorter than this is a label, not an
+# account, and the world refuses it.
+DESCRIBED_ENOUGH = 12
 
 
 def children_of(world, name: str) -> dict:
@@ -136,16 +143,25 @@ What was said about it:
 {words}
 
 Name the kind, not this example: "Language", not "LanguageTheUserSpeaks"; "Sport", not
-"FinnishBatAndBallGame". The next thing of this kind must fit it without being bent. Three or
-four attributes any of these would have, not everything this one happens to have.
+"FinnishBatAndBallGame". The next thing of this kind must fit it without being bent. It is a
+kind OF {parent}, so it is not called {parent} — that name is taken by the wider one. Three or
+four attributes any of these would have, not everything this one happens to have. Describe each
+of them in a sentence rather than a label: "how many people live there", not "Population" — it
+is what somebody looking for that attribute later will search by.
 
 One of these is known by its name, and the record adds that itself — do not give a `name`
 attribute and do not put this thing's name into any other one.
 
+`brief` is how this class appears in the list every host reads before it writes anything: a
+clause, not a sentence, saying what sort of thing goes here and when to reach for it. "A city,
+town or village", not "The City class represents urban settlements which may have a population".
+It is read after the class's own name and a dash.
+
 **Whether what was said is true is not part of this task and must not affect any answer.**
 
 JSON only, these keys and no others:
-{{"name": "...", "description": "one sentence saying what this kind of thing is",
+{{"name": "...", "brief": "...",
+  "description": "one sentence saying what this kind of thing is",
   "attributes": [{{"name": "...", "description": "...", "type": "str|int|date|bool"}}]}}"""
 
 
@@ -286,12 +302,22 @@ def _make_one(world, entity, words: str, reader, under: str, tally: dict) -> str
         return None
     if not isinstance(spec, dict) or not spec.get("name"):
         return None
+    if str(spec["name"]).strip().lower() == under.lower():
+        # Naming it after the class it is a kind of is not a new class, it is the walk saying
+        # "none of these" and then handing back where it started. The thing stays where it is.
+        return None
     # What identifies one of these is not the reader's to choose, and it went wrong the one time
     # it was asked: a City identified by `population`, with "Rome" written into it. These things
     # arrive under a name and are known by it — so the class gets a `name` and is identified by
     # it, and the reader's attributes go alongside.
+    # An attribute the world refuses does not cost the class. A reader writes attribute
+    # descriptions as labels — "Land area" — and `define` wants a sentence; losing City over
+    # `area_sqkm` left the thing a bare Thing and every later city with nowhere to go. The
+    # class is the thing being made here; an attribute nobody described is not much of a loss
+    # and can be declared later, when something is actually written into it.
     attributes = [a for a in (spec.get("attributes") or []) if isinstance(a, dict)
-                  and a.get("name") and a["name"] != "name"]
+                  and a.get("name") and a["name"] != "name"
+                  and len(str(a.get("description") or "").strip()) >= DESCRIBED_ENOUGH]
     try:
         # The parent goes in with it, and is the whole of what makes this a class the walk
         # reaches next time rather than a leaf nobody descends to. What to ask about one of
@@ -299,10 +325,12 @@ def _make_one(world, entity, words: str, reader, under: str, tally: dict) -> str
         # means, and a line made up for a class nobody has thought about is a line nobody
         # wrote on purpose.
         made = grow(spec["name"], spec.get("description") or spec["name"], "name", attributes,
-                    parent=under)
+                    parent=under, brief=spec.get("brief"), source="world")
     except Exception:  # noqa: BLE001 - a name already taken is a class to join, not to force
         cls = world.classes.get(str(spec["name"]).strip())
-        return None if cls is None or cls._spec.get("relation") else cls._spec["name"]
+        if cls is None or cls._spec.get("relation") or cls._spec["name"] == under:
+            return None
+        return cls._spec["name"]
     tally["defined"] += 1
     return made._spec["name"]
 
