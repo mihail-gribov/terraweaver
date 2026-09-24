@@ -1524,3 +1524,36 @@ at `describe`, for the reason everything else moved there: a raise stops the blo
 for it finally arrives. `take_in` offers free links to a new type and nothing offers descriptions.
 `world.wanted()` counts untyped words across links only — counting them across descriptions would
 have named `capital_of` around fact 30 rather than fact 225.
+
+---
+
+## 2026-09-24 · A refusal that sends you to prose, and advice you cannot follow
+
+**Two messages, found by asking what `AttributeError: CapitalOf has no 'subject'` was for.**
+
+*The first was wrong about what happened.* `__getattr__` fires both when a class has no such
+attribute and when this one instance has no value for one it does declare, and both raised the
+same sentence — so a link whose ends were missing from its image was reported as
+`CapitalOf has no 'subject' — did you mean 'subject'? It has: subject, object`, which says it
+has it and has not got it in one breath. A host read that eighteen times in one session and
+stopped using the class. The two cases now say different things, and the second says where the
+value has gone: the class declares it, this one lacks it, `world.rebuild()` reads the image
+again from what was said.
+
+*The second pointed the wrong way.* Writing an attribute the class has not got is refused — it
+used to be accepted and lost on save, a write that looked fine and never happened — and the
+refusal offered one way out: `entity.describe(...)`. That is prose, and the same day's work
+established that prose is where a fact goes to stop being one. In an open ontology the answer is
+to give the class the attribute: the message now leads with `world.attribute(Cls, name, "…")`
+and says what a description is actually for.
+
+**And then the advice turned out not to work.** `world.attribute` rebuilt the class, and a
+rebuilt class is a *new* class object — so the instance already in hand, and the name bound in
+the run's namespace, still carried the old spec. A host that did exactly what it was told got
+the same refusal a second time, with nothing available from inside the run to get past it. That
+is a refusal that repeats itself, and the way out of one of those is prose.
+
+So a class that grows is now the **same class**: `define_class` updates the standing one in
+place when the base is unchanged, instead of building a replacement. What was made before the
+growth keeps working, `isinstance` keeps meaning what it says, and the sentence the world prints
+can be typed straight back in. Tested as the three steps a host takes: refused, told, works.

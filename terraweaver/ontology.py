@@ -1035,12 +1035,27 @@ class Entity:
 
         calls_it = matching.NAME_KEYS.get(type(self).__name__)
         synonyms = {w: calls_it for w in ("name", "title", "label", "full_name")} if calls_it else {}
+        if name in known or name in _MANAGED_ATTRS or name in ("subject", "object"):
+            # Declared, and not on this one. Two different things wear the same exception, and
+            # saying the wrong one is worse than saying nothing: "CapitalOf has no 'subject' —
+            # did you mean 'subject'? It has: subject, object" is what a host was told eighteen
+            # times in one session about a link whose ends were missing from its image. It read
+            # as the class being wrong, and the host stopped using the class.
+            raise AttributeError(
+                f"this {type(self).__name__} has no {name!r} in the image — the class declares "
+                f"it, so the value is missing from this one rather than from the class. If the "
+                f"record has it, `world.rebuild()` reads every image again from what was said "
+                f"and brings it back; if nothing ever said it, say it now."
+            )
         near = did_you_mean(name, known, synonyms)
         raise AttributeError(
             f"{type(self).__name__} has no {name!r}"
             + (f" — did you mean {near!r}? " if near else ". ")
             + (f"It has: {', '.join(known)}." if known else "")
-            + " What none of them holds goes into a description: entity.describe(...).")
+            + " If this is a value worth asking about later, give the class the attribute and "
+            + f"then set it: world.attribute({type(self).__name__}, {name!r}, \"<what it is>\")."
+            + " A description is for what no attribute should hold — a sentence about why this "
+            + "thing is here, not a fact somebody will want to look up.")
 
     def __setattr__(self, name, value):
         spec = type(self)._spec
@@ -1054,12 +1069,23 @@ class Entity:
                 if near:
                     setattr(self, take_as(class_name, name, near), value)
                     return
+                # Refused rather than kept, because an attribute the class does not have used
+                # to be accepted and lost on save — a write that looked fine and never happened.
+                # But the way out is to give the class the attribute, not to write prose: this
+                # message used to offer only `describe(...)`, which is how a value somebody will
+                # want to look up ends up in a sentence nothing can supersede or count.
                 raise AttributeError(
                     f"{class_name} has no attribute '{name}'"
                     + (f" — did you mean '{near}'? " if near else ". ")
                     + "Its attributes are: "
                     + ", ".join(a["name"] for a in spec["attributes"])
-                    + ". What none of them holds goes into a dated remark: entity.describe(...."
+                    + f".\nIf this is a value — something somebody will ask for later — give "
+                    f"the class the attribute and then set it:\n"
+                    f"    world.attribute({class_name}, '{name}', \"<what it is>\", "
+                    f"type=\"str\")\n"
+                    f"    thing.{name} = ...\n"
+                    f"A description is for what no attribute should hold: why this thing is "
+                    f"here, in a sentence. Not a fact anybody will look up."
                 )
             if "derived" in declared:
                 if declared.get("settable"):
@@ -1901,6 +1927,20 @@ def define_class(classes: dict[str, type], spec: dict[str, Any], name: str | Non
         # Everything shared comes from Entity; a generated class carries only its own
         # spec and methods.
         made = _RelationClass if spec.get("relation") else type
+        standing = classes.get(name)
+        if standing is not None and (standing.__bases__ == (base,)):
+            # Grown, not replaced. A new class object leaves every instance already in hand —
+            # and the name bound in the run's namespace — pointing at the old spec, so a host
+            # that does exactly what the world just told it to do gets the same refusal twice:
+            #     world.attribute(Person, "email", "...")
+            #     person.email = "ada@example.org"      -> Person has no attribute 'email'
+            # There is no way past that from inside the run, and the way out of a refusal that
+            # repeats itself is prose. Same class, new spec: what was made before the growth
+            # keeps working, and isinstance still means what it says.
+            for key, value in namespace.items():
+                if key != "_classes":
+                    setattr(standing, key, value)
+            return standing
         classes[name] = made(name, (base,), namespace)
         _lend_relations(classes, name)
         return classes[name]

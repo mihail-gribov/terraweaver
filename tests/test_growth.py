@@ -203,6 +203,27 @@ def main() -> int:
           got["ok"] and "Berlin" in (got["output"] or ""),
           str(got.get("error") or got.get("output"))[:160])
 
+    # --- what the refusal tells you to do has to work in the same breath ---
+    # The world refuses an attribute the class has not got, and now says to declare it. Growing
+    # a class used to build a new class object, leaving the instance in hand and the name in the
+    # run's namespace on the old spec — so a host that did exactly what it was told got the same
+    # refusal again, with no way past it from inside the run. That is where prose comes from.
+    rt = WorldRuntime(":memory:", fixture="job_search")
+    authoring.install(rt.world, None)
+    rt.start_task("k3", "record what the user said about somebody's pay", "recording")
+    turned_away = rt.run('p = Person.new(full_name="Ada Byron")\np.salary = 120000', "k3")
+    check("an attribute the class has not got is refused",
+          not turned_away["ok"] and "has no attribute 'salary'" in str(turned_away.get("error")),
+          str(turned_away.get("error"))[:90])
+    check("and the refusal says to declare it, not to write prose",
+          "world.attribute(" in str(turned_away.get("error")),
+          str(turned_away.get("error"))[:140])
+    done = rt.run('world.attribute(Person, "salary", "what they are paid a year", type="int")\n'
+                  'p = Person.get(full_name="Ada Byron")\np.salary = 120000\nprint(p.salary)', "k3")
+    check("and doing what it says works in the same run",
+          done["ok"] and "120000" in (done["output"] or ""),
+          str(done.get("error") or done.get("output"))[:140])
+
     print()
     if failures:
         print(f"{len(failures)} failed: {', '.join(failures)}")
