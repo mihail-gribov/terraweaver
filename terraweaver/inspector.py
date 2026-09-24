@@ -52,7 +52,10 @@ TTL = 10.0
 #
 # `fixes` says whether a finding may be acted on or only said. Only a deterministic finding may
 # be acted on, and only where it is certain: what an outside reader makes of the words is one
-# more account of the fact, and the person's own account outranks it.
+# more account of the fact, and the person's own account outranks it. Nothing is said when
+# nothing was changed — the agent does not need to hear that all is well. What was changed is
+# said, because a fact that turned round while nobody was looking is one the agent can no
+# longer account for.
 CHECKLIST = (
     {"name": "twin_type", "on": "type", "how": "deterministic", "fixes": False,
      "asks": "two types read as one idea — take one into the other, or say how they differ"},
@@ -62,8 +65,9 @@ CHECKLIST = (
      "asks": "what each end is, in words a thing can be checked against"},
     {"name": "name_says_direction", "on": "type", "how": "open", "fixes": False,
      "asks": "the word does not say which end it starts from; a clearer one would"},
-    {"name": "against_the_run", "on": "link", "how": "deterministic", "fixes": False,
-     "asks": "this link runs the opposite way to the rest of its type"},
+    {"name": "against_the_run", "on": "link", "how": "deterministic", "fixes": True,
+     "asks": "this link runs the opposite way to the rest of its type — turned where the run "
+             "is unambiguous (one against five or more), asked about otherwise"},
     {"name": "ends_fit_their_roles", "on": "link", "how": "closed", "fixes": False,
      "asks": "whether each end is the kind of thing that belongs at its end"},
 )
@@ -323,7 +327,10 @@ def look_at_types(world, limit: int = 20, can_ask: bool = True) -> dict[str, lis
             said = ask(account)
         except Exception:  # noqa: BLE001 - a reader that fails is not a world that fails
             continue
-        lines = _what_it_offered(name, account, said) if can_ask else []
+        # Written in either way: a blank filled is not a question, and a pass with
+        # nobody listening still leaves the type checkable for the next one.
+        lines = _what_it_offered(name, account, said, world) if can_ask else (
+            _what_it_offered(name, account, said, world) and [])
         world.store.conn.execute(
             "INSERT OR REPLACE INTO type_checks (class_name, looked_at, reader, said) "
             "VALUES (?, ?, ?, ?)",
@@ -335,16 +342,50 @@ def look_at_types(world, limit: int = 20, can_ask: bool = True) -> dict[str, lis
     return out
 
 
-def _what_it_offered(name: str, account: dict, said: dict | None) -> list[str]:
+def name_the_ends(world, name: str, subject_is: str, object_is: str) -> bool:
+    """Write what each end of a type is. Safe to do without asking, and this is why.
+
+    A role is not a statement. Nothing in the record is written under it and nothing already
+    said changes meaning when it is filled in — it says how a link of this type is to be
+    *checked*, which is the world's own bookkeeping. Compare an attribute's type or an entity's
+    name, where everything already recorded was recorded meaning the old one and no later
+    telling repairs that: those are refused, and this is not.
+
+    Only where nobody has said them. A type whose ends the host named keeps what the host said;
+    the disagreement is put to the host instead, because there the world would be overruling
+    somebody rather than filling a blank.
+    """
+    cls = world.classes.get(name)
+    rel = cls._spec.get("relation") if cls else None
+    if not rel or rel.get("roles") or not (subject_is and object_is):
+        return False
+    rel["roles"] = [{"name": subject_is, "inverse": object_is}]
+    grow = (world.extras or {}).get("define_relation")
+    made = getattr(grow, "__self__", None)
+    if made is not None and hasattr(made, "_save"):
+        made._save(cls._spec)        # so the world reopened tomorrow still knows them
+    return True
+
+
+def _what_it_offered(name: str, account: dict, said: dict | None, world=None) -> list[str]:
     lines: list[str] = []
     if said:
         if said.get("subject_is") and not (account or {}).get("subject_is"):
+            written = world is not None and name_the_ends(
+                world, name, said["subject_is"], said["object_is"])
             lines.append(
-                f"Nothing says what the two ends of {name} are, and without that no later "
-                f"reading can tell a link written backwards from one written right. Read from "
-                f"outside, they look like: subject_is=\"{said['subject_is']}\", "
-                f"object_is=\"{said['object_is']}\". Say them if they are right — it is one "
-                f"more argument on define_relation and it is what makes the type checkable.")
+                (f"Nothing said what the two ends of {name} are, so nothing could tell a link "
+                 f"of it written backwards from one written right. Read from outside and "
+                 f"written down: subject_is=\"{said['subject_is']}\", "
+                 f"object_is=\"{said['object_is']}\". They are how links of this type will be "
+                 f"checked from now on, not a claim about any fact — say them yourself on "
+                 f"define_relation if these are wrong."
+                 if written else
+                 f"Nothing says what the two ends of {name} are, and without that no later "
+                 f"reading can tell a link written backwards from one written right. Read from "
+                 f"outside, they look like: subject_is=\"{said['subject_is']}\", "
+                 f"object_is=\"{said['object_is']}\". Say them if they are right — it is one "
+                 f"more argument on define_relation and it is what makes the type checkable."))
         if said.get("clear_name") and said["clear_name"] not in (name, account.get("kind")):
             lines.append(
                 f"The word {account.get('kind')!r} does not say which end it starts from; "
@@ -355,7 +396,16 @@ def _what_it_offered(name: str, account: dict, said: dict | None) -> list[str]:
 
 
 def unread_types(world) -> list[str]:
-    """Types nobody has looked at yet — what a deferred pass over the world would pick up."""
+    """Types nobody has looked at yet — what a deferred pass over the world would pick up.
+
+    Every relation type, not only the ones this world wrote for itself. There was a version
+    that split them, on the grounds that what the world ships with is not the host's to fix —
+    and that is not a distinction the world has. A class is a class; a type whose ends are not
+    named cannot have its links checked, and it makes no difference who wrote it. Where the
+    answer is worth keeping it goes beside the core file rather than into it, which is what
+    `growth` is for: the core is read as it is and never written to, and additions live beside
+    it and are merged in.
+    """
     run_script(world.store.conn, TYPE_CHECKS)
     looked = {r[0] for r in world.store.conn.execute(
         "SELECT class_name FROM type_checks WHERE looked_at IS NOT NULL")}
@@ -363,7 +413,58 @@ def unread_types(world) -> list[str]:
             if c._spec.get("relation") and n not in looked]
 
 
-def twins(world, close: float = 0.86) -> list[tuple]:
+# How long a run has to be before a single link going the other way is taken as a mistake
+# rather than as the second of two readings. Five against one: at two or three the majority is
+# not a majority, and it is at two or three that a type is young — which is where every reversal
+# in the measured run was written. The number is deliberately dull; being late is cheap here and
+# being wrong is not.
+A_RUN = 5
+
+
+def turn_the_odd_ones(world, least_run: int = A_RUN) -> list[str]:
+    """Turn a link that runs against an unambiguous run of its own type, and say so.
+
+    The one thing in this file that changes anything. It is allowed to because it is
+    deterministic — counted from the world's own links, not read from outside — and because it
+    is held to the narrow case: exactly one link going one way against at least five going the
+    other. Anything less clear is a question, not a correction.
+
+    Nothing is said when nothing was changed. What was changed is said, because a fact that
+    turned round while nobody was looking is a fact the agent can no longer account for, and a
+    remark on the link keeps the reason where the next reader will find it.
+    """
+    from terraweaver import ontology, relations
+
+    turned = []
+    try:
+        found = relations.verify(world, least=2)
+    except Exception:  # noqa: BLE001 - a check must never be what stops the world
+        return []
+    for one in found:
+        if one.get("about") != "against the run of its type" or one.get("tied"):
+            continue
+        if one.get("seen") != 1 or one.get("usual", 0) < least_run:
+            continue
+        for link_id in one.get("links", []):
+            try:
+                link = world.store.load(link_id, world.classes)
+            except Exception:  # noqa: BLE001
+                continue
+            if link is None:
+                continue
+            was = link.display_name()
+            with ontology.trusted_writes():
+                link.subject, link.object = link.object, link.subject
+                world.save(link)
+            with ontology.stating("world"):
+                link.describe(
+                    f"turned round by the world: it was written {was}, and {one['usual']} other "
+                    f"links of this type run the other way with none beside this one")
+            turned.append(f"{was}  ->  {link.display_name()}")
+    return turned
+
+
+def twins(world, close: float = 0.82) -> list[tuple]:
     """Types that read like each other: two words for one idea, which answer for neither.
 
     By meaning, over the name and description together, the way `classes_like` finds a class —

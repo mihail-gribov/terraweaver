@@ -103,10 +103,24 @@ an agent that is not listening. A question nobody is there for is not caution, i
 
 ## What it does with what it finds
 
-Nothing is applied. A verdict becomes a question on the link, which is how everything uncertain
-in this world is kept: it outlives the run, it is asked once, and answering it closes it. A
-reader outside the world is one more account of the fact, and the person's own account outranks
-it.
+**All is well — nothing is said.** The agent does not need to hear that a check passed.
+
+**Changed, and certain — said.** One check may act: a link that is the only one of its type
+going one way against five or more going the other is turned round, a remark on it records that
+the world did it and why, and the close tells the agent what was turned. It is allowed to
+because it is deterministic — counted from the world's own links, not read from outside — and
+because it is held to the narrow case. Five against one: at two or three the majority is not a
+majority, and it is at two or three that a type is young, which is where every reversal in the
+measured run was written.
+
+A fact that turned round while nobody was looking is a fact the agent can no longer account
+for. That is the whole reason for saying it, and for saying it with the sentence it was: the
+agent has what the person said and the world only has a count.
+
+**Unclear — asked, with the options named.** A verdict becomes a question on the link, which is
+how everything uncertain in this world is kept: it outlives the run, it is asked once, and
+answering it closes it. Nothing an outside reader says is ever applied — it is one more account
+of the fact, and the person's own account outranks it.
 
 Renaming and merging are offered, never done. `twins` reports two types that read as one idea;
 `world.take_in(<the type>, "<the word>")` is what moves the links across once somebody decides.
@@ -114,6 +128,18 @@ A clearer name is offered the same way: define the clearer word and take the lin
 leaves the record saying what it always said. Nothing is renamed in place, because a word whose
 meaning can be changed afterwards makes every statement written under it unreadable in the way
 it was written.
+
+## A class is a class
+
+There was a version of this that looked only at the types a world had grown for itself, on the
+grounds that what the world ships with is not the host's to fix. That is not a distinction the
+world has, and drawing it was wrong: a type whose ends are not named cannot have its links
+checked, and it makes no difference who wrote it. `PartOf` came back "part" and "whole", which
+is right and useful; `Related` came back "entity" and "entity", which is vacuous and harmless.
+
+Where an answer is worth keeping it goes *beside* the core file, never into it — which is what
+`growth` is for and has always been for: the core is read as it is and never written to, and
+additions live next to it and are merged in on the way.
 
 ## Known wrong
 

@@ -753,6 +753,7 @@ class WorldRuntime:
         # reader was paid for on every attempt that came back "not closed yet" and its answer
         # thrown away with the rest of the message.
         unnamed = self._types_without_named_ends()
+        turned = self._turn_the_odd_ones()
         offered = self._read_the_new_types()
         self.reset_session(key)
         if abandon:
@@ -760,6 +761,15 @@ class WorldRuntime:
         # Asked at the end, and the task closes either way. A type whose ends are not named
         # works; what it cannot do is be checked, and that is worth one line rather than a wall.
         asked = ""
+        if turned:
+            # Said because it was changed, not because it was checked. A fact that turned round
+            # while nobody was looking is one the agent can no longer account for.
+            shown = "\n".join(f"    {line}" for line in turned[:8])
+            asked += (f"\n\nI turned {len(turned)} link(s) round. Each was the only one of its "
+                      f"type going that way against five or more going the other, which is not "
+                      f"a second reading but a slip:\n{shown}\nThe record says the world did "
+                      f"it and why. If any of them was right as you wrote it, turn it back — "
+                      f"you have the sentence and I only have the count.")
         if offered:
             said = "\n".join(f"    {name}: {line}"
                               for name, lines in offered.items() for line in lines)
@@ -782,6 +792,15 @@ class WorldRuntime:
         return ("Settled, and put to the user — these wait for them, not for you:\n"
                 + "\n".join(f"    {q.line()}" for q in left) + asked)
 
+    def _turn_the_odd_ones(self) -> list[str]:
+        """The one correction the world makes by itself: see inspector.turn_the_odd_ones."""
+        try:
+            from terraweaver import inspector
+
+            return inspector.turn_the_odd_ones(self.world)
+        except Exception:  # noqa: BLE001 - a correction is never what stops a task closing
+            return []
+
     def _read_the_new_types(self) -> dict:
         """Types nobody has read, read now — at the close, where no run is waiting on it.
 
@@ -798,19 +817,12 @@ class WorldRuntime:
 
     def _types_without_named_ends(self) -> list[tuple]:
         """Link types this world grew that never said what each of their two ends is."""
-        grow = (self.world.extras or {}).get("define_relation")
-        made = getattr(grow, "__self__", None)
-        if made is None or not hasattr(made, "grown_names"):
-            return []
-        try:
-            mine = made.grown_names()
-        except Exception:  # noqa: BLE001 - a question at the close must never be what fails
-            return []
+        # Every type, whoever wrote it. A class is a class here, and a type whose ends are not
+        # named cannot have its links checked whether it came with the world or was built in it.
         out = []
         for name, cls in sorted(self.classes.items()):
             rel = cls._spec.get("relation")
-            # Only what this world wrote for itself. What came with it is not the host's to fix.
-            if rel and not rel.get("roles") and name in mine:
+            if rel and not rel.get("roles"):
                 out.append((rel.get("kind", name), name))
         return out
 
