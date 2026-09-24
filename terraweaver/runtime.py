@@ -434,8 +434,8 @@ class WorldRuntime:
             lines.append("The task before it was dropped. " + left)
         lines.append("Settle who this is about first: world.identify(Person, full_name=\"...\") "
                      "for each one the user named hands back who could be meant. Read them, "
-                     "pick the one, hold it in a variable. Nobody fits — record them with "
-                     "Class.new(...). Do it before anything is written.")
+                     "pick the one, hold it in a variable. A name nobody here has is recorded "
+                     "as you ask, so that is one call, not two. Do it before anything else.")
         if mode == "recording":
             lines.append("Then write it against those variables. Writes don't ask about "
                          "identity: they take what they are given. Read what the world says "

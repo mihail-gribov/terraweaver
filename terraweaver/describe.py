@@ -91,7 +91,10 @@ Rules the world enforces:
   meant, best first. You have the conversation and the world does not, so you read them and
   pick — hold the one you meant in a variable and say everything else about that variable. Too
   many to read? Say more about them: `world.identify(Person, full_name="Anna", location="Berlin")`.
-  An empty list means nobody here fits, so `Class.new(...)` records them.
+  Nobody here of that name and it makes them, so the list is never empty on a plain lookup and
+  you never need a second call to record a city the world hasn't heard of; the run's [created]
+  line says it was made rather than found. Empty means only one thing: you narrowed a search
+  yourself and left nothing — the name is here, your extra attributes ruled it out.
   Writes do not identify: `Class.new(...)` and `Class.ensure(...)` take the name they are given,
   because a question in the middle of a block stops the run and settles nothing. Two records
   that turn out to be one thing are merged later, over the whole world at once.
@@ -210,8 +213,9 @@ Every class below shares these, so they aren't repeated for each one:
         — then either the user means someone new (use new) or you misidentified them.
     world.identify(Class, **attrs) -> list
         "Who could this be?" The candidates, best first, for you to read and choose between —
-        it never creates and never chooses. Empty means nobody here fits. Use it at the start
-        of a task, once per thing the user named, and work with the one you picked.
+        it never chooses. A name nobody here has is recorded and comes back as the one
+        candidate. Use it at the start of a task, once per thing the user named, and work with
+        the one you picked. Give a Thing its nature ("place", "agent", ...) while you are there.
     Class.new(**attrs)
         "Someone/something new." Creates it. A recognised twin (same email, same website) is
         returned instead of a second copy; anything short of that is recorded as given.

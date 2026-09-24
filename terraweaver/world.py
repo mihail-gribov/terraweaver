@@ -367,18 +367,25 @@ class World:
         """Who in the world could this be — the candidates, best first, for you to read.
 
         A task settles who it is about before it records anything about them, and this is how.
-        It reads and never creates, and it does not choose: it hands back what resembles what
-        the user said, and you pick. You have the conversation and the world does not, so with
-        two or five of them in front of you the choice is yours to make by eye; with twenty, say
-        more about them — `world.identify(Person, full_name="Anna", organization=acme)` — and
-        look again. An empty list means nobody here fits, so the user means somebody new:
-        `Class.new(...)` records them.
+        It does not choose: it hands back what resembles what the user said and you pick, because
+        you have the conversation and the world does not. Two or five of them are read by eye;
+        twenty means say more — `world.identify(Person, full_name="Anna", location="Berlin")` —
+        and look again.
 
-        Recording does not do any of this. Matching in the middle of a write asks the same doubt
-        again on every mention and settles none of them, and it stops a block half-written:
-        "France" against a recorded "Acme" scored 0.6 on three letters they share, and the run
-        ended on its fourteenth line. Writes take what they are given, and what they cannot tell
-        apart is merged later, over the record, with the whole world in view.
+        **Nobody here of that name, and it makes them.** There is no second branch for the host
+        to take: the user has just spoken about a city, and a city the world has never heard of
+        is a city to record, not a refusal. Waiting for a second call to say so is ceremony, so
+        the list comes back holding the new one and the run's [created] line says it was made.
+
+        The one case that is not that: a search you narrowed yourself. If the name found people
+        and your extra attributes ruled all of them out, the list is empty and nothing is made —
+        you were choosing between the ones already here, and the narrowing was too tight.
+
+        Recording does none of this. Matching in the middle of a write asks the same doubt again
+        on every mention and settles none of them, and it stops a block half-written: "France"
+        against a recorded "Acme" scored 0.6 on three letters they share, and the run ended on
+        its fourteenth line. Writes take what they are given, and what they cannot tell apart is
+        merged later, over the record, with the whole world in view.
         """
         if not attrs:
             raise ValueError(
@@ -387,12 +394,18 @@ class World:
         ontology.note_world_call("world_queries")
         class_name = self._name(cls)
         attrs = self._check_attrs(class_name, attrs)
-        scored = matching.score_candidates(self.all(cls, limit=None, history=True),
-                                           class_name, attrs, filter_others=True)
+        everyone = self.all(cls, limit=None, history=True)
+        scored = matching.score_candidates(everyone, class_name, attrs, filter_others=True)
         scored.sort(key=lambda pair: (-pair[1], -pair[0].accessed_at.timestamp()))
         found = [inst for inst, _ in scored]
-        ontology.note_looked_up(found)
-        return found
+        if found:
+            ontology.note_looked_up(found)
+            return found
+        name_key = matching.NAME_KEYS.get(class_name)
+        by_name = {name_key: attrs[name_key]} if name_key in attrs else dict(attrs)
+        if matching.score_candidates(everyone, class_name, by_name, filter_others=True):
+            return []          # the name is here; it was the narrowing that left nothing
+        return [self.create(class_name, attrs)]
 
     # --- writes ---
 

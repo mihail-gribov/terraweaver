@@ -1821,11 +1821,17 @@ So a task has two halves, and they want opposite things:
     who = world.identify(Person, full_name="Anna Weber")      # settle who — a search, you pick
     anna.relate(acme, "Anna has worked at Acme since 2019")   # record — no questions, no matching
 
-`world.identify` is a search and nothing more. It never creates and never chooses: it hands back
-who could be meant, best first, and the host reads them. Two or five of them are read by eye;
-twenty means say more and look again. The host has the conversation and the world does not, so
-the choice was never the world's to make — and a question machine here would be a machine for
-asking about what the host could see.
+`world.identify` hands back who could be meant, best first, and never chooses between them. The
+host has the conversation and the world does not, so the choice was never the world's to make —
+and a question machine here would be a machine for asking about what the host could already see.
+Two or five are read by eye; twenty means say more and look again.
+
+A name nobody here has is recorded, and the list comes back holding it. There is no second
+branch for a host to take — the user has just spoken about a city, and a city the world has
+never heard of is a city to record, not a refusal — so making the host say it in a second call
+is ceremony. The one thing that is not that is a search the host narrowed itself: if the name
+found people and the extra attributes ruled all of them out, nothing is made and the list is
+empty, because the host was choosing among the ones already here.
 
 `new` and `ensure` still recognise a strong key — the same email is the same person and costs
 nothing to see — and otherwise record what they are given. Two records that turn out to be one
