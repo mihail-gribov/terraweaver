@@ -1680,3 +1680,43 @@ Nemotron called `affiliated_with` an organisation-to-organisation link, so
 "Princess Alice affiliated with Anglicanism" came back impossible. The link is fine; the role
 is too tight. The verdict is kept as a question on the link and never applied, which is the
 reason that costs a question rather than a fact.
+
+---
+
+## 2026-09-24 · The inspector's checklist, and what it is never allowed to check
+
+Settled with the user over the course of building it. The inspector now carries its checklist
+in one place (`inspector.CHECKLIST`), so what it looks at is read rather than reconstructed, and
+each entry says the thing that decides its cost and its authority:
+
+    on     how             what
+    type   deterministic   twin_type             two types read as one idea
+    type   deterministic   ends_named            the type never said what its two ends are
+    type   open            ends_could_be         what each end is, in checkable words
+    type   open            name_says_direction   the word does not say which end starts
+    link   deterministic   against_the_run       this link runs against the rest of its type
+    link   closed          ends_fit_their_roles  is each end the kind of thing that belongs
+
+**Deterministic** is worked out from the world's own record: free, certain, and the only kind
+that may ever correct anything by itself. **Closed** is one question with named options to an
+outside reader — cheap, calibrated, and where the volume is, one per link. **Open** is where a
+word has to be invented: expensive, so once per type and never per link. On a hundred-fact
+world that came to 26 open questions against 115 closed ones.
+
+**And one thing it is never allowed to check:** whether the fact is true. The world holds what
+the person said; a benchmark of it holds deliberate absurdities on purpose; a capital really
+does get moved. Read from outside, the truth of a fact is kept as a remark and is never grounds
+for anything. The user's line: semantic correctness — *can this be so* — is the world's
+business, substantive correctness is not.
+
+**Timing decides where each check runs.** A host's run is stopped after ten seconds. Measured,
+a naming answer comes back in four or five seconds and one in several takes twenty — so nothing
+that waits on a reader may be called from inside a run, or the run dies of the check. What the
+world can do for free it does at the moment the type is defined, while the host is still holding
+the pen and the correction is one more argument on the call being made; the reader runs at the
+close, where nothing is waiting, with `TTL = 10` seconds and whatever it does not answer marked
+unread for a later pass.
+
+**`can_ask=False`** is for a pass with nobody there — a sweep over an old world, a nightly run.
+The finding is written down either way, so the same link is not read twice; it simply is not put
+to an agent that is not listening. A question nobody is there for is not caution, it is a queue.

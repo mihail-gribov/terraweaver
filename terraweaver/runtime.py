@@ -749,13 +749,24 @@ class WorldRuntime:
                 if abandon:
                     task.describe(f"abandoned: {abandon.strip()}")
                 self.world.save(task)
+        # Asked only once the task is actually closing. Called before the checks above, the
+        # reader was paid for on every attempt that came back "not closed yet" and its answer
+        # thrown away with the rest of the message.
         unnamed = self._types_without_named_ends()
+        offered = self._read_the_new_types()
         self.reset_session(key)
         if abandon:
             return f"Task abandoned: {abandon.strip()}. What it did record stays in the world."
         # Asked at the end, and the task closes either way. A type whose ends are not named
         # works; what it cannot do is be checked, and that is worth one line rather than a wall.
         asked = ""
+        if offered:
+            said = "\n".join(f"    {name}: {line}"
+                              for name, lines in offered.items() for line in lines)
+            asked += (f"\n\nRead from outside, now that the work is done — {len(offered)} "
+                      f"type(s) this world holds:\n{said}\nNothing has been changed; this is "
+                      f"what somebody outside the world makes of the words, and you have the "
+                      f"sentences they came from.")
         if unnamed:
             shown = ", ".join(k for k, _ in unnamed[:6])
             more = f" and {len(unnamed) - 6} more" if len(unnamed) > 6 else ""
@@ -770,6 +781,20 @@ class WorldRuntime:
                     if task is not None else "")
         return ("Settled, and put to the user — these wait for them, not for you:\n"
                 + "\n".join(f"    {q.line()}" for q in left) + asked)
+
+    def _read_the_new_types(self) -> dict:
+        """Types nobody has read, read now — at the close, where no run is waiting on it.
+
+        A host's run is stopped after ten seconds and a reader that thinks first takes longer,
+        so this cannot happen where the type is defined. It happens here, once per type, and
+        what it offers is said rather than applied.
+        """
+        try:
+            from terraweaver import inspector
+
+            return inspector.look_at_types(self.world)
+        except Exception:  # noqa: BLE001 - reading is never what stops a task closing
+            return {}
 
     def _types_without_named_ends(self) -> list[tuple]:
         """Link types this world grew that never said what each of their two ends is."""

@@ -33,6 +33,47 @@ from datetime import datetime, timezone
 
 from terraweaver.store import run_script
 
+# How long an outside reader is given before the world stops waiting for it. Measured on the
+# naming question: most answers come back in four or five seconds and one in several takes
+# twenty. So most are had for nothing and the slow one is not paid for in a host's patience —
+# it is marked unread and picked up by a later pass, which is what `unread` and `unread_types`
+# are for. A host's own run is stopped after ten seconds, so nothing that waits this long may
+# be called from inside one.
+TTL = 10.0
+
+# What the inspector checks, in one place, so the answer to "what does it look at" is read
+# rather than reconstructed. `how` is the thing that decides the cost and the trust:
+#
+#   deterministic — the world works it out from its own record. Free, certain, and the only
+#                   kind that may correct anything by itself.
+#   closed        — one question with named options to an outside reader. Cheap, calibrated,
+#                   and the volume: one per link.
+#   open          — a word has to be invented. Expensive, so once per type, never per link.
+#
+# `fixes` says whether a finding may be acted on or only said. Only a deterministic finding may
+# be acted on, and only where it is certain: what an outside reader makes of the words is one
+# more account of the fact, and the person's own account outranks it.
+CHECKLIST = (
+    {"name": "twin_type", "on": "type", "how": "deterministic", "fixes": False,
+     "asks": "two types read as one idea — take one into the other, or say how they differ"},
+    {"name": "ends_named", "on": "type", "how": "deterministic", "fixes": False,
+     "asks": "the type does not say what its two ends are, so no link of it can be checked"},
+    {"name": "ends_could_be", "on": "type", "how": "open", "fixes": False,
+     "asks": "what each end is, in words a thing can be checked against"},
+    {"name": "name_says_direction", "on": "type", "how": "open", "fixes": False,
+     "asks": "the word does not say which end it starts from; a clearer one would"},
+    {"name": "against_the_run", "on": "link", "how": "deterministic", "fixes": False,
+     "asks": "this link runs the opposite way to the rest of its type"},
+    {"name": "ends_fit_their_roles", "on": "link", "how": "closed", "fixes": False,
+     "asks": "whether each end is the kind of thing that belongs at its end"},
+)
+
+# Never any of them. Whether a fact is TRUE is not the inspector's business and must not become
+# it: this world holds what the person said, a benchmark of it holds deliberate absurdities on
+# purpose, and a capital really does get moved. What is read from outside about the truth of a
+# fact is kept as a remark and never as grounds for anything.
+NOT_CHECKED = "whether the fact is true"
+
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS link_checks (
     link_id TEXT NOT NULL,
@@ -113,8 +154,15 @@ def unread(world, limit: int = 200) -> list:
     return out
 
 
-def note(world, link, account: dict, reader: str, verdict: str, said: str = "") -> None:
-    """Mark the link as read, and keep what was said about it where it can be answered."""
+def note(world, link, account: dict, reader: str, verdict: str, said: str = "",
+         can_ask: bool = True) -> None:
+    """Mark the link as read, and keep what was said about it where it can be answered.
+
+    `can_ask=False` for a pass with nobody to answer — a sweep over an old world, a nightly
+    run. The finding is still written down, so the same link is not read twice and a later pass
+    with somebody there can put the question; it simply is not put to an agent that is not
+    listening. A question nobody is there for is not caution, it is a queue.
+    """
     run_script(world.store.conn, SCHEMA)
     world.store.conn.execute(
         "INSERT OR REPLACE INTO link_checks (link_id, digest, looked_at, reader, verdict, said) "
@@ -122,7 +170,7 @@ def note(world, link, account: dict, reader: str, verdict: str, said: str = "") 
         (link.id, digest_of(account), datetime.now(timezone.utc).isoformat(), reader,
          verdict, said))
     world.store.conn.commit()
-    if verdict == "right":
+    if verdict == "right" or not can_ask:
         return
     # Kept as a question, not acted on. A reader outside the world is one more account of the
     # fact, and the person's own account outranks it — the world says what it noticed and the
@@ -135,8 +183,12 @@ def note(world, link, account: dict, reader: str, verdict: str, said: str = "") 
                   "it is right as written"]))
 
 
-def look(world, ask, reader: str = "outside", limit: int = 200) -> dict:
-    """Read every link nobody has read yet. `ask(account) -> (verdict, said)`."""
+def look(world, ask, reader: str = "outside", limit: int = 200,
+         can_ask: bool = True) -> dict:
+    """Read every link nobody has read yet. `ask(account) -> (verdict, said)`.
+
+    `can_ask=False` reads and records without putting anything to an agent — see `note`.
+    """
     tally = {"right": 0, "reversed": 0, "impossible": 0, "unsure": 0, "failed": 0}
     for link, account in unread(world, limit):
         try:
@@ -147,7 +199,7 @@ def look(world, ask, reader: str = "outside", limit: int = 200) -> dict:
         if verdict not in tally:
             verdict = "unsure"
         tally[verdict] += 1
-        note(world, link, account, reader, verdict, said)
+        note(world, link, account, reader, verdict, said, can_ask=can_ask)
     return tally
 
 
@@ -198,6 +250,117 @@ def naming(world, ask, only: set | None = None) -> list[dict]:
         if said and not said.get("clear", True):
             out.append({**said, "class": name, "kind": account["kind"]})
     return out
+
+
+TYPE_CHECKS = """
+CREATE TABLE IF NOT EXISTS type_checks (
+    class_name TEXT PRIMARY KEY,
+    looked_at TEXT,
+    reader TEXT,
+    said TEXT                  -- JSON: what the reader offered, or null while nobody has looked
+);
+"""
+
+
+def reader_of(world):
+    """The outside reader this world was given, or None. A world without one simply skips."""
+    return getattr(world, "reader", None)
+
+
+def on_new_type(world, name: str) -> list[str]:
+    """Look at a type the moment it is defined, while the host is still holding the pen.
+
+    This is the one moment the correction is cheap. A type is defined once and every link
+    written under it inherits whatever was wrong with it — a word that does not say which end
+    starts, a second word for an idea the world already has. Found a hundred facts later, the
+    links are already written and somebody has to go back over them; found here, it is one more
+    argument on the call being made.
+
+    Nothing is refused and nothing is changed: what comes back is said to the host, which is
+    the rule everything the world notices is held to. If no reader is configured, or it does
+    not answer in time, the type is marked as unread and `unread_types` finds it later — the
+    check is worth doing late, and never worth making the host wait.
+    """
+    run_script(world.store.conn, TYPE_CHECKS)
+    lines = []
+    for a, b, score in twins(world):
+        if name in (a, b):
+            other = b if a == name else a
+            lines.append(
+                f"{name} reads almost exactly like {other} ({score}). If they are one idea, "
+                f"the world should hold one word for it: world.take_in({other}, \"<the word "
+                f"{name} was written with>\") moves the links across. If they are two ideas, "
+                f"say so in the descriptions — that is what tells them apart later.")
+    # Nothing that talks to the outside happens here. A host's run is stopped after ten
+    # seconds and a reader that thinks before it answers takes longer than that, so asking one
+    # from inside a run is asking for the run to die — which is the opposite of the point. What
+    # the world can do for free it does now; the rest is marked unread and done at the close,
+    # where nothing is waiting. The user's rule: online where it keeps up, deferred with a mark
+    # where it does not.
+    world.store.conn.execute(
+        "INSERT OR IGNORE INTO type_checks (class_name, looked_at, reader, said) "
+        "VALUES (?, NULL, NULL, NULL)", (name,))
+    world.store.conn.commit()
+    return lines
+
+
+def look_at_types(world, limit: int = 20, can_ask: bool = True) -> dict[str, list[str]]:
+    """Read the types nobody has read, and say what the reader offered. Called at the close.
+
+    Here there is no ten-second limit and the host is between pieces of work, which is where
+    everything else this world asks for is asked. One open question per type, asked once.
+    """
+    run_script(world.store.conn, TYPE_CHECKS)
+    ask = reader_of(world)
+    if ask is None:
+        return {}
+    out: dict[str, list[str]] = {}
+    for name in unread_types(world)[:limit]:
+        account = type_account(world, name)
+        if account is None:
+            continue
+        try:
+            said = ask(account)
+        except Exception:  # noqa: BLE001 - a reader that fails is not a world that fails
+            continue
+        lines = _what_it_offered(name, account, said) if can_ask else []
+        world.store.conn.execute(
+            "INSERT OR REPLACE INTO type_checks (class_name, looked_at, reader, said) "
+            "VALUES (?, ?, ?, ?)",
+            (name, datetime.now(timezone.utc).isoformat(), "outside",
+             json.dumps(said) if said else None))
+        if lines:
+            out[name] = lines
+    world.store.conn.commit()
+    return out
+
+
+def _what_it_offered(name: str, account: dict, said: dict | None) -> list[str]:
+    lines: list[str] = []
+    if said:
+        if said.get("subject_is") and not (account or {}).get("subject_is"):
+            lines.append(
+                f"Nothing says what the two ends of {name} are, and without that no later "
+                f"reading can tell a link written backwards from one written right. Read from "
+                f"outside, they look like: subject_is=\"{said['subject_is']}\", "
+                f"object_is=\"{said['object_is']}\". Say them if they are right — it is one "
+                f"more argument on define_relation and it is what makes the type checkable.")
+        if said.get("clear_name") and said["clear_name"] not in (name, account.get("kind")):
+            lines.append(
+                f"The word {account.get('kind')!r} does not say which end it starts from; "
+                f"{said['clear_name']!r} would. Nothing is renamed here — define the clearer "
+                f"word and world.take_in it, which moves the links and leaves the record saying "
+                f"what it always said.")
+    return lines
+
+
+def unread_types(world) -> list[str]:
+    """Types nobody has looked at yet — what a deferred pass over the world would pick up."""
+    run_script(world.store.conn, TYPE_CHECKS)
+    looked = {r[0] for r in world.store.conn.execute(
+        "SELECT class_name FROM type_checks WHERE looked_at IS NOT NULL")}
+    return [n for n, c in sorted(world.classes.items())
+            if c._spec.get("relation") and n not in looked]
 
 
 def twins(world, close: float = 0.86) -> list[tuple]:

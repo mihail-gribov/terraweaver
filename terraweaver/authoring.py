@@ -376,6 +376,18 @@ class Authoring:
         built = ontology.define_class(self.world.classes, spec)
         self._register(spec)
         self._save(spec)
+        # Looked at the moment it is made, while the host is still holding the pen. A type is
+        # defined once and every link written under it inherits whatever was wrong with it —
+        # a word that does not say which end starts, a second word for an idea already here.
+        # Found a hundred facts later, the links are written and somebody has to go back over
+        # them; found here, it is one more argument on the call being made.
+        try:
+            from terraweaver import inspector
+
+            for said in inspector.on_new_type(self.world, name):
+                ontology.note_hint(said)
+        except Exception:  # noqa: BLE001 - looking at a type is never what stops one being made
+            pass
         if not subject_is:
             # Asked for, never demanded. A type without named ends works perfectly well — it is
             # the *checking* of it that cannot be done: told what each end is, an outside reader
