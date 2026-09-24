@@ -1846,3 +1846,52 @@ what somebody said. With it went `_supersede_own_conclusions` (a later conclusio
 earlier one of its own kind), which nothing could reach any more. The conclusion machinery in
 `facts.py` stays and is still used for attributes; `relations.retract` keeps its refusal, which
 now always fires, and that is the honest answer: what was said stays.
+
+## 2026-09-25 — a thing that came in as a bare name is described in words, and read at the close
+
+The twin of the sentence door, for one thing instead of two, built on the same division.
+
+`world.identify(Thing, name="Rome")` finds nobody of that name and records Rome. What comes back
+is a `Thing` with a name and nothing else — no class worth the word, no nature, nothing to find
+it by later. The host knows what Rome is; it has just heard about it from the user. Choosing a
+class for it is a different job, and one a reader with nothing else to attend to does better.
+
+So the run's reply carries a line of code to run next:
+
+    [to fill in] the block ran. Run these next, with real words in place of the dots:
+        rome.describe("...")   # rome is only a name so far — what sort of thing, where, whose
+
+**The variable, not the name.** The question is put together after the script has run, where the
+world can see what the host bound the thing to, so it asks about `rome` and not about "Rome".
+A host told to describe "the thing" describes the wrong one often enough that this is the whole
+reason the asking happens there and not at the close.
+
+**A clarifying question, not a failure.** The block ran; nothing is wrong. It is kept apart from
+`[open questions]` (doubts about what is in the world) and from an error (the block stopped).
+
+**It closes itself.** `describe` is the answer — there is no `q.answer(...)` to make. The
+question's reason is that nothing is known about the thing, so the moment there are words on it
+the reason is gone and it closes, the way a doubt about two current relations closes when one of
+them ends.
+
+**Then the close reads it**, with the entity handed over and never read out of the words: the
+reader says what this is, never which this is. Measured on four bare names —
+
+    Rome       -> Place  {capital_of: Italy, population: 2800000}
+    Berlin     -> Place  {capital_of: Germany}
+    Kreuzberg  -> Place
+    pesapallo  -> Sport  {origin_country: Finland, invention_period: 1920s}
+
+— two classes crystallised out of what was said, and the attributes came with them.
+
+**`Thing` is not offered as an answer.** It is described as "anything the world has no better
+class for", which describes everything, so a reader asked to pick a class picks it every time and
+nothing is ever defined. It is the absence of a class, so it is not among the classes to choose
+from; a reader that finds none of them fitting defines one.
+
+**Nothing refuses the reading.** The first prompt had an `ill_typed: "relation"` escape for an
+account that turns out to be about two things — and "Rome is the capital of Italy" went straight
+into it, because an account of a thing names other things. That is how these words say Rome is a
+city. The mirror was drawn wrong: in the sentence door `ill_typed` stops a *link* being made from
+words about one thing; here there is nothing to stop, because `describe` is about this thing by
+construction.

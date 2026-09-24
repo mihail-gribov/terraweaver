@@ -364,9 +364,21 @@ def _still_alike(question: Question) -> bool:
     return len(question.involves) >= 1 and question.about.id is not None
 
 
+def _still_bare(question) -> bool:
+    """Asked because a thing arrived as a bare name and nothing was known about it.
+
+    The host answers it by saying what the thing is — `rome.describe("...")` — and that is the
+    answer, not a separate `q.answer(...)`. So the moment there are words on it the question has
+    no reason left and closes itself, the way a doubt about two current relations does once one
+    of them ends.
+    """
+    return not (getattr(question.about, "descriptions", None) or [])
+
+
 CHECKS = {
     "two_at_once": _both_current,
     "maybe_the_same": _still_alike,
+    "what_is_it": _still_bare,
 }
 
 

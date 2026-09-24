@@ -800,6 +800,7 @@ class WorldRuntime:
         # reader was paid for on every attempt that came back "not closed yet" and its answer
         # thrown away with the rest of the message.
         typed = self._read_what_was_said()
+        placed = self._read_what_things_are()
         unnamed = self._types_without_named_ends()
         turned = self._turn_the_odd_ones()
         offered = self._read_the_new_types()
@@ -829,6 +830,16 @@ class WorldRuntime:
                          f"and were taken in the order you wrote them" if typed["astray"] else "")
                       + (f", {typed['failed']} could not be read and are still waiting"
                          if typed["failed"] else "") + ".")
+        if placed and placed.get("read"):
+            asked += (f"\n\nRead what you said about {placed['read']} thing(s) that came in as "
+                      f"bare names: {placed['placed']} were placed under a class"
+                      + (f", {placed['defined']} of them a class made for them" if placed["defined"] else "")
+                      + (f", {placed['failed']} could not be read and are still waiting"
+                         if placed["failed"] else "") + ".")
+        if placed and placed.get("no_words"):
+            asked += (f"\n\n{placed['no_words']} thing(s) are still only a name — nothing was "
+                      f"said about them, so there was nothing to read. They keep the name and "
+                      f"wait: say what they are next time you have the user in front of you.")
         if turned:
             # Said because it was changed, not because it was checked. A fact that turned round
             # while nobody was looking is one the agent can no longer account for.
@@ -859,6 +870,68 @@ class WorldRuntime:
                     if task is not None else "")
         return ("Settled, and put to the user — these wait for them, not for you:\n"
                 + "\n".join(f"    {q.line()}" for q in left) + asked)
+
+    def _ask_about_bare_things(self, namespace: dict) -> list[str]:
+        """The script has run; now the world looks at what it made and asks about the empty ones.
+
+        A thing that came in as a bare name has nothing on it but that name — not a class worth
+        the word, not a nature, nothing to find it by later. The host knows what it is: it has
+        just heard about it from the user. So the world asks, in the list of questions the run
+        hands back, and asks about `rome` and not about "Rome", because the host thinks in the
+        variable it wrote.
+
+        What it asks for is words, not a class. Choosing the class is the other half of the
+        division this world runs on: the host says what it knows, and the close reads it.
+        """
+        from terraweaver import portraits
+
+        try:
+            waiting = {row["entity_id"] for row in portraits.unread(self.world)}
+        except Exception:  # noqa: BLE001 - never what stops a run being reported
+            return []
+        if not waiting:
+            return []
+        asked = []
+        for name, value in namespace.items():
+            if name.startswith("_"):
+                continue
+            for entity, written in ((value, name),) if not isinstance(value, list) \
+                    else [(v, f"{name}[{i}]") for i, v in enumerate(value)]:
+                got = getattr(entity, "id", None)
+                if got is None or got not in waiting:
+                    continue
+                waiting.discard(got)
+                why = (f"{written} is only a name so far — what sort of thing it is, where, "
+                       f"when, whose")
+                text = (
+                    f"{written} is new here — recorded under the name you gave and nothing else. "
+                    f"Tell me about it in your own words: {written}.describe(\"...\"). What sort "
+                    f"of thing it is, where, when, whose — what the user told you and what you "
+                    f"know yourself. I read it when the task closes and give it a class then, so "
+                    f"you do not have to pick one. Describing it is the answer; nothing else to do.")
+                if self.world.questions.raise_(entity, "what_is_it", text,
+                                               touches=["identity"]) is not None:
+                    asked.append(f'{written}.describe("...")   # {why}')
+        return asked
+
+    def _read_what_things_are(self) -> dict:
+        """Read what was said about the things that came in as bare names. At the close.
+
+        The twin of `_read_what_was_said`, and here for the same reason: a run is stopped after
+        ten seconds and a reader takes four to twenty.
+        """
+        reader = getattr(self.world, "reader", None)
+        if reader is None:
+            return {}
+        try:
+            from terraweaver import portraits
+
+            asked, waiting = portraits.count(self.world)
+            if not waiting:
+                return {}
+            return portraits.read_them(self.world, reader)
+        except Exception:  # noqa: BLE001 - reading is never what stops a task closing
+            return {}
 
     def _read_what_was_said(self) -> dict:
         """Turn the sentences this task said into links. At the close, where nothing waits.
@@ -1200,8 +1273,13 @@ class WorldRuntime:
                 learned = self._learn_name_choice(session, recording, before)
                 effects = _effects(recording, created={id(o) for o in self.store._tx_new_ids})
                 effects["assumed"] += learned
-                effects["questions"] += _waiting_on_answers(session)
                 session.touched |= {e.id for e in _entities_of(recording)}
+                # Said in this run's reply, not left for the next one: the question is about a
+                # variable, and the variable is what the host has in front of it now. It is
+                # raised outside the recorder — the run has already finished — so it is added
+                # here by hand rather than arriving through it.
+                effects["clarify"] = self._ask_about_bare_things(namespace)
+                effects["questions"] += _waiting_on_answers(session)
                 # Only what this run raised. Repeating every doubt about every entity a run
                 # happens to touch is noise: the literature's criterion is relevance to the
                 # answer at hand (query-driven repair) and the task boundary, and both are
@@ -1723,6 +1801,14 @@ def format_result(result: dict) -> str:
         parts.append("[ask first] " + "; ".join(result["ask_now"])
                      + " — this run's answer depends on it: put it to the user before answering, "
                        "or answer by the standing reading above and say so")
+    if result.get("clarify"):
+        # Not a doubt and not a failure: the block ran and the world wants a line more. The
+        # answer is code, so it is given as code, with the variable the host itself wrote —
+        # a host told "describe the thing" writes about the wrong one often enough that the
+        # variable is the whole point of asking here rather than at the close.
+        parts.append("[to fill in] the block ran. Run these next, with real words in place of "
+                     "the dots — each answers a question the world would otherwise have to "
+                     "guess:\n" + "\n".join(f"    {line}" for line in result["clarify"]))
     if result.get("questions"):
         parts.append("[open questions] " + "; ".join(result["questions"])
                      + " — put them to the user if they're here; entity.questions() to answer or drop them")

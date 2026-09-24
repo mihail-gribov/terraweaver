@@ -1,9 +1,13 @@
 """The world as the agent sees it: query and write entities without touching storage.
 
-`ensure()` is the important one — it's the single entry point for "record this
-entity", and it never silently guesses. If the incoming data plausibly refers to
-something already in the world but isn't certain, or contradicts what's stored, it
-returns a NeedsResolution naming the skill the agent must run instead of picking.
+`identify()` is the important one — it settles who a task is about before anything is
+written about them. It searches and hands back who could be meant; the host reads them and
+picks, because the host has the conversation and the world does not. A name nobody here has
+is recorded by that same call, because there was no other branch to take.
+
+Writes do not identify. `new()` and `ensure()` take the name they are given: a question in
+the middle of a block stops the run and settles nothing, and what two records have in common
+is seen better later, over the record, with the whole world in view.
 """
 import json
 from typing import Any
@@ -405,7 +409,35 @@ class World:
         by_name = {name_key: attrs[name_key]} if name_key in attrs else dict(attrs)
         if matching.score_candidates(everyone, class_name, by_name, filter_others=True):
             return []          # the name is here; it was the narrowing that left nothing
-        return [self.create(class_name, attrs)]
+        # The nature hint asks the same thing in the old door's words and guesses a variable
+        # name out of the display name. What comes back from here is asked properly, after the
+        # run, about the variable the host actually wrote — so it is not asked twice.
+        self._reading_it_later = True
+        try:
+            made = self.create(class_name, attrs)
+        finally:
+            self._reading_it_later = False
+        self._ask_what_it_is(made)
+        return [made]
+
+    def _ask_what_it_is(self, entity) -> None:
+        """A thing that arrived as a bare name: say what it is, in words, and it is read later.
+
+        The same division as the sentence door. The host has just heard of Rome from the user
+        and knows what it is; choosing a class for it is a different job, done well by something
+        whose whole attention is that. So the host says what it knows in the words it has, and
+        the close reads them — picks a class or makes one, fills what the words fill.
+
+        Only marked here. The question that asks for those words is put together after the
+        script has run (`runtime._ask_about_bare_things`), because that is where the world can
+        see what the host called the thing and ask about `rome` rather than about "Rome".
+        """
+        from terraweaver import portraits
+
+        try:
+            portraits.wanted(self, entity)
+        except Exception:  # noqa: BLE001 - never what stops a name being recorded
+            return
 
     # --- writes ---
 
@@ -850,7 +882,8 @@ class World:
                                  source=source, run_id=run_id, class_name=class_name)
         if isinstance(attrs.get("tags"), list) and attrs["tags"]:
             instance._set_tags(attrs["tags"])
-        _ask_its_nature(instance, class_name, attrs)
+        if not getattr(self, "_reading_it_later", False):
+            _ask_its_nature(instance, class_name, attrs)
         self._apply_deferred(instance)
         return instance  # brand new, so created_at and accessed_at already coincide
 
