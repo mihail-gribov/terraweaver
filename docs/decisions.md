@@ -1720,3 +1720,47 @@ unread for a later pass.
 **`can_ask=False`** is for a pass with nobody there — a sweep over an old world, a nightly run.
 The finding is written down either way, so the same link is not read twice; it simply is not put
 to an agent that is not listening. A question nobody is there for is not caution, it is a queue.
+
+---
+
+## 2026-09-24 · Take it all without loss, then lower the entropy
+
+The user's summary of the whole shape, and the one line the rest follows from:
+
+> **Record everything that can be taken without loss. Then lower the entropy — build the
+> structure. And if there is time, ask the host, while the window of interactivity is open.**
+
+Three stages, and each has a cost and a deadline of its own:
+
+**Take it.** `world.say(a, b, "Paris is the capital of France")` — two things and the fact in
+words. The link is made at that moment, untyped, carrying the host's own words. Nothing waits in
+a side table: a sentence kept until somebody can type it is a fact nothing can find, and if the
+reader never runs it is a fact nobody recorded. An untyped link is a poor link — it cannot
+supersede, cannot be asked about by type — and it is a link.
+
+**Lower the entropy.** At the close of the task, where no run is waiting on a ten-second limit,
+the untyped links are read: what relation, which end holds which role, how many at a moment,
+when it began. The typed link is written and the bare one is ended where it begins — not erased,
+because what was said is never unsaid.
+
+**Ask, if there is time.** The close is the one moment the world knows the host is free and the
+user is still there. What could not be read, what was read thinly, what turned out to be two
+words for one idea — all of it is put then, and closes the task or does not.
+
+**The reader's task is concrete, and that is what made it work.** Not "describe this relation"
+but: here are two things and their classes, here is what was said, here are the relations the
+record already holds, and here are seven numbered things to return. Measured on four sentences:
+
+    Paris is the capital of France    capital ↔ country, subject Paris, one/one
+    London is the capital of France   the same, subject London        <- false, placed identically
+    Anna has worked at Brightwork     person ↔ organisation, "since 2019", one employer at a time
+    They are brothers                 brother ↔ brother, many/many    <- symmetry, undeclared
+
+The second is the test that matters: a falsehood is placed exactly as the truth would be. A
+record that took only what it agreed with would be an encyclopaedia.
+
+**And in the battle run the host did not use the new door at all.** Ten facts, 10/10 — the best
+batch this project has recorded — and every one of them through `define_relation` and `relate`.
+`world.say` appears four times in the dialogue, all four in the primer it was given. Offered two
+doors, a host takes the one it already knows. Whether the sentence door is better is therefore
+not yet measured, and saying so is the point: the mechanism works, and its worth is unmeasured.

@@ -66,6 +66,20 @@ Everything else you define as you go:
                           subject=Person, object=Book,
                           cardinality="one-to-many", over_time=False)
 
+**There are two ways to say a fact about two things, and the second is usually the one.**
+
+    world.say(paris, france, "Paris is the capital of France")
+
+Two things and the fact in your own words. No type, no role, no argument order to get right, no \
+date as a separate thing — say it as the user said it, including when, and the world reads the \
+rest afterwards. The two things you must give, because only you know which Paris is meant. The \
+link is made at once and holds from that moment; what kind of link it is, is worked out at the \
+close of the task.
+
+The other way is below, and it is for when you already know the type and want it exactly: \
+`a.relate(b, kind)`. It is not better or worse — it is the same fact through a door you have \
+to have the type for.
+
 A fact with no class goes in as a Thing. A link needs a type, and the world will not invent \
 one for you — say what the link is, then say the fact:
 

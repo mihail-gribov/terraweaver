@@ -268,6 +268,25 @@ def _token() -> str:
     return TOKEN_FILE.read_text().strip()
 
 
+def _give_it_a_reader(world) -> None:
+    """A reader from outside, if this machine has the key for one. Optional, always.
+
+    Without it `world.say` still works and still joins the two things — the link is made at
+    once and stays untyped, which is a poor link and a real one. With it, the untyped links are
+    read at the close of each task and become what they are.
+    """
+    import os
+
+    if not os.environ.get("NEBIUS_API_KEY"):
+        return
+    try:
+        from terraweaver import outside
+
+        world.reader = outside.Nemotron(ttl=25)
+    except Exception:  # noqa: BLE001 - a world with no reader is a world that does not read
+        pass
+
+
 def _lan_address() -> str | None:
     """The address other machines on the local network reach this one by."""
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as probe:
@@ -352,6 +371,7 @@ def main() -> None:
         specs = growth.apply_growth(ont.base_specs(here), growth.load_grown(grown_dir))
         runtime = WorldRuntime(args.db, fixture=None, specs=specs, selves=True)
         authoring.install(runtime.world, grown_dir)
+        _give_it_a_reader(runtime.world)
     elif args.blank:
         # A world with the mechanism and no vocabulary. The host defines the classes; the world
         # keeps them uniform and answers "is there already something for this?".

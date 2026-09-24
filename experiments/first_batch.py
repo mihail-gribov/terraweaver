@@ -39,6 +39,9 @@ def census(db: Path) -> dict:
     def count(t):
         if t not in tables:
             return 0
+        columns = {r[1] for r in conn.execute(f"PRAGMA table_info('{t}')")}
+        if "instance_id" not in columns:
+            return conn.execute(f"SELECT count(*) FROM '{t}'").fetchone()[0]
         if t.startswith("facts_") or t in ("runs", "questions"):
             return conn.execute(f"SELECT count(*) FROM '{t}'").fetchone()[0]
         return conn.execute(f"SELECT count(DISTINCT instance_id) FROM '{t}'").fetchone()[0]
@@ -47,7 +50,13 @@ def census(db: Path) -> dict:
                    and t not in {"instances", "values_", "comments", "runs", "questions", "texts",
                                  "periods", "said", "subjects", "meanings", "name_choices",
                                  "entity_access", "value_history", "world_variables", "procedures",
-                                 "self_files", "Thing", "Person", "AIAgent", "Related", "Task"})
+                                 "self_files", "Thing", "Person", "AIAgent", "Related", "Task",
+                                 # Not classes: the world's own side tables. A new one added
+                                 # here used to be counted as a grown type and then read for a
+                                 # column it does not have, which killed the census after the
+                                 # run had already cost its money.
+                                 "sentences", "link_checks", "type_checks", "tick_runs",
+                                 "tag_reviews", "Event"})
     return {
         "things": count("Thing"), "people": count("Person"), "free links": count("Related"),
         "typed links": sum(count(t) for t in grown), "types made": len(grown),
@@ -90,6 +99,9 @@ def fact_by_fact(db: Path, facts: list[str]) -> list[tuple]:
         if table in plumbing or table.startswith(("facts_", "reasoning_", "sqlite_", "idx_")):
             continue
         held = {a for _, a, _ in conn.execute(f"SELECT * FROM '{table}' LIMIT 0") or []}
+        columns = {r[1] for r in conn.execute(f"PRAGMA table_info('{table}')")}
+        if "attr" not in columns:
+            continue                      # a side table, not a class: nothing here is a fact
         attrs_here = {r[0] for r in conn.execute(f"SELECT DISTINCT attr FROM '{table}'")}
         (link_tables if {"subject", "object"} <= attrs_here else entity_tables).append(table)
 

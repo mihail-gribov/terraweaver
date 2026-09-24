@@ -186,6 +186,24 @@ class WorldView:
         says what was seen and what would settle it."""
         return self._world.verify(least)
 
+    def say(self, subject, obj, words: str):
+        """Say a fact in words about two things, and let the type be read from it afterwards.
+
+            world.say(paris, france, "Paris is the capital of France")
+
+        The other door. `a.relate(b, kind)` needs the type chosen before the fact can be said,
+        and a host that must choose before it has anything to choose with chooses badly —
+        measured: two ideas under one word, three links written backwards, `over_time` answered
+        by guess. Here the words are recorded at once and what they mean is read at the close of
+        the task, where nothing is waiting on it.
+        """
+        from terraweaver import sentences
+
+        task = getattr(self._session, "task_id", None) if self._session else None
+        sentences.say(self._world, subject, obj, words, task)
+        ontology.note_world_call("world_writes")
+        return f"said: {words.strip()}"
+
     def take_in(self, kind, idea: str | None = None) -> list:
         """Move the free links that were waiting for a type into the one just defined."""
         return self._world.take_in(kind, idea)
@@ -752,6 +770,7 @@ class WorldRuntime:
         # Asked only once the task is actually closing. Called before the checks above, the
         # reader was paid for on every attempt that came back "not closed yet" and its answer
         # thrown away with the rest of the message.
+        typed = self._read_what_was_said()
         unnamed = self._types_without_named_ends()
         turned = self._turn_the_odd_ones()
         offered = self._read_the_new_types()
@@ -761,6 +780,14 @@ class WorldRuntime:
         # Asked at the end, and the task closes either way. A type whose ends are not named
         # works; what it cannot do is be checked, and that is worth one line rather than a wall.
         asked = ""
+        if typed:
+            asked += (f"\n\nRead the {typed['read']} fact(s) you said in words: "
+                      f"{typed['joined']} joined a relation already here, {typed['defined']} "
+                      f"needed a new one"
+                      + (f", {typed['astray']} had their ends given to somebody not in the fact "
+                         f"and were taken in the order you wrote them" if typed["astray"] else "")
+                      + (f", {typed['failed']} could not be read and are still waiting"
+                         if typed["failed"] else "") + ".")
         if turned:
             # Said because it was changed, not because it was checked. A fact that turned round
             # while nobody was looking is one the agent can no longer account for.
@@ -791,6 +818,25 @@ class WorldRuntime:
                     if task is not None else "")
         return ("Settled, and put to the user — these wait for them, not for you:\n"
                 + "\n".join(f"    {q.line()}" for q in left) + asked)
+
+    def _read_what_was_said(self) -> dict:
+        """Turn the sentences this task said into links. At the close, where nothing waits.
+
+        A run is stopped after ten seconds and a reader takes four to twenty, so this cannot
+        happen where the fact is said. It does not need to: the words are in the record.
+        """
+        reader = getattr(self.world, "reader", None)
+        if reader is None:
+            return {}
+        try:
+            from terraweaver import sentences
+
+            said, waiting = sentences.count(self.world)
+            if not waiting:
+                return {}
+            return sentences.read_them(self.world, reader)
+        except Exception:  # noqa: BLE001 - reading is never what stops a task closing
+            return {}
 
     def _turn_the_odd_ones(self) -> list[str]:
         """The one correction the world makes by itself: see inspector.turn_the_odd_ones."""
