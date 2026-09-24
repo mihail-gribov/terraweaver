@@ -494,7 +494,7 @@ def relate(world, a, b, kind: str, period: dict, attrs: dict):
     # stand as parts of France. Twenty-four facts in the slice measured, eight of them a pair.
     # Sometimes "part of" really is the word, so this asks once per type per task rather than
     # refusing.
-    if (rel["kind"] in ("part_of", "kind_of", "related") 
+    if (rel["kind"] in ("part_of", "kind_of", "related") and not ontology.is_said_in_words()
             and not world.all(name, limit=1, history=True)):
         # Once, on the first link of this kind: the doubt is about the type, not about any one
         # link, and asked per link it is asked per fact.

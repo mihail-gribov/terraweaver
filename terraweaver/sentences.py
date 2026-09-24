@@ -72,7 +72,10 @@ def say(world, subject, obj, words: str, task_id: str | None = None):
     # is nonsense. It is nonsense for a few minutes: the link is read at the close of the task
     # and becomes what it is. Choosing a better word would be inventing the very thing that has
     # not been read, and a word read as content is the failure measured all day.
-    link = subject.relate(obj, "related", label="said", nature="related_to")
+    from terraweaver import ontology
+
+    with ontology.said_in_words():
+        link = subject.relate(obj, "related", label="said", nature="related_to")
     link.describe(words.strip())
     cursor = world.store.conn.execute(
         "INSERT INTO sentences (subject_id, object_id, words, said_at, task_id, link_id) "

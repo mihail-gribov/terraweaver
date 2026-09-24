@@ -305,6 +305,31 @@ def is_identifying() -> bool:
     return _IDENTIFYING
 
 
+_SAID_IN_WORDS = False
+
+
+@contextmanager
+def said_in_words():
+    """A link being made from the host's sentence, to be typed when the task closes.
+
+    It goes in untyped on purpose — `related`, carrying the words — and the world asks, once
+    per type, whether a link recorded that way has a word of its own. Here it does not: the
+    word is in the sentence and is read at the close, minutes later. Asking would hold the task
+    open on a question the close itself answers, which deadlocked every run of the sentence
+    door: seven facts recorded, seven links standing, the task refusing to close.
+    """
+    global _SAID_IN_WORDS
+    was, _SAID_IN_WORDS = _SAID_IN_WORDS, True
+    try:
+        yield
+    finally:
+        _SAID_IN_WORDS = was
+
+
+def is_said_in_words() -> bool:
+    return _SAID_IN_WORDS
+
+
 @contextmanager
 def trusted_writes():
     """Writes made by the machinery itself (loading, applying a settled decision)."""
