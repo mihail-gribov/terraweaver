@@ -982,8 +982,8 @@ class WorldRuntime:
         The twin of `_read_what_was_said`, and here for the same reason: a run is stopped after
         ten seconds and a reader takes four to twenty.
         """
-        reader = getattr(self.world, "reader", None)
-        if reader is None:
+        engineer = getattr(self.world, "engineer", None)
+        if engineer is None:
             return {}, 0
         try:
             from terraweaver import portraits
@@ -992,7 +992,9 @@ class WorldRuntime:
             silent = len(portraits.still_only_a_name(self.world))
             if not waiting:
                 return {}, silent
-            return portraits.read_them(self.world, reader, run=self._the_world_writes), silent
+            tally = portraits.read_them(self.world, engineer, run=self._the_world_writes)
+            self._hand_back_what_moved(tally.pop("moved", []))
+            return tally, silent
         except Exception:  # noqa: BLE001 - reading is never what stops a task closing
             return {}, 0
 
@@ -1015,14 +1017,36 @@ class WorldRuntime:
         with ontology.stating("world"):
             return self.run(code, THE_WORLDS_OWN)
 
+    def _hand_back_what_moved(self, moved: list[str]) -> None:
+        """A thing read under another class is a different instance; whoever holds it gets it.
+
+        `retype` builds the thing afresh under its new class, so every variable still pointing at
+        the old one points at a Thing that is no longer what the record says. Left alone the next
+        line the agent writes saves that one back, and the whole reading is undone by an
+        unrelated assignment, with nothing anywhere to say it happened.
+        """
+        if not moved:
+            return
+        for entity_id in moved:
+            try:
+                now = self.store.load(entity_id, self.classes)
+            except Exception:  # noqa: BLE001 - a thing that has gone is nobody's to hand back
+                continue
+            if now is None:
+                continue
+            for session in self.sessions.values():
+                for name, held in list(session.namespace.items()):
+                    if getattr(held, "id", None) == entity_id and held is not now:
+                        session.namespace[name] = now
+
     def _read_what_was_said(self) -> dict:
         """Turn the sentences this task said into links. At the close, where nothing waits.
 
         A run is stopped after ten seconds and a reader takes four to twenty, so this cannot
         happen where the fact is said. It does not need to: the words are in the record.
         """
-        reader = getattr(self.world, "reader", None)
-        if reader is None:
+        engineer = getattr(self.world, "engineer", None)
+        if engineer is None:
             return {}
         try:
             from terraweaver import sentences
@@ -1030,7 +1054,7 @@ class WorldRuntime:
             said, waiting = sentences.count(self.world)
             if not waiting:
                 return {}
-            return sentences.read_them(self.world, reader)
+            return sentences.read_them(self.world, engineer)
         except Exception:  # noqa: BLE001 - reading is never what stops a task closing
             return {}
 

@@ -282,7 +282,7 @@ def _give_it_a_reader(world) -> None:
     try:
         from terraweaver import outside
 
-        world.reader = outside.Nemotron(ttl=25)
+        world.engineer = outside.Nemotron(ttl=25)
     except Exception:  # noqa: BLE001 - a world with no reader is a world that does not read
         pass
 

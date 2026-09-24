@@ -275,7 +275,7 @@ def held(world) -> str:
     return "Relations the record already holds:\n" + "\n".join(lines[:30])
 
 
-def read_them(world, reader, limit: int = 100) -> dict:
+def read_them(world, engineer, limit: int = 100) -> dict:
     """Read the sentences nobody has read, and make each one a link. Called at the close.
 
     Everything that happens after the reading is the world as it already is: `define_relation`
@@ -297,12 +297,12 @@ def read_them(world, reader, limit: int = 100) -> dict:
             mark(world, one["id"], {"gone": True})
             continue
         try:
-            said = reader.json(SYSTEM, ASK.format(
+            said = engineer.json(SYSTEM, ASK.format(
                 words=one["words"],
                 a=subject.display_name(), a_is=type(subject).__name__,
                 b=obj.display_name(), b_is=type(obj).__name__,
                 held=held(world), classes=classes_here(world)))
-        except Exception:  # noqa: BLE001 - a reader that fails leaves the words for a later pass
+        except Exception:  # noqa: BLE001 - one that fails leaves the words for a later pass
             tally["failed"] += 1
             continue
         if not said:

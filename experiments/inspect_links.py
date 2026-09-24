@@ -37,7 +37,7 @@ def main() -> int:
     authoring.install(rt.world, where / "grown")
     world = rt.world
 
-    world.reader = outside.namer(outside.Nemotron())
+    world.engineer = outside.namer(outside.Nemotron())
     unnamed = [n for n in inspector.unread_types(world)]
     print(f"{where.name}: {len(unnamed)} type(s) nobody has read")
     for name, lines in inspector.look_at_types(world, limit=100).items():

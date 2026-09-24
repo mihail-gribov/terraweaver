@@ -9,14 +9,15 @@ thing, the world records it as a bare `Thing`, and the host says what it is in t
     rome.describe("Rome is the capital of Italy, where the user lived until 2019")
 
 What class that is, which attributes it fills, whether a class for it has to be made at all —
-read afterwards, at the close of the task, by a reader whose whole attention is that question.
+read afterwards, at the close of the task, by an engineer of knowledge whose whole
+attention is that one question.
 
 **Which thing it is, is never read.** The entity is handed over as an entity and its id is what
-the reading is written against. A reader that had to find "Rome" in its own answer could name
+the reading is written against. An engineer that had to find "Rome" in its own answer could name
 something that is not in the record at all, and identity recovered from words is the one mistake
-no later pass repairs. The reader says what this is; it never says which this is.
+no later pass repairs. The engineer says what this is; it never says which this is.
 
-**Whether it is true is not the reader's business.** A world that holds "London is the capital of
+**Whether it is true is not the engineer's business.** A world that holds "London is the capital of
 France" describes it exactly as it would the truth. This is a record of what somebody said.
 """
 import json
@@ -34,7 +35,7 @@ CREATE TABLE IF NOT EXISTS portraits (
     statement_id TEXT PRIMARY KEY,   -- the prose-fact that was read
     entity_id TEXT NOT NULL,
     read_at TEXT NOT NULL,           -- when it was taken apart
-    read_as TEXT,                    -- what the reader made of it
+    read_as TEXT,                    -- what the engineer made of it
     became TEXT                      -- the class it put the thing under, if it moved it
 );
 CREATE INDEX IF NOT EXISTS idx_portraits_entity ON portraits(entity_id);
@@ -55,8 +56,15 @@ def wanted(world, entity, task_id: str | None = None) -> None:
     world.store.conn.commit()
 
 
+# What the world said itself. Its own writing is not an account to be read: the engineer's code
+# calls `it.describe(...)` for what no attribute could hold, that lands as a prose-fact like any
+# other, and reading it sets the whole circuit off again over a sentence the world composed.
+# Only what came from outside is an account of anything.
+OURS = "world"
+
+
 def unread(world, limit: int = 50) -> list[dict]:
-    """Prose-facts about a bare-named thing that nobody has taken apart yet.
+    """Prose-facts said from outside about a bare-named thing, that nobody has taken apart yet.
 
     The unit is the prose-fact and not the thing, because a thing is described more than once.
     Kept per thing, a second account arriving a week later found the row already marked read and
@@ -76,7 +84,7 @@ def unread(world, limit: int = 50) -> list[dict]:
         except Exception:  # noqa: BLE001 - a thing that has gone says nothing
             continue
         for statement in said:
-            if statement.id in done:
+            if statement.id in done or statement.source == OURS:
                 continue
             out.append({"statement_id": statement.id, "entity_id": entity_id,
                         "words": str(statement.value), "source": statement.source,
@@ -142,7 +150,7 @@ def walk_down(world, entity, words: str, picker) -> tuple[str, str | None]:
     level the options are that class's children plus "none of these", so the answer is either a
     step down, a stop, or word that the record has no class for this.
 
-    The option names are what a reader has to echo back, so they are short and plain. This one
+    The option names are what an engineer has to echo back, so they are short and plain. This one
     read "— none of these: it needs a class of its own" and came back unmatched every time: the
     walk never descended and nothing was ever placed.
     """
@@ -262,7 +270,7 @@ MAKE_SHAPE = ('{{"name": "...", "brief": "...", "description": "one sentence say
 
 
 # The most general class of thing, and a real one: a book or a dish is a Thing and wants no
-# other word. It is shown last and said to be the widest, because a reader that sees it first
+# other word. It is shown last and said to be the widest, because an engineer that sees it first
 # among equals takes it every time — it fits everything — and then no class is ever made.
 WIDEST = "Thing"
 
@@ -293,7 +301,7 @@ def words_about(world, entity) -> str:
 GOES = 3
 
 
-def read_them(world, reader, limit: int = 50, picker=None, run=None) -> dict:
+def read_them(world, engineer, limit: int = 50, picker=None, run=None) -> dict:
     """Read the prose-facts nobody has read, and put each into the record's own terms.
 
     Two steps, and the split between them is where the cost is. Finding the class is a walk down
@@ -306,8 +314,12 @@ def read_them(world, reader, limit: int = 50, picker=None, run=None) -> dict:
     """
     from terraweaver import ontology, outside
 
-    picker = picker or getattr(world, "picker", None) or outside.AsChoices(reader)
+    picker = picker or getattr(world, "picker", None) or outside.AsChoices(engineer)
     tally = {"read": 0, "placed": 0, "defined": 0, "ran": 0, "failed": 0, "gave_up": 0}
+    # Things that changed class. Whoever is holding one of these is holding the instance it was
+    # before, and the next thing they save writes that back — the reading undone by the very
+    # next line the agent runs, quietly, with nothing to show it happened.
+    moved: list[str] = []
     for one in unread(world, limit):
         try:
             entity = world.store.load(one["entity_id"], world.classes)
@@ -323,7 +335,7 @@ def read_them(world, reader, limit: int = 50, picker=None, run=None) -> dict:
         words = words_about(world, entity) or f"    {one['words']}"
         at, wanting = walk_down(world, entity, words, picker)
         asked = _asking(world, entity, words, at, make_new=bool(wanting))
-        said = _say(reader, asked)
+        said = _say(engineer, asked)
         if said is None:
             tally["failed"] += 1
             continue
@@ -340,6 +352,7 @@ def read_them(world, reader, limit: int = 50, picker=None, run=None) -> dict:
                 if at and at != type(entity).__name__ and at in world.classes:
                     entity = world.retype(entity, at)
                     became = at
+                    moved.append(one["entity_id"])
                     tally["placed"] += 1
         except Exception as wrong:  # noqa: BLE001 - the world's own refusals still stand
             # The thing stays exactly as it was. A class the world could not apply is a class
@@ -347,13 +360,14 @@ def read_them(world, reader, limit: int = 50, picker=None, run=None) -> dict:
             mark(world, one["statement_id"], one["entity_id"],
                  {**read_as, "refused": str(wrong)[:200]})
             continue
-        read_as["code"], read_as["went"] = _the_loop(reader, run, entity, asked, said, tally)
+        read_as["code"], read_as["went"] = _the_loop(engineer, run, entity, asked, said, tally)
         mark(world, one["statement_id"], one["entity_id"], read_as, became)
+    tally["moved"] = moved
     return tally
 
 
-def _the_loop(reader, run, entity, asked: str, said: dict, tally: dict) -> tuple[list, str]:
-    """Run what the reader wrote, and hand back whatever the world says until it is done.
+def _the_loop(engineer, run, entity, asked: str, said: dict, tally: dict) -> tuple[list, str]:
+    """Run what the engineer wrote, and hand back whatever the world says until it is done.
 
     Exactly the loop a host is in: write, read what the world says back, answer that. The only
     difference is who is on the other end. A host that is told its line failed writes the
@@ -378,7 +392,7 @@ def _the_loop(reader, run, entity, asked: str, said: dict, tally: dict) -> tuple
                 f"{format_result(got)[:1500]}\n\nWrite the lines that still have to run — the "
                 f"ones that finished are done and must not be sent again. `class` is null now; "
                 f"the class is made. Nothing new is invented: only what the words above say.")
-        again = _say(reader, back)
+        again = _say(engineer, back)
         code = str((again or {}).get("code") or "").strip()
         if not code:
             break
@@ -386,10 +400,10 @@ def _the_loop(reader, run, entity, asked: str, said: dict, tally: dict) -> tuple
     return written, "gave up"
 
 
-def _say(reader, asked: str) -> dict | None:
+def _say(engineer, asked: str) -> dict | None:
     try:
-        said = reader.json(SYSTEM, asked)
-    except Exception:  # noqa: BLE001 - a reader that fails leaves the words for a later pass
+        said = engineer.json(SYSTEM, asked)
+    except Exception:  # noqa: BLE001 - an engineer that fails leaves the words for a later pass
         return None
     return said if isinstance(said, dict) else None
 
@@ -419,7 +433,7 @@ def _a_word_it_has_not(world) -> str:
 
     Whether an unknown word makes its own type is a switch (`initiative.MAKES_TYPES`), off by
     default and turned on one at a time against a record somebody can already read. Telling the
-    reader the wrong one costs a whole reading: promised that `relate` would make the type, it
+    engineer the wrong one costs a whole reading: promised that `relate` would make the type, it
     wrote the line, watched it refused, and spent its three goes on `define_relation` calls the
     world refused for a different reason.
     """
@@ -445,7 +459,7 @@ def _a_word_it_has_not(world) -> str:
 def _classes_here(world) -> str:
     """Every class something can be looked up under, so a name that is not one is not written.
 
-    Shown rather than remembered: a reader given an example that names a class this world has
+    Shown rather than remembered: an engineer given an example that names a class this world has
     not got copies the example. `world.identify(Place, ...)` came back a NameError three times
     running in a world whose widest classes were Thing and Event.
     """
@@ -462,7 +476,7 @@ def _classes_here(world) -> str:
 
 
 def _make_one(world, spec, under: str, tally: dict) -> str | None:
-    """Make the class the reader described, under the class the walk stopped at.
+    """Make the class the engineer described, under the class the walk stopped at.
 
     Under it, and that is the whole of what makes it reachable: placing a thing walks down from
     the widest class asking which child it is, so a class with no parent is a leaf nobody ever
@@ -477,7 +491,7 @@ def _make_one(world, spec, under: str, tally: dict) -> str | None:
         # Naming it after the class it is a kind of is not a new class, it is the walk saying
         # "none of these" and then handing back where it started.
         return None
-    # An attribute the world refuses does not cost the class. A reader writes attribute
+    # An attribute the world refuses does not cost the class. An engineer writes attribute
     # descriptions as labels — "Land area" — and `define` wants a sentence; losing City over
     # `area_sqkm` left the thing a bare Thing and every later city with nowhere to go.
     attributes = [a for a in (spec.get("attributes") or []) if isinstance(a, dict)

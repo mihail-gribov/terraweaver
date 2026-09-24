@@ -2064,3 +2064,32 @@ None of the six was a logic error a test would catch by running the same path tw
 a second party — a model reading what we wrote and doing something else — and each took a
 five-minute live run to find. That is the argument for a fake reader in the suite: the same
 circuit, answers fixed in advance, seconds instead of minutes.
+
+### The party that formalises is the engineer, and the circuit has a test
+
+**`world.reader` is `world.engineer`.** "Reader" said nothing about the work and the word was
+already doing two jobs in one file. The name is the project's own: the host tells the story, the
+world does the engineering. It says the role rather than the model, so Nemotron is replaceable in
+it without a line changing. The closed one stays `world.picker` — named options, the walk down
+the tree, where Jev goes.
+
+**`tests/test_portraits.py` stands both of them in.** Answers fixed in advance, the whole circuit
+in seconds: a bare name noted and asked about, the question closing itself when something is
+said, the walk, the class made under the parent it was found from, the code run, a refusal handed
+back and the next answer run, a reading written against the prose-fact rather than the thing.
+
+It earned itself twice on the day it was written, on two things no live run had shown:
+
+**The world was reading its own writing.** The engineer's code calls `it.describe(...)` for what
+no attribute can hold. That lands as a prose-fact like any other and joins the queue to be read —
+the world taking apart a sentence it composed itself, and setting the circuit off again each
+time. Only what came from outside is an account of anything now.
+
+**A retype was undone by the next line the agent wrote.** `retype` builds the thing afresh under
+its new class, and every variable still pointing at the old one points at something the record no
+longer agrees with. The host's next save wrote that back: Turin, read into `City` at the close,
+was a `Thing` again after one unrelated assignment, with nothing anywhere to say so. What changed
+class is now handed back to whoever is holding it.
+
+Neither is a logic error a test would find by walking the same path twice, and neither shows in a
+live run — the second one looks like the reading simply not having worked.

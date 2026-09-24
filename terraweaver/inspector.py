@@ -266,9 +266,9 @@ CREATE TABLE IF NOT EXISTS type_checks (
 """
 
 
-def reader_of(world):
+def engineer_of(world):
     """The outside reader this world was given, or None. A world without one simply skips."""
-    return getattr(world, "reader", None)
+    return getattr(world, "engineer", None)
 
 
 def on_new_type(world, name: str) -> list[str]:
@@ -315,7 +315,7 @@ def look_at_types(world, limit: int = 20, can_ask: bool = True) -> dict[str, lis
     everything else this world asks for is asked. One open question per type, asked once.
     """
     run_script(world.store.conn, TYPE_CHECKS)
-    ask = reader_of(world)
+    ask = engineer_of(world)
     if ask is None:
         return {}
     out: dict[str, list[str]] = {}
@@ -546,7 +546,7 @@ def silent_classes(world, least: int = A_FEW) -> list[str]:
     return out
 
 
-def write_the_questions(world, reader=None, least: int = A_FEW, limit: int = 5) -> list[str]:
+def write_the_questions(world, engineer=None, least: int = A_FEW, limit: int = 5) -> list[str]:
     """Write the asking line for classes that have none, from what has accumulated under them.
 
     Offline work, and it has to be: a class is born in the middle of reading one thing, and one
@@ -559,7 +559,7 @@ def write_the_questions(world, reader=None, least: int = A_FEW, limit: int = 5) 
     """
     from terraweaver import ontology
 
-    reader = reader or reader_of(world)
+    engineer = engineer or engineer_of(world)
     if reader is None:
         return []
     written = []
@@ -571,7 +571,7 @@ def write_the_questions(world, reader=None, least: int = A_FEW, limit: int = 5) 
         for one in here:
             words = [t for t in (getattr(one, "descriptions", None) or []) if isinstance(t, str)]
             said.append(f"    {one.display_name()} — {words[0][:110] if words else '(nothing said)'}")
-        got = reader.json(WRITING, WRITE_ONE.format(
+        got = engineer.json(WRITING, WRITE_ONE.format(
             name=name, description=(spec.get("description") or "")[:200],
             parent=spec.get("parent"),
             inherited=ontology.what_to_say(world.classes[spec["parent"]], world.classes)
