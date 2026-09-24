@@ -1764,3 +1764,41 @@ batch this project has recorded — and every one of them through `define_relati
 `world.say` appears four times in the dialogue, all four in the primer it was given. Offered two
 doors, a host takes the one it already knows. Whether the sentence door is better is therefore
 not yet measured, and saying so is the point: the mechanism works, and its worth is unmeasured.
+
+---
+
+## 2026-09-24 · The host tells a story; the world is the knowledge engineer
+
+The user's framing, and the best one this project has had for what the two sides are:
+
+> **The host is like a person telling a story. The world is a knowledge engineer who takes the
+> story apart and turns it into a formal representation. So it is odd to ask a person about the
+> transitivity and cardinality of a relation.**
+
+That is exactly what the primer had been doing. `define_relation` asks a storyteller for
+`nature`, `cardinality` and `over_time` — three questions about the shape of a relation, asked
+before the second fact of its kind has been heard, and every one of them was answered badly in
+a measured run: two ideas under `Speaks`, three links written backwards, `over_time` guessed.
+None of that was carelessness. It was a storyteller doing an engineer's work.
+
+So: `world.link(a, b, "Anna has been an employee of Acme since 2019")`. Two things and the fact
+in words. The engineering — roles, how many at a moment, what follows, when it began — is read
+afterwards, by a reader whose whole task that is, at the close where nothing waits on it.
+
+**The primer halves.** 1651 words to 824, and what went is not reworded, it is gone: natures,
+cardinality as a question, `over_time`, "a nature is not a name", "do not reach for a type that
+is roughly the area". What stays is what a storyteller needs, including what a link *becomes*,
+because the host has to read its own facts back:
+
+    paris.capital_of  -> France          each end reads by its own role
+    anna.mother_of    -> [Boris, Vera]   several at once, so a list
+
+**The experiment did not run, and reporting it as 8/10 would be wrong.** Hiding
+`define_relation` is not hiding the type-first door: `relate` is a method on every entity, so
+the host wrote `relate(a, b, "related", label="born_in")` — labelled free links, untyped —
+three `world.link` calls against five of those. Worse, nothing got typed at all: typing happens
+at `finish_task`, and two of the three tasks it opened were left with `runs=0 closed=null`. The
+`Related[born_in]` in every row is a bare link that was never read.
+
+What that measures is a mixture, not a mechanism. To try the claim, the surface has to have one
+way to write a link, and the task has to close.

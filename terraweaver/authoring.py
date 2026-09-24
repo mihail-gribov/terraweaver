@@ -608,7 +608,7 @@ class Authoring:
             (self.dir / f"{spec['name']}.json").write_text(json.dumps(spec, indent=2))
 
 
-def install(world, specs_dir=None) -> Authoring:
+def install(world, specs_dir=None, one_door: bool = False) -> Authoring:
     """Put the definition calls where a host can reach them, and nowhere else.
 
     The core world does not know these exist; a mode adds them. `world.extras` is the one door
@@ -628,4 +628,14 @@ def install(world, specs_dir=None) -> Authoring:
         "attributes_like": authoring.attributes_like,
         "anything_like": authoring.anything_like,
     })
+    if one_door:
+        # An experiment, and the reason it has to be one: offered both doors, a host takes the
+        # one it already knows — measured, ten facts out of ten through the type-first door and
+        # not one call to the other, which appeared in the dialogue only where the world itself
+        # had printed it. Two doors measure the habit, not the mechanism. With the type-first
+        # one closed, what is left is `world.link(a, b, "...")`, which defines the types itself
+        # from what was said. Nothing is lost: the calls are still here and still used, by the
+        # sentence door among others — they are simply not on the host's surface.
+        for shut in ("define_relation",):
+            extras.pop(shut, None)
     return authoring

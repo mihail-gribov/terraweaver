@@ -329,6 +329,9 @@ def main() -> None:
     parser.add_argument("--db", default="worlds/job_search.db")
     parser.add_argument("--fixture", default="job_search", help="world to build when the db is empty")
     parser.add_argument("--rebuild", action="store_true", help="rebuild from the fixture on start")
+    parser.add_argument("--one-door", action="store_true",
+                        help="hide define_relation: the host says facts in words and the world "
+                             "works out the types (an experiment; see authoring.install)")
     parser.add_argument("--blank", action="store_true",
                         help="no classes at all: the host defines the ontology (docs/open-ontology.md)")
     parser.add_argument("--base", action="store_true",
@@ -370,7 +373,7 @@ def main() -> None:
         # alongside `PlaysPosition` and a marriage recorded as kin next to an unused MarriedTo.
         specs = growth.apply_growth(ont.base_specs(here), growth.load_grown(grown_dir))
         runtime = WorldRuntime(args.db, fixture=None, specs=specs, selves=True)
-        authoring.install(runtime.world, grown_dir)
+        authoring.install(runtime.world, grown_dir, one_door=args.one_door)
         _give_it_a_reader(runtime.world)
     elif args.blank:
         # A world with the mechanism and no vocabulary. The host defines the classes; the world

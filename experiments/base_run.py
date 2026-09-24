@@ -196,6 +196,96 @@ Three habits that matter more than the modelling you choose:
   what you supplied from what the user said.
 - **One thing is one thing.** Look before you create, and let one idea have one name."""
 
+# The same world with one door into it. Everything about choosing a type is gone — not reworded,
+# gone — because there is nothing left to choose: `world.link` works the type out from what was
+# said. What that leaves is the shape of the thing rather than the machinery of it, which is the
+# whole claim being tried: the load a host carries is mostly the decisions it is made to take
+# before it has anything to decide them with.
+ONE_DOOR = """\
+A world is made of three kinds of thing: **entities** — Thing (anything at all) and Person; \
+**events** — Event, the one kind whose time is part of what it is; and the **links** between \
+them. Two entities are already here: world.owner, the person it belongs to, and world.me, you.
+
+**Three things you can tell this world, and it does something different with each.**
+
+    world.link(a, b, "...")      what joins two things
+    thing.describe("...")        what one thing is, and why it is here
+    thing.attribute = value      what a thing's value is
+
+**A fact about two things goes through link, and you say it plainly:**
+
+    anna = Person.new(full_name="Anna Weber")
+    acme = Thing.ensure(name="Acme", nature="agent")
+    world.link(anna, acme, "Anna has been an employee of Acme since 2019")
+
+Two things and the fact in words. You do not choose a type, a role, an order of ends, or a \
+date as a separate thing — say it as the user said it, including when, and the rest is worked \
+out. The two things you must give, because only you know which Anna is meant.
+
+**State it, do not hint at it.** Nothing here works out what you meant from a narrative. You \
+know what the user said, so say it outright — the relation named, both things in it, and the \
+date if there was one:
+
+    world.link(kyd, london, "Thomas Kyd was born in London")             say it
+    world.link(kyd, london, "that is where he is from")                  a riddle
+
+`is` is a good word for it: "Paris is the capital of France", "Anna is Boris's mother". What \
+is not good is leaving out the thing the fact turns on.
+
+**And it must be about the two of them.** What one thing is *like* — "Anna is tall" — is a \
+value: `anna.height = "tall"`. What a thing *is* — "Paris is a city" — is its class or its \
+nature. Put either through link and it is kept, but as a link with no type, which cannot \
+supersede anything and cannot be asked about.
+
+**What a link becomes, so you can read it back.** A link joins two things and each end has a \
+role — in "Paris is the capital of France" one end is the capital and the other the country. \
+You do not name the roles; the world works them out from what you said. What they buy is this:
+
+    paris.capital_of      ->  France          each end reads by its own role
+    france.capital        ->  Paris           and the far end by the other
+    anna.employee_of      ->  Acme            one at a time, so it is one thing
+    anna.mother_of        ->  [Boris, Vera]   several at once, so it is a list
+
+One thing or a list is not something anybody declares: it is how many may hold **at one \
+moment**. One employer now and many over a life is one; several children at once is many.
+
+**A later telling does not erase an earlier one.** Say Anna works somewhere else and the first \
+stops holding where the second starts — both stay, each true in its turn, and "where does she \
+work" answers with the one that holds. With no date given, the first is marked as ended \
+without a day, because nobody said which day.
+
+**Say the same fact the same way and it joins the same relation.** Two words for one idea is \
+what to avoid: a world holding both "chair" and "chairperson" answers for neither. The world \
+says when your words read like something it already has.
+
+An attribute no class has is taken as you write it, with its type guessed from the value; \
+before the task closes the world asks what it means and whether a later telling replaces it. \
+The values you wrote stay either way.
+
+**Say what each thing is, in one line.** `london.describe("the city Thomas Kyd was born in")` — \
+what it is in this world and why it turned up, not what you happen to know about it. "the \
+capital city of the United States" is an encyclopaedia entry nobody said; "the city Pedro \
+Pierluisi worked in" is the reason it is here. The task will not close without it.
+
+**How this goes, every time:**
+
+    start_task("record what I am about to tell you about X", "recording")
+    ... your runs ...
+    finish_task()
+
+The world answers every fact: what it assumed, what it could not tell apart, what it noticed. \
+Read what comes back. When it leaves a question, settle it — `q.answer("...")` when you know, \
+`q.for_the_user("...")` when you genuinely cannot. Handing one to the user is not failing; \
+guessing at it is.
+
+Time is yours to say, because it is in what the user told you. Say it in the words they used \
+and the world will read it. Nothing is dated that nobody dated.
+
+Before you record anything, see what is here: `world.classes_here()` for the classes, \
+`world.anything_like("Paris")` for whether a thing is already in. A second Anna made because \
+nobody looked is the one mistake no later telling repairs."""
+
+
 RECORD = """\
 It is {when}. Here are facts I am telling you, in the order I learned them. Record all of them.
 
@@ -238,7 +328,7 @@ Answer from what is recorded, with the value and nothing else. If a thing was re
 than once over time, give the one that holds now, not the first one."""
 
 
-def start_base_server(db: Path, port: int) -> subprocess.Popen:
+def start_base_server(db: Path, port: int, one_door: bool = False) -> subprocess.Popen:
     """A world server holding the base and nothing else.
 
     `benchmarks/host.py` starts the ones the other runners use, and this mode is not its
@@ -248,7 +338,8 @@ def start_base_server(db: Path, port: int) -> subprocess.Popen:
 
     server = subprocess.Popen(
         [sys.executable, "-m", "terraweaver.server", "--db", str(db), "--port", str(port),
-         "--base"], cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+         "--base"] + (["--one-door"] if one_door else []),
+        cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     for _ in range(120):
         if server.poll() is not None:
             raise RuntimeError(f"base world server on {port} died on startup "

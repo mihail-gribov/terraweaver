@@ -25,7 +25,7 @@ sys.path.insert(0, str(ROOT / "benchmarks"))
 import factconsolidation as fc              # noqa: E402
 import host as hosting                      # noqa: E402
 
-from experiments.base_run import PRIMER, RECORD, start_base_server  # noqa: E402
+from experiments.base_run import ONE_DOOR, PRIMER, RECORD, start_base_server  # noqa: E402
 
 RESULTS = ROOT / "experiments" / "results" / "batches"
 
@@ -312,6 +312,9 @@ def main() -> int:
                         help="a run directory to carry on in, so the world already holds what "
                              "the last batch put there")
     parser.add_argument("--model", default="haiku")
+    parser.add_argument("--one-door", action="store_true",
+                        help="hide define_relation and give the shorter primer: the host says "
+                             "facts in words and the world works out the types")
     parser.add_argument("--port", type=int, default=7093)
     args = parser.parse_args()
 
@@ -343,7 +346,7 @@ def main() -> int:
     spent = {"turns": 0, "cost": 0.0}
     started = time.monotonic()
     try:
-        server = start_base_server(db, args.port)
+        server = start_base_server(db, args.port, one_door=args.one_door)
         # The host runs outside this repository. Its working folder used to sit under
         # experiments/results, and Claude Code walks up from there, recognises the project and
         # loads its memory — a recorder answered the primer with "I've read the memory files …
@@ -353,7 +356,8 @@ def main() -> int:
         elsewhere = Path(tempfile.mkdtemp(prefix="tw-host-"))
         agent = hosting.World(elsewhere, "batch", args.port)
 
-        primed = hosting.ask(agent, PRIMER, agent.conversation(), None, log, args.model)
+        primed = hosting.ask(agent, ONE_DOOR if args.one_door else PRIMER,
+                             agent.conversation(), None, log, args.model)
         spent["turns"] += primed["turns"]; spent["cost"] += primed["cost"]
         print(f"primer: {primed['turns']} turns, ${primed['cost']:.2f}", flush=True)
 
