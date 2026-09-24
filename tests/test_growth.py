@@ -231,6 +231,16 @@ def main() -> int:
     check("and the grown attribute can be searched by, not only written",
           found["ok"] and "Ada Byron" in (found["output"] or ""),
           str(found.get("error") or found.get("output"))[:140])
+    # Adding is the whole of what growth does: nothing here redeclares, removes or renames,
+    # because everything recorded under a word was recorded meaning it. The refusal has to say
+    # what the word already means, or a host that wanted another type is left with nowhere to go.
+    again = rt.run('world.attribute(Person, "salary", "now as words", type="str")', "k3")
+    check("an attribute cannot be redeclared into another type",
+          not again["ok"] and "already declared" in str(again.get("error")),
+          str(again.get("error"))[:90])
+    check("and the refusal says what the word already means",
+          "int" in str(again.get("error")) and "paid a year" in str(again.get("error")),
+          str(again.get("error"))[-160:])
 
     print()
     if failures:

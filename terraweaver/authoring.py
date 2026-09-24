@@ -162,8 +162,19 @@ class Authoring:
         spec = self._spec_of(cls)
         attr = self._attribute_spec(name, description, type=type, changes=changes,
                                     required=required)
-        if any(a["name"] == attr["name"] for a in spec["attributes"]):
-            raise Refused(f"{spec['name']}.{attr['name']} is already declared")
+        standing = next((a for a in spec["attributes"] if a["name"] == attr["name"]), None)
+        if standing is not None:
+            # Saying only "already declared" leaves a host that wanted a different type with
+            # nowhere to go: it cannot redeclare, and nothing here removes or renames. So the
+            # refusal says what the word already means in this world, which is the thing it
+            # needs in order to either write the value in that form or pick another word.
+            raise Refused(
+                f"{spec['name']}.{attr['name']} is already declared, as "
+                f"{standing.get('type', 'str')}: {standing.get('description', '')[:90]}\n"
+                f"Write the value in that form, or if this is genuinely a different thing, give "
+                f"it a name of its own — an attribute cannot be redeclared, removed or renamed, "
+                f"because everything already recorded under the word was recorded meaning it."
+            )
         spec["attributes"].append(attr)
         ontology.define_class(self.world.classes, spec)  # rebuild the class with the addition
         self._register(spec)

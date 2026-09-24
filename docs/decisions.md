@@ -1568,3 +1568,28 @@ attribute a host had just declared was writable and **not findable** in the same
 grown `list[...]` slot was read back on a rebuild as a single value, the last one said. That
 second one is the same fault that made a test of mine earlier today report every list attribute
 on a grown class as a scalar. `Authoring._register` now puts the spec in both.
+
+---
+
+## 2026-09-24 · What a class can become while the world is running
+
+Settled with the user: **intercept the call and say so** — no removing, no renaming, no
+redeclaring. What growth does is add.
+
+    add an attribute      yes — writable, readable, searchable, saved to grown/*.json
+    add a class           yes
+    add a relation type   yes
+    declare it again      refused
+    change its type       refused (the same thing as declaring it again)
+    remove, rename        no such call, and none wanted
+
+The reason is not caution about schemas: everything already recorded under a word was recorded
+*meaning* it. A word whose meaning can be changed afterwards makes every statement written
+before the change unreadable in the way it was written, and no later telling repairs that —
+the record cannot say which meaning was in force. Adding a second word costs a word; changing
+one costs the record.
+
+So the refusal now says what the word already means — its type and its description — because a
+host that wanted something else needs exactly that in order to write the value in the form the
+world has or to pick a name of its own. "Person.salary is already declared" on its own is a
+door with nothing behind it.
