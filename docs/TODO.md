@@ -3,6 +3,39 @@
 Ordered by what currently blocks progress. The focus is reading the world; write tasks are
 deliberately parked (see below).
 
+## The recorder keeps fumbling the definition calls
+
+Measured mid-run on 2026-09-24 (`dated455`, first eight batches). The host's calls to
+`world.define` and `world.define_relation` fail on their own signature far more often than in
+either earlier full run, and a type it failed to define is a link that never lands — which is
+most of what the check reports as a missing fact.
+
+| run | errors on `define*` | turns | per 1000 |
+|---|---|---|---|
+| `final455` | 60 | 6250 | 9.6 |
+| `clean455` | 12 | 5995 | 2.0 |
+| `dated455` | 48 | 1243 | **38.6** |
+
+What they are: `define_relation() got multiple values for argument`, `define() missing 1
+required positional argument: 'identified_by'`, `define() got multiple values for argument
+'description'`. All three are the host mixing positional and keyword arguments — it passes the
+name positionally and then names `description=` as well, or leaves out `identified_by`.
+
+Neither `describe.py` nor `authoring.py` has changed since those runs (`git diff` is empty), so
+this is not a regression in what the world teaches. Two things to separate before fixing
+anything:
+
+- whether it is spread evenly or sits on particular batches — the full run will say;
+- whether it follows the date refusal. Refusals run at the same rate as before (47.5 per 1000
+  against 46.2 and 39.2), but each one makes the host rewrite its block, and a rewritten block
+  is where the signature goes wrong. Turns per batch are up too (155 against 136 and 130).
+
+The fix is probably not a better sentence in the guide — [[terraweaver-working-principles]]:
+enforce in code, not in the prompt. `define(name, description, identified_by)` taking its
+arguments in an order the host keeps getting wrong is the world's problem to remove, by
+accepting what it is given or by refusing in a way that says which argument is missing and
+what to write instead.
+
 ## Two instances in every world: `user` and `agent`
 
 Every world should hold two explicit instances: `user` — the person the world belongs to and
