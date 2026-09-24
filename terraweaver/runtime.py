@@ -56,6 +56,10 @@ CREATE TABLE IF NOT EXISTS runs (
 # a host should be able to do to itself.
 ALWAYS = frozenset({"user", "agent", "owner", "me"})
 
+# The session the world uses for code it wrote itself, kept apart from every host's so that
+# what it binds cannot be mistaken for what a host is holding.
+THE_WORLDS_OWN = "the world's own reading"
+
 
 class WorldView:
     """What host code sees as `world`: the operations, not the machinery.
@@ -800,7 +804,7 @@ class WorldRuntime:
         # reader was paid for on every attempt that came back "not closed yet" and its answer
         # thrown away with the rest of the message.
         typed = self._read_what_was_said()
-        placed = self._read_what_things_are()
+        placed, still = self._read_what_things_are()
         unnamed = self._types_without_named_ends()
         turned = self._turn_the_odd_ones()
         offered = self._read_the_new_types()
@@ -836,10 +840,10 @@ class WorldRuntime:
                       + (f", {placed['defined']} of them a class made for them" if placed["defined"] else "")
                       + (f", {placed['failed']} could not be read and are still waiting"
                          if placed["failed"] else "") + ".")
-        if placed and placed.get("no_words"):
-            asked += (f"\n\n{placed['no_words']} thing(s) are still only a name — nothing was "
-                      f"said about them, so there was nothing to read. They keep the name and "
-                      f"wait: say what they are next time you have the user in front of you.")
+        if still:
+            asked += (f"\n\n{still} thing(s) here are still only a name — nothing has been said "
+                      f"about them, so there was nothing to read. They keep the name and wait: "
+                      f"say what they are next time you have the user in front of you.")
         if turned:
             # Said because it was changed, not because it was checked. A fact that turned round
             # while nobody was looking is one the agent can no longer account for.
@@ -871,7 +875,8 @@ class WorldRuntime:
         return ("Settled, and put to the user — these wait for them, not for you:\n"
                 + "\n".join(f"    {q.line()}" for q in left) + asked)
 
-    def _ask_about_bare_things(self, namespace: dict, recording, created: set) -> list[str]:
+    def _ask_about_bare_things(self, namespace: dict, recording, created: set,
+                               mine: bool = True) -> list[str]:
         """The script has run; now the world looks at what it made and asks about the empty ones.
 
         A thing that came in as a bare name has nothing on it but that name — not a class worth
@@ -907,6 +912,7 @@ class WorldRuntime:
                 if got is None or got not in waiting:
                     continue
                 waiting.discard(got)
+                written = _reachable(entity, written, mine)
                 why = ont.what_to_say(type(entity), self.classes)
                 text = (
                     f"{written} is new here — recorded under the name you gave and nothing else. "
@@ -917,6 +923,25 @@ class WorldRuntime:
                 if self.world.questions.raise_(entity, "what_is_it", text,
                                                touches=["identity"]) is not None:
                     asked.append(f'{written}.describe("...")   # {why}')
+        for left in sorted(waiting):
+            # Not in anybody's namespace: the world made it while reading somebody's account —
+            # Italy turns up because "Rome is the capital of Italy" says Italy. The question is
+            # still the agent's to answer, since it is the one who brought Italy up, so the line
+            # looks the thing up by name rather than naming a variable nobody here has.
+            try:
+                stray = self.store.load(left, self.classes)
+            except Exception:  # noqa: BLE001 - a thing that has gone is asked about by nobody
+                continue
+            if stray is None:
+                continue
+            handle = _reachable(stray, "", mine=False)
+            why = ont.what_to_say(type(stray), self.classes)
+            text = (f"{stray.display_name()} came up while I was reading what you told me, and "
+                    f"is in the world as a bare name. Tell me about it in your own words: {why}. "
+                    f"Describing it is the answer; nothing else to do.")
+            if self.world.questions.raise_(stray, "what_is_it", text,
+                                           touches=["identity"]) is not None:
+                asked.append(f'{handle}.describe("...")   # {why}')
         return asked + self._ask_about_bare_links(namespace, recording, created)
 
     def _ask_about_bare_links(self, namespace: dict, recording, created: set) -> list[str]:
@@ -945,7 +970,7 @@ class WorldRuntime:
                              f'{ont.what_to_say(type(link), self.classes)}')
         return asked
 
-    def _read_what_things_are(self) -> dict:
+    def _read_what_things_are(self) -> tuple[dict, int]:
         """Read what was said about the things that came in as bare names. At the close.
 
         The twin of `_read_what_was_said`, and here for the same reason: a run is stopped after
@@ -953,16 +978,36 @@ class WorldRuntime:
         """
         reader = getattr(self.world, "reader", None)
         if reader is None:
-            return {}
+            return {}, 0
         try:
             from terraweaver import portraits
 
             asked, waiting = portraits.count(self.world)
+            silent = len(portraits.still_only_a_name(self.world))
             if not waiting:
-                return {}
-            return portraits.read_them(self.world, reader)
+                return {}, silent
+            return portraits.read_them(self.world, reader, run=self._the_world_writes), silent
         except Exception:  # noqa: BLE001 - reading is never what stops a task closing
-            return {}
+            return {}, 0
+
+    def _the_world_writes(self, entity, code: str) -> dict:
+        """Run code the world wrote itself, by exactly the door a host's code goes through.
+
+        Not a second interpreter, and that is the point of asking for code at all. What the
+        reader may say is what a host may say, the sandbox is the same sandbox, the statements
+        are committed one at a time the same way, and every refusal the world makes of a host
+        it makes of itself. A reading that can express only what a hand-written translator
+        thought of is a reading that quietly drops the rest.
+
+        `it` is the thing being filled in, bound before the code runs so the reader never has
+        to name it — identity is handed over here as it is everywhere else in this world, never
+        recovered from words. The writes are the world's own (`stating("world")`), which is the
+        lowest standing there is and comes off in one move.
+        """
+        session = self.session(THE_WORLDS_OWN)
+        session.namespace["it"] = entity
+        with ontology.stating("world"):
+            return self.run(code, THE_WORLDS_OWN)
 
     def _read_what_was_said(self) -> dict:
         """Turn the sentences this task said into links. At the close, where nothing waits.
@@ -1310,7 +1355,8 @@ class WorldRuntime:
                 # raised outside the recorder — the run has already finished — so it is added
                 # here by hand rather than arriving through it.
                 effects["clarify"] = self._ask_about_bare_things(
-                    namespace, recording, {id(o) for o in self.store._tx_new_ids})
+                    namespace, recording, {id(o) for o in self.store._tx_new_ids},
+                    mine=key != THE_WORLDS_OWN)
                 effects["questions"] += _waiting_on_answers(session)
                 # Only what this run raised. Repeating every doubt about every entity a run
                 # happens to touch is noise: the literature's criterion is relevance to the
@@ -1595,6 +1641,22 @@ def _effects(recording, created: set[int]) -> dict[str, list[str]]:
     return {"created": made, "updated": changed, "found": found, "comments": list(recording.remarks),
             "assumed": list(recording.assumed), "hints": list(recording.hints),
             "questions": list(recording.questions), "ask_now": list(recording.ask_now)}
+
+
+def _reachable(entity, written: str, mine: bool) -> str:
+    """A handle for this thing that whoever is being asked can actually run.
+
+    A host is asked about the variable it wrote — that is the whole reason the asking happens
+    after the run. But the world writes code too, while reading somebody's account, and it
+    names things the account named: Italy turns up because "Rome is the capital of Italy" says
+    Italy. That question is still the agent's to answer — it is the one who brought Italy up —
+    and the agent has no `italy`. So the line looks the thing up by name, which anybody can run.
+    """
+    if mine:
+        return written
+    cls = type(entity)
+    key = cls._spec.get("identified_by") or matching.NAME_KEYS.get(cls.__name__) or "name"
+    return f'world.identify({cls.__name__}, {key}="{entity.display_name()}")[0]'
 
 
 def _waiting_on_answers(session) -> list[str]:

@@ -1989,3 +1989,54 @@ One canonical sentence per class was a shape used nowhere else in this world, an
 replaced: the first account is written when one of a kind has been seen, the next when there are
 twenty, and neither overrules the other. `source` is the word every statement here already
 carries (`ontology.stating`) — "agent", "world", "given" — rather than a second word for it.
+
+## 2026-09-25 — the reading returns a class and the code to fill the thing in
+
+The portrait reader used to return a shape — values here, links there — and something in this
+file had to interpret it. Two things were wrong with that. A hand-written translator can express
+only what its author thought of, so everything else the reading found was quietly dropped; and
+it was a second door into the world, with its own idea of what is allowed.
+
+So the reader returns what a host returns: **a class description, and the code that fills this
+one in.**
+
+    {"class": {"name": "City", "brief": "…", "attributes": […]},
+     "code": "it.population = 2800000\n"
+             "italy = world.identify(Thing, name=\"Italy\")[0]\n"
+             "it.relate(italy, \"capital_of\")"}
+
+`it` is bound before the code runs. Identity is handed over here as everywhere else in this
+world and never recovered from words — the reader says what this is, never which this is.
+
+**The code runs by the door a host's code runs through** (`runtime._the_world_writes` →
+`run`): the same sandbox, the same statement-at-a-time commits, the same refusals. Its writes
+are the world's own (`stating("world")`), which is the lowest standing there is.
+
+**And the loop is the same loop**, with Nemotron where the agent usually stands. The code fails,
+the world hands back exactly what it would hand a host — where it stopped, what is done, what
+was rolled back — and asks for the continuation. Three goes, the same bound a host has.
+
+Measured on three prose-facts: 3 read, 3 placed, 2 classes defined, 3 ran, 0 gave up.
+
+**What the loop got wrong, and the prompt now forbids.** `it.capital_of(italy)` failed — there
+was no such relation type — and the reader recovered by declaring an attribute:
+`world.attribute(City, 'capital_of', …)` then `it.capital_of = italy`. A link became a slot with
+a thing in it: nothing can ask it by type, nothing can supersede it, and everything that reads
+links is blind to it. The prompt had shown the typed short form as if it were the ordinary way
+to write a link. It says now that `relate` is always how a link is written, that the short form
+exists only for words the record already has, and that a link is never an attribute.
+
+**A class grown under Person is identified like a Person.** `_make_one` hardcoded
+`identified_by="name"`, so a `Colleague` was known by a `name` nobody writes: "Anna" and "Anna
+Weber" two people, one email two accounts. Identity is declared per class here and nothing looks
+across classes, so a child now starts from what its parent declares — the name key, and those
+strong keys and distinguishing attributes it actually has.
+
+**The reader is shown the classes that exist.** Given an example naming `Place` in a world whose
+classes were Thing, Person, Event and AIAgent, it copied the example: `world.identify(Place, …)`
+three times, three NameErrors, nothing written.
+
+**A thing the world named while reading is asked about too.** "Rome is the capital of Italy"
+makes an Italy, and the question belongs to the agent — it is the one who brought Italy up. It
+has no variable for it, so the line looks the thing up by name:
+`world.identify(Thing, name="Italy")[0].describe("...")`, which anybody can run.

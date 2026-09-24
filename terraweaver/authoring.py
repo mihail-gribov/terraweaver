@@ -600,7 +600,20 @@ class Authoring:
         if register is None:  # the hook is not in yet; say so rather than breed duplicates
             raise Refused("this world cannot yet tell two of a host-defined class apart "
                           "(matching.register_identity is missing)")
-        register(spec["name"], name_keys=[spec["identified_by"]])
+        # How a kind of Person is told from another is how a Person is: by a full name written
+        # several ways, by an address nobody else has, by one part of the name being the name
+        # somebody is called by. A class grown under Person with none of that is a class where
+        # "Anna" and "Anna Weber" are two people and one email is two accounts. Identity is
+        # declared per class here, so what a parent declares is what a child starts with.
+        parent = spec.get("parent")
+        above = self.world.classes.get(parent)._spec if parent in self.world.classes else {}
+        inherited = above.get("name") or ""
+        register(spec["name"], name_keys=[spec["identified_by"]],
+                 strong_keys=[k for k in matching.STRONG_KEYS.get(inherited, [])
+                              if any(a["name"] == k for a in spec["attributes"])],
+                 part_match=inherited in matching.PART_MATCH_CLASSES,
+                 distinguishing=[k for k in matching.DISTINGUISHING_KEYS.get(inherited, [])
+                                 if any(a["name"] == k for a in spec["attributes"])])
 
     def _name_of(self, cls) -> str:
         return cls if isinstance(cls, str) else getattr(cls, "__name__", str(cls))
