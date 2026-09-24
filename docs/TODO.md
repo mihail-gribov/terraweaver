@@ -36,6 +36,46 @@ arguments in an order the host keeps getting wrong is the world's problem to rem
 accepting what it is given or by refusing in a way that says which argument is missing and
 what to write instead.
 
+## A type defined not to supersede answers wrong forever
+
+Found 2026-09-24 by asking `worlds/facts455` three questions with `benchmarks/ask_world.py`.
+"What is Nobuhiro Watsuki famous for?" came back as a list of two — Rurouni Kenshin *and* The
+Fairly OddParents — where the benchmark's answer is the later one. The world was right to say
+both: the recorder defined `famous_for` with `over_time=False`, so the two accumulate and
+nothing supersedes anything. The substring match scored it correct, which is how the whole
+published table is graded, so the number hides it.
+
+Of the 32 link types that run defined, 23 do supersede (14 `functional: True` — the latest
+telling holds at read time; 9 `at_any_time` — a new start ends the previous one). Nine do not:
+
+    AffiliatedWith  a place's religious affiliation      5 subjects hold several at once
+    AssociatedWith  is associated with the sport of     17
+    FamousFor       someone is famous for a work         3
+    Speaks          speaks the language                  3
+    EducatedAt      was educated at                      3
+    Founded, Performed, Produced, WorkFieldOf
+
+**The thing worth saying plainly:** in FactConsolidation every fact is a superseding fact by
+construction — the benchmark injects conflicting updates and grades on the latest. So a type
+defined `over_time=False` does not merely lose a little accuracy, it guarantees a wrong answer
+for every fact recorded under it, and the recorder makes that decision once, early, from one
+example. Seventeen subjects under `AssociatedWith` alone.
+
+The guide already insists `over_time` be said and says why (`experiments/base_run.py`, PRIMER).
+Saying it and saying it right are different things, and this is the second time a level-2
+decision made from the first example has cost more than the fact it was made for — see the note
+about `define_relation` above, and [[terraweaver-working-principles]]: attribute the failure to a
+level first. Options, none decided:
+
+- the world notices the shape: a subject that accumulates a third live link of a type whose
+  earlier ones it never ended is a type worth asking about. `_too_many_handovers` already does
+  this for the other direction, at `_HANDOVERS_BEFORE_ASKING = 3`.
+- `over_time` stops being a definition-time answer and becomes one the world revises from what
+  accumulates — which is [[project-world-as-crystallizer]] applied to a property rather than a
+  type.
+- nothing: the recorder is told plainly and gets it wrong, and that is a model result, not ours.
+  Worth knowing which, and only a run with the question asked out loud can say.
+
 ## Two instances in every world: `user` and `agent`
 
 Every world should hold two explicit instances: `user` — the person the world belongs to and
