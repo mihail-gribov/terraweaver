@@ -175,6 +175,34 @@ def main() -> int:
           got["ok"] and "Berlin -> Germany" in (got["output"] or ""),
           str(got.get("error") or got.get("output"))[:140])
 
+    # --- one unreadable link does not take the rest of its type with it ---
+    # Two endless rows from an older `retype` bug raised eighteen times in one recording
+    # session: the host could read nothing about capitals, stopped writing them, and
+    # twenty-two facts were lost to two bad rows. A reading that cannot be made leaves that
+    # one thing out.
+    rt = WorldRuntime(":memory:", fixture="job_search")
+    made = authoring.install(rt.world, None)
+    made.define_relation("capital_of", "the city that is a country's seat of government",
+                         nature="part_of", cardinality="one-to-one", over_time=False)
+    rt._bind_classes(rt.session("k2"))
+    rt.start_task("k2", "record which cities are seats of government", "recording")
+    rt.run('for city, land in (("Berlin", "Germany"), ("Tokyo", "Japan")):\n'
+           '    a = Thing.ensure(name=city, nature="place")\n'
+           '    b = Thing.ensure(name=land, nature="place")\n'
+           '    a.relate(b, "capital_of")\n'
+           'print("two links")', "k2")
+    # Break one of them the way retype used to: take its ends out of the image, not the record.
+    links = rt.world.all(rt.world.classes["CapitalOf"], limit=None)
+    tokyo_link = next(l for l in links if l.subject.name == "Tokyo")
+    rt.store.conn.execute("DELETE FROM 'CapitalOf' WHERE instance_id = ? AND attr IN "
+                          "('subject', 'object')", (tokyo_link.id,))
+    rt.store.conn.commit()
+    rt.store._identity.clear()
+    got = rt.run('print([t.name for t in Thing.get(name="Germany").related("capital_of_of")])', "k2")
+    check("one unreadable link does not take the rest of its type with it",
+          got["ok"] and "Berlin" in (got["output"] or ""),
+          str(got.get("error") or got.get("output"))[:160])
+
     print()
     if failures:
         print(f"{len(failures)} failed: {', '.join(failures)}")

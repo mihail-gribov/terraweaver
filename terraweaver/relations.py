@@ -1262,10 +1262,25 @@ def relations_of(world, entity, kind: str | None = None, history: bool = False,
     for name, reverse in chosen:
         symmetric = spec(world.classes[name]).get("symmetric")
         for r in world.all(name, limit=None, history=True):
-            if symmetric or reverse is None:
-                hit = same(r.subject, entity) or same(r.object, entity)
-            else:
-                hit = same(r.object, entity) if reverse else same(r.subject, entity)
+            try:
+                if symmetric or reverse is None:
+                    hit = same(r.subject, entity) or same(r.object, entity)
+                else:
+                    hit = same(r.object, entity) if reverse else same(r.subject, entity)
+            except AttributeError:
+                # A link whose ends cannot be read is one link nobody can follow; raising here
+                # made it every link of that type. Two rows left endless by an older `retype`
+                # bug raised eighteen times in a single recording session — the host could not
+                # read back anything about capitals, so it stopped writing them, and twenty-two
+                # facts were lost to two bad rows. A reading that cannot be made leaves that one
+                # thing out and says so, the way rebuilding an image already does.
+                ontology.note_hint(
+                    f"one {name} link cannot be followed — its ends are missing from the image, "
+                    f"though the record may still hold them. It is left out of this answer; the "
+                    f"rest of the {name} links are here. `world.rebuild()` reads every image "
+                    f"again from what was said, which is where a link like this comes back."
+                )
+                continue
             if not hit:
                 continue
             if by_label is not None and _asked(getattr(r, "label", "") or "")[0] != by_label:

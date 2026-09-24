@@ -36,6 +36,29 @@ arguments in an order the host keeps getting wrong is the world's problem to rem
 accepting what it is given or by refusing in a way that says which argument is missing and
 what to write instead.
 
+## Where the twenty-two capitals actually went — and what is still open
+
+Traced 2026-09-24, after two wrong diagnoses of my own. `capital_of` was defined in **batch
+31–40**, not 221–230: only fact 27 predates it. The other twenty-one were lost while the type
+existed, and the host knew it — in the session recording fact 104 it names `capital_of` 74 times
+and reads `classes_here`. What it also hit, **eighteen times in that one session**, was
+`AttributeError: CapitalOf has no 'subject'`.
+
+So the chain is one bug, not a vocabulary problem: `retype` dropped the ends of two links →
+every read of the type raised → the host could read nothing back about capitals and fell to
+prose → twenty-two facts. **Two bad rows cost a type for the rest of the run.** Both halves are
+fixed now (`retype` carries the ends; a read skips a link it cannot follow and says so), so the
+next run is the measurement.
+
+Still open, and not explained by any of this:
+
+- **13 `citizen_of` losses.** `citizen_of` was defined in batch 241–250, so facts before it had
+  no type — the prose story may be right *here*, where it was wrong for capitals. Unchecked.
+- **8 capitals after the type existed** may be the same poisoning or may not; the count above
+  does not separate them.
+- **`official_language` and `famous_for` were never defined at all** in that run, so every fact
+  under them had nowhere typed to go from beginning to end.
+
 ## A type that arrives late leaves everything before it in prose
 
 2026-09-24, from the run that lost 22 capital facts. `capital_of` was not in the world when the
