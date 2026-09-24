@@ -36,6 +36,45 @@ arguments in an order the host keeps getting wrong is the world's problem to rem
 accepting what it is given or by refusing in a way that says which argument is missing and
 what to write instead.
 
+## Jev on link direction: measured three ways, not connected
+
+2026-09-24. With "the fact never landed" fixed, the top remaining error is a link written
+backwards — three of six flags in a hundred-fact run, and a backwards link is worse than a
+missing one: the world then asserts that Great Britain is London's capital. The user's framing
+of the question is the right one and worth keeping: **semantic** correctness is not "is this
+true" but "*can* this be so — is each end the kind of thing that belongs at that end", so
+"Rome capital of Japan" is fine and "Japan capital of Rome" is not. **Substantive** correctness
+is a separate question the world records and never acts on, because a fact may be refuted later
+and a capital really does get moved.
+
+Asked Jev (`jev-1.13.0`, TypeSafe systemone, `choice` questions) three ways over the links of
+`fixed100`:
+
+    plain English sentence      5/5 on a picked set, but rejects the benchmark's deliberate
+                                falsehoods and mangles any `_by` / `_language` type name
+    "can this be so at all"     9/12 — keeps absurd-but-possible 4/4, catches impossible 1/1,
+                                catches reversed 1/4
+    "which of A / B"            7/12 — catches some reversals and confidently inverts others
+
+**Not connected, and the reason is the shape of the errors, not the average.** The wrong calls
+come with p=0.93 (`Starship Troopers author Robert A. Heinlein` judged right way round) and
+p=0.89 (`Andy Warhol founded by Chanel` judged right way round). Acting on a confident wrong
+answer corrupts a correct link, which is worse than the error it was meant to catch. The
+world's own majority rule found 13 candidates over the same links and is wrong only where no
+majority exists yet — weak, but never confidently wrong.
+
+**What did hold up**, and is worth wiring when there is a place for it: the substantive verdict.
+17 of 115 links came back "contradicts what is generally known", and the list is almost exactly
+the benchmark's superseding pairs — `quarterback associated with sport Muay Thai`,
+`Japan official language Swedish`, `Frank Zappa died in Berlin`. As a remark on the link, with
+`stating("world")` so the record says who said it, that is real information. As a refusal it
+would throw away precisely the facts the benchmark exists to test.
+
+Next, per the user: generalise from what the world has accumulated, and decide deterministically.
+The majority rule is that in embryo — it reads `Person → Thing` against `Thing → Person` from
+the links already written. What it lacks is the first few links of a type, which is where every
+one of today's reversals was written.
+
 ## Where the twenty-two capitals actually went — and what is still open
 
 Traced 2026-09-24, after two wrong diagnoses of my own. `capital_of` was defined in **batch

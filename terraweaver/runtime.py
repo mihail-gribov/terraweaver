@@ -421,14 +421,25 @@ class WorldRuntime:
             if one.get("about") != "against the run of its type":
                 continue
             for link_id in one.get("links", []):
-                if link_id not in session.touched:
-                    continue
                 try:
                     link = self.store.load(link_id, self.classes)
                 except Exception:  # noqa: BLE001
                     continue
-                if link is not None:
-                    against.append((link.display_name(), one.get("said", ""), one.get("tied")))
+                if link is None:
+                    continue
+                against.append((link.display_name(), one.get("said", ""), one.get("tied")))
+                # Kept as a question on the link, not only reported here. A link written
+                # backwards in the third batch is not in the seventh batch's session, so the
+                # old test — only what this task touched — never saw it again; and inside its
+                # own batch the type had too few links for a run to exist yet. So the world
+                # worked it out, said nothing, and the wrong fact stayed. Six of them sat in a
+                # hundred-fact world while every task closed clean. A question outlives the run
+                # and is asked once: `raise_` will not repeat one, and will not re-ask one
+                # somebody has answered.
+                self.world.questions.raise_(
+                    link, "against the run of its type", one.get("said", ""),
+                    options=["it is backwards — record it the other way and retract this one",
+                             "it is right; this type runs both ways"])
         return against
 
     def _words_taken_on_the_fly(self) -> list[tuple]:
