@@ -489,7 +489,7 @@ class World:
                 self.apply_period(outcome, period)
             return outcome
         elsewhere = self._named_elsewhere(class_name, attrs)
-        if twins:
+        if twins and ontology.is_identifying():
             needs = looks_existing(class_name, attrs, twins)
             needs.context["period"] = period
             self.pending = needs
@@ -537,11 +537,15 @@ class World:
             outcome = self._apply_or_flag(self._determined(certain[0]), attrs)
         elif (chosen := self._remembered(class_name, attrs, certain or [inst for inst, _ in scored])) is not None:
             outcome = self._apply_or_flag(self._determined(chosen), attrs)
-        elif len(certain) > 1:
+        elif len(certain) > 1 and ontology.is_identifying():
             outcome = ambiguous_identity(class_name, attrs, certain)
-        elif scored and (only := self._only_match(class_name, attrs, scored)) is not None:
+        elif scored and not ontology.is_identifying() \
+                and (only := self._only_match(class_name, attrs, scored)) is not None:
+            # Taking the only candidate without asking is right while recording, where a
+            # question stops a run and settles nothing. Settling the task's context is the one
+            # place it is worth a turn: it is asked once and the answer holds for the task.
             outcome = self._apply_or_flag(only, attrs)
-        elif scored:
+        elif scored and ontology.is_identifying():
             outcome = ambiguous_identity(class_name, attrs, [inst for inst, _ in scored])
         else:
             outcome = self.create(class_name, attrs)
@@ -550,6 +554,30 @@ class World:
         elif period:
             self.apply_period(outcome, period)
         return outcome
+
+    def about(self, cls, **attrs):
+        """Settle who this task is about, before anything is written about them.
+
+        This is the one call that may come back with a question, and the one place a question
+        about identity is worth asking: once, at the start, about the handful of things the
+        conversation is going to name. Answer it and the entity is settled for the whole task —
+        the host holds it as a variable and says everything else about that variable.
+
+        Recording does not do this. Matching in the middle of a write asks the same doubt again
+        on every mention and settles none of them, and it stops a run over a resemblance that
+        was never there: "France" against a recorded "Acme" scored 0.6 on three letters they
+        share, and `Thing.ensure(name="France")` came back a question. So writes take what they
+        are given; what they cannot tell apart is merged later, over the record, with the whole
+        world in view rather than one line of one run.
+
+        Returns the entity, or a NeedsResolution to be answered — which is the point of it.
+        """
+        if not attrs:
+            raise ValueError(
+                f"say who: world.about({self._name(cls)}, <what the user called them>). This is "
+                f"where the task settles what it is about, so it needs something to go on.")
+        with ontology.identifying():
+            return self.ensure(cls, **attrs)
 
     def like(self, text: str, limit: int = 5, kind: str | None = None) -> list:
         """What in this world reads like that — by meaning, not by the words used.
@@ -753,16 +781,12 @@ class World:
             setattr(instance, name, deferred[name])
 
     def relate(self, a, b, kind: str, /, starts=None, until=None, ttl=None,
-               permanent: bool = False, basis: list | None = None, **attrs):
-        """Record that `a` stands in relation `kind` to `b`.
-
-        `basis=[statements]` makes it a conclusion rather than a statement: the world worked the
-        link out from what was said, and says so. Without it nothing changes."""
+               permanent: bool = False, **attrs):
+        """Record that `a` stands in relation `kind` to `b`."""
         from terraweaver import relations
 
         ontology.note_world_call("world_writes")
-        return relations.relate(self, a, b, kind, _period(starts, until, ttl, permanent), attrs,
-                                basis=basis)
+        return relations.relate(self, a, b, kind, _period(starts, until, ttl, permanent), attrs)
 
     def set_period(self, instance, starts=None, until=None, ttl=None, permanent: bool = False) -> None:
         period = _period(starts, until, ttl, permanent)

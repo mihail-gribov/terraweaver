@@ -113,6 +113,9 @@ class WorldView:
     def get(self, cls, **attrs):
         return self._world.get(cls, **attrs)
 
+    def about(self, cls, **attrs):
+        return self._world.about(cls, **attrs)
+
     def new(self, cls, *, starts=None, until=None, ttl=None, permanent: bool = False, **attrs):
         return self._world.new(cls, starts=starts, until=until, ttl=ttl, permanent=permanent, **attrs)
 
@@ -429,12 +432,17 @@ class WorldRuntime:
         lines = [f"Task {task.id} open: {stated} ({mode})."]
         if left:
             lines.append("The task before it was dropped. " + left)
+        lines.append("Settle who this is about first: world.about(Person, full_name=\"...\") "
+                     "for each one the user named, and hold what comes back in a variable. That "
+                     "is where the world may ask which of two people you mean — once, before "
+                     "anything is written, and the answer holds for the whole task.")
         if mode == "recording":
-            lines.append("Write it, read what the world says back, answer that, then "
-                         "finish_task. A fact recorded with the world's reply unanswered is a "
-                         "guess filed under the user's name.")
+            lines.append("Then write it against those variables. Writes don't ask about "
+                         "identity: they take what they are given. Read what the world says "
+                         "back, answer that, then finish_task. A fact recorded with the world's "
+                         "reply unanswered is a guess filed under the user's name.")
         else:
-            lines.append("Read and report. Don't write facts: a question is not evidence.")
+            lines.append("Then read and report. Don't write facts: a question is not evidence.")
         return "\n".join(lines)
 
     def _links_against_their_type(self, session) -> list[str]:
@@ -1212,6 +1220,10 @@ class WorldRuntime:
                 with self.store.transaction():
                     effects = _effects(recording, created={id(o) for o in self.store._tx_new_ids})
                     effects["assumed"] += self._learn_name_choice(session, recording, before)
+                    # The statements that finished are in the world, so the task did touch
+                    # things. Counting them only on a clean run left a close saying nothing
+                    # was recorded while the world held the links the first ten lines made.
+                    session.touched |= {e.id for e in _entities_of(recording) if getattr(e, "id", None)}
                 # Whatever the failing statement had begun to make lost its id when that one
                 # statement was undone; it is not among what was kept.
                 effects["created"] = [line for line in effects["created"]

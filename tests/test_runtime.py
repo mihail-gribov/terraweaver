@@ -127,8 +127,8 @@ def main() -> int:
           "Anna Sullivan" in (later["output"] or ""), str(later["output"] or later["error"]))
 
     waiting = WorldRuntime(str(Path(tempfile.mkdtemp()) / "waiting.db"), fixture="job_search", rebuild=True)
-    waiting.run('barb = Person.new(full_name="Barb Liskov")\n'
-                'barb.tag("conference")\n'
+    waiting.run('annie = world.about(Person, full_name="Annie")\n'
+                'annie.tag("conference")\n'
                 'kept = Person.new(full_name="Zoya Ren", email="zoya@x.org")', "one")
     check("a question in a batch does not take the rest of it down",
           "Zoya" in (waiting.run('print(Person.get(email="zoya@x.org").full_name)', "two")["output"] or ""))
@@ -137,7 +137,7 @@ def main() -> int:
           any("waiting on the answer" in q for q in nagged["questions"]), str(nagged["questions"]))
 
     listing = WorldRuntime(str(Path(tempfile.mkdtemp()) / "listing.db"), fixture="job_search", rebuild=True)
-    listing.run('needs = Person.ensure(full_name="Annie")', "one")
+    listing.run('needs = world.about(Person, full_name="Annie")', "one")
     showed = listing.run('annies = Person.find(full_name="Annie")\n'
                          'for annie in annies.candidates:\n    print(annie.full_name)', "one")
     check("listing the candidates for the user teaches nothing, even a run later",

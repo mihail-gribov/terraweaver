@@ -188,9 +188,10 @@ def main() -> int:
     check("a relation reads as a sentence", mom.display_name() == "Maria Gribova is Michael's mom (kin)", mom.display_name())
     check("its period reads under the names it's written with", job.starts is not None and job.until is None)
 
-    # --- new() asks about someone the name merely resembles ---
-    maybe = Person.new(full_name="Darren", email="d@example.org")
-    check("new() with a resembling name asks instead of creating", getattr(maybe, "skill", None) == "resolve_ambiguity")
+    # --- settling the task's context asks about someone the name merely resembles ---
+    maybe = world.about(Person, full_name="Darren", email="d@example.org")
+    check("world.about with a resembling name asks instead of creating",
+          getattr(maybe, "skill", None) == "resolve_ambiguity")
 
     # --- find compares entities by identity, not name ---
     twin = Organization.new(name="Meridian Corp (Boston)")
@@ -282,7 +283,10 @@ def main() -> int:
     check("and not with advice that would end it today", clash is not None and ".expire()" not in clash)
 
     # --- a question at either end holds the link rather than discarding the run ---
-    unsettled = Organization.new(name="TechCorp")            # a twin exists, so this is a question
+    Organization.new(name="Tech Holdings")
+    # "Tech" fits two of them and is the name of neither, so settling it is a question — and
+    # the link written against the answer waits for it rather than taking the run down.
+    unsettled = world.about(Organization, name="Tech")
     linked = Person.new(full_name="Vera Holt", email="vera@holt.example")
     linked.relate(unsettled, "membership", title="director", primary=True)
     alongside = Person.new(full_name="Wes Holt", email="wes@holt.example")
@@ -295,7 +299,7 @@ def main() -> int:
           any(line.startswith("Vera Holt ") and "TechCorp" in line for line in made), str(made))
 
     # --- an unanswered question is not an entity to link, so the link waits for the answer ---
-    asked = Person.new(full_name="Darren")  # resembles Darren Liu: a question, not a person
+    asked = world.about(Person, full_name="Darren")  # resembles Darren Liu: a question, not a person
     with ontology.record_changes() as waiting:
         owner.relate(asked, "social", label="friend")
     check("linking to an unsettled question is held, not refused",
@@ -305,56 +309,10 @@ def main() -> int:
           any(r.other(friend) is owner for r in friend.relations("social")),
           str([r.display_name() for r in friend.relations("social")]))
 
-    # --- a link the world worked out is a conclusion, and can be dropped as a guess ---
+    # A link is what somebody said, and nothing here makes one out of anything else: the
+    # world does not conclude links. What was said stays, so it cannot be taken back either.
     ana = Person.new(full_name="Ana Borg", email="ana@borg.example")
-    ana.describe("famous for the Shahnameh")
-    note = world.facts.about(ana.subject_id, "descriptions")[0]
     book = world.classes["Idea"].new(title="Shahnameh", content="an epic")
-    guess = world.relate(ana, book, "related", label="famous for", description="from a note",
-                         basis=[note])
-    made = world.facts.about(guess.id)
-    check("a derived link is written as the world's own conclusion",
-          made and all(s.is_conclusion and s.source == "world" for s in made),
-          str([(s.slot, s.source) for s in made]))
-    check("and it knows what it rests on",
-          all(note.id in (s.basis or []) for s in made), str([s.basis for s in made]))
-    guess.retract("the note meant someone else")
-    check("retracting a guess removes the link rather than ending it",
-          not [r for r in ana.relations("related", any_time=True)],
-          str([r.display_name() for r in ana.relations("related", any_time=True)]))
-    check("and leaves what it was drawn from untouched",
-          [s.value for s in world.facts.about(ana.subject_id, "descriptions")] == ["famous for the Shahnameh"])
-    # --- a conclusion takes its place in time, and a later one closes an earlier one ---
-    from datetime import date as _date
-
-    moved = Person.new(full_name="Cedric Klapisch", email="cedric@x.example")
-    moved.describe("citizen of France", when=_date(2026, 3, 1))
-    moved.describe("citizen of Malaysia", when=_date(2026, 6, 1))
-    told = sorted(world.facts.about(moved.subject_id, "descriptions"),
-                  key=lambda s: s.valid_from or s.stated_at)
-    fr = world.classes["Place"].new(name="France", city="Paris", category="other")
-    my = world.classes["Place"].new(name="Malaysia", city="Kuala Lumpur", category="other")
-    early = world.relate(moved, fr, "located", starts=told[0].valid_from, basis=[told[0]])
-    check("a derived link holds from the moment of what it was drawn from",
-          early.starts == _date(2026, 3, 1), str(early.starts))
-    check("and its statements carry that moment, not now",
-          all(s.valid_from is not None for s in world.facts.about(early.id)),
-          str([(s.slot, s.valid_from) for s in world.facts.about(early.id)]))
-
-    # --- what was said is read before what was worked out ---
-    from datetime import date as _d
-
-    stayed = Person.new(full_name="Ines Vale", email="ines@vale.example")
-    here = world.classes["Place"].new(name="Porto", city="Porto", category="other")
-    stayed.relate(here, "located", starts=_d(2026, 3, 1))          # the person said so
-    stayed.describe("seems to have moved to Lisbon", when=_d(2026, 6, 1))
-    guessed_from = [s for s in world.facts.about(stayed.subject_id, "descriptions")][0]
-    there = world.classes["Place"].new(name="Lisbon", city="Lisbon", category="other")
-    world.relate(stayed, there, "located", starts=guessed_from.valid_from, basis=[guessed_from])
-    check("a link the world worked out is read after one the person stated, however new it is",
-          [p.name for p in stayed.related("located")] == ["Porto", "Lisbon"],
-          str([p.name for p in stayed.related("located")]))
-
     stated = world.relate(ana, book, "related", label="wrote", description="the user said so")
     refused_retract = ""
     try:

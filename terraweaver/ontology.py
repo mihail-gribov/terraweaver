@@ -275,6 +275,36 @@ def note_world_call(kind: str) -> None:
         ACCESS[kind] = ACCESS.get(kind, 0) + 1
 
 
+_IDENTIFYING = False
+
+
+@contextmanager
+def identifying():
+    """Settling who is being talked about — the one place identity may be asked about.
+
+    A task has two halves and they want opposite things. First the host settles its context:
+    which Anna, which Acme, which of the two Berkeleys. That is where a question earns its
+    keep — it is asked once, about a handful of things, before anything has been written, and
+    the answer holds for everything that follows.
+
+    Then the host records, and there a question is only in the way. Matching in the middle of a
+    write turned "France" into "did you mean Acme?" and stopped a run on its fourteenth line;
+    worse, the same doubt is raised again on every mention, because nothing was settled. So
+    recording does not identify: it resolves what is certain, creates what is not, and leaves
+    the rest to a pass over the record, where twins are merged with the whole world in view.
+    """
+    global _IDENTIFYING
+    was, _IDENTIFYING = _IDENTIFYING, True
+    try:
+        yield
+    finally:
+        _IDENTIFYING = was
+
+
+def is_identifying() -> bool:
+    return _IDENTIFYING
+
+
 @contextmanager
 def trusted_writes():
     """Writes made by the machinery itself (loading, applying a settled decision)."""
@@ -595,7 +625,7 @@ class Entity:
         return current_world().history.of(self, attr)
 
     def relate(self, other, how: str, /, *, starts=None, until=None, ttl=None,
-               permanent: bool = False, every=None, lasting=None, basis: list | None = None,
+               permanent: bool = False, every=None, lasting=None,
                **attrs):
         """Relate this entity to another — by the fact in words, or by a type you already know.
 
@@ -618,7 +648,7 @@ class Entity:
         if _is_a_sentence(how):
             return current_world().said_of(self, other, how, starts=starts)
         made = current_world().relate(self, other, how, starts=starts, until=until, ttl=ttl,
-                                      permanent=permanent, basis=basis, **attrs)
+                                      permanent=permanent, **attrs)
         return _also_repeats(made, every, lasting, starts, until)
 
     def relations(self, kind: str | None = None, *, any_time: bool = False, history: bool = False) -> list:

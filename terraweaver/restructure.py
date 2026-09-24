@@ -474,7 +474,7 @@ def apply(world, answer: dict, *, specs_dir=None, dry_run: bool = False) -> dict
             try:
                 if kind and other is not None:
                     world.relate(world.store.load(subject, world.classes), other, kind,
-                                 starts=_moment(held_from), basis=[said_in])
+                                 starts=_moment(held_from))
                     done["linked"] += 1
                 elif kind:
                     done["skipped"] += 1  # the note names something this world has never met

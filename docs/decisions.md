@@ -1802,3 +1802,38 @@ at `finish_task`, and two of the three tasks it opened were left with `runs=0 cl
 
 What that measures is a mixture, not a mechanism. To try the claim, the surface has to have one
 way to write a link, and the task has to close.
+
+## 2026-09-25 — identity is settled once, at the start, and never in the middle of a write
+
+**What broke.** `Thing.ensure(name="France")` came back a question: "did you mean Acme?"
+`SequenceMatcher` counts matching characters wherever they fall, so "france" and "acme" score
+0.6 on the `a`, `c`, `e` they happen to share in that order — exactly the threshold where the
+world asks. The run stopped on its fourteenth line. Two spellings of one name share a run of
+characters, not scattered ones ("anna"/"anne" share "ann"), so a match that never runs longer
+than a couple of characters is now worth nothing.
+
+**The deeper thing that fix exposed.** Matching *during a write* is the wrong shape whatever
+its threshold. It asks the same doubt again on every mention and settles none of them; it stops
+a block half-written; and it asks at the one moment the host has least to answer with.
+
+So a task has two halves, and they want opposite things:
+
+    anna = world.about(Person, full_name="Anna Weber")   # settle who — here the world may ask
+    anna.relate(acme, "Anna has worked at Acme since 2019")   # record — no questions, no matching
+
+`world.about` is the only call that raises an identity question, and inside it the world asks
+rather than assuming: `_only_match` ("one candidate and nothing against it is them") is right
+while recording, where a question costs a run, and wrong here, where a question is the point and
+is asked once. `new` and `ensure` still recognise a strong key — the same email is the same
+person and costs nothing to see — and otherwise record what they are given. Two records that
+turn out to be one thing are merged over the record, with the whole world in view.
+
+This is the same division as the sentence door: take what the host can say now, do the
+engineering later where nothing is waiting.
+
+**`basis` is gone from the relation path.** `world.relate(a, b, kind, basis=[statements])` made
+a link the world's own conclusion. It did not fit: the world does not conclude links — a link is
+what somebody said. With it went `_supersede_own_conclusions` (a later conclusion closing an
+earlier one of its own kind), which nothing could reach any more. The conclusion machinery in
+`facts.py` stays and is still used for attributes; `relations.retract` keeps its refusal, which
+now always fires, and that is the honest answer: what was said stays.

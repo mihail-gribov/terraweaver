@@ -344,7 +344,7 @@ def _overlaps(rel, start, end) -> bool:
 
 # --- writing ---
 
-def _make_the_type(world, subject, obj, kind: str, period: dict, attrs: dict, basis, why: str):
+def _make_the_type(world, subject, obj, kind: str, period: dict, attrs: dict, why: str):
     """A word with no type behind it makes one, and the world says what it assumed.
 
     Free links were the answer before: keep the fact, count the word, and wait for somebody to
@@ -387,7 +387,7 @@ def _make_the_type(world, subject, obj, kind: str, period: dict, attrs: dict, ba
         ontology.note_hint(f"{why} — kept as an untyped link labelled '{label}'.")
         return relate(world, subject, obj, spec(world.classes[free])["kind"], period,
                       {"label": label, "description": f"{subject.display_name()} {label} "
-                                                      f"{obj.display_name()}"}, basis)
+                                                      f"{obj.display_name()}"})
 
     theirs = spec(made)
     if theirs["kind"] != word:
@@ -405,7 +405,7 @@ def _make_the_type(world, subject, obj, kind: str, period: dict, attrs: dict, ba
         )
     kept = {k: v for k, v in attrs.items()
             if k in {a["name"] for a in theirs.get("attributes", [])}}
-    link = relate(world, subject, obj, theirs["kind"], period, kept, basis)
+    link = relate(world, subject, obj, theirs["kind"], period, kept)
     if theirs["kind"] == word:
         # The hint above says this in the run that made the type, and a hint lives for that run
         # only. The assumption outlives it: the type is in the world for good with a nature
@@ -423,7 +423,7 @@ def _make_the_type(world, subject, obj, kind: str, period: dict, attrs: dict, ba
     return link
 
 
-def relate(world, a, b, kind: str, period: dict, attrs: dict, basis: list | None = None):
+def relate(world, a, b, kind: str, period: dict, attrs: dict):
     """Record that `a` stands in relation `kind` to `b` — or update that relation if it exists."""
     try:
         name, reverse = resolve_kind(world.classes, kind)
@@ -442,7 +442,7 @@ def relate(world, a, b, kind: str, period: dict, attrs: dict, basis: list | None
                 f"over_time=True when one holds at a time and a new one ends the last (an "
                 f"employer, a spouse); False when they simply accumulate.\n{unknown}"
             ) from None
-        return _make_the_type(world, a, b, kind, period, attrs, basis, str(unknown))
+        return _make_the_type(world, a, b, kind, period, attrs, str(unknown))
     subject, obj = (b, a) if reverse else (a, b)
     cls = world.classes[name]
     rel = spec(cls)
@@ -486,7 +486,7 @@ def relate(world, a, b, kind: str, period: dict, attrs: dict, basis: list | None
             f"'{attrs['label']}' is a {other['kind']} relation, not {rel['kind']} — recorded as "
             f"{other['kind']}, which knows how that link behaves. Say it that way next time."
         )
-        return relate(world, subject, obj, other["kind"], period, attrs, basis)
+        return relate(world, subject, obj, other["kind"], period, attrs)
     # The three base types are natures wearing a type's clothes: `part_of`, `kind_of` and
     # `related` say how a link behaves and have no word of their own. Used directly as the type
     # of a fact, the fact's word is gone — "the capital of France is Paris" recorded as part_of
@@ -494,7 +494,7 @@ def relate(world, a, b, kind: str, period: dict, attrs: dict, basis: list | None
     # stand as parts of France. Twenty-four facts in the slice measured, eight of them a pair.
     # Sometimes "part of" really is the word, so this asks once per type per task rather than
     # refusing.
-    if (rel["kind"] in ("part_of", "kind_of", "related") and not basis
+    if (rel["kind"] in ("part_of", "kind_of", "related") 
             and not world.all(name, limit=1, history=True)):
         # Once, on the first link of this kind: the doubt is about the type, not about any one
         # link, and asked per link it is asked per fact.
@@ -515,7 +515,7 @@ def relate(world, a, b, kind: str, period: dict, attrs: dict, basis: list | None
     # later link followed it — consistently backwards, so nothing that compares links with each
     # other can see it. Read back once, it is obvious; the world has the reading and the host
     # has the sentence, so the world shows its reading and asks.
-    first_of_its_kind = (rel["kind"] not in ("part_of", "kind_of", "related") and not basis
+    first_of_its_kind = (rel["kind"] not in ("part_of", "kind_of", "related") 
                          and not world.all(name, limit=1, history=True))
     if rel.get("free"):
         # A label is what makes a free link readable; a description is prose about it. Requiring
@@ -577,18 +577,13 @@ def relate(world, a, b, kind: str, period: dict, attrs: dict, basis: list | None
     # the world insists on a date exactly where the date is the fact, and nowhere else.
     start = period.get("valid_from") or timeutil.now()
     end = period.get("valid_until")
-    if basis:
-        _supersede_own_conclusions(world, name, rel, subject, obj, start, basis)
     _check_functional(world, name, rel, subject, obj, start, end, attrs)
     if attrs.get("role"):
         _check_roles(world, name, cls, subject, obj, attrs["role"], start, end)
     if rule(rel, "acyclic") and _reaches(world, name, obj, subject):
         raise ValueError(f"{name} can't form a cycle: {obj.display_name()} already leads to {subject.display_name()}")
     _note_flipped(world, name, rel, subject, obj, attrs)
-    created = world.create(name, {"subject": subject, "object": obj, **attrs}, basis=basis,
-                           period=period)
-    if period and basis:
-        period = {}      # already on it, and stated as the conclusion it is
+    created = world.create(name, {"subject": subject, "object": obj, **attrs}, period=period)
     waiting = getattr(subject, "_waiting_title", None)
     if waiting and name == "Membership" and attrs.get("primary") and not attrs.get("title"):
         created.title = waiting          # the title that was set before there was a job
@@ -1059,36 +1054,6 @@ def _how_to_make_room(start) -> str:
         return (f"end that one where this one begins — old.keep(until={timeutil.show(start)}) — "
                 f"or give this one a later starts=")
     return "end that one first (its .expire(), or keep(until=...)), or give this one starts= after it ends"
-
-
-def _supersede_own_conclusions(world, name, rel, subject, obj, start, basis) -> None:
-    """A later conclusion closes an earlier one of its own kind. Only its own.
-
-    Between two things the world worked out for itself, the later evidence wins and the earlier
-    reading ends where it begins — that is what supersession means, and refusing the second
-    leaves the first standing as the answer, which is how a restructuring pass made a world
-    worse than it found it. Between a conclusion and something the person said, nothing of the
-    sort: the world does not overrule what it was told, and the ordinary refusal stands.
-    """
-    if rel.get("functional") != "at_any_time" and rel.get("inverse_functional") != "at_any_time":
-        return
-    for r in world.all(name, limit=None, history=True):
-        if not (same(r.subject, subject) if rel.get("functional") == "at_any_time"
-                else same(r.object, obj)):
-            continue
-        if not _overlaps(r, start, None) or getattr(r, "valid_until", None) is not None:
-            continue
-        said = [s for s in world.facts.about(r.id) if not s.is_conclusion]
-        if said:
-            continue                       # the person's, not the world's: leave it alone
-        with ontology.trusted_writes(), ontology.not_recording():
-            r.valid_until = start
-        world.store.save_graph(r)
-        world.facts.conclude(r.id, "valid_until", timeutil.as_datetime(start).isoformat(),
-                             basis=basis, class_name=name)
-        ontology.note_hint(
-            f"{r.display_name()} was the world's own reading and ends {timeutil.show(start)}, "
-            f"where the later one begins — both were worked out, so the later evidence wins.")
 
 
 def _check_functional(world, name, rel, subject, obj, start, end, attrs) -> None:

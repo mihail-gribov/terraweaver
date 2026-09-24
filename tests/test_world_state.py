@@ -255,14 +255,12 @@ def main() -> int:
     check("new creates", isinstance(petr, Person) and petr.id is not None)
     twin = Person.new(full_name="Pete Ivanson", email="pete@x.org")
     check("the same address is the same person, without asking", twin is petr)
-    nameless = Person.new(full_name="Pete Ivanson")
-    check("but the same name and nothing to go on still asks",
-          getattr(nameless, "skill", None) == "resolve_ambiguity")
-    check("settling the one it did ask about returns that person",
-          world.settle(nameless, petr) is petr)
+    second = Person.new(full_name="Pete Ivanson")
+    check("but a write with nothing to go on records rather than asking, and is merged later",
+          isinstance(second, Person) and second is not petr)
 
     # --- a question in the middle of a batch holds its link instead of killing the run ---
-    held = Person.new(full_name="Pete Ivanson")           # same name, nothing to tell them apart
+    held = world.about(Person, full_name="Pete Ivanson")  # two of them now, nothing to tell them apart
     acme = Organization.ensure(name="Held Links Ltd")
     held.relate(acme, "membership", title="advisor")      # would have raised and discarded it all
     held.tag("conference")

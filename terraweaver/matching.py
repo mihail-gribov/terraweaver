@@ -87,6 +87,23 @@ def drop_titles(text: str) -> str:
     return " ".join(kept) if kept else text
 
 
+def _ratio(a: str, b: str) -> float:
+    """How alike two words are, with scattered coincidences discounted.
+
+    SequenceMatcher counts every matching character wherever it falls, so "france" and "acme"
+    score 0.6 on the a, c and e they happen to share in that order — enough, among short names,
+    to stop a recording and ask the user which of the two they meant. Two spellings of one name
+    share a run, not scattered letters: "anna" and "anne" share "ann". So a match that never
+    runs longer than a couple of characters is a coincidence, and worth nothing.
+    """
+    matcher = SequenceMatcher(None, a, b)
+    ratio = matcher.ratio()
+    if ratio >= CERTAIN:
+        return ratio
+    run = matcher.find_longest_match(0, len(a), 0, len(b)).size
+    return ratio if run >= min(3, len(a), len(b)) else 0.0
+
+
 def similarity(a: str | None, b: str | None, by_parts: bool = True) -> float:
     """How alike two names are, comparing whole strings and individual parts.
 
@@ -98,7 +115,7 @@ def similarity(a: str | None, b: str | None, by_parts: bool = True) -> float:
     a_norm, b_norm = drop_titles(normalize(a)), drop_titles(normalize(b))
     if not a_norm or not b_norm:
         return 0.0
-    whole = SequenceMatcher(None, a_norm, b_norm).ratio()
+    whole = _ratio(a_norm, b_norm)
     if not by_parts:
         return whole
     # Every part of what was asked must find its counterpart: "Pete Ivanson" is not "Anna
@@ -106,7 +123,7 @@ def similarity(a: str | None, b: str | None, by_parts: bool = True) -> float:
     # One part asked ("Annie") still only needs one part to match.
     b_parts = b_norm.split()
     parts = min(
-        max(SequenceMatcher(None, a_part, b_part).ratio() for b_part in b_parts)
+        max(_ratio(a_part, b_part) for b_part in b_parts)
         for a_part in a_norm.split()
     )
     # A part matching is enough to consider someone, never enough to be sure of them:
