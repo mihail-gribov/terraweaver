@@ -156,14 +156,41 @@ def _alike(a: str, b: str) -> bool:
     return len(short) >= 4 and short in long
 
 
+def as_spec(described: dict) -> dict:
+    """The same description as the world's own JSON, for a world that still speaks that.
+
+    Here to make one thing plain: what is asked of a reader is **data**, and the shape of what
+    is written is ours. Two renderers from one description, and the prompt knows about neither.
+    Change how a relation is written down — a class, a spec file, a row — and nothing has to be
+    asked again, re-measured or re-worded. A prompt that emitted code would have tied the two
+    together, and every change to the code would have been a change to the question.
+    """
+    return {"name": _class_name(described["subject_is"]),
+            "description": described.get("relation_is", ""),
+            "relation": {"subject_is": described["subject_is"],
+                         "object_is": described["object_is"],
+                         "one_object": bool(described.get("one_object")),
+                         "one_subject": bool(described.get("one_subject")),
+                         "transitive": bool(described.get("transitive"))}}
+
+
+def _class_name(subject_is: str) -> str:
+    word = _plain(subject_is).split()[-1]
+    return word[:1].upper() + word[1:] + "Of"
+
+
 def as_class(described: dict) -> str:
     """The description as the source of a class. What the host writes, or is handed to write.
 
     A class rather than a record because it is the one notation the host already knows: it can
     be read, kept in a file, subclassed, and argued with. Nothing here is a new language.
+
+    And it is generated from the description rather than asked for: the reader is asked for
+    **data** and the shape of the code is ours. See `as_spec` — the same description, written
+    another way, with nothing asked again.
     """
     subject_is, object_is = described["subject_is"], described["object_is"]
-    name = "".join(w[:1].upper() + w[1:] for w in _plain(subject_is).split()[-1:]) + "Of"
+    name = _class_name(subject_is)
     body = [f"class {name}(Relation):",
             f'    """{described.get("relation_is", "").strip()}"""',
             f'    subject_is = {subject_is!r}',

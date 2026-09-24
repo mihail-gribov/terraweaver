@@ -86,6 +86,18 @@ said = book.settle(ends, "whole", "", judge_says("two_ends", 0.97))
 check("called the two ends of one relation, that is what it says",
       "two ENDS" in said and "PartOf" in said, said[:80])
 
+# --- asked for data, written whatever way we like ---
+from relation_class import as_spec
+said = {"subject_is": "part", "object_is": "whole", "one_object": True,
+        "transitive": True, "relation_is": "A part of a whole."}
+spec = as_spec(said)
+check("one description renders as a class",
+      "class PartOf(Relation):" in as_class(said))
+check("and as a spec, with nothing asked again",
+      spec["name"] == "PartOf" and spec["relation"]["transitive"] is True, str(spec))
+check("and the two agree, because neither is what was asked for",
+      spec["relation"]["subject_is"] == said["subject_is"])
+
 print("\n--- what a host is shown ---")
 print(book.offer())
 print("\n" + (f"{len(failures)} failed: " + ", ".join(failures) if failures
