@@ -749,14 +749,45 @@ class WorldRuntime:
                 if abandon:
                     task.describe(f"abandoned: {abandon.strip()}")
                 self.world.save(task)
+        unnamed = self._types_without_named_ends()
         self.reset_session(key)
         if abandon:
             return f"Task abandoned: {abandon.strip()}. What it did record stays in the world."
+        # Asked at the end, and the task closes either way. A type whose ends are not named
+        # works; what it cannot do is be checked, and that is worth one line rather than a wall.
+        asked = ""
+        if unnamed:
+            shown = ", ".join(k for k, _ in unnamed[:6])
+            more = f" and {len(unnamed) - 6} more" if len(unnamed) > 6 else ""
+            asked = (f"\n\nOne thing to come back to when you can: {len(unnamed)} link type(s) "
+                     f"here have no names for their two ends — {shown}{more}. Without them "
+                     f"nothing can later tell a link written backwards from one written right, "
+                     f"and a backwards link is a wrong fact, not an untidy one. Naming them is "
+                     f"one argument each: world.define_relation(..., subject_is=\"…\", "
+                     f"object_is=\"…\").")
         if not left:
-            return ("Nothing was left open about what that task touched."
+            return (("Nothing was left open about what that task touched." + asked)
                     if task is not None else "")
         return ("Settled, and put to the user — these wait for them, not for you:\n"
-                + "\n".join(f"    {q.line()}" for q in left))
+                + "\n".join(f"    {q.line()}" for q in left) + asked)
+
+    def _types_without_named_ends(self) -> list[tuple]:
+        """Link types this world grew that never said what each of their two ends is."""
+        grow = (self.world.extras or {}).get("define_relation")
+        made = getattr(grow, "__self__", None)
+        if made is None or not hasattr(made, "grown_names"):
+            return []
+        try:
+            mine = made.grown_names()
+        except Exception:  # noqa: BLE001 - a question at the close must never be what fails
+            return []
+        out = []
+        for name, cls in sorted(self.classes.items()):
+            rel = cls._spec.get("relation")
+            # Only what this world wrote for itself. What came with it is not the host's to fix.
+            if rel and not rel.get("roles") and name in mine:
+                out.append((rel.get("kind", name), name))
+        return out
 
     def reset_session(self, key: str) -> str:
         """Drop a session's variables: the next call starts with a clean namespace.

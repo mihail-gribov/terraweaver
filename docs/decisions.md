@@ -1624,3 +1624,59 @@ date once and that is the version this one replaced: a date nobody could questio
 in the record from one somebody knew. Taking the *value* is not the same as taking the *meaning*.
 An attribute taken on the fly gets its type guessed and is marked `provisional`; what it means and
 whether it supersedes stay empty until somebody says, because no value can tell you either.
+
+---
+
+## 2026-09-24 · Two ways of asking, and a link is read once
+
+The user's rule, and it decides the shape of everything below: **there are two ways to get
+intelligence, open questions and closed ones, and two tools for them.** A closed question — one
+of these options — is an order of magnitude cheaper, so anything that can be reduced to options
+is reduced and goes to Jev; what is left, where a word has to be invented, goes to Nemotron.
+Decompose hard, make it concrete, and ask for a reading of the world rather than a piece of
+reasoning.
+
+**The link inspector** (`terraweaver/inspector.py`) is that split made into a thing. A link is
+handed to a reader with everything the world holds about it — the type's word and description,
+what each end is, both ends by name and class and whatever was said about them, and the link's
+own description. It is read **once**: the mark is over the link's own content, so a link whose
+end has moved is read again and one nobody has touched is not.
+
+Three questions, and only the first is the world's business:
+
+- **Which way it runs.** Not whether it is true. This record deliberately holds claims that
+  contradict common knowledge and they are what it exists to keep — "Rome capital of Japan" is
+  well formed and false, "Japan capital of Rome" is malformed. The user's distinction: semantic
+  correctness is *can this be so*, substantive correctness is *is it so*, and the world acts on
+  the first only. A fact may be refuted later; a capital really does get moved.
+- **Whether the type is the right word**, and whether the world already holds one meaning the
+  same (`twins`, by meaning over name and description).
+- **Whether the word says plainly what it is** (`naming`), with a clearer one offered. Nothing
+  is renamed: the honest rename is a new type and `take_in`, which moves the links across and
+  leaves the record saying what it always said.
+
+**Measured, and the measurement is the point.** Asked four ways over the links of a hundred-fact
+world:
+
+    a plain English sentence         5/5 on a picked set — but rejects the deliberate falsehoods
+    "can this be so at all"          9/12 — keeps them, misses reversals
+    "which of A or B"                7/12 — and inverts correct links at p=0.93
+    the ends named, four yes/nos     12/14 — and every miss an abstention
+
+The last is the one, and what makes it work is the thing none of the twenty-six grown types had:
+**names for its two ends**. With `roles` empty the inspector found nothing at all in 115 links.
+With the ends named by Nemotron (26 calls) and the links judged by Jev (115), it found 13
+written backwards, including all three the checker knew about, and left 90 alone. Two tools,
+twenty times fewer open questions than closed ones.
+
+**So the recorder is asked for them** — asked, not made to. `define_relation` without
+`subject_is` says what cannot be checked without them and hands back the call to write; the
+close adds one line listing the types still unnamed and closes anyway. A type without named ends
+works perfectly well. It is only the checking that cannot be done, and that is worth a line
+rather than a wall.
+
+**Still wrong, and worth naming:** a role written too narrowly turns into a false alarm.
+Nemotron called `affiliated_with` an organisation-to-organisation link, so
+"Princess Alice affiliated with Anglicanism" came back impossible. The link is fine; the role
+is too tight. The verdict is kept as a question on the link and never applied, which is the
+reason that costs a question rather than a fact.

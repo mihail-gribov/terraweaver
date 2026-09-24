@@ -235,6 +235,22 @@ class Authoring:
         self._save(spec)
         return attr
 
+    def grown_names(self) -> set:
+        """The classes this world wrote for itself, as the files beside it record them.
+
+        Read from the directory rather than kept in memory, so a world reopened tomorrow still
+        knows which of its types are its own. What came with the world is not the host's to fix.
+        """
+        if not self.dir or not self.dir.exists():
+            return set()
+        out = set()
+        for path in self.dir.glob("*.json"):
+            try:
+                out.add(json.loads(path.read_text())["name"])
+            except Exception:  # noqa: BLE001 - an unreadable file is not a class we can name
+                continue
+        return out
+
     def unsaid(self) -> list[tuple]:
         """Every word taken this way that nobody has said the meaning of yet."""
         out = []
@@ -360,6 +376,23 @@ class Authoring:
         built = ontology.define_class(self.world.classes, spec)
         self._register(spec)
         self._save(spec)
+        if not subject_is:
+            # Asked for, never demanded. A type without named ends works perfectly well — it is
+            # the *checking* of it that cannot be done: told what each end is, an outside reader
+            # tells a link written backwards from one written right and abstains where it cannot
+            # (12 of 14 against 7 of 12, and every miss an abstention rather than a wrong call).
+            # Told only the type's name and description, it guesses, and guesses confidently.
+            # None of the twenty-six types one recorder built named its ends, and a backwards
+            # link was the commonest wrong fact left in that world.
+            ontology.note_hint(
+                f"{name} has no names for its ends, so nothing can later tell a link of this "
+                f"type written backwards from one written right. Say what each end is — it is "
+                f"one more argument, and it is what makes the type checkable:\n"
+                f"    world.define_relation(\"{kind}\", \"…\", …, "
+                f"subject_is=\"<what the first end is>\", "
+                f"object_is=\"<what the second end is>\")\n"
+                f"For {kind}: the subject is the end the sentence starts from."
+            )
         return built
 
     def _relation_like(self, text: str, limit: int = 1,
