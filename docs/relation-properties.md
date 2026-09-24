@@ -1,127 +1,127 @@
-# What a relation type carries
+# Чем описано отношение
 
-A working document, started 2026-09-24. Part one is what is there now, read out of the code and
-the thirty-eight types two worlds hold. Part two is what we found wrong with it. Part three is
-where new properties go, with what each one would settle of the existing ones — because the
-thing this document exists to prevent is a second way of saying something already said.
+Рабочий документ, начат 2026-09-24. Первая часть — что есть сейчас, вычитано из кода и из
+тридцати восьми типов, которые держат два мира. Вторая — что с этим не так. Третья — куда
+кладутся новые свойства, и каждое обязано сказать, **что оно решает** из уже имеющегося.
 
-## The rule this is written against
+## Правило, против которого это написано
 
-**Two statements of one thing is how supersession was lost.** That is in `BY_NATURE`'s own
-comment, and it has been earned twice more since: a nature that repeats what cardinality says,
-an `over_time` that overwrites the cardinality it sits beside. Any property added below has to
-say what it settles and what it must therefore not repeat.
+**Два утверждения об одном — это то, как потерялось вытеснение.** Так записано в комментарии
+самого `BY_NATURE`, и с тех пор это подтвердилось дважды: природа, повторяющая кардинальность,
+и `over_time`, затирающий кардинальность, рядом с которой стоит. Любое свойство ниже обязано
+назвать, что оно решает и чего тем самым не должно повторять.
 
-## Part one — what is there now
+## Часть первая — что есть сейчас
 
-Counted across the 38 relation types in `ontology/core/` and one recorded world.
+Посчитано по 38 типам отношений в `ontology/core/` и в одном записанном мире.
 
-### Said by whoever defines the type
+### Говорит тот, кто определяет тип
 
-| property | in | what it is |
+| свойство | в скольких | что это |
 |---|---|---|
-| `kind` | 38 | the word a link of this type is written with — `capital_of`, `authority` |
-| `nature` | 38 | one of five: `related_to`, `part_of`, `kind_of`, `same_as`, `derived_from` |
-| `from` / `to` | 38 | the classes at each end. `any` in every grown type |
-| `roles` | 32 | what each end **is** — "a city that serves as a capital" / "the country" |
-| `labels` | 38 | words this link is called in speech. Empty in every grown type |
-| `reverse` | 34 | the word for reading it from the far end — `managed_by` |
-| `reads` | 38 | how it reads as a sentence. A template in every grown type |
-| `example` | 38 | how it is written. A template in every grown type |
-| `notes` | 1 | an aside about how it is usually recorded |
+| `kind` | 38 | слово, которым пишут связь этого типа — `capital_of`, `authority` |
+| `nature` | 38 | одна из пяти: `related_to`, `part_of`, `kind_of`, `same_as`, `derived_from` |
+| `from` / `to` | 38 | классы на концах. У всех выросших — `any` |
+| `roles` | 32 | чем **является** каждый конец — «город-столица» / «страна» |
+| `labels` | 38 | слова, которыми это называют в речи. У всех выросших пусто |
+| `reverse` | 34 | слово для чтения с дальнего конца — `managed_by` |
+| `reads` | 38 | как читается предложением. У всех выросших — шаблон |
+| `example` | 38 | как её пишут. У всех выросших — шаблон |
+| `notes` | 1 | оговорка о том, как её обычно записывают |
 
-### Worked out from cardinality and `over_time`
+### Выводится из кардинальности и `over_time`
 
-| property | in | what it is |
+| свойство | в скольких | что это |
 |---|---|---|
-| `functional` | 29 | one object per subject: `False`, `True` (corrects), `at_any_time` (hands over) |
-| `inverse_functional` | 28 | the same for the other end |
+| `functional` | 29 | один объект на субъекта: `False`, `True` (исправляется), `at_any_time` (передаётся) |
+| `inverse_functional` | 28 | то же для другого конца |
 
-### Algebra, declared per type
+### Алгебра, объявляется на типе
 
-| property | in | what the world does with it |
+| свойство | в скольких | что мир с этим делает |
 |---|---|---|
-| `transitive` | 2 | a read follows the chain to its end (`relations.py:1453`) |
-| `symmetric` | 3 | writing one side writes the other; used in seven places |
-| `acyclic` | 3 | a cycle is refused |
-| `irreflexive` | 7 | a thing cannot stand in it to itself |
-| `asymmetric` | 7 | declared and read nowhere |
+| `transitive` | 2 | чтение доходит по цепочке до конца (`relations.py:1453`) |
+| `symmetric` | 3 | записав одну сторону, записал обе; читается в семи местах |
+| `acyclic` | 3 | цикл отказывается |
+| `irreflexive` | 7 | вещь не может стоять в этом отношении к себе |
+| `asymmetric` | 7 | объявлено и нигде не читается |
 
-### Machinery
+### Машинерия
 
-| property | in | what it is |
+| свойство | в скольких | что это |
 |---|---|---|
-| `free` | 1 | the untyped link (`Related`), before any type exists |
-| `one_of_a_label` | 2 | one holder per label, not per type |
-| `transitive_via` | 1 | another type's chain extends this one |
-| `same_class` | 1 | both ends must be of one class |
-| `compose` | 1 | how two of them combine |
+| `free` | 1 | связь без типа (`Related`), до того как тип появился |
+| `one_of_a_label` | 2 | один держатель на ярлык, а не на тип |
+| `transitive_via` | 1 | цепочка другого типа продолжает эту |
+| `same_class` | 1 | оба конца одного класса |
+| `compose` | 1 | как две такие складываются |
 
-## Part two — what is wrong with it
+## Часть вторая — что с этим не так
 
-**`over_time` overwrites the cardinality beside it.** All four cardinalities with
-`over_time=True` produce the same thing:
+**`over_time` затирает кардинальность, рядом с которой стоит.** Все четыре кардинальности при
+`over_time=True` дают одно и то же:
 
     one-to-one    True  ->  at_any_time / at_any_time
     one-to-many   True  ->  at_any_time / at_any_time
     many-to-one   True  ->  at_any_time / at_any_time
     many-to-many  True  ->  at_any_time / at_any_time
 
-So `over_time` carries two claims at once: **one at a time** — which is a claim about how many,
-and therefore cardinality — and **the displaced one ended rather than was wrong**, which is a
-separate question nothing else asks.
+Значит `over_time` несёт два утверждения разом: **одно за раз** — а это утверждение о
+количестве, то есть кардинальность, — и **вытесненное кончилось, а не было ошибкой**, а вот это
+отдельный вопрос, которого не задаёт больше ничто.
 
-**Cardinality cannot say "one at a time".** `one-to-many` means one *ever*. An employer is one
-*now* and many over a life, and there is no word for that — which is why `over_time=True` was
-made to mean it, and why it had to override everything to do so.
+**Кардинальность не умеет сказать «одно в каждый момент».** `one-to-many` значит «один
+**когда-либо**». Работодатель — один **сейчас** и много за жизнь, и такого слова нет; оттого
+`over_time=True` и был сделан, чтобы это выразить, и оттого ему пришлось затирать всё остальное.
 
-**The second question only applies to one of the three.** "Did the displaced one end, or was it
-wrong?" is meaningless where many are allowed, and settled by construction where one is allowed
-ever — a birthplace cannot have ended. It is a real question only for "one at a time". It is
-currently asked of every type, which is one reason it is answered badly: `FamousFor` was
-declared accumulating, and the fault was not `over_time` at all but choosing "many" where the
-facts meant "one ever".
+**Второй вопрос осмыслен только для одного случая из трёх.** «Вытесненное кончилось или было
+неверным?» бессмысленно там, где разрешено много, и решено по построению там, где разрешён один
+когда-либо: место рождения кончиться не может. Настоящий вопрос это только для «одного за раз».
+А задают его каждому типу — и это одна из причин, почему на него отвечают плохо: `FamousFor`
+объявили накапливающимся, и ошибка была вовсе не в `over_time`, а в том, что выбрали «много»
+там, где факты значили «один когда-либо».
 
-**`part_of` and `kind_of` are physically identical** — transitive, acyclic, irreflexive, and the
-world follows both chains the same way. What would part them is inheritance: under
-classification what holds of the object holds of the subject, under containment nothing does
-but position. Neither is implemented, so today they are one nature under two words.
+**`part_of` и `kind_of` физически неразличимы** — транзитивны, ацикличны, иррефлексивны, и мир
+ходит по обеим цепочкам одинаково. Развело бы их наследование: при классификации верное об
+объекте верно и о субъекте, при вхождении не наследуется ничего, кроме положения. Ни то ни
+другое не сделано, значит сегодня это одна природа под двумя словами.
 
-**A template reads as content.** Every grown type has `reads`, `example` and `reverse` filled in
-by pattern — "a capital of b — whichever end you start from is the subject", `capital_of_of`.
-Handed to a reader as though it said something, it produced confident wrong answers. An empty
-field would have been skipped; a filled one was taken as an instruction.
+**Шаблон читается как содержание.** У каждого выросшего типа `reads`, `example` и `reverse`
+заполнены по образцу — «a capital of b — whichever end you start from is the subject»,
+`capital_of_of`. Отданные читателю как содержательные, они дали уверенные неверные ответы.
+Пустое поле он бы пропустил, а заполненное принял за указание.
 
-**Measured, the properties that carry checkability are the empty ones.** `roles` empty in all 26
-grown types, `from`/`to` `any` in all 26, `labels` empty in all 26. With `roles` empty an outside
-reader found nothing in 115 links; with them named it found 13 written backwards.
+**Измерено: проверяемость несут ровно те свойства, которые пусты.** `roles` пусты у всех 26
+выросших типов, `from`/`to` — `any` у всех 26, `labels` пусты у всех 26. С пустыми `roles`
+читатель снаружи не нашёл ничего на 115 связях; с названными — нашёл 13 написанных наизнанку.
 
-## Part three — new properties
+## Часть третья — новые свойства
 
-Each entry says what it settles, and what it therefore replaces. Nothing goes here that another
-property already says.
+Каждая запись говорит, что она решает и что тем самым заменяет. Сюда не кладётся то, что уже
+сказано другим свойством.
 
-### Proposed: cardinality gains a temporal reading
+### Предложено: у кардинальности появляется прочтение во времени
 
-    one ever        at most one, for good — a birthplace. A second telling is a correction.
-    one at a time   one now, many over time — an employer. A second telling is a change,
-                    unless somebody says it was a mistake.
-    many            no limit. Nothing supersedes anything.
+    один когда-либо    не больше одного, навсегда — место рождения.
+                       Второе сказанное — это поправка.
+    один в каждый      один сейчас, много за жизнь — работодатель.
+    момент             Второе сказанное — перемена, если не сказано, что была ошибка.
+    много              без предела. Ничто ничего не вытесняет.
 
-**Settles:** `functional` / `inverse_functional` entirely, including the `at_any_time` case
-that `over_time` was carrying.
+**Решает:** `functional` / `inverse_functional` целиком, включая случай `at_any_time`, который
+нёс на себе `over_time`.
 
-**Replaces:** the "one at a time" half of `over_time`.
+**Заменяет:** ту половину `over_time`, которая говорит «одно за раз».
 
-**Leaves:** the other half — *ended, or was wrong* — which becomes a question asked only of
-"one at a time", and only when a second telling actually arrives, because that is where it is
-answerable and nowhere else.
+**Оставляет:** вторую половину — *кончилось или было неверным*, — и она становится вопросом,
+который задают только для «одного в каждый момент» и только когда второе утверждение
+действительно пришло, потому что там на него и можно ответить, а больше нигде.
 
-### Open, not yet proposed
+### Открыто, но не предложено
 
-- **What may be inferred**, which is what is left of `nature` once cardinality and time are
-  taken out of it: `identity` (what holds of one holds of the other), `derivation` (staleness
-  runs from the basis), `classification` (properties inherit down the chain), `containment`
-  (position inherits, properties do not). Two of the four are not implemented.
-- **Whether a template is worse than a blank** for `reads`, `example`, `reverse` — measured as a
-  cause of wrong answers, unmeasured as a fix.
+- **Что мир вправе вывести** — это всё, что остаётся от природы, если вынуть из неё
+  кардинальность и время: `identity` (верное об одном верно о другом), `derivation`
+  (устаревание идёт от основания), `classification` (свойства наследуются вниз по цепочке),
+  `containment` (наследуется положение, свойства — нет). Два правила из четырёх не сделаны.
+- **Хуже ли шаблон, чем пустота** для `reads`, `example`, `reverse` — как причина неверных
+  ответов измерено, как починка не измерено.
