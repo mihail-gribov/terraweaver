@@ -226,6 +226,49 @@ class World:
         out = list(dict.fromkeys(out))
         return (out[0] if out else None) if single else out
 
+    def thin(self, placed: "Placed") -> str:
+        """What is missing from a reading, in one line — or empty when it is sound.
+
+        The loop the whole day keeps arriving at: nothing is refused, and what came back thin is
+        asked about again. Measured here on two sentences about one couple:
+
+            "She married him then"                       -> roles "marries" / "married"
+            "Anna married Boris in June 2019, after      -> roles "spouse" / "spouse"
+             they met at the Lisbon office"
+
+        The first is not a worse answer, it is the answer to a worse question: the agent holds
+        the conversation and the world never will, so a sentence that needs the conversation to
+        be understood cannot be read by anything downstream. It is not refused — it is recorded,
+        read as well as it can be, and the gap is named so the agent can say more.
+
+        Re-reading costs nothing and breaks nothing: the record holds the sentence, and every
+        reading is built from it again. Nothing has to be unsaid to be read better.
+        """
+        relation = placed.relation
+        near, far = relation.subject_is, relation.object_is
+        gaps = []
+        if not far:
+            gaps.append("nothing names the far end")
+        if _role_word(near) == _role_word(far or "") and not relation.symmetric():
+            gaps.append("both ends came back with the same word but the relation is not symmetric")
+        for role in (near, far):
+            word = _role_word(role)
+            if word and (word.endswith("s") and word[:-1] in placed.said.words.lower()):
+                gaps.append(f"{word!r} reads as the sentence's verb, not as what an end IS")
+        if not gaps:
+            return ""
+        return (f"«{placed.said.words}» was read as {near or '?'} ↔ {far or '?'}, and "
+                + "; ".join(gaps) + ". Say it again with what only you know — who the two are "
+                f"by name, when it was, and what {placed.subject} is to {placed.object} in one "
+                f"noun: a wife, a capital, a part.")
+
+    def again(self, said: "Said", fuller: str) -> "Placed":
+        """The agent said more. Read it again — the record keeps both tellings."""
+        said.words = fuller
+        said.placed = None
+        self._placed = None
+        return next((p for p in self.placed() if p.said is said), None)
+
     def role_named(self, asked: str):
         """The relation an attribute name belongs to, and whether it is asked of the near end."""
         if not asked.endswith("_of"):
