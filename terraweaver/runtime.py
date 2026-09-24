@@ -186,10 +186,15 @@ class WorldView:
         says what was seen and what would settle it."""
         return self._world.verify(least)
 
-    def link(self, subject, obj, words: str):
-        """Say in words what joins two things, and let the type be read from it afterwards.
+    def relate(self, subject, obj, how: str, **attrs):
+        """Relate two things — by the fact in words, or by a type this world already has.
 
-            world.link(paris, france, "Paris is the capital of France")
+            world.relate(paris, france, "Paris is the capital of France")   the fact, in words
+            world.relate(paris, france, "capital_of")                       a type it has
+
+        The same verb an entity carries (`paris.relate(france, ...)`), in the other place: the
+        world joins two things, an entity attaches another to itself. One verb, two positions,
+        and what it takes says which form it is.
 
         **Named for what is being said, not for the saying.** There are three things a host can
         tell this world and it does something different with each: what joins two things (here),
@@ -211,12 +216,14 @@ class WorldView:
         by guess. Here the words are recorded at once, the two things are joined at once, and
         what the joining *is* gets read at the close of the task, where nothing waits on it.
         """
-        from terraweaver import sentences
+        from terraweaver import ontology as ont, sentences
 
+        if not ont._is_a_sentence(how):
+            return self._world.relate(subject, obj, how, **attrs)
         task = getattr(self._session, "task_id", None) if self._session else None
-        sentences.say(self._world, subject, obj, words, task)
+        sentences.say(self._world, subject, obj, how, task)
         ontology.note_world_call("world_writes")
-        return f"said: {words.strip()}"
+        return f"said: {how.strip()}"
 
     def take_in(self, kind, idea: str | None = None) -> list:
         """Move the free links that were waiting for a type into the one just defined."""

@@ -69,14 +69,14 @@ Everything else you define as you go:
 **Three things you can tell this world, and it does something different with each.** Say \
 which you mean — most of what went wrong in the past was a fact put in the wrong one of them:
 
-    world.link(a, b, "...")      what joins two things
+    a.relate(b, "...")           what joins two things
     thing.describe("...")        what one thing is
     thing.attribute = value      what a thing's value is
 
 **For a link, the second way is usually the one.**
 
-    world.link(Thing.ensure(name="Paris"), Thing.ensure(name="France"),
-               "Paris is the capital of France")
+    Thing.ensure(name="Paris").relate(Thing.ensure(name="France"),
+                                      "Paris is the capital of France")
 
 Two things and the fact stated plainly. No type, no role, no argument order to get right, no \
 date as a separate thing. The two things you must give, because only you know which Paris is \
@@ -87,18 +87,18 @@ narrative — you know what the user said and you can say it outright, so say it
 form that always works is the relation named, with both things in it and any date the user \
 gave:
 
-    world.link(anna, acme, "Anna has been an employee of Acme since 2019")      say it
-    world.link(anna, acme, "She started there a while back")                    a riddle
+    anna.relate(acme, "Anna has been an employee of Acme since 2019")      say it
+    anna.relate(acme, "She started there a while back")                    a riddle
 
-    world.link(kyd, london, "Thomas Kyd was born in London")                    say it
-    world.link(kyd, london, "that is where he is from")                         a riddle
+    kyd.relate(london, "Thomas Kyd was born in London")                    say it
+    kyd.relate(london, "that is where he is from")                         a riddle
 
 `is` is a perfectly good word for it — "Paris is the capital of France", "Anna is Boris's \
 mother". What is not good is leaving out the thing the whole fact turns on.
 
 **And it must be a fact about the two of them.** What one thing is like — "Anna is tall" — is a \
 value and belongs on the thing: `anna.height = "tall"`. What a thing IS — "Paris is a city" — \
-is its class or its nature. Put either through this door and it is kept, but it stays a link \
+is its class or its nature. Put either through relate and it is kept, but it stays a link \
 with no type, which cannot supersede anything and cannot be asked about.
 
 The other way is below, and it is for when you already know the type and want it exactly — \
@@ -197,7 +197,7 @@ Three habits that matter more than the modelling you choose:
 - **One thing is one thing.** Look before you create, and let one idea have one name."""
 
 # The same world with one door into it. Everything about choosing a type is gone — not reworded,
-# gone — because there is nothing left to choose: `world.link` works the type out from what was
+# gone — because there is nothing left to choose: `relate` works the type out from what was
 # said. What that leaves is the shape of the thing rather than the machinery of it, which is the
 # whole claim being tried: the load a host carries is mostly the decisions it is made to take
 # before it has anything to decide them with.
@@ -208,7 +208,7 @@ them. Two entities are already here: world.owner, the person it belongs to, and 
 
 **Three things you can tell this world, and it does something different with each.**
 
-    world.link(a, b, "...")      what joins two things
+    a.relate(b, "...")           what joins two things
     thing.describe("...")        what one thing is, and why it is here
     thing.attribute = value      what a thing's value is
 
@@ -216,7 +216,7 @@ them. Two entities are already here: world.owner, the person it belongs to, and 
 
     anna = Person.new(full_name="Anna Weber")
     acme = Thing.ensure(name="Acme", nature="agent")
-    world.link(anna, acme, "Anna has been an employee of Acme since 2019")
+    anna.relate(acme, "Anna has been an employee of Acme since 2019")
 
 Two things and the fact in words. You do not choose a type, a role, an order of ends, or a \
 date as a separate thing — say it as the user said it, including when, and the rest is worked \
@@ -226,15 +226,15 @@ out. The two things you must give, because only you know which Anna is meant.
 know what the user said, so say it outright — the relation named, both things in it, and the \
 date if there was one:
 
-    world.link(kyd, london, "Thomas Kyd was born in London")             say it
-    world.link(kyd, london, "that is where he is from")                  a riddle
+    kyd.relate(london, "Thomas Kyd was born in London")             say it
+    kyd.relate(london, "that is where he is from")                  a riddle
 
 `is` is a good word for it: "Paris is the capital of France", "Anna is Boris's mother". What \
 is not good is leaving out the thing the fact turns on.
 
 **And it must be about the two of them.** What one thing is *like* — "Anna is tall" — is a \
 value: `anna.height = "tall"`. What a thing *is* — "Paris is a city" — is its class or its \
-nature. Put either through link and it is kept, but as a link with no type, which cannot \
+nature. Put either through relate and it is kept, but as a link with no type, which cannot \
 supersede anything and cannot be asked about.
 
 **What a link becomes, so you can read it back.** A link joins two things and each end has a \

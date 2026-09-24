@@ -152,6 +152,12 @@ class World:
         if held:
             self.store.conn.commit()
 
+    def said_of(self, subject, obj, words: str, starts=None):
+        """A fact about two things, in the words it was said in. See `sentences.say`."""
+        from terraweaver import sentences
+
+        return sentences.say(self, subject, obj, words)
+
     def is_protected(self, entity) -> bool:
         """The two parties are not the host's to remove or replace."""
         return getattr(entity, "id", None) in (self.USER_ID, self.AGENT_ID)

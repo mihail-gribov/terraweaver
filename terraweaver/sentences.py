@@ -7,7 +7,7 @@ of care — each is a decision it was made to take before it had anything to dec
 
 So there is a second door. The host says the fact in words and names the two things it is about:
 
-    world.say(paris, france, "Paris is the capital of France")
+    paris.relate(france, "Paris is the capital of France")
 
 That is recorded at once and costs nothing. What relation it is, which end holds which role,
 how many may hold at a moment and when it began are read afterwards, at the close of the task,
@@ -56,7 +56,7 @@ def say(world, subject, obj, words: str, task_id: str | None = None):
     """
     if not (words or "").strip():
         raise ValueError(
-            "link(a, b, words) needs the fact in words — that is the whole of what it takes. "
+            "relate(other, words) needs the fact in words — that is the whole of what it takes. "
             "Not a type, not a role, not which end is which: those are read from the words "
             "afterwards. \"Anna has worked at Brightwork since 2019\" is a fact; \"employment\" "
             "is a type, and choosing one is the thing this call exists to spare you.")

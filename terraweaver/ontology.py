@@ -162,6 +162,25 @@ def _note_changed(entity, attr: str | None = None) -> None:
             _CHANGED.attrs.setdefault(id(entity), set()).add(attr)
 
 
+def _is_a_sentence(how: str) -> bool:
+    """Words about a fact, or the name of a type this world holds.
+
+    A type is one word this world knows; a fact is a sentence. Told apart by asking the world
+    rather than by the shape of the string: `born_in` is a sentence nowhere and a type here, and
+    which it is depends on what has been defined, not on whether it has an underscore in it.
+    """
+    if not isinstance(how, str):
+        return False
+    said = how.strip()
+    world = current_world()
+    if world is not None:
+        for name, cls in getattr(world, "classes", {}).items():
+            rel = (getattr(cls, "_spec", {}) or {}).get("relation") or {}
+            if said in (rel.get("kind"), rel.get("reverse"), name):
+                return False
+    return " " in said or len(said.split()) > 1
+
+
 def note_looked_up(entities) -> None:
     """Entities a query returned — evidence of what the host actually asked the world for."""
     if _CHANGED is None:
@@ -575,14 +594,30 @@ class Entity:
             return history(self) if history else []
         return current_world().history.of(self, attr)
 
-    def relate(self, other, kind: str, /, *, starts=None, until=None, ttl=None,
+    def relate(self, other, how: str, /, *, starts=None, until=None, ttl=None,
                permanent: bool = False, every=None, lasting=None, basis: list | None = None,
                **attrs):
-        """Record that this entity stands in relation `kind` to `other`; returns the relation.
+        """Relate this entity to another — by the fact in words, or by a type you already know.
+
+            paris.relate(france, "Paris is the capital of France")    the fact, in words
+            paris.relate(france, "capital_of")                        a type this world has
+
+        One verb, and what it takes says which. A type this world holds is a word it knows; a
+        fact is a sentence. Nothing has to be chosen between them, and the first form is the one
+        for a host that is telling what happened rather than modelling it: the roles, how many
+        hold at a moment, what follows and when it began are worked out afterwards, by a reader
+        whose whole task that is.
+
+        Asking the host for a type before the fact can be said asks a storyteller to do an
+        engineer's work, and it was measured: two ideas collected under one word, three links
+        written backwards because an argument order had to be got right, `over_time` answered
+        by guess. None of that was carelessness.
 
         A relation takes a period like anything else, and a cyclic one the same way: a cleaner
         every other week, a class every Tuesday term-time."""
-        made = current_world().relate(self, other, kind, starts=starts, until=until, ttl=ttl,
+        if _is_a_sentence(how):
+            return current_world().said_of(self, other, how, starts=starts)
+        made = current_world().relate(self, other, how, starts=starts, until=until, ttl=ttl,
                                       permanent=permanent, basis=basis, **attrs)
         return _also_repeats(made, every, lasting, starts, until)
 
