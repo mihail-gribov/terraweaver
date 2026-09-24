@@ -696,7 +696,18 @@ def take_in(world, kind, idea: str | None = None) -> list:
     """
     name = kind if isinstance(kind, str) else getattr(kind, "__name__", str(kind))
     if name not in world.classes:
-        raise ValueError(f"there is no relation type {name!r} here")
+        # Said as the word it was defined with. `define_relation("capital_of", ...)` takes the
+        # kind and makes the class `CapitalOf`, and this took only the class — so the host that
+        # had just written the word wrote it again here and was told there was no such type,
+        # with its links left free. The two spellings are one idea and the world knows both.
+        by_kind = {spec(c).get("kind"): n for n, c in relation_classes(world.classes).items()}
+        if name in by_kind:
+            name = by_kind[name]
+        else:
+            known = ", ".join(sorted(k for k in by_kind if k)[:12])
+            raise ValueError(
+                f"there is no relation type {name!r} here — say it as the word you defined it "
+                f"with or as the class it became. This world has: {known}")
     rel = spec(world.classes[name])
     one_way = list(rel.get("from", [])) != list(rel.get("to", []))
 

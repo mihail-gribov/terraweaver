@@ -36,6 +36,31 @@ arguments in an order the host keeps getting wrong is the world's problem to rem
 accepting what it is given or by refusing in a way that says which argument is missing and
 what to write instead.
 
+## A type that arrives late leaves everything before it in prose
+
+2026-09-24, from the run that lost 22 capital facts. `capital_of` was not in the world when the
+run began — the recorder defines its own vocabulary, which is the design working. It defined the
+type at **turn 599 of 1143**, recording facts 221–230. Of the twenty-two capitals that never
+became links, **fourteen arrived before that turn** and eight after.
+
+The fourteen went into descriptions: Tokyo holds "the capital of Japan" and "the capital city of
+Japan" and no link at all; New Delhi the same, twice over. That is the honest move when there is
+no type — but `take_in` moves free *links* into a new type and nothing ever revisits a
+description. So a fact written as prose before its type existed stays prose for good, and the
+moment the recorder is most likely to reach for prose is exactly the moment when doing so is
+permanent.
+
+`finish_task` now refuses to close while a description this task wrote names another entity that
+nothing joins to it (`_facts_hiding_in_prose`), which catches it at the one moment the host can
+still act. What it does not do is go back over what is already there. Two things that would:
+
+- when a type is defined, look at the descriptions that read like it and offer them, the way
+  `take_in` offers free links. That is [[project-world-as-crystallizer]] applied to prose, and
+  prose is where the structure actually accumulates first.
+- `world.wanted()` already reports words written several times with no type behind them. It
+  reads links; reading descriptions too would have named `capital_of` around fact 30 instead of
+  fact 225.
+
 ## The word the recorder picks decides whether the fact can be answered
 
 2026-09-24, two worlds built from the same 455 facts by the same recorder, asked the same

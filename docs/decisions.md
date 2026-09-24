@@ -1487,3 +1487,40 @@ this run built, 81/100 for the frozen one. Published numbers on the task: Zep 7%
 BM25 48%, HippoRAG-v2 54%, and a deterministic `max(serial)` recipe at 78% / 94.8%. At n=100 our
 interval is 68–84%, so clear of every memory system and both retrieval baselines — the first time
 that gap is wider than the interval — and not separable from `max(serial)` on gpt-4o-mini.
+
+---
+
+## 2026-09-24 · A sentence that names something else is a link
+
+**Where twenty-two capitals went.** Two became `CapitalOf` rows with a label, a description and
+neither end — `retype` carries the attributes both specs declare, and a link's ends are declared
+by neither, so a free link taken into a type lost them. The record held both ends throughout and
+a rebuild put them back (Berlin → Germany, Chang'an → Tang Empire), so nothing was lost; it was
+unreadable, and reading one raised and took every other link of that type with it. Fixed, with a
+test that fails without the fix. `take_in` also now answers to the word a type was defined with,
+not only to the class it became — the host wrote `take_in("capital_of")` and was told there was
+no such type.
+
+**The other twenty went into prose, and that is the finding.** `capital_of` did not exist when
+the run began: the recorder builds its own vocabulary as it meets the words, which is the design
+working. It defined the type at turn 599 of 1143. Fourteen of the lost capitals arrived before
+that. With no type to put them in, the host wrote the fact as a description — Tokyo holds "the
+capital of Japan" and "the capital city of Japan" and no link at all.
+
+**And every check we had passed it.** The thing is described, so `_undescribed` is satisfied;
+something was said, so the emptiness check is satisfied; the task closes and reports success.
+Our own rule — describe everything, or the task will not close — is what makes prose a legitimate
+place for a fact to land. A description written to let the world check its own structure became
+the way around it.
+
+**So the world now reads what a description says about.** `_facts_hiding_in_prose`: a description
+this task wrote that names another entity the world holds, with no link between them in either
+direction, stops the close. The test is narrow on purpose — "the city Thomas Kyd was born in"
+names Thomas Kyd and there *is* a link, so it is what it looks like, an account of why the thing
+is here. The same sentence with no link is a fact nobody recorded. Caught at `finish_task`, not
+at `describe`, for the reason everything else moved there: a raise stops the block.
+
+**What it does not do**, and is in docs/TODO.md: go back over prose already written when the type
+for it finally arrives. `take_in` offers free links to a new type and nothing offers descriptions.
+`world.wanted()` counts untyped words across links only — counting them across descriptions would
+have named `capital_of` around fact 30 rather than fact 225.

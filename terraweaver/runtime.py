@@ -17,7 +17,7 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from terraweaver import initiative, onboarding, ontology, sandbox
+from terraweaver import initiative, matching, onboarding, ontology, sandbox
 from terraweaver.impls import IMPLS
 from terraweaver.describe import (COMMON_MEMBERS, HOST_GUIDE, catalogue, describe_for_prompt, short,
                                   describe_methods)
@@ -431,6 +431,55 @@ class WorldRuntime:
                     against.append((link.display_name(), one.get("said", ""), one.get("tied")))
         return against
 
+    def _facts_hiding_in_prose(self, session) -> list[tuple]:
+        """Descriptions this task wrote that name another thing in the world and join nothing.
+
+        "the capital of Japan", written on Tokyo, is not a description of Tokyo — it is a fact
+        about Tokyo *and Japan*, and its place is the link between them. Written as prose it
+        passes every check the world has: the thing is described, the task closes, and the fact
+        is somewhere nothing can supersede, count or ask about it. Fourteen capitals went this
+        way in one 455-fact run, each while no type for them existed yet — which is exactly when
+        prose is the easiest thing to reach for, and exactly when reaching for it is worst,
+        because nothing ever goes back over a description when the type finally arrives.
+
+        The test is deliberately narrow: the text must name another entity *this world already
+        holds*, and the two must have no link between them in either direction. "the city
+        Thomas Kyd was born in" names Thomas Kyd and there is a link, so it is what it looks
+        like — an account of why the thing is here. Same sentence with no link is a fact nobody
+        recorded.
+        """
+        named: list[tuple] = []
+        others = {}
+        for cls in self.world.classes.values():
+            if cls._spec.get("relation"):
+                continue
+            for other in self.world.all(cls, limit=None):
+                said = (getattr(other, "name", None) or getattr(other, "full_name", None)
+                        or getattr(other, "title", None))
+                if said and len(str(said)) > 3:      # "USA" is a name; "the" is a coincidence
+                    others[matching.normalize(str(said))] = other
+        for entity_id in sorted(session.touched):
+            try:
+                entity = self.store.load(entity_id, self.classes)
+            except Exception:  # noqa: BLE001 - a check must never be what stops a task closing
+                continue
+            if entity is None or type(entity)._spec.get("relation"):
+                continue
+            joined = set()
+            try:
+                for link in entity.relations(any_time=True):
+                    joined |= {getattr(link.subject, "id", None), getattr(link.object, "id", None)}
+            except Exception:  # noqa: BLE001
+                pass
+            for text in (getattr(entity, "descriptions", None) or []):
+                words = matching.normalize(str(getattr(text, "text", text)))
+                for name, other in others.items():
+                    if other.id == entity.id or other.id in joined or name not in words:
+                        continue
+                    named.append((entity, other, str(getattr(text, "text", text))))
+                    break
+        return named
+
     def _undescribed(self, session) -> list[str]:
         """What this task put in the world and never said a word about.
 
@@ -588,6 +637,29 @@ class WorldRuntime:
                     f"reads and retract the one that went in backwards — or say it from the far "
                     f"end with the reverse name, which puts it round for you: "
                     f"book.relate(person, \"author_of_of\")."
+                )
+            prose = self._facts_hiding_in_prose(session)
+            if prose:
+                shown = "\n".join(
+                    f"    {_name_of(one)}: \"{text}\"   — names {_name_of(other)}, "
+                    f"nothing joins them"
+                    for one, other, text in prose[:8])
+                more = f"\n    … and {len(prose) - 8} more" if len(prose) > 8 else ""
+                first, other, _ = prose[0]
+                return (
+                    f"Not closed: {len(prose)} description(s) are facts about two things, "
+                    f"written about one:\n{shown}{more}\n\n"
+                    f"A sentence that names something else in this world is a link, and a link "
+                    f"is the only place the world can do anything with it — supersede it when "
+                    f"you are told otherwise, count it, answer a question with it. In a "
+                    f"description it is text: nothing contradicts it and nothing finds it.\n"
+                    f"Define the type if there is none, then say it:\n"
+                    f"    world.define_relation(\"<the word>\", \"<what this link is>\", "
+                    f"nature=\"related_to\", cardinality=\"many-to-one\", over_time=False)\n"
+                    f"    a.relate(b, \"<the word>\")\n"
+                    f"Keep the description if it says why the thing is here; the fact goes in "
+                    f"the link either way. If the sentence really is only about "
+                    f"{_name_of(first)}, say it without naming {_name_of(other)}."
                 )
             bare = self._undescribed(session)
             if bare and self._anything_said(session):
@@ -1175,6 +1247,13 @@ def _name_as_string(arg: ast.expr) -> ast.expr:
 
 def _variables_by_name(tree: ast.AST) -> ast.AST:
     return ast.fix_missing_locations(_VariablesByName().visit(tree))
+
+
+def _name_of(entity) -> str:
+    """What to call one entity in a message to the host — its own word for itself."""
+    said = (getattr(entity, "name", None) or getattr(entity, "full_name", None)
+            or getattr(entity, "title", None))
+    return str(said) if said else entity.display_name()
 
 
 # Attributes the machinery maintains; changing them isn't something the host did.

@@ -110,6 +110,34 @@ def main() -> int:
     check("a task that leaves nothing open closes done",
           "nothing was left open" in clean.lower(), clean[:100])
 
+    # --- a fact written as a description of one thing, when it is about two ---
+    # Fourteen capitals went in this way in a 455-fact run, every one of them while no type for
+    # them existed yet: `tokyo.describe("the capital of Japan")` passes every check the world
+    # had — the thing is described, something was said, the task closes — and leaves the fact
+    # where nothing can supersede it, count it or answer with it.
+    rt = WorldRuntime(":memory:", fixture="job_search")
+    rt.start_task(key, "record what the user said about cities and countries", "recording")
+    rt.run('tokyo = Thing.ensure(name="Tokyo", nature="place")\n'
+           'japan = Thing.ensure(name="Japan", nature="place")\n'
+           'japan.describe("the country Tokyo is in")\n'
+           'tokyo.describe("the capital of Japan")\n'
+           'print("said")', key)
+    held = rt.finish_task(key)
+    check("a description naming another thing with no link between them stops the close",
+          held is not None and "facts about two things" in held, str(held)[:110])
+    check("and it says which two", "Tokyo" in (held or "") and "Japan" in (held or ""),
+          str(held)[:140])
+
+    rt.run('world.define_relation("capital_of", "the city that is a country\'s seat of '
+           'government", nature="part_of", cardinality="one-to-one", over_time=False)\n'
+           'print("defined")', key)
+    rt._bind_classes(rt.session(key))
+    rt.run('Thing.get(name="Tokyo").relate(Thing.get(name="Japan"), "capital_of")\n'
+           'print("linked")', key)
+    closed = rt.finish_task(key)
+    check("and once the link is there it closes",
+          closed is None or "facts about two things" not in closed, str(closed)[:110])
+
     initiative.MAKES_TYPES = False
     print("\n" + (f"{len(failures)} failed: " + ", ".join(failures) if failures else "all task tests passed"))
     return 1 if failures else 0

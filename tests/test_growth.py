@@ -149,6 +149,32 @@ def main() -> int:
     check("after which the world asks for nothing", base.world.wanted() == [],
           str(base.world.wanted()))
 
+    # --- a free link taken into a type keeps its ends ---
+    # `retype` carries the attributes both specs declare, and a link's ends are declared by
+    # neither — the relation machinery puts them there. So a link taken in arrived with a
+    # label, a description and nothing joined. The record held both ends throughout, so the
+    # fact was never lost; it was unreadable, and reading one raised and took every other link
+    # of that type down with it.
+    from terraweaver import authoring
+
+    rt = WorldRuntime(":memory:", fixture="job_search")
+    made = authoring.install(rt.world, None)
+    rt.start_task("k", "record where a city is the seat of government", "recording")
+    rt.run('berlin = Thing.ensure(name="Berlin", nature="place")\n'
+           'germany = Thing.ensure(name="Germany", nature="place")\n'
+           'link = berlin.relate(germany, "related", label="capital of")\n'
+           'link.describe("Berlin is the capital of Germany")\n'
+           'print("free link made")', "k")
+    made.define_relation("capital_of", "the city that is a country's seat of government",
+                         nature="part_of", cardinality="one-to-one", over_time=False)
+    rt._bind_classes(rt.session("k"))
+    got = rt.run('world.take_in("capital_of", "capital of")\n'
+                 'for link in world.all("CapitalOf", limit=None):\n'
+                 '    print(link.subject.name, "->", link.object.name)', "k")
+    check("a link taken into a type keeps both its ends",
+          got["ok"] and "Berlin -> Germany" in (got["output"] or ""),
+          str(got.get("error") or got.get("output"))[:140])
+
     print()
     if failures:
         print(f"{len(failures)} failed: {', '.join(failures)}")

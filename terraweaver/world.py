@@ -591,6 +591,18 @@ class World:
             value = getattr(entity, attr["name"], None)
             if value is not None and value != []:
                 carried[attr["name"]] = value
+        # A link's ends are not declared attributes — the relation machinery puts them there,
+        # so neither spec lists them and the loop above cannot see them. Left out, a free link
+        # taken into a type became a row with a label, a description and nothing joined: two
+        # `CapitalOf` rows in one run, and reading either end raised, which took every other
+        # link of that type down with it. The record had both ends all along and a rebuild put
+        # them back, so nothing was lost — but nothing was readable either, and the check that
+        # asks whether a fact is in the world quite correctly said no.
+        if becomes._spec.get("relation") or was._spec.get("relation"):
+            for end in ("subject", "object"):
+                at_end = getattr(entity, end, None)
+                if at_end is not None:
+                    carried[end] = at_end
         # Whatever it was called is what it is called: a Thing's `name` read as a Vacancy's
         # `title`, the one thing every entity has and the one most easily lost in becoming.
         named = matching.NAME_KEYS.get(was.__name__)
@@ -608,6 +620,9 @@ class World:
                     continue
                 default = [] if attr.get("type", "").startswith("list[") else None
                 setattr(now, attr["name"], carried.get(attr["name"], default))
+            for end in ("subject", "object"):   # not declared, so set beside the declared ones
+                if end in carried:
+                    setattr(now, end, carried[end])
             now.created_at = getattr(entity, "created_at", None) or ontology.now_utc()
             now.accessed_at = ontology.now_utc()
             now.valid_from = getattr(entity, "valid_from", None)

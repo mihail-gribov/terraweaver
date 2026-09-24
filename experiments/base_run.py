@@ -161,6 +161,12 @@ is what is true now — so do not write a date you were not given.
 If one of them does not fit what you have so far, put it in as a Thing, define the link type \
 you need and say it, and carry on. Do not drop it and do not write it out as a sentence.
 
+A description says what the thing is; a sentence naming something *else* is a link, and the \
+world will not close the task until you have written it as one. "Tokyo is the capital of Japan" \
+is not a description of Tokyo — it is a fact about Tokyo and Japan, and in a description it is \
+text: nothing contradicts it, nothing counts it, no question finds it. If there is no type for \
+the word yet, that is the moment to define one, not the reason to write prose.
+
 Say what each Thing is, in one line: `london.describe("the city Thomas Kyd was born in")`, and \
 what each link is: `born.describe("Thomas Kyd's birthplace")`. Not for entities of a class that \
 already says what they are — a Person called Amy Winehouse is accounted for, and a line about \
