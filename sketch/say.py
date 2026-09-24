@@ -142,6 +142,7 @@ class World:
         self.book = Relations()
         self.reader = reader
         self.asked = 0
+        self.astray: list[str] = []    # readings that named somebody who is not here
         self._placed: list | None = None
 
     def thing(self, name: str) -> Thing:
@@ -175,9 +176,21 @@ class World:
                 continue
             self.asked += 1
             relation = self._relation_for(got)
+            # The assignment has to name one of the two things handed over. Given names that
+            # say nothing — X and Y — a reader read "She married him then" and made "She" the
+            # subject: a role given to somebody who is not in the record. The two things are
+            # the one part of this the world is sure of, so an answer outside them is dropped
+            # rather than believed, and the order the host wrote them in stands.
             by_name = {said.a.name: said.a, said.b.name: said.b}
-            subject = by_name.get(got.get("subject"), said.a)
-            obj = by_name.get(got.get("object"), said.b)
+            subject = by_name.get(got.get("subject"))
+            obj = by_name.get(got.get("object"))
+            if subject is None or obj is None or subject is obj:
+                subject, obj = said.a, said.b
+                self.astray.append(
+                    f"«{said.words}»: the roles were given to "
+                    f"{got.get('subject')!r} and {got.get('object')!r}, which are not the two "
+                    f"things this is about ({said.a}, {said.b}). Taken in the order they were "
+                    f"written, and the reading is worth asking about again.")
             # The date comes out of the sentence, because that is where the writer put it.
             # Asked for as a separate argument it was one more thing to fill in and one more
             # place to guess; said in words — "since 2015" — it arrives with the fact.
