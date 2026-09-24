@@ -36,6 +36,52 @@ arguments in an order the host keeps getting wrong is the world's problem to rem
 accepting what it is given or by refusing in a way that says which argument is missing and
 what to write instead.
 
+## The word the recorder picks decides whether the fact can be answered
+
+2026-09-24, two worlds built from the same 455 facts by the same recorder, asked the same
+twenty questions (`benchmarks/ask_world.py`): `worlds/facts455` answered 17/20, the run made
+today 15/20. The two grew **different vocabularies** — 32 types against 28, twelve words in one
+that are not in the other — and the difference is not cosmetic. Two worked examples, both from
+the questions that parted:
+
+**Japan's official language.** Both worlds hold both facts, Swedish and Japanese, neither ended.
+
+    facts455   OfficialLanguage  Japan -> Swedish, Japan -> Japanese    answered Swedish   ✓
+    dated455   Speaks            Japan -> Swedish, Japan -> Japanese    answered Japanese  ✗
+
+Same two statements, same order, opposite answer. `OfficialLanguage` was defined
+`functional: True`, so the later telling holds at read time; `Speaks` was defined
+`functional: False`, so both stand and the host picked the first. `Speaks` is also the type that
+collects "a country's official language" and "a person speaks a language" — a type that answers
+for several ideas answers for none of them, which the primer says in those words.
+
+**Microsoft's chief executive.** A different failure wearing the same face.
+
+    facts455   CEOOf       Steve Jobs -> Microsoft, Satya Nadella -> Microsoft   answered Jobs ✓
+    dated455   Leadership  Satya Nadella -> Microsoft                            answered Nadella ✗
+
+Here the superseding fact never landed at all — one of that run's 101 real losses. The host
+answered correctly from what it had.
+
+So a wrong answer to a conflict question has (at least) two causes that look identical from the
+outside, and only reading the record tells them apart: **the fact did not land**, or **the fact
+landed under a word that cannot supersede**. Any measurement of "conflict resolution" that does
+not separate them is measuring the recorder's vocabulary and calling it the world's memory.
+
+## A link whose end cannot be loaded breaks every read of that entity
+
+Found while probing the above. `entity.relations()` raised:
+
+    AttributeError: CapitalOf has no 'subject' — did you mean 'subject'?
+                    It has: subject, object, descriptions, tags.
+
+The message names the attribute as missing and as present in the same sentence, and the raise
+takes down the whole call, so an entity with one broken link cannot have any of its links read.
+Two `CapitalOf` links in `dated455` are in this state. Two things to fix: the link with an end
+that no longer resolves (why it happens), and the read that dies on it (a link nobody can follow
+should be reported, not thrown — an image is a reading of the record and a reading that cannot
+be made should leave that one thing out, which is what `rebuild._fill` already does).
+
 ## A type defined not to supersede answers wrong forever
 
 Found 2026-09-24 by asking `worlds/facts455` three questions with `benchmarks/ask_world.py`.
