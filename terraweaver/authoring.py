@@ -135,6 +135,7 @@ class Authoring:
                 spec["identified_by"], f"what this {class_name} is called", type="str",
                 required=True))
         built = ontology.define_class(self.world.classes, spec)
+        self._register(spec)
         self._register_identity(spec)
         self._save(spec)
         if near:
@@ -165,6 +166,7 @@ class Authoring:
             raise Refused(f"{spec['name']}.{attr['name']} is already declared")
         spec["attributes"].append(attr)
         ontology.define_class(self.world.classes, spec)  # rebuild the class with the addition
+        self._register(spec)
         self._save(spec)
         return attr
 
@@ -282,6 +284,7 @@ class Authoring:
             "methods": [],
         }
         built = ontology.define_class(self.world.classes, spec)
+        self._register(spec)
         self._save(spec)
         return built
 
@@ -412,6 +415,20 @@ class Authoring:
                 f"type ({', '.join(VALUE_TYPES[:6])}, …), or say changes=False if it is prose.")
         return {"name": attr_name, "type": type, "required": required,
                 "description": described, "changes": changes}
+
+    def _register(self, spec: dict) -> None:
+        """Put the grown spec everywhere a spec is read from, not only on the class.
+
+        `world.specs` is the dictionary the world opened with, and two readers prefer it to the
+        class: `find`/`get` checks an attribute name against it, and the assembler asks it
+        whether a slot holds one value or many. Left behind, an attribute a host had just
+        declared was writable and not findable in the same run — `Person.find(salary=...)` came
+        back "no attribute 'salary'" while `person.salary` held it — and a grown `list[...]`
+        slot was read back on a rebuild as a single value, the last one said.
+        """
+        specs = getattr(self.world, "specs", None)
+        if isinstance(specs, dict):
+            specs[spec["name"]] = spec
 
     def _register_identity(self, spec: dict) -> None:
         from terraweaver import matching

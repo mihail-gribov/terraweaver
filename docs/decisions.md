@@ -1557,3 +1557,14 @@ So a class that grows is now the **same class**: `define_class` updates the stan
 place when the base is unchanged, instead of building a replacement. What was made before the
 growth keeps working, `isinstance` keeps meaning what it says, and the sentence the world prints
 can be typed straight back in. Tested as the three steps a host takes: refused, told, works.
+
+**A class lives in two places, and growth reached only one.** The class object carries `_spec`
+and the generated properties, and that is what `__setattr__`, `__getattr__` and saving consult.
+`world.specs` is a separate dictionary the world opened with, and two readers prefer it: `find`
+and `get` check an attribute name against it, and the assembler asks it whether a slot holds one
+value or many. Growth updated the class and the file on disk and not that dictionary — so an
+attribute a host had just declared was writable and **not findable** in the same run
+(`Person.find(salary=...)` → "no attribute 'salary'" while `person.salary` held 140000), and a
+grown `list[...]` slot was read back on a rebuild as a single value, the last one said. That
+second one is the same fault that made a test of mine earlier today report every list attribute
+on a grown class as a scalar. `Authoring._register` now puts the spec in both.

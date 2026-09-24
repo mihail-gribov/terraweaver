@@ -223,6 +223,14 @@ def main() -> int:
     check("and doing what it says works in the same run",
           done["ok"] and "120000" in (done["output"] or ""),
           str(done.get("error") or done.get("output"))[:140])
+    # Writable and not findable is the other half of the same trap. `find`/`get` prefers
+    # `world.specs` — the dictionary the world opened with — to the class, and so does the
+    # assembler when it asks whether a slot holds one value or many. A grown spec has to land
+    # in both, or the attribute works until somebody looks for it.
+    found = rt.run('print([p.full_name for p in Person.find(salary=120000)])', "k3")
+    check("and the grown attribute can be searched by, not only written",
+          found["ok"] and "Ada Byron" in (found["output"] or ""),
+          str(found.get("error") or found.get("output"))[:140])
 
     print()
     if failures:
