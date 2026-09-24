@@ -795,6 +795,18 @@ class WorldRuntime:
         # works; what it cannot do is be checked, and that is worth one line rather than a wall.
         asked = ""
         if typed:
+            poor = typed.get("ill_typed") or []
+            if poor:
+                shown = "\n".join(
+                    f"    «{words}» — that is {what} of {who}, not what joins two things"
+                    for words, what, who in poor[:5])
+                asked += (
+                    f"\n\n{len(poor)} of them could not be typed as links, and stay as links "
+                    f"with no type — joined, findable, and unable to supersede anything:\n"
+                    f"{shown}\n"
+                    f"A value belongs on the thing (thing.attribute = ...), what a thing IS "
+                    f"belongs in its nature or its class. Said that way they land where they "
+                    f"can be used; said this way they are kept and little else.")
             asked += (f"\n\nRead the {typed['read']} fact(s) you said in words: "
                       f"{typed['joined']} joined a relation already here, {typed['defined']} "
                       f"needed a new one"

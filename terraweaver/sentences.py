@@ -154,6 +154,24 @@ Your task is to describe that relation, and nothing else.
 
 {held}
 
+**First: can this be typed as a relation?** The link is already in the record either way — two
+things are joined and the words are on it, and nothing you say takes that away. The question is
+only whether it can be given a type, and sometimes it cannot, because what was said is not
+about two things at all:
+
+    a value        a characteristic of one thing — "Anna is tall", "the salary is 60000".
+                   "tall" is not a thing; it is what Anna is like, and a type made for it
+                   invents a thing called "tall" and hangs somebody off it.
+    a kind         one thing said to be OF a class — "Paris is a city", "Anna is a person".
+                   "city" is a class, not another thing: this says what Paris IS.
+
+Say `ill_typed` as "value" or "kind" when it is one of those, with `description` and nothing
+else, and stop. The link stays; it stays untyped, which is a poor link and a real one, and the
+writer is told which door would have served it better. Guessing a type for what has none is
+worse than saying there is none.
+
+Null when it can be typed, and then:
+
 A relation in this record is four things and no others. Give them.
 
 **use** — the name of one of the relations listed above, when this is that same relation. Give
@@ -214,7 +232,8 @@ capital of France" is described exactly as "Paris is the capital of France" woul
 relation, same roles, London in the capital's role.
 
 JSON only, these keys and no others:
-{{"use": null,
+{{"ill_typed": null,
+  "use": null,
   "subject_is": "...", "object_is": "...", "also_called": ["..."],
   "subject_class": "...", "object_class": "...",
   "one_object": true, "one_subject": true,
@@ -287,6 +306,16 @@ def read_them(world, reader, limit: int = 100) -> dict:
             tally["failed"] += 1
             continue
         tally["read"] += 1
+        if said.get("ill_typed") in ("value", "kind"):
+            # The link stays exactly as it was written, untyped. Nothing is undone and nothing
+            # is refused: what was said stands, and the writer is told which door would have
+            # served it better. An untyped link is a poor link — it cannot supersede and cannot
+            # be asked about by type — and it is a link, which is more than a fact nobody
+            # recorded because a type could not be found for it.
+            tally.setdefault("ill_typed", []).append(
+                (one["words"], said["ill_typed"], subject.display_name()))
+            mark(world, one["id"], said)
+            continue
         kind = _type_for(world, said, tally)
         if kind is None:
             tally["failed"] += 1

@@ -78,11 +78,28 @@ which you mean — most of what went wrong in the past was a fact put in the wro
     world.link(Thing.ensure(name="Paris"), Thing.ensure(name="France"),
                "Paris is the capital of France")
 
-Two things and the fact in your own words. No type, no role, no argument order to get right, no \
-date as a separate thing — say it as the user said it, including when, and the world reads the \
-rest afterwards. The two things you must give, because only you know which Paris is meant. The \
-link is made at once and holds from that moment; what kind of link it is, is worked out at the \
-close of the task.
+Two things and the fact stated plainly. No type, no role, no argument order to get right, no \
+date as a separate thing. The two things you must give, because only you know which Paris is \
+meant. The link is made at once; what kind of link it is, is worked out at the close.
+
+**State it, do not hint at it.** Nothing here is trying to work out what you meant from a \
+narrative — you know what the user said and you can say it outright, so say it outright. The \
+form that always works is the relation named, with both things in it and any date the user \
+gave:
+
+    world.link(anna, acme, "Anna has been an employee of Acme since 2019")      say it
+    world.link(anna, acme, "She started there a while back")                    a riddle
+
+    world.link(kyd, london, "Thomas Kyd was born in London")                    say it
+    world.link(kyd, london, "that is where he is from")                         a riddle
+
+`is` is a perfectly good word for it — "Paris is the capital of France", "Anna is Boris's \
+mother". What is not good is leaving out the thing the whole fact turns on.
+
+**And it must be a fact about the two of them.** What one thing is like — "Anna is tall" — is a \
+value and belongs on the thing: `anna.height = "tall"`. What a thing IS — "Paris is a city" — \
+is its class or its nature. Put either through this door and it is kept, but it stays a link \
+with no type, which cannot supersede anything and cannot be asked about.
 
 The other way is below, and it is for when you already know the type and want it exactly — \
 relate, with the type named. It is not better or worse: it is the same fact through a door you \
