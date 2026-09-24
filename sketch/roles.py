@@ -20,6 +20,11 @@ Six fields, and each is here because something cannot be tested without it.
 from dataclasses import dataclass, field
 from datetime import datetime
 
+def _word(role: str) -> str:
+    """A role as an attribute name: "a city that serves as a capital" -> capital."""
+    return role.strip().split()[-1].lower().replace("-", "_")
+
+
 FOREVER = None          # no end: it does not stop
 UNKNOWN_END = "before"  # it has stopped, and nobody said when
 
@@ -54,7 +59,7 @@ class Pair:
 
     def word(self) -> str:
         """The name a host would have invented, derived rather than asked for."""
-        return f"{self.subject_is.replace(' ', '_')}_of"
+        return f"{_word(self.subject_is)}_of"
 
 
 @dataclass
@@ -85,11 +90,41 @@ class Link:
 
 @dataclass(eq=False)
 class Thing:
-    """Whatever a link joins. Held by reference, not by name: two things called Paris are two."""
+    """Whatever a link joins. Held by reference, not by name: two things called Paris are two.
+
+    Its attributes are not declared anywhere. Ask Paris what it is the capital **of** and the
+    answer comes from the pair; ask France for its **capital** and the same link answers from
+    the other end. The two names are the two roles, and which of them gives a list rather than
+    a value is the cardinality, not a second decision:
+
+        paris.capital_of  ->  France        one_object=True   -> a value
+        france.capital    ->  Paris         one_subject=True  -> a value
+        anna.mother_of    ->  [Boris, Vera] one_object=False  -> a list
+        boris.mother      ->  Anna          one_subject=True  -> a value
+
+    In the working world four such attributes are written out by hand in JSON and registered in
+    `relations.DERIVED`; here there are none to write, and none to get out of step with the
+    relation they read.
+    """
     name: str
+    world: "World | None" = None
 
     def __repr__(self) -> str:
         return self.name
+
+    def __getattr__(self, asked: str):
+        world = self.__dict__.get("world")
+        if world is None or asked.startswith("_"):
+            raise AttributeError(asked)
+        answer = world.through(self, asked)
+        if answer is _NOTHING:
+            raise AttributeError(
+                f"{self.name} has no {asked!r}. It is read from the roles of the relations this "
+                f"world holds: {', '.join(sorted(world.readable())) or '(none yet)'}")
+        return answer
+
+
+_NOTHING = object()
 
 
 class World:
@@ -151,7 +186,33 @@ class World:
                 self.said.append(f"{old.reads()} has stopped — nobody said when, so it is "
                                  f"recorded as ended before now, not on a day I made up")
 
+    def thing(self, name: str) -> Thing:
+        """A thing that knows its world, so its attributes can be read off the relations."""
+        return Thing(name, self)
+
     # --- reading ---
+
+    def readable(self) -> set:
+        """Every attribute name this world's relations give its things."""
+        out = set()
+        for pair in self.pairs.values():
+            out.add(f"{_word(pair.subject_is)}_of")     # asked of the one in the subject role
+            out.add(_word(pair.subject_is))             # asked of the one in the object role
+        return out
+
+    def through(self, thing: Thing, asked: str):
+        """Answer `thing.<asked>` from the relations, or _NOTHING if no role is called that.
+
+        `<role>_of` is asked of the end that holds the role — "Paris, capital of what?"
+        `<role>` is asked of the other end — "France, your capital?"
+        """
+        for pair in self.pairs.values():
+            role = _word(pair.subject_is)
+            if asked == f"{role}_of":
+                return self.read(thing, pair.object_is)
+            if asked == role:
+                return self.read(thing, pair.subject_is)
+        return _NOTHING
 
     def read(self, thing: Thing, role: str, at: datetime | None = None):
         """What this thing has in that role — a value or a list, decided by the cardinality.
