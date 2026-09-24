@@ -57,6 +57,33 @@ class Thing:
     def __repr__(self) -> str:
         return self.name
 
+    def related(self, other: "Thing", words, starts=None):
+        """Either door: a sentence for a relation nobody has typed, or a relation itself.
+
+            boris.related(anna, "они поженились в 2019")   -> a reader types it
+            boris.related(anna, HusbandWife)               -> already typed, nothing is asked
+        """
+        world = self.__dict__.get("world")
+        if isinstance(words, type):
+            return world.write(self, other, words, starts=starts)
+        return world.say(self, other, words, starts=starts)
+
+    def _related_by_sentence(self, other: "Thing", words: str, starts=None):
+        """`boris.related(anna, "они поженились в 2019")` — what the agent writes.
+
+        Two things and a sentence, and the sentence may be put any way the agent finds natural:
+
+            boris.related(anna, "они поженились в 2019")     -> Boris is Anna's spouse
+            boris.related(anna, "он женат на Анне")           -> Boris is Anna's husband
+            boris.related(anna, "Анна замужем за Борисом")    -> Anna is Boris's wife
+
+        The order of the two arguments is not the direction. Who holds which role is read out of
+        the sentence, so the third of those lands with Anna as the subject although Boris was
+        written first — which is why direction cannot be got wrong here: nobody sets it.
+        """
+        world = self.__dict__.get("world")
+        return world.say(self, other, words, starts=starts)
+
     def __setattr__(self, asked: str, value):
         """`sasha.husband_of = olga` — a fact written in the plainest thing Python has.
 
@@ -83,6 +110,15 @@ class Thing:
         if world is None or asked.startswith("_"):
             raise AttributeError(asked)
         answer = world.through(self, asked)
+        role = world.role_named(asked)
+        if answer is not _NOTHING and role is not None:
+            relation, near = role
+
+            def write(other, starts=None, _r=relation, _n=near):
+                subject, obj = (self, other) if _n else (other, self)
+                return world.write(subject, obj, _r, starts=starts)
+
+            return Held(answer, write)
         if answer is _NOTHING:
             raise AttributeError(
                 f"{self.name} has no {asked!r}. It is read from the roles this world has been "
@@ -91,6 +127,46 @@ class Thing:
 
 
 _NOTHING = object()
+
+
+class Held:
+    """What a role gives back: the answer, and a door to write another one through.
+
+    Two doors into the same place, and which one a host uses decides what it costs:
+
+        boris.related(anna, "они поженились в 2019")   untyped — a reader works out the relation
+        boris.husband_of(anna)                         typed   — the world builds it, free
+        boris.husband_of                               read    — who that is
+        boris.husband_of = anna                        typed   — the same as the call
+
+    The typed doors cost nothing at all: the expensive question — what relation is this, which
+    end is which — was answered the first time somebody said a fact of this kind, and every fact
+    after it is a call. A world with no reader at all can still be written to through them.
+
+    Being both an answer and a call is a small piece of cleverness, and it is here because the
+    two readings of `boris.husband_of` — "who is he married to" and "marry him to her" — are the
+    two things a host wants and they differ only by parentheses.
+    """
+
+    def __init__(self, answer, write):
+        self._answer, self._write = answer, write
+
+    def __call__(self, other, starts=None):
+        return self._write(other, starts)
+
+    # Everything else is the answer, so reading behaves as if this class were not here.
+    def __repr__(self): return repr(self._answer)
+    def __eq__(self, other): return self._answer == other
+    def __bool__(self): return bool(self._answer)
+    def __iter__(self): return iter(self._answer or [])
+    def __len__(self): return len(self._answer or [])
+    def __getitem__(self, i): return self._answer[i]
+    def __hash__(self): return id(self)
+
+    @property
+    def is_(self):
+        """The answer itself, for where the proxy would be in the way."""
+        return self._answer
 
 
 @dataclass
@@ -205,15 +281,59 @@ class World:
     # --- what a thing reads as, from the roles it holds ---
 
     def readable(self) -> set:
+        """Every role this world knows a word for — from the relations, not from the links.
+
+        A relation with nothing written under it yet still has its two roles, and asking about
+        one should answer "nobody" rather than "no such word". Read off the links instead, a
+        role existed only once somebody had used it, so the first fact of a kind could not be
+        written through the door made for it.
+        """
         out = set()
-        for placed in self._read():
-            out.add(f"{_role_word(placed.relation.subject_is)}_of")
-            if placed.relation.object_is:
-                out.add(f"{_role_word(placed.relation.object_is)}_of")
+        for relation in self.book.known:
+            out.add(f"{_role_word(relation.subject_is)}_of")
+            if relation.object_is:
+                out.add(f"{_role_word(relation.object_is)}_of")
         return out
 
     def through(self, thing: Thing, asked: str):
         """`sasha.husband_of` -> Masha. Each end asked by the name of its own role."""
+        role = self.role_named(asked)
+        if role is None:
+            return _NOTHING
+        relation, near = role
+        single = relation.one_object if near else relation.one_subject
+        out = []
+        for placed in self._read():
+            if placed.relation is not relation or not placed.holds():
+                continue
+            if near and placed.subject is thing:
+                out.append(placed.object)
+            elif not near and placed.object is thing:
+                out.append(placed.subject)
+        if relation.transitive and near and out:
+            out += self._chain(relation, out)
+        out = list(dict.fromkeys(out))
+        return (out[0] if out else None) if single else out
+
+    def _chain(self, relation: type, reached: list) -> list:
+        """Everything further along, by every branch — a thing may be in two wholes.
+
+        A part of a part is a part of the whole, so the answer to "what is the office part of"
+        is the whole chain and not the first step of it. Every branch, because nothing says a
+        thing has one whole: cardinality is about a moment, not about how many wholes exist.
+        """
+        out, edge, seen = [], list(reached), {id(x) for x in reached}
+        while edge:
+            further = [p.object for p in self._read()
+                       if p.relation is relation and p.holds()
+                       for e in edge if p.subject is e and id(p.object) not in seen]
+            for one in further:
+                seen.add(id(one))
+            out += further
+            edge = further
+        return out
+
+    def _through_old(self, thing: Thing, asked: str):
         out, single, found = [], None, False
         for placed in self._read():
             near = f"{_role_word(placed.relation.subject_is)}_of"
