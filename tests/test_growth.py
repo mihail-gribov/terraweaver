@@ -4,16 +4,18 @@ methods it writes for itself.
 Run: .venv/bin/python tests/test_growth.py
 """
 import json
+import tempfile
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from terraweaver import growth
-from terraweaver.ontology import load_specs
+from terraweaver.ontology import base_specs as ont_base, load_specs
 from terraweaver.runtime import WorldRuntime
 
 ONTOLOGY_DIR = Path(__file__).resolve().parent.parent / "ontology" / "core"
+ROOT = Path(__file__).resolve().parent.parent
 failures: list[str] = []
 
 
@@ -211,16 +213,14 @@ def main() -> int:
     rt = WorldRuntime(":memory:", fixture="job_search")
     authoring.install(rt.world, None)
     rt.start_task("k3", "record what the user said about somebody's pay", "recording")
-    turned_away = rt.run('p = Person.new(full_name="Ada Byron")\np.salary = 120000', "k3")
-    check("an attribute the class has not got is refused",
-          not turned_away["ok"] and "has no attribute 'salary'" in str(turned_away.get("error")),
-          str(turned_away.get("error"))[:90])
-    check("and the refusal says to declare it, not to write prose",
-          "world.attribute(" in str(turned_away.get("error")),
-          str(turned_away.get("error"))[:140])
+    taken = rt.run('p = Person.new(full_name="Ada Byron")\np.salary = 120000\n'
+                   'print(Person.get(full_name="Ada Byron").salary)', "k3")
+    check("an attribute the class has not got is taken, with its type guessed",
+          taken["ok"] and "120000" in (taken["output"] or ""),
+          str(taken.get("error"))[:110])
     done = rt.run('world.attribute(Person, "salary", "what they are paid a year", type="int")\n'
                   'p = Person.get(full_name="Ada Byron")\np.salary = 120000\nprint(p.salary)', "k3")
-    check("and doing what it says works in the same run",
+    check("and saying what it means works in the same run",
           done["ok"] and "120000" in (done["output"] or ""),
           str(done.get("error") or done.get("output"))[:140])
     # Writable and not findable is the other half of the same trap. `find`/`get` prefers
@@ -241,6 +241,40 @@ def main() -> int:
     check("and the refusal says what the word already means",
           "int" in str(again.get("error")) and "paid a year" in str(again.get("error")),
           str(again.get("error"))[-160:])
+
+    # --- a word the host writes before anybody says what it means ---
+    # Refusing this is right about the ontology and wrong about the cost: a raise stops the
+    # block, everything after it goes unrecorded, and a host that keeps hitting a wall writes
+    # prose. So the word is taken, and the two things no value can tell you — what it means
+    # and whether it supersedes — are asked for at the close.
+    work = Path(tempfile.mkdtemp(prefix="tw-taken-"))
+    rt = WorldRuntime(str(work / "w.db"), fixture=None,
+                      specs=ont_base(ROOT / "ontology" / "core"), selves=True)
+    authoring.install(rt.world, work / "grown")
+    rt.start_task("k4", "record what the user said about Ada and her pay", "recording")
+    wrote = rt.run('ada = Person.new(full_name="Ada Byron")\n'
+                   'ada.describe("the person the user is telling me about")\n'
+                   'ada.salary = 120000\nada.phone = "+7 (900) 000-00-01"\n'
+                   'print(Person.get(full_name="Ada Byron").salary)', "k4")
+    check("a word nobody declared is taken, not refused",
+          wrote["ok"] and "120000" in (wrote["output"] or ""),
+          str(wrote.get("error"))[:120])
+    held = rt.finish_task("k4")
+    check("and the task will not close until somebody says what it means",
+          held is not None and "taken on your word" in held, str(held)[:110])
+    check("and the close hands back the call to write",
+          "world.attribute(Person, 'salary'" in (held or ""), str(held)[:200])
+    said = rt.run('world.attribute(Person, "salary", "what they are paid a year, before tax", '
+                  'type="int", changes=True)\n'
+                  'world.attribute(Person, "phone", "the number she is called on", type="phone")\n'
+                  'print("said")', "k4")
+    check("saying what it means is not redeclaring it", said["ok"], str(said.get("error"))[:120])
+    kept = rt.run('print(Person.get(full_name="Ada Byron").salary)\n'
+                  'print([p.full_name for p in Person.find(phone="+79000000001")])', "k4")
+    check("what was written under the word is still there, and the type now holds",
+          "120000" in (kept["output"] or "") and "Ada Byron" in (kept["output"] or ""),
+          str(kept.get("error") or kept.get("output"))[:140])
+    check("and then it closes", "taken on your word" not in (rt.finish_task("k4") or ""))
 
     print()
     if failures:

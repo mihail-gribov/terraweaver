@@ -1593,3 +1593,34 @@ So the refusal now says what the word already means — its type and its descrip
 host that wanted something else needs exactly that in order to write the value in the form the
 world has or to pick a name of its own. "Person.salary is already declared" on its own is a
 door with nothing behind it.
+
+---
+
+## 2026-09-24 · Take everything the situation offers, then ask for what is missing
+
+The user, after the third time this shape turned out to be the answer, stated it as a rule:
+**take all of it rather than refusing, and ask for the rest.** It is now how the world behaves
+in three places, and each one was a refusal first and cost something measurable.
+
+    a link with no date        refused  →  sixty facts turned away, then the same again
+    a fact written as prose    accepted →  the close asks for the link
+    a word nobody declared     refused  →  the close asks what it means
+
+**Why a refusal costs more than it looks.** Host code runs statement by statement and a raise
+stops the block: everything after it never runs, and the world says so — `28 after it never ran`.
+One un-dated marriage on line five of a thirty-three-line block cost the rest of the batch. And
+a host that keeps hitting a wall does not keep trying; it writes prose, which passes every check
+and puts the fact where nothing can supersede, count or find it. A refusal does not hold the line
+on structure, it moves the failure somewhere the world cannot see.
+
+**Why asking later works.** The close is the one moment the world knows the host is free and the
+user is still there. Everything hard to answer mid-block is easy there: what a word means, which
+of two tellings came first, what this thing is. `finish_task` already refused to close over
+undecided questions, undescribed things and links against their type; dates, prose and undeclared
+words join a list, not invent a mechanism.
+
+**What the world must never do instead** is fill the gap itself. It took `now()` for a missing
+date once and that is the version this one replaced: a date nobody could question, indistinguishable
+in the record from one somebody knew. Taking the *value* is not the same as taking the *meaning*.
+An attribute taken on the fly gets its type guessed and is marked `provisional`; what it means and
+whether it supersedes stay empty until somebody says, because no value can tell you either.

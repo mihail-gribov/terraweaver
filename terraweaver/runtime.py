@@ -431,6 +431,17 @@ class WorldRuntime:
                     against.append((link.display_name(), one.get("said", ""), one.get("tied")))
         return against
 
+    def _words_taken_on_the_fly(self) -> list[tuple]:
+        """Attributes the world took on the host's word, still waiting to be said what they are."""
+        grow = (self.world.extras or {}).get("attribute")
+        made = getattr(grow, "__self__", None)
+        if made is None or not hasattr(made, "unsaid"):
+            return []
+        try:
+            return made.unsaid()
+        except Exception:  # noqa: BLE001 - a check must never be what stops a task closing
+            return []
+
     def _facts_hiding_in_prose(self, session) -> list[tuple]:
         """Descriptions this task wrote that name another thing in the world and join nothing.
 
@@ -637,6 +648,27 @@ class WorldRuntime:
                     f"reads and retract the one that went in backwards — or say it from the far "
                     f"end with the reverse name, which puts it round for you: "
                     f"book.relate(person, \"author_of_of\")."
+                )
+            unsaid = self._words_taken_on_the_fly()
+            if unsaid:
+                shown = "\n".join(
+                    f"    world.attribute({cls}, {attr!r}, \"<what it is>\", "
+                    f"type=\"{kind}\", changes=True)"
+                    for cls, attr, kind in unsaid[:8])
+                more = f"\n    … and {len(unsaid) - 8} more" if len(unsaid) > 8 else ""
+                return (
+                    f"Not closed: {len(unsaid)} attribute(s) you wrote to were taken on your "
+                    f"word and nobody has said what they mean. The values are recorded and "
+                    f"stay recorded; what is missing is the two things no value can tell me.\n"
+                    f"{shown}{more}\n\n"
+                    f"**What it is** — one sentence. It is what the next lookup searches, so a "
+                    f"word without one cannot be found by anybody who did not invent it, and "
+                    f"the world ends up with two words for one idea.\n"
+                    f"**The type** — I guessed it from the first value. A phone typed as str "
+                    f"stops matching \"+7 (900) 000-00-01\" against \"+79000000001\".\n"
+                    f"**changes=** — True if a later telling replaces the value, False if they "
+                    f"accumulate. Nothing in a value says which, and getting it wrong is how a "
+                    f"correction never reaches anybody."
                 )
             prose = self._facts_hiding_in_prose(session)
             if prose:

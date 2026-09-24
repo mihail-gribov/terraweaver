@@ -98,6 +98,12 @@ it does not. If they are one, `world.take_in(<the type>, "<the word>")` moves th
 `world.wanted()` asks what is still untyped. A Thing that turns out to have a name of its own \
 joins a class the same way: `thing.become("Sport")`, and nothing it holds is lost.
 
+If you write to an attribute no class has, the world takes it and guesses the type from what \
+you wrote — nothing is lost and the block keeps running. Before the task closes it asks what the \
+word means and whether a later telling replaces the value, because neither can be read off a \
+value: `world.attribute(Person, "salary", "what they are paid a year", type="int", \
+changes=True)`. Answer it then; the values you already wrote stay where they are.
+
 Two things the world insists on. Every class, attribute and relation type needs a description \
 of what it is — that is what a later lookup searches. And `over_time` on a relation has to be \
 said: True when a thing has one current holder and a new one ends the last (an employer, a \

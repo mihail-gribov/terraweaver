@@ -1069,24 +1069,25 @@ class Entity:
                 if near:
                     setattr(self, take_as(class_name, name, near), value)
                     return
-                # Refused rather than kept, because an attribute the class does not have used
-                # to be accepted and lost on save — a write that looked fine and never happened.
-                # But the way out is to give the class the attribute, not to write prose: this
-                # message used to offer only `describe(...)`, which is how a value somebody will
-                # want to look up ends up in a sentence nothing can supersede or count.
-                raise AttributeError(
-                    f"{class_name} has no attribute '{name}'"
-                    + (f" — did you mean '{near}'? " if near else ". ")
-                    + "Its attributes are: "
-                    + ", ".join(a["name"] for a in spec["attributes"])
-                    + f".\nIf this is a value — something somebody will ask for later — give "
-                    f"the class the attribute and then set it:\n"
-                    f"    world.attribute({class_name}, '{name}', \"<what it is>\", "
-                    f"type=\"str\")\n"
-                    f"    thing.{name} = ...\n"
-                    f"A description is for what no attribute should hold: why this thing is "
-                    f"here, in a sentence. Not a fact anybody will look up."
-                )
+                # Taken on the fly where the world can take it. Refusing is right about the
+                # ontology and wrong about the cost: a raise stops the block, everything after
+                # it goes unrecorded, and a host that keeps hitting a wall writes prose, which
+                # is where a fact stops being one. So the word is taken with its type guessed
+                # from the value, and the two things no value can tell you — what it means and
+                # whether it supersedes — are asked for at the close, where the host is free.
+                taken = _take_the_word(self, class_name, name, value)
+                if taken is not None:
+                    declared = taken
+                else:
+                    raise AttributeError(
+                        f"{class_name} has no attribute '{name}'"
+                        + (f" — did you mean '{near}'? " if near else ". ")
+                        + "Its attributes are: "
+                        + ", ".join(a["name"] for a in spec["attributes"])
+                        + f".\nThis world does not let its classes grow, so there is nowhere "
+                        f"to put it. What no attribute holds goes into a description: "
+                        f"entity.describe(...)."
+                    )
             if "derived" in declared:
                 if declared.get("settable"):
                     object.__setattr__(self, name, value)  # the property's setter records it
@@ -1858,6 +1859,25 @@ def build_classes(specs: dict[str, dict[str, Any]], impls: dict[tuple[str, str],
     for name, spec in specs.items():
         define_class(classes, spec, name=name, impls=impls)
     return classes
+
+
+def _take_the_word(entity, class_name: str, name: str, value):
+    """Declare an attribute nobody declared, if this world is one whose classes may grow.
+
+    Returns the attribute spec, or None where growth is not on — a world with a fixed ontology
+    refuses as it always did, because there the class list is the promise.
+    """
+    world = current_world()
+    grow = (world.extras or {}).get("attribute")
+    if grow is None or name.startswith("_"):
+        return None
+    made = getattr(grow, "__self__", None)
+    if made is None or not hasattr(made, "provisional"):
+        return None
+    try:
+        return made.provisional(type(entity), name, value)
+    except Exception:  # noqa: BLE001 - a word the world cannot take is a word it refuses
+        return None
 
 
 def define_class(classes: dict[str, type], spec: dict[str, Any], name: str | None = None,

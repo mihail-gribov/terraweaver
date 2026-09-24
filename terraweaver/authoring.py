@@ -163,6 +163,14 @@ class Authoring:
         attr = self._attribute_spec(name, description, type=type, changes=changes,
                                     required=required)
         standing = next((a for a in spec["attributes"] if a["name"] == attr["name"]), None)
+        if standing is not None and standing.get("provisional"):
+            # Saying what a word taken on the fly means is not redeclaring it — it is the
+            # answer the world asked for. Whatever was written under the word stays where it is.
+            spec["attributes"][spec["attributes"].index(standing)] = attr
+            ontology.define_class(self.world.classes, spec)
+            self._register(spec)
+            self._save(spec)
+            return attr
         if standing is not None:
             # Saying only "already declared" leaves a host that wanted a different type with
             # nowhere to go: it cannot redeclare, and nothing here removes or renames. So the
@@ -180,6 +188,61 @@ class Authoring:
         self._register(spec)
         self._save(spec)
         return attr
+
+    # What a value looks like, when the word for it arrives before anybody says what it is.
+    # A guess, and marked as one: the host confirms or corrects it before the task closes.
+    def guess_type(self, value) -> str:
+        from datetime import date as _date, datetime as _datetime
+
+        from terraweaver.ontology import Entity
+
+        if isinstance(value, bool):
+            return "bool"
+        if isinstance(value, int):
+            return "int"
+        if isinstance(value, float):
+            return "float"
+        if isinstance(value, _datetime) or isinstance(value, _date):
+            return "datetime"
+        if isinstance(value, Entity):
+            return "ref:any"
+        if isinstance(value, dict):
+            return "dict"
+        if isinstance(value, (list, tuple)):
+            inner = next((v for v in value if v is not None), None)
+            return f"list[{self.guess_type(inner) if inner is not None else 'str'}]"
+        return "str"
+
+    def provisional(self, cls, name: str, value) -> dict:
+        """Take a word the host wrote before anybody said what it means.
+
+        Refusing this is right about the ontology and wrong about the cost. A raise stops the
+        block, and everything after it in that block is not recorded — one un-dated link took
+        twenty-eight lines with it, and a host that keeps hitting a wall writes prose instead,
+        which is where a fact stops being one. So the word is taken, the type is guessed from
+        the value, and the two things nobody can read off a value — what it means and whether
+        it supersedes — are asked for at the close, where the host is free to answer.
+        """
+        from terraweaver import ontology
+
+        spec = self._spec_of(cls)
+        attr_name = _clean(name)
+        attr = {"name": attr_name, "type": self.guess_type(value), "required": False,
+                "description": "", "changes": True, "provisional": True}
+        spec["attributes"].append(attr)
+        ontology.define_class(self.world.classes, spec)
+        self._register(spec)
+        self._save(spec)
+        return attr
+
+    def unsaid(self) -> list[tuple]:
+        """Every word taken this way that nobody has said the meaning of yet."""
+        out = []
+        for name, cls in sorted(self.world.classes.items()):
+            for attr in cls._spec.get("attributes", []):
+                if attr.get("provisional"):
+                    out.append((name, attr["name"], attr.get("type", "str")))
+        return out
 
     def define_relation(self, name: str, description: str, subject=None, object=None,
                         nature: str | None = None,
