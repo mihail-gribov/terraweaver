@@ -2040,3 +2040,27 @@ three times, three NameErrors, nothing written.
 makes an Italy, and the question belongs to the agent — it is the one who brought Italy up. It
 has no variable for it, so the line looks the thing up by name:
 `world.identify(Thing, name="Italy")[0].describe("...")`, which anybody can run.
+
+### What five minutes of Nemotron caught and the suite did not
+
+Six corrections in one branch, and all six the same mistake: **the code said something other
+than what was so.**
+
+To the reader — an example naming a class this world has not got (`world.identify(Place, …)`,
+three NameErrors, nothing written); the typed short form `it.capital_of(other)` shown as the
+ordinary way to write a link, when it only works for words the record already has, so the reader
+recovered by making the link an attribute; a promise that `relate` would make a missing type,
+when `initiative.MAKES_TYPES` is off by design; and no word about a record refusing any
+description shorter than a few words, which it does for attributes and relation types alike.
+
+To itself — `_ask_about_bare_things` kept asking `portraits.unread` for things with nothing said
+about them, after that table was changed to hold prose-facts, which are the opposite: accounts
+somebody has already given. So the one case the branch exists for — a thing the world named
+itself, Italy out of "Rome is the capital of Italy" — was never asked about. And the clarifying
+line was only printed when `raise_` returned a new question, so a doubt raised inside the world's
+own reading was never mentioned to the agent again.
+
+None of the six was a logic error a test would catch by running the same path twice. Each needed
+a second party — a model reading what we wrote and doing something else — and each took a
+five-minute live run to find. That is the argument for a fake reader in the suite: the same
+circuit, answers fixed in advance, seconds instead of minutes.

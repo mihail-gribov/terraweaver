@@ -897,7 +897,11 @@ class WorldRuntime:
         from terraweaver import ontology as ont, portraits
 
         try:
-            waiting = {row["entity_id"] for row in portraits.unread(self.world)}
+            # The things with nothing but a name — not the prose-facts waiting to be read.
+            # `unread` holds accounts somebody has already given, which are the opposite of
+            # what is being asked for here, and asking from it meant the one case this exists
+            # for — a thing the world named itself and nobody has described — was never asked.
+            waiting = set(portraits.still_only_a_name(self.world))
         except Exception:  # noqa: BLE001 - never what stops a run being reported
             return []
         if not waiting:
@@ -920,9 +924,12 @@ class WorldRuntime:
                     f"of thing it is, where, when, whose — what the user told you and what you "
                     f"know yourself. I read it when the task closes and give it a class then, so "
                     f"you do not have to pick one. Describing it is the answer; nothing else to do.")
-                if self.world.questions.raise_(entity, "what_is_it", text,
-                                               touches=["identity"]) is not None:
-                    asked.append(f'{written}.describe("...")   # {why}')
+                self.world.questions.raise_(entity, "what_is_it", text, touches=["identity"])
+                # Said again every run until something is said about the thing, the way a held
+                # write is. `raise_` keeps one doubt per thing and answers None the second time,
+                # so asking only on a new question meant a thing the world itself had named was
+                # asked about in its own session and never mentioned to the agent again.
+                asked.append(f'{written}.describe("...")   # {why}')
         for left in sorted(waiting):
             # Not in anybody's namespace: the world made it while reading somebody's account —
             # Italy turns up because "Rome is the capital of Italy" says Italy. The question is
@@ -939,9 +946,8 @@ class WorldRuntime:
             text = (f"{stray.display_name()} came up while I was reading what you told me, and "
                     f"is in the world as a bare name. Tell me about it in your own words: {why}. "
                     f"Describing it is the answer; nothing else to do.")
-            if self.world.questions.raise_(stray, "what_is_it", text,
-                                           touches=["identity"]) is not None:
-                asked.append(f'{handle}.describe("...")   # {why}')
+            self.world.questions.raise_(stray, "what_is_it", text, touches=["identity"])
+            asked.append(f'{handle}.describe("...")   # {why}')
         return asked + self._ask_about_bare_links(namespace, recording, created)
 
     def _ask_about_bare_links(self, namespace: dict, recording, created: set) -> list[str]:

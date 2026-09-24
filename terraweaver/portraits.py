@@ -221,8 +221,9 @@ Italy's capital and not the other way round.
 
 **`it.relate(other, "the_word")` is how a link is written, always.** `it.the_word(other)` is a
 short form that exists only for words the record already has — used for any other word it is a
-missing attribute and the line fails. `relate` makes the type if there is none, which is what
-should happen when the words say something this record has no word for yet.
+missing attribute and the line fails.
+
+{new_words}
 
 **A link is never an attribute.** `it.capital_of = italy` puts a thing in a slot: it cannot be
 asked about by type, nothing can supersede it, and it is invisible to everything that reads
@@ -408,8 +409,37 @@ def _asking(world, entity, words: str, at: str, make_new: bool) -> str:
     return FORMALISE.format(
         name=entity.display_name(), parent=at, parent_is=parent_is, standing=standing,
         words=words, held=sentences.held(world), classes=_classes_here(world),
+        new_words=_a_word_it_has_not(world),
         class_ask=(MAKE_ONE if make_new else KEEP_ONE).format(parent=at),
         class_shape=MAKE_SHAPE if make_new else "null")
+
+
+def _a_word_it_has_not(world) -> str:
+    """What to do with a word for a link this record has no type for — as this world stands.
+
+    Whether an unknown word makes its own type is a switch (`initiative.MAKES_TYPES`), off by
+    default and turned on one at a time against a record somebody can already read. Telling the
+    reader the wrong one costs a whole reading: promised that `relate` would make the type, it
+    wrote the line, watched it refused, and spent its three goes on `define_relation` calls the
+    world refused for a different reason.
+    """
+    from terraweaver import initiative
+
+    if initiative.MAKES_TYPES:
+        return ("A word this record has not got makes its own type when you use it, so write "
+                "the link and say no more about it.")
+    return ('A word this record has not got has to be declared before it can be used, on its '
+            'own line first:\n\n'
+            '    world.define_relation("capital_of", "a city that is the seat of a country\'s '
+            'government", nature="related_to", cardinality="many-to-one", over_time=False)\n'
+            '    it.relate(italy, "capital_of")\n\n'
+            'The second argument is a sentence saying what that kind of link is — about the '
+            'kind, not about these two — and a record refuses anything shorter than a few '
+            'words. `nature` is one of related_to / part_of / kind_of / same_as / derived_from. '
+            '`cardinality` is "many-to-one" when this thing has one of those, "one-to-many" the '
+            'other way, "many-to-many" when neither is limited. `over_time=True` when one holds '
+            'at a time and a new one ends the last (an employer, a spouse), False when they '
+            'simply accumulate.')
 
 
 def _classes_here(world) -> str:
