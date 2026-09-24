@@ -165,7 +165,7 @@ def as_spec(described: dict) -> dict:
     asked again, re-measured or re-worded. A prompt that emitted code would have tied the two
     together, and every change to the code would have been a change to the question.
     """
-    return {"name": _class_name(described["subject_is"]),
+    return {"name": _class_name(described["subject_is"], described["object_is"]),
             "description": described.get("relation_is", ""),
             "relation": {"subject_is": described["subject_is"],
                          "object_is": described["object_is"],
@@ -174,9 +174,26 @@ def as_spec(described: dict) -> dict:
                          "transitive": bool(described.get("transitive"))}}
 
 
-def _class_name(subject_is: str) -> str:
-    word = _plain(subject_is).split()[-1]
-    return word[:1].upper() + word[1:] + "Of"
+def _class_name(subject_is: str, object_is: str = "") -> str:
+    """The two roles joined: `HusbandWife`, `CapitalCountry`, `PartWhole`.
+
+    Nobody invents it and nobody argues about it. A name asked of a reader is one more open
+    question, one more thing to get wrong, and one more word that can drift from what it names —
+    and the roles already say everything the name would. Where both ends hold the same role it
+    is said once: `SiblingSibling` would be silly, so `Sibling`.
+    """
+    near = _one_word(subject_is)
+    far = _one_word(object_is)
+    if not far or far == near:
+        return near[:1].upper() + near[1:]
+    return near[:1].upper() + near[1:] + far[:1].upper() + far[1:]
+
+
+def _one_word(role: str) -> str:
+    words = _plain(role).replace("-", "_").split()
+    while words and words[0] in ("a", "an", "the"):
+        words = words[1:]
+    return words[-1] if words else ""
 
 
 def as_class(described: dict) -> str:
@@ -190,7 +207,7 @@ def as_class(described: dict) -> str:
     another way, with nothing asked again.
     """
     subject_is, object_is = described["subject_is"], described["object_is"]
-    name = _class_name(subject_is)
+    name = _class_name(subject_is, object_is)
     body = [f"class {name}(Relation):",
             f'    """{described.get("relation_is", "").strip()}"""',
             f'    subject_is = {subject_is!r}',

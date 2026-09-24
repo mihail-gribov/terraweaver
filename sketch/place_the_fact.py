@@ -34,6 +34,13 @@ ASK = """A fact was written down about two things:
 
 {held}
 
+**Whether the fact is TRUE is not asked and must not affect anything you say.** This record
+holds what somebody said, including things that contradict what is generally known: "London is
+the capital of France" is a fact somebody stated, and it is placed exactly as "Paris is the
+capital of France" would be — same relation, same roles, London in the capital's role. A record
+that only took facts it agreed with would be an encyclopaedia, and this is a record of what was
+said. What you decide is the **shape**: which relation, and which end holds which role.
+
 Place it. Either it belongs to a relation the record already holds, or it needs a new one.
 
 - If one of the held relations is this same idea, give its name in `use` and nothing else but
