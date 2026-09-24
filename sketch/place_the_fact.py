@@ -54,13 +54,20 @@ Place it. Either it belongs to a relation the record already holds, or it needs 
 Then, either way, say **which of the two things holds which role** — that is the whole of the
 direction, and it is yours to decide, not the writer's.
 
+Last: if the sentence says **when**, say when. "since 2015", "from March to June", "until she
+left" — a date the writer gave, in the form they gave it. If it says nothing about when, leave
+both empty and do not guess: a date nobody said is worse than no date, because the record
+cannot tell an invented one from one somebody knew.
+
 JSON only:
 {{"use": "<a held relation's name, or null>",
   "subject_is": "...", "object_is": "...",
   "one_object": true|false, "one_subject": true|false, "transitive": true|false,
   "relation_is": "<one sentence>",
   "subject": "<whichever of the two holds the first role>",
-  "object": "<the other>"}}"""
+  "object": "<the other>",
+  "starts": "<when it began, as the sentence said it, or null>",
+  "until": "<when it ended, or null>"}}"""
 
 
 def place(reader, said: str, a: str, b: str, held: str = "") -> dict | None:

@@ -178,7 +178,12 @@ class World:
             by_name = {said.a.name: said.a, said.b.name: said.b}
             subject = by_name.get(got.get("subject"), said.a)
             obj = by_name.get(got.get("object"), said.b)
-            said.placed = Placed(relation, subject, obj, said, starts=said.starts)
+            # The date comes out of the sentence, because that is where the writer put it.
+            # Asked for as a separate argument it was one more thing to fill in and one more
+            # place to guess; said in words — "since 2015" — it arrives with the fact.
+            said.placed = Placed(relation, subject, obj, said,
+                                 starts=got.get("starts") or said.starts,
+                                 until=got.get("until"))
             self._make_room(said.placed, out)
             out.append(said.placed)
         self._placed = out
