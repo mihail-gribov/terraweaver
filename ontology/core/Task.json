@@ -1,7 +1,7 @@
 {
   "name": "Task",
   "own": true,
-  "description": "One thing an agent was sent to do with this world, said out loud before it is done. A task is the world's own bookkeeping, not a fact about the person: it is how the world knows where one piece of work starts and stops, which is something it cannot otherwise see — a session key comes from the host's connection settings and outlives any conversation. A task is opened with the start_task tool, worked through over several runs, and closed when nothing is left open about what it touched.",
+  "description": "One thing an agent was sent to do with this world, said out loud before it is done. A task is the world's own bookkeeping, not a fact about the person: it is how the world knows where one piece of work starts and stops, which is something it cannot otherwise see \u2014 a session key comes from the host's connection settings and outlives any conversation. A task is opened with the start_task tool, worked through over several runs, and closed when nothing is left open about what it touched.",
   "attributes": [
     {
       "name": "stated",
@@ -13,7 +13,7 @@
       "name": "mode",
       "type": "enum[recording, answering]",
       "required": true,
-      "description": "recording — putting something into the world; answering — finding something out of it. A task is one or the other."
+      "description": "recording \u2014 putting something into the world; answering \u2014 finding something out of it. A task is one or the other."
     },
     {
       "name": "touched",
@@ -31,8 +31,10 @@
       "name": "closed_as",
       "type": "enum[done, for_the_user, abandoned]",
       "required": false,
-      "description": "How it ended. done — nothing it touched was left undecided; for_the_user — what remains was handed on deliberately, because only the user can settle it; abandoned — the task could not be done, and why is in a remark on it."
+      "description": "How it ended. done \u2014 nothing it touched was left undecided; for_the_user \u2014 what remains was handed on deliberately, because only the user can settle it; abandoned \u2014 the task could not be done, and why is in a remark on it."
     }
   ],
-  "methods": []
+  "methods": [],
+  "what_to_say": "what this piece of work was, in one line, as it would be read back later",
+  "parent": "Event"
 }

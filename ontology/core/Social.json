@@ -89,5 +89,6 @@
       "description": "1 (distant) to 5 (closest)."
     }
   ],
-  "methods": []
+  "methods": [],
+  "what_to_say": "how they know each other"
 }

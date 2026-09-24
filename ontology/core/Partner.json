@@ -35,7 +35,7 @@
           "boyfriend",
           "fiancee",
           "fiance",
-          "fiancée"
+          "fianc\u00e9e"
         ]
       }
     ],
@@ -57,5 +57,6 @@
       "description": "The role the subject plays for the object, from this type's roles; filled from the label when it matches one."
     }
   ],
-  "methods": []
+  "methods": [],
+  "what_to_say": "what sort of partnership and since when"
 }

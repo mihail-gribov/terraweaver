@@ -550,6 +550,35 @@ def _members_index() -> str:
             "  the world:    " + ", ".join(named(world_module.World)))
 
 
+def _by_kind(specs: dict[str, dict[str, Any]]) -> list[str]:
+    """The entity classes as what they are kinds of — two levels, roots and their children.
+
+    A flat list says what there is; it does not say that a Person is a Thing, so a host looking
+    for somewhere to put a city reads past Place and reaches for Thing. Two levels are enough to
+    show that and short enough to carry: deeper than that the indentation is doing the work the
+    class descriptions should do, and the prompt pays for it in front of every task.
+    """
+    kinds = {n: s for n, s in specs.items() if "relation" not in s and not s.get("own")}
+    children: dict[str, list[str]] = {}
+    for name, spec in kinds.items():
+        parent = spec.get("parent")
+        if parent in kinds:
+            children.setdefault(parent, []).append(name)
+    lines = []
+    for name, spec in kinds.items():
+        if spec.get("parent") in kinds:
+            continue                              # shown under its parent
+        lines.append(f"{name} — {spec.get('description', '').strip()}")
+        for kid in sorted(children.get(name, [])):
+            lines.append(f"  {kid} — {kinds[kid].get('description', '').strip()}")
+            # A third level is folded into its parent's line rather than dropped: the name has
+            # to be reachable, and a class nothing mentions is a class nothing is recorded under.
+            deeper = sorted(children.get(kid, []))
+            if deeper:
+                lines.append(f"    kinds of {kid}: " + ", ".join(deeper))
+    return lines
+
+
 def catalogue(specs: dict[str, dict[str, Any]]) -> str:
     """The classes by name, one line each — what the prompt carries.
 
@@ -558,8 +587,7 @@ def catalogue(specs: dict[str, dict[str, Any]]) -> str:
     what there is, and `describe_classes([...])` says what any of them is made of. The one line
     per class is there to choose by, not to work from.
     """
-    entities = [f"{n} — {s.get('description', '').strip()}" for n, s in specs.items()
-                if "relation" not in s and not s.get("own")]
+    entities = _by_kind(specs)
     # The world's own bookkeeping is listed apart from the person's life. A host asked "what is
     # in this world" and got the world's record-keeping back mixed in with the people in it,
     # which is a different question wearing the same words.
@@ -580,8 +608,10 @@ def catalogue(specs: dict[str, dict[str, Any]]) -> str:
             line += "  — last resort, for a link you have no word for at all; prefer saying the word"
         links.append(line)
     return "\n".join(
-        ["Classes in this world — names only. Before writing code that touches one, call",
-         "describe_classes([\"Person\", \"Event\"]) for its attributes, methods and relations.",
+        ["Classes in this world, as what they are kinds of — names only. Before writing code",
+         "that touches one, call describe_classes([\"Person\", \"Event\"]) for its attributes,",
+         "methods and relations. Reach for the most particular one that fits; the widest are",
+         "where something goes when nothing narrower is here yet.",
          ""]
         + [f"  {line}" for line in entities]
         + ["", "Relation types — a.relate(b, \"kind\") reads as the sentence \"a is b's kind\", so the",

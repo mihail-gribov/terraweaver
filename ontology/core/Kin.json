@@ -270,8 +270,9 @@
       "name": "label_reverse",
       "type": "str",
       "required": false,
-      "description": "The label seen from the other side (brother ↔ sister)."
+      "description": "The label seen from the other side (brother \u2194 sister)."
     }
   ],
-  "methods": []
+  "methods": [],
+  "what_to_say": "how they are related and since when, in the words the user used"
 }

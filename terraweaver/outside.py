@@ -139,6 +139,34 @@ class TypecastLM(Closed):
 Local = TypecastLM
 
 
+class AsChoices(Closed):
+    """A closed question put to a reader that answers in words, when no closed one is configured.
+
+    The choice between classes is a closed question and belongs to a model that answers those —
+    it is asked once per level of the tree, several times per thing, and a word-answering model
+    is an order of magnitude dearer. This is the stand-in for a world with no such model to
+    hand: the same question, the same options, one of them returned with all the weight.
+    """
+
+    def __init__(self, open_reader):
+        self.reader = open_reader
+
+    def ask(self, state: str, questions: dict) -> dict:
+        out = {}
+        for key, asked in questions.items():
+            options = asked.get("criteria") or {}
+            shown = "\n".join(f"    {name} — {why}" for name, why in options.items())
+            said = self.reader.json(
+                "You choose one of the named options and answer with JSON only.",
+                f"{state}\n\n{asked.get('instructions', '')}\n\n{shown}\n\n"
+                f'JSON only: {{"choice": "<exactly one of the option names above>"}}') or {}
+            picked = str(said.get("choice") or "").strip()
+            if picked not in options:
+                picked = next((n for n in options if n.lower() in picked.lower()), None)
+            out[key] = {"probabilities": {picked: 1.0} if picked else {}}
+        return out
+
+
 class Open:
     """A reader that answers in words, for the one kind of question options cannot hold."""
 

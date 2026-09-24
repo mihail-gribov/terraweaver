@@ -1940,6 +1940,50 @@ def _take_the_word(entity, class_name: str, name: str, value):
         return None
 
 
+# Asked of a host when something of this class has nothing on it but a name. Used when the class
+# itself says nothing, and deliberately plain: a class that has not said what to say about one of
+# these is a class that has not been thought about, and the fallback should not hide that.
+SAY_SOMETHING = ("what sort of thing it is and why it is in this world — what the user said "
+                 "about it, not what you happen to know")
+
+
+def what_to_say(cls, classes: dict | None = None) -> str:
+    """The line that asks a host to describe one of these — the class's own, or what it falls to.
+
+    Per class, because "describe it" means different things: a person is described so they can be
+    recognised when the name is said differently, an event so it can be placed in time, a link so
+    it can be read as the fact it is. Asking all of them the same thing gets all of them the same
+    answer, which is the encyclopaedia entry nobody asked for.
+
+    A class that says nothing falls back to what it is a kind of. There is no class inheritance
+    in this world yet, so the chain is the one that does exist: a relation type falls to the base
+    relation whose nature it carries, an entity class to `Thing`, which is what anything is when
+    nothing better fits. When a real parent arrives it goes at the head of the same walk.
+    """
+    spec = getattr(cls, "_spec", cls if isinstance(cls, dict) else {})
+    seen = set()
+    while spec:
+        said = spec.get("what_to_say")
+        if said:
+            return said
+        name = spec.get("name")
+        if name in seen:
+            break
+        seen.add(name)
+        classes = classes if classes is not None else getattr(cls, "_classes", None) or {}
+        relation = spec.get("relation") or {}
+        parent = spec.get("parent") or (_BASE_FOR.get(relation.get("nature") or relation.get("kind"))
+                                        if relation else "Thing")
+        nxt = classes.get(parent) if parent else None
+        spec = getattr(nxt, "_spec", None) if nxt is not None else None
+    return SAY_SOMETHING
+
+
+# The three base relations are natures wearing a type's clothes (relations.py), so a type that
+# carries one of those natures is a kind of it, and that is the whole of the inheritance here.
+_BASE_FOR = {"part_of": "PartOf", "kind_of": "Kind", "related_to": "Related", "related": "Related"}
+
+
 def define_class(classes: dict[str, type], spec: dict[str, Any], name: str | None = None,
                  impls: dict[tuple[str, str], Any] | None = None) -> type:
     """Build one class from its spec and register it in `classes`. Returns the class.

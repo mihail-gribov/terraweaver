@@ -1,6 +1,6 @@
 {
   "name": "Place",
-  "description": "A physical location — home, office, venue, city, or a candidate listing's address.",
+  "description": "A physical location \u2014 home, office, venue, city, or a candidate listing's address.",
   "attributes": [
     {
       "name": "name",
@@ -41,7 +41,7 @@
     {
       "name": "descriptions",
       "type": "list[text]",
-      "description": "How this one has been described, in whoever's words — several are normal, because people describe the same thing differently and each telling is worth keeping."
+      "description": "How this one has been described, in whoever's words \u2014 several are normal, because people describe the same thing differently and each telling is worth keeping."
     },
     {
       "name": "tags",
@@ -59,5 +59,7 @@
   "relations": {
     "part_of": "the larger place it is in (district of a city, floor of a building)",
     "hosts": "who lives, works or is kept here"
-  }
+  },
+  "what_to_say": "what sort of place it is \u2014 a city, a district, a country \u2014 where it is, and why it came up in this world",
+  "parent": "Thing"
 }

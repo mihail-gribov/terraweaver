@@ -1895,3 +1895,56 @@ into it, because an account of a thing names other things. That is how these wor
 city. The mirror was drawn wrong: in the sentence door `ill_typed` stops a *link* being made from
 words about one thing; here there is nothing to stop, because `describe` is about this thing by
 construction.
+
+## 2026-09-25 — the asking line belongs to the class, and finding a class is a walk down the tree
+
+**"Describe it" means different things.** A person is described so they can be recognised when
+the name is said differently next time; an event so it can be placed in time; a link so it can
+be read as the fact it is. Asked all the same thing they all give the same answer, which is the
+encyclopaedia entry nobody wanted. So the line lives in the class:
+
+    Person   their full name as the user says it, who they are to the user, where they live…
+    Event    when it is or was, where, who was in it, and what it was for
+    Related  what this link is, in the words the user used — what one of them is to the other
+
+Written for all 23 classes the record has.
+
+**And it is inherited.** There was no class inheritance in this world — `base = Entity`, always.
+Now there is a declared parent, and two roots: a thing **is**, an event **happens**. Person and
+AIAgent are kinds of Thing; so are Place, Organization, Project, Vacancy, Idea. Task is a kind
+of Event. A relation type with nothing of its own falls to the base relation whose nature it
+carries. `ontology.what_to_say` walks that chain.
+
+**Finding a class is a walk, and most of it is closed questions.** One procedure for everything,
+starting from the class the thing already sits under (or a root):
+
+    Thing → [AIAgent, Person, …, "none of these: it needs a class of its own"]
+      ↓ Place
+    Place → [City, District, …, "none of these"]
+      ↓ none of these
+    a class is invented under Place
+
+Every level is a list of named options — a closed question, answered by a model built for those
+and an order of magnitude cheaper than one answering in words (`docs/decisions.md`, open and
+closed questions). Only the last step is open, and only when nothing fitted. `outside.AsChoices`
+puts a closed question to an open reader for a world with no such model configured; Jev drops
+into the same place.
+
+The new class is defined **under the parent the walk stopped at**, which is the whole of what
+makes it reachable: a class with no parent is a leaf nobody ever descends to. This is how the
+world's own description grows.
+
+**Three things the reader is not asked.** What identifies one of these — it went wrong the one
+time it was asked, a `City` identified by `population` with "Rome" written into it; these things
+arrive under a name and are known by it. Whether what was said is true. And what to ask about
+one of these: a new class inherits its parent's line, because a line invented from the single
+example that caused the class is a line about that example.
+
+**Writing those lines is offline work** (`inspector.write_the_questions`). A class is born in the
+middle of reading one thing, and one thing is an example; what a kind is shows in several of
+them. So the world waits until there are three and writes the line from all of them at once,
+and until then the class honestly says what its parent says.
+
+**The world description shows two levels**, roots and their children, with a third folded into
+its parent's line. A flat list does not say that a Person is a Thing, so a host looking for
+somewhere to put a city reads past Place and reaches for Thing.

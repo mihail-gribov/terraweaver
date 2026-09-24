@@ -1,6 +1,6 @@
 {
   "name": "Event",
-  "description": "A scheduled happening — meeting, interview, trip leg, appointment.",
+  "description": "A scheduled happening \u2014 meeting, interview, trip leg, appointment.",
   "attributes": [
     {
       "name": "title",
@@ -12,14 +12,14 @@
       "name": "kind",
       "type": "enum[interview, call, meeting, appointment, other]",
       "required": false,
-      "description": "What kind of event this is. Recorded rather than inferred from the title — 'Интервью в DataWorks' and 'Собес в DW' are the same kind of thing.",
+      "description": "What kind of event this is. Recorded rather than inferred from the title \u2014 '\u0418\u043d\u0442\u0435\u0440\u0432\u044c\u044e \u0432 DataWorks' and '\u0421\u043e\u0431\u0435\u0441 \u0432 DW' are the same kind of thing.",
       "default": "other"
     },
     {
       "name": "about",
       "type": "ref:any",
       "required": false,
-      "description": "What the event concerns — the vacancy being interviewed for, the company being talked to, the project being discussed."
+      "description": "What the event concerns \u2014 the vacancy being interviewed for, the company being talked to, the project being discussed."
     },
     {
       "name": "start_time",
@@ -55,7 +55,7 @@
     {
       "name": "descriptions",
       "type": "list[text]",
-      "description": "How this one has been described, in whoever's words — several are normal, because people describe the same thing differently and each telling is worth keeping."
+      "description": "How this one has been described, in whoever's words \u2014 several are normal, because people describe the same thing differently and each telling is worth keeping."
     },
     {
       "name": "tags",
@@ -87,5 +87,6 @@
       "signature": "add_participant(person: Person) -> None",
       "description": "Add a person to `participants`."
     }
-  ]
+  ],
+  "what_to_say": "when it is or was, where, who was in it, and what it was for"
 }

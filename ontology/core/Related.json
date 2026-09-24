@@ -1,6 +1,6 @@
 {
   "name": "Related",
-  "description": "A link the world has no type for yet. Say what it is with `label`, and what kind of link it is with `nature` — the world behaves by the nature even before anybody defines a type, and a label that keeps coming back is how a type gets defined at all.",
+  "description": "A link the world has no type for yet. Say what it is with `label`, and what kind of link it is with `nature` \u2014 the world behaves by the nature even before anybody defines a type, and a label that keeps coming back is how a type gets defined at all.",
   "relation": {
     "kind": "related",
     "from": [
@@ -37,5 +37,6 @@
       "description": "What kind of link this is: related_to (they stand in some relation), kind_of (the subject is a narrower kind of the object), part_of (the subject is part of the object), same_as (one and the same), derived_from (the subject was worked out from the object)."
     }
   ],
-  "methods": []
+  "methods": [],
+  "what_to_say": "what this link is, in the words the user used \u2014 what one of them is to the other, and since when"
 }

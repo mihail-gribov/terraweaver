@@ -1,6 +1,6 @@
 {
   "name": "Project",
-  "description": "A goal-directed effort the user is running or tracking — personal, professional, or a job/apartment search treated as a project.",
+  "description": "A goal-directed effort the user is running or tracking \u2014 personal, professional, or a job/apartment search treated as a project.",
   "attributes": [
     {
       "name": "name",
@@ -50,7 +50,7 @@
     {
       "name": "descriptions",
       "type": "list[text]",
-      "description": "How this one has been described, in whoever's words — several are normal, because people describe the same thing differently and each telling is worth keeping."
+      "description": "How this one has been described, in whoever's words \u2014 several are normal, because people describe the same thing differently and each telling is worth keeping."
     },
     {
       "name": "tags",
@@ -62,7 +62,7 @@
       "name": "related_to",
       "type": "list[ref:any]",
       "required": false,
-      "description": "What this project covers — the vacancies, events and notes that belong to it."
+      "description": "What this project covers \u2014 the vacancies, events and notes that belong to it."
     }
   ],
   "methods": [
@@ -81,5 +81,7 @@
       "signature": "mark_done() -> None",
       "description": "Set status to 'done'."
     }
-  ]
+  ],
+  "what_to_say": "what the project is, whose it is, what state it is in",
+  "parent": "Thing"
 }

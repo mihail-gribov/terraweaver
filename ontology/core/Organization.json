@@ -1,6 +1,6 @@
 {
   "name": "Organization",
-  "description": "A company or institution — employer, vendor, target company, etc.",
+  "description": "A company or institution \u2014 employer, vendor, target company, etc.",
   "attributes": [
     {
       "name": "name",
@@ -12,7 +12,7 @@
       "name": "aliases",
       "type": "list[str]",
       "required": false,
-      "description": "Other names it goes by — short forms, transliterations, former names."
+      "description": "Other names it goes by \u2014 short forms, transliterations, former names."
     },
     {
       "name": "website",
@@ -43,7 +43,7 @@
     {
       "name": "descriptions",
       "type": "list[text]",
-      "description": "How this one has been described, in whoever's words — several are normal, because people describe the same thing differently and each telling is worth keeping."
+      "description": "How this one has been described, in whoever's words \u2014 several are normal, because people describe the same thing differently and each telling is worth keeping."
     },
     {
       "name": "tags",
@@ -64,7 +64,7 @@
     {
       "name": "research",
       "signature": "research() -> None",
-      "description": "Ground/enrich attributes and notes via live search (Tavily) — facts, news, funding."
+      "description": "Ground/enrich attributes and notes via live search (Tavily) \u2014 facts, news, funding."
     },
     {
       "name": "add_contact",
@@ -74,8 +74,10 @@
   ],
   "relations": {
     "members": "people who work, study or belong there",
-    "part_of": "the organization it is a department or branch of; parts — its departments",
+    "part_of": "the organization it is a department or branch of; parts \u2014 its departments",
     "managed_by": "who heads it",
     "located": "its offices"
-  }
+  },
+  "what_to_say": "what it does, where it is, and how the user is connected to it \u2014 worked there, applied there, buys from it",
+  "parent": "Thing"
 }

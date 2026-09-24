@@ -19,7 +19,7 @@
       "leases"
     ],
     "example": "michael.relate(car, \"ownership\", label=\"owns\")",
-    "reads": "Michael owns the car — the owner is the subject",
+    "reads": "Michael owns the car \u2014 the owner is the subject",
     "nature": "related_to"
   },
   "attributes": [
@@ -36,5 +36,6 @@
       "description": "What was paid, or the rent."
     }
   ],
-  "methods": []
+  "methods": [],
+  "what_to_say": "what the ownership is and since when"
 }

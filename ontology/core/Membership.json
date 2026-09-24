@@ -120,7 +120,7 @@
       }
     ],
     "example": "kevin.relate(acme, \"membership\", title=\"logistics lead\")",
-    "reads": "Kevin belongs to Acme as logistics lead — the member is the subject",
+    "reads": "Kevin belongs to Acme as logistics lead \u2014 the member is the subject",
     "nature": "related_to"
   },
   "attributes": [
@@ -134,7 +134,7 @@
       "name": "role",
       "type": "str",
       "required": false,
-      "description": "Their role from this type's roles (ceo, founder, employee…); filled from the label or title when it matches one."
+      "description": "Their role from this type's roles (ceo, founder, employee\u2026); filled from the label or title when it matches one."
     },
     {
       "name": "title",
@@ -153,7 +153,7 @@
       "name": "primary",
       "type": "bool",
       "required": false,
-      "description": "The main one — what Person.organization shows. One at a time.",
+      "description": "The main one \u2014 what Person.organization shows. One at a time.",
       "default": false
     },
     {
@@ -163,5 +163,6 @@
       "description": "Team or group inside the organization."
     }
   ],
-  "methods": []
+  "methods": [],
+  "what_to_say": "what they do there, since when, and whether it is still current"
 }

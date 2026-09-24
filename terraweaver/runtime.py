@@ -871,7 +871,7 @@ class WorldRuntime:
         return ("Settled, and put to the user — these wait for them, not for you:\n"
                 + "\n".join(f"    {q.line()}" for q in left) + asked)
 
-    def _ask_about_bare_things(self, namespace: dict) -> list[str]:
+    def _ask_about_bare_things(self, namespace: dict, recording, created: set) -> list[str]:
         """The script has run; now the world looks at what it made and asks about the empty ones.
 
         A thing that came in as a bare name has nothing on it but that name — not a class worth
@@ -880,10 +880,16 @@ class WorldRuntime:
         hands back, and asks about `rome` and not about "Rome", because the host thinks in the
         variable it wrote.
 
-        What it asks for is words, not a class. Choosing the class is the other half of the
-        division this world runs on: the host says what it knows, and the close reads it.
+        What it asks for is words, not a class — and what words, the class says itself
+        (`ontology.what_to_say`). "Describe it" means different things about a person, an event
+        and a link, and asking all of them the same thing gets all of them the same answer.
+
+        A link written with nothing said about it is asked the same way and in the same breath.
+        It is the same gap: a `Kin` between two people that nobody said anything about cannot be
+        told from any other `Kin`, and the words are the only account of it the world did not
+        write itself.
         """
-        from terraweaver import portraits
+        from terraweaver import ontology as ont, portraits
 
         try:
             waiting = {row["entity_id"] for row in portraits.unread(self.world)}
@@ -901,8 +907,7 @@ class WorldRuntime:
                 if got is None or got not in waiting:
                     continue
                 waiting.discard(got)
-                why = (f"{written} is only a name so far — what sort of thing it is, where, "
-                       f"when, whose")
+                why = ont.what_to_say(type(entity), self.classes)
                 text = (
                     f"{written} is new here — recorded under the name you gave and nothing else. "
                     f"Tell me about it in your own words: {written}.describe(\"...\"). What sort "
@@ -912,6 +917,32 @@ class WorldRuntime:
                 if self.world.questions.raise_(entity, "what_is_it", text,
                                                touches=["identity"]) is not None:
                     asked.append(f'{written}.describe("...")   # {why}')
+        return asked + self._ask_about_bare_links(namespace, recording, created)
+
+    def _ask_about_bare_links(self, namespace: dict, recording, created: set) -> list[str]:
+        """Links this run wrote with nothing said about them, and the line that would say it."""
+        from terraweaver import ontology as ont
+
+        bound = {getattr(v, "id", None): k for k, v in namespace.items() if not k.startswith("_")}
+        asked = []
+        for key, link in recording.changed.items():
+            if key not in created or not hasattr(link, "subject") or not hasattr(link, "object"):
+                continue
+            if getattr(link, "descriptions", None) or getattr(link, "label", None):
+                continue
+            kind = (type(link)._spec.get("relation") or {}).get("kind")
+            handle = bound.get(link.id)
+            if handle is None:
+                at_end = bound.get(getattr(getattr(link, "subject", None), "id", None))
+                if at_end is None or not kind:
+                    continue
+                handle = f'{at_end}.relations("{kind}")[-1]'
+            text = (f"{handle} was written with nothing said about it. Say what it is: "
+                    f"{ont.what_to_say(type(link), self.classes)}. Those words are the only "
+                    f"account of this link the world did not write itself.")
+            if self.world.questions.raise_(link, "what_is_it", text) is not None:
+                asked.append(f'{handle}.describe("...")   # '
+                             f'{ont.what_to_say(type(link), self.classes)}')
         return asked
 
     def _read_what_things_are(self) -> dict:
@@ -1278,7 +1309,8 @@ class WorldRuntime:
                 # variable, and the variable is what the host has in front of it now. It is
                 # raised outside the recorder — the run has already finished — so it is added
                 # here by hand rather than arriving through it.
-                effects["clarify"] = self._ask_about_bare_things(namespace)
+                effects["clarify"] = self._ask_about_bare_things(
+                    namespace, recording, {id(o) for o in self.store._tx_new_ids})
                 effects["questions"] += _waiting_on_answers(session)
                 # Only what this run raised. Repeating every doubt about every entity a run
                 # happens to touch is noise: the literature's criterion is relevance to the

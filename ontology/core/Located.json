@@ -43,5 +43,6 @@
       "description": "Floor, building, room."
     }
   ],
-  "methods": []
+  "methods": [],
+  "what_to_say": "where exactly, and for what stretch of time"
 }

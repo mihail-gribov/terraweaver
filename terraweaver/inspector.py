@@ -496,3 +496,109 @@ def twins(world, close: float = 0.82) -> list[tuple]:
             if score >= close:
                 pairs.append((said[i][0], said[j][0], round(score, 3)))
     return sorted(pairs, key=lambda p: -p[2])
+
+
+# How many of a kind before the world can say what one of them is. One is an example and
+# writing from it gives a line about that example — "the Finnish bat-and-ball game" where
+# "what sort of sport and where it is played" was wanted. Three is a kind.
+A_FEW = 3
+
+WRITING = ("You write the one line a record puts to whoever records a thing of this kind and "
+           "says nothing about it. You write what somebody would have to say for one of these "
+           "to be known again. You answer with JSON only.")
+
+WRITE_ONE = """A record holds a class and has nothing to ask about one of these.
+
+The class: {name} — {description}
+It is a kind of: {parent}, which asks: {inherited}
+The attributes it has: {attributes}
+
+What has been said about the {count} of them here:
+{said}
+
+Write the line the record will put after the word "say". It asks for what makes one of these
+known again and tells two of them apart — for a person that is the full name and who they are
+to the user; for a place, what sort of place and where.
+
+About the kind, never about these ones: not "the Finnish bat-and-ball game" but "what sort of
+sport it is and where it is played". Someone recording the next one of these has not met any of
+the ones above.
+
+Shorter than a sentence and a half. It is read after "say", so it needs no verb of its own, and
+no second person.
+
+JSON only: {{"what_to_say": "..."}}"""
+
+
+def silent_classes(world, least: int = A_FEW) -> list[str]:
+    """Classes with no line of their own and enough of them here to say what one is."""
+    from terraweaver import ontology
+
+    out = []
+    for name, cls in sorted(world.classes.items()):
+        spec = cls._spec
+        if spec.get("what_to_say") or spec.get("own") or spec.get("relation"):
+            continue
+        if not spec.get("parent"):
+            continue      # a root with nothing above it: its line is written by hand, on purpose
+        if len(world.all(name, limit=least, history=True)) >= least:
+            out.append(name)
+    return out
+
+
+def write_the_questions(world, reader=None, least: int = A_FEW, limit: int = 5) -> list[str]:
+    """Write the asking line for classes that have none, from what has accumulated under them.
+
+    Offline work, and it has to be: a class is born in the middle of reading one thing, and one
+    thing is an example. What a kind is shows in several of them, so this waits until there are
+    several and then writes from all of them at once — the same order everything else here
+    follows, accept what arrives, see the shape later.
+
+    Until then the class inherits its parent's line, which is the honest answer: nothing more
+    particular is known about these than that they are things.
+    """
+    from terraweaver import ontology
+
+    reader = reader or reader_of(world)
+    if reader is None:
+        return []
+    written = []
+    for name in silent_classes(world, least)[:limit]:
+        cls = world.classes[name]
+        spec = cls._spec
+        here = world.all(name, limit=12, history=True)
+        said = []
+        for one in here:
+            words = [t for t in (getattr(one, "descriptions", None) or []) if isinstance(t, str)]
+            said.append(f"    {one.display_name()} — {words[0][:110] if words else '(nothing said)'}")
+        got = reader.json(WRITING, WRITE_ONE.format(
+            name=name, description=(spec.get("description") or "")[:200],
+            parent=spec.get("parent"),
+            inherited=ontology.what_to_say(world.classes[spec["parent"]], world.classes)
+            if spec.get("parent") in world.classes else ontology.SAY_SOMETHING,
+            attributes=", ".join(a["name"] for a in spec["attributes"] if "derived" not in a),
+            count=len(here), said="\n".join(said)))
+        line = (got or {}).get("what_to_say")
+        if not isinstance(line, str) or not line.strip():
+            continue
+        _keep_the_line(world, name, line.strip())
+        written.append(f"{name}: {line.strip()}")
+    return written
+
+
+def _keep_the_line(world, name: str, line: str) -> None:
+    """Put it everywhere a spec is read from, and on disk if this world keeps its specs there."""
+    import json
+    from pathlib import Path
+
+    world.classes[name]._spec["what_to_say"] = line
+    specs = getattr(world, "specs", None)
+    if isinstance(specs, dict) and name in specs:
+        specs[name]["what_to_say"] = line
+    where = getattr(world, "grown_dir", None)
+    if where:
+        path = Path(where) / f"{name}.json"
+        if path.exists():
+            spec = json.loads(path.read_text())
+            spec["what_to_say"] = line
+            path.write_text(json.dumps(spec, indent=2) + "\n")

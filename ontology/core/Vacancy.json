@@ -18,7 +18,7 @@
       "name": "contact",
       "type": "ref:Person",
       "required": false,
-      "description": "The person handling this opening — recruiter, hiring manager, referrer."
+      "description": "The person handling this opening \u2014 recruiter, hiring manager, referrer."
     },
     {
       "name": "location",
@@ -92,7 +92,7 @@
     {
       "name": "descriptions",
       "type": "list[text]",
-      "description": "How this one has been described, in whoever's words — several are normal, because people describe the same thing differently and each telling is worth keeping."
+      "description": "How this one has been described, in whoever's words \u2014 several are normal, because people describe the same thing differently and each telling is worth keeping."
     },
     {
       "name": "tags",
@@ -111,5 +111,7 @@
       "signature": "matches_stack(skills: list[str]) -> float",
       "description": "Fraction (0..1) of the given skills that appear in this vacancy's stack."
     }
-  ]
+  ],
+  "what_to_say": "the role, the company, and where the user is with it",
+  "parent": "Thing"
 }

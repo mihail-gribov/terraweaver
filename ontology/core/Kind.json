@@ -1,6 +1,6 @@
 {
   "name": "Kind",
-  "description": "This is a particular kind of that — a chief executive is a kind of head, a novel a kind of work. The narrower one is the subject. Without it a world has no way to say that two of its words are the same idea at different grain, and ends up with four independent types where it wanted one with four labels.",
+  "description": "This is a particular kind of that \u2014 a chief executive is a kind of head, a novel a kind of work. The narrower one is the subject. Without it a world has no way to say that two of its words are the same idea at different grain, and ends up with four independent types where it wanted one with four labels.",
   "relation": {
     "kind": "kind_of",
     "nature": "kind_of",
@@ -21,5 +21,6 @@
     "reads": "the narrower one is the subject: a chief executive is a kind of head of an organisation"
   },
   "attributes": [],
-  "methods": []
+  "methods": [],
+  "what_to_say": "in what sense one is a kind of the other"
 }
