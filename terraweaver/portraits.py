@@ -129,7 +129,9 @@ NEW_ONE = "none of these"
 # and finding the class is walking down from where the thing already sits, asking at each level
 # which child it is. Each of those is a closed question — a list of named options — and a closed
 # question is answered by a model an order of magnitude cheaper than one answering in words.
-# Only the last step is open, and only when nothing fitted.
+# Only the last step is open, and only when nothing fitted. `world.jev` is that reader, named
+# for the class of model rather than for one of them: a system-one model answering a question
+# with named options, and which weights are behind it is a deployment question, not the world's.
 ROOTS = ("Thing", "Event")
 
 # What `authoring._described` insists on: a description shorter than this is a label, not an
@@ -143,7 +145,7 @@ def children_of(world, name: str) -> dict:
             if c._spec.get("parent") == name and not c._spec.get("relation")}
 
 
-def walk_down(world, entity, words: str, picker) -> tuple[str, str | None]:
+def walk_down(world, entity, words: str, jev) -> tuple[str, str | None]:
     """Descend from where the thing sits to the most particular class that fits.
 
     Returns (the class to stop at, the class under which a new one is wanted or None). At each
@@ -168,8 +170,8 @@ def walk_down(world, entity, words: str, picker) -> tuple[str, str | None]:
         options[NEW_ONE] = (f"none of the above is what this is; it is a kind of {at} that this "
                             f"record has no class for")
         try:
-            scored = picker.choose(state, f"Which of these is {entity.display_name()}?", options)
-        except Exception:  # noqa: BLE001 - a picker that fails leaves it where it sits
+            scored = jev.choose(state, f"Which of these is {entity.display_name()}?", options)
+        except Exception:  # noqa: BLE001 - one that fails leaves it where it sits
             return at, None
         if not scored:
             return at, None
@@ -301,7 +303,7 @@ def words_about(world, entity) -> str:
 GOES = 3
 
 
-def read_them(world, engineer, limit: int = 50, picker=None, run=None) -> dict:
+def read_them(world, engineer, limit: int = 50, jev=None, run=None) -> dict:
     """Read the prose-facts nobody has read, and put each into the record's own terms.
 
     Two steps, and the split between them is where the cost is. Finding the class is a walk down
@@ -314,7 +316,7 @@ def read_them(world, engineer, limit: int = 50, picker=None, run=None) -> dict:
     """
     from terraweaver import ontology, outside
 
-    picker = picker or getattr(world, "picker", None) or outside.AsChoices(engineer)
+    jev = jev or getattr(world, "jev", None) or outside.AsChoices(engineer)
     tally = {"read": 0, "placed": 0, "defined": 0, "ran": 0, "failed": 0, "gave_up": 0}
     # Things that changed class. Whoever is holding one of these is holding the instance it was
     # before, and the next thing they save writes that back — the reading undone by the very
@@ -333,7 +335,7 @@ def read_them(world, engineer, limit: int = 50, picker=None, run=None) -> dict:
         # about the thing. A second account arriving later says what the first did not, and
         # placing the thing on half of what is known about it is worse than waiting.
         words = words_about(world, entity) or f"    {one['words']}"
-        at, wanting = walk_down(world, entity, words, picker)
+        at, wanting = walk_down(world, entity, words, jev)
         asked = _asking(world, entity, words, at, make_new=bool(wanting))
         said = _say(engineer, asked)
         if said is None:

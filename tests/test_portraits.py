@@ -32,8 +32,8 @@ def check(name: str, condition: bool, detail: str = "") -> None:
         failures.append(name)
 
 
-class Picker:
-    """Stands in for the closed reader: answers each choice with the option named in turn."""
+class AJev:
+    """Stands in for the Jev: answers each choice with the option named in turn."""
 
     def __init__(self, answers: list[str]):
         self.answers, self.asked = list(answers), []
@@ -89,7 +89,7 @@ def main() -> int:
           not [q for q in rt.world.questions.open_(limit=9) if q.kind == "what_is_it"])
 
     # --- the walk, the class, the code, the links ---
-    picker = Picker([portraits.NEW_ONE])
+    jev = AJev([portraits.NEW_ONE])
     engineer = Engineer([{
         "class": {"name": "City", "brief": "a city, town or village",
                   "description": "A populated place with a permanent community.",
@@ -101,7 +101,7 @@ def main() -> int:
                 'italy = world.identify(Thing, name="Italy")[0]\n'
                 'it.relate(italy, "capital_of")',
     }])
-    tally = portraits.read_them(rt.world, engineer, picker=picker, run=rt._the_world_writes)
+    tally = portraits.read_them(rt.world, engineer, jev=jev, run=rt._the_world_writes)
     rt._hand_back_what_moved(tally.pop("moved", []))
     check("the prose-fact is read, the class made, the code run",
           tally == {"read": 1, "placed": 1, "defined": 1, "ran": 1, "failed": 0, "gave_up": 0},
@@ -127,7 +127,7 @@ def main() -> int:
           str(city._spec.get("descriptions")))
 
     # --- the walk is offered the children plus a way out, by their short line ---
-    asked = picker.asked[0][1]
+    asked = jev.asked[0][1]
     # Event is a root of its own — a thing is, an event happens — so it is not among the kinds
     # of Thing the walk comes down through.
     check("the walk offers the kinds of Thing and a way out",
@@ -151,12 +151,12 @@ def main() -> int:
     # --- the loop: a line the world refuses comes back, and the next answer is run ---
     rt.run('turin = world.identify(Thing, name="Turin")[0]\n'
            'turin.describe("Turin is a city in the north of Italy")', "k")
-    loop_picker = Picker(["City"])
+    loop_jev = AJev(["City"])
     loop_engineer = Engineer([
         {"class": None, "code": 'it.population = 900_000\nit.relate(nowhere, "near")'},
         {"class": None, "code": 'it.describe("in the north")'},
     ])
-    tally = portraits.read_them(rt.world, loop_engineer, picker=loop_picker, run=rt._the_world_writes)
+    tally = portraits.read_them(rt.world, loop_engineer, jev=loop_jev, run=rt._the_world_writes)
     rt._hand_back_what_moved(tally.pop("moved", []))
     check("a refused line is handed back and the next answer runs",
           tally["ran"] == 1 and tally["gave_up"] == 0 and len(loop_engineer.asked) == 2, str(tally))
@@ -180,7 +180,7 @@ def main() -> int:
           len(portraits.unread(rt.world)) == 1, str(portraits.unread(rt.world)))
 
     # --- a reader that says nothing usable costs the reading, never the thing ---
-    silent = portraits.read_them(rt.world, Engineer([]), picker=Picker(["City"]),
+    silent = portraits.read_them(rt.world, Engineer([]), jev=AJev(["City"]),
                                  run=rt._the_world_writes)
     silent.pop("moved", None)
     check("an engineer that answers nothing leaves the words for a later pass",

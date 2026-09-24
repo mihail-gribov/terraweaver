@@ -2070,8 +2070,17 @@ circuit, answers fixed in advance, seconds instead of minutes.
 **`world.reader` is `world.engineer`.** "Reader" said nothing about the work and the word was
 already doing two jobs in one file. The name is the project's own: the host tells the story, the
 world does the engineering. It says the role rather than the model, so Nemotron is replaceable in
-it without a line changing. The closed one stays `world.picker` — named options, the walk down
-the tree, where Jev goes.
+it without a line changing. The closed one is `world.jev` — named options, the walk down the
+tree. That name is a role here too: a Jev is a system-one model answering a question with named
+options, and which weights are behind it (`outside.Jev`, `outside.TypecastLM`, `AsChoices` over
+an open reader when there are none) is a deployment question and not the world's.
+
+**Neither is required, and that is what lets the circuit be tested.** The world constructs no
+model: `server.py` puts them on at startup and everything takes them as arguments, so a world
+with none simply does not run these passes. `tests/test_portraits.py` passes two plain objects
+with the same two methods and answers fixed in advance — and keeps what it was asked, which is
+the other half. Three of the six defects of that day were the world *asking* the wrong thing,
+and there is no other way to see that than to read the question back.
 
 **`tests/test_portraits.py` stands both of them in.** Answers fixed in advance, the whole circuit
 in seconds: a bare name noted and asked about, the question closing itself when something is
