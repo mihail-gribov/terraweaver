@@ -186,16 +186,30 @@ class WorldView:
         says what was seen and what would settle it."""
         return self._world.verify(least)
 
-    def say(self, subject, obj, words: str):
-        """Say a fact in words about two things, and let the type be read from it afterwards.
+    def link(self, subject, obj, words: str):
+        """Say in words what joins two things, and let the type be read from it afterwards.
 
-            world.say(paris, france, "Paris is the capital of France")
+            world.link(paris, france, "Paris is the capital of France")
 
-        The other door. `a.relate(b, kind)` needs the type chosen before the fact can be said,
-        and a host that must choose before it has anything to choose with chooses badly —
+        **Named for what is being said, not for the saying.** There are three things a host can
+        tell this world and it does something different with each: what joins two things (here),
+        what one thing is (`thing.describe`), and what a thing's value is (`thing.attr = ...`).
+        Getting them mixed up is not a tidiness problem, it is the failure that was measured all
+        day: fourteen capitals went into the *entity's* description — "the capital of Japan" on
+        Tokyo, a fact about two things written about one, where nothing can supersede or find
+        it — and encyclopaedia entries about cities went onto the *link* — "the capital and
+        largest city of Germany, located in central Europe" on a CapitalOf. Each was a legal
+        move and each put the fact where it cannot be used.
+
+        So the host says which of the three it means, and the world can hold it to that: a
+        sentence said as a link that mentions only one of the two things is probably about the
+        thing, and the other way round.
+
+        The type is not asked for. `a.relate(b, kind)` needs it chosen before the fact can be
+        said, and a host that must choose before it has anything to choose with chooses badly —
         measured: two ideas under one word, three links written backwards, `over_time` answered
-        by guess. Here the words are recorded at once and what they mean is read at the close of
-        the task, where nothing is waiting on it.
+        by guess. Here the words are recorded at once, the two things are joined at once, and
+        what the joining *is* gets read at the close of the task, where nothing waits on it.
         """
         from terraweaver import sentences
 

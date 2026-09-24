@@ -66,10 +66,17 @@ Everything else you define as you go:
                           subject=Person, object=Book,
                           cardinality="one-to-many", over_time=False)
 
-**There are two ways to say a fact about two things, and the second is usually the one.**
+**Three things you can tell this world, and it does something different with each.** Say \
+which you mean — most of what went wrong in the past was a fact put in the wrong one of them:
 
-    world.say(Thing.ensure(name="Paris"), Thing.ensure(name="France"),
-              "Paris is the capital of France")
+    world.link(a, b, "...")      what joins two things
+    thing.describe("...")        what one thing is
+    thing.attribute = value      what a thing's value is
+
+**For a link, the second way is usually the one.**
+
+    world.link(Thing.ensure(name="Paris"), Thing.ensure(name="France"),
+               "Paris is the capital of France")
 
 Two things and the fact in your own words. No type, no role, no argument order to get right, no \
 date as a separate thing — say it as the user said it, including when, and the world reads the \

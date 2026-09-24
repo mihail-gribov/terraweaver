@@ -56,12 +56,23 @@ def say(world, subject, obj, words: str, task_id: str | None = None):
     """
     if not (words or "").strip():
         raise ValueError(
-            "say(a, b, words) needs the fact in words — that is the whole of what it takes. "
+            "link(a, b, words) needs the fact in words — that is the whole of what it takes. "
             "Not a type, not a role, not which end is which: those are read from the words "
             "afterwards. \"Anna has worked at Brightwork since 2019\" is a fact; \"employment\" "
             "is a type, and choosing one is the thing this call exists to spare you.")
+    _about_two(subject, obj, words)
     run_script(world.store.conn, SCHEMA)
-    link = subject.relate(obj, "related", label="said")
+    # `related_to` on purpose, and it is the honest one: it means nothing follows from this
+    # link but the link itself, which is exactly true of a link nobody has read yet. Any other
+    # nature would be a claim about what may be inferred, made before anybody knows what the
+    # link is.
+    #
+    # The label is the sore point and is left as it is knowingly. A free link must carry one,
+    # and an unread link has no word — `display_name` renders it "Tokyo is Japan's said", which
+    # is nonsense. It is nonsense for a few minutes: the link is read at the close of the task
+    # and becomes what it is. Choosing a better word would be inventing the very thing that has
+    # not been read, and a word read as content is the failure measured all day.
+    link = subject.relate(obj, "related", label="said", nature="related_to")
     link.describe(words.strip())
     cursor = world.store.conn.execute(
         "INSERT INTO sentences (subject_id, object_id, words, said_at, task_id, link_id) "
@@ -70,6 +81,39 @@ def say(world, subject, obj, words: str, task_id: str | None = None):
          link.id))
     world.store.conn.commit()
     return link
+
+
+def _about_two(subject, obj, words: str) -> None:
+    """A link is about two things. Said as one, it is probably about the thing, not the joining.
+
+    Not refused — said. The commonest wrong move measured today was a fact about two things
+    written as a description of one, and the commonest wrong move in the other direction was an
+    account of one thing written onto the link between two. Both passed every check there was.
+    The host knows which it meant; the world can only notice that the sentence names one thing
+    and not the other, and say so while there is still somebody to say it to.
+    """
+    from terraweaver import matching, ontology
+
+    said = matching.normalize(words)
+    named = [t for t in (subject, obj)
+             if matching.normalize(str(t.display_name())) in said
+             or any(matching.normalize(w) in said
+                    for w in str(t.display_name()).split() if len(w) > 3)]
+    if len(named) >= 2:
+        return
+    if not named:
+        ontology.note_hint(
+            f"That names neither {subject.display_name()} nor {obj.display_name()}. A link is a "
+            f"fact about the two together — say which is what to the other, in the words the "
+            f"user used. Recorded as a link either way, and it will be read as one.")
+        return
+    missing = obj if named[0] is subject else subject
+    ontology.note_hint(
+        f"That reads as being about {named[0].display_name()} alone — "
+        f"{missing.display_name()} is not in it. A link is a fact about the two together: what "
+        f"one of them is to the other. If this is an account of {named[0].display_name()} "
+        f"rather than of what joins them, it belongs on the thing: "
+        f"{named[0].display_name()}.describe(...). Recorded as a link either way.")
 
 
 def unread(world, limit: int = 100) -> list[dict]:
@@ -110,35 +154,59 @@ Your task is to describe that relation, and nothing else.
 
 {held}
 
-What you return, item by item:
+A relation in this record is four things and no others. Give them.
 
-1. `use` — the name of one of the relations listed above, if this is that same relation. Give
-   it and stop; do not describe a second word for an idea the record already holds. If none of
-   them is this, give null and do items 2 to 5.
+**use** — the name of one of the relations listed above, when this is that same relation. Give
+it and stop: a second word for an idea the record already holds answers for neither. Null when
+none of them is this, and then give the four below.
 
-2. `subject_is` and `object_is` — what each END of the relation IS, as a short noun phrase a
-   thing could be checked against. "a city that serves as a capital", not "Paris"; "the country
-   whose capital it is", not "France". If both ends hold the same role, give the same word: two
-   siblings are both siblings.
+**the roles** — `subject_is` and `object_is`: what each END of the relation IS, as a short noun
+phrase a thing could be checked against. "a city that serves as a capital", not "Paris"; "the
+country whose capital it is", not "France". When both ends hold the same role, give the same
+word — two siblings are both siblings, and that sameness is the whole of what symmetry is here,
+so there is no separate thing to say about it. `also_called`: up to four other words this
+relation is said with, so the next person who says it another way lands here instead of making
+a second word for it.
 
-3. `one_object` and `one_subject` — how many may hold AT ONE MOMENT. `one_object` is true when
-   the first end may have only one of the second at a time; `one_subject` is true the other way.
-   A person has one employer now and many over a life, so that is true. A person has several
-   children at once, so for a parent that is false.
+**what may stand there** — `subject_class` and `object_class`: what sort of thing may fill each
+role, chosen from the classes this record has:
 
-4. `transitive` — true when A to B and B to C makes A to C. A part of a part is part of the
-   whole: true. A mother of a mother is not a mother: false.
+{classes}
 
-5. `relation_is` — one sentence saying what this relation is, for a reader who has never seen
-   it. Not about these two things; about the kind of link.
+Widely, not narrowly. A role written tight turns every honest fact into an alarm: a religion's
+followers are people as well as bodies, so an affiliation takes both and not just one. Give
+"any" when anything may stand there, and say nothing a first example taught you that a second
+would contradict. These are watched, not enforced — a fact whose ends do not fit is reported
+and kept, because a fact refused goes somewhere nothing can find it.
 
-6. `subject` and `object` — which of the two things above holds which end, **by the name given
-   above**. This is the whole of the direction. Do not name anything that is not one of those
-   two.
+**how many** — `one_object` is true when the first end may have only one of the second AT ONE
+MOMENT; `one_subject` is the same the other way. About one moment, never about a lifetime:
+somebody has one employer now and many over a life, so that is true. A parent has several
+children at once, so for a parent that is false.
 
-7. `starts` — when it began, if what was said says so, in the form it said it ("2019", "June
-   2019", "since she moved"). If nothing was said about when, give null. Do not work one out: a
-   date nobody said cannot be told, later, from one somebody knew.
+**what follows** — `implies`, a list of what becomes true *in addition* when a link of this kind
+is written. Only these words, and empty is a common and honest answer:
+
+    "transitive"   A to B and B to C makes A to C. A part of a part is part of the whole.
+                   A mother of a mother is not a mother.
+    "inherits"     what holds of the second end holds of the first by virtue of this link.
+                   A dog is a kind of mammal, so what is true of mammals is true of dogs.
+                   A wheel is part of a car and is not a car.
+    "identity"     the two are one and the same thing under two names — "Bombay is Mumbai".
+                   A part is not the whole and a member is not the group.
+
+**what it is** — `description`: one sentence saying what this kind of relation is, for somebody
+who has never seen it. About the kind of link, not about these two things.
+
+Then, about this one fact rather than about the relation:
+
+**which end is which** — `subject` and `object`, by the names given at the top. This is the
+whole of the direction; nothing else decides it. Do not name anything that is not one of those
+two things.
+
+**when** — `starts`, if what was said says so, in the words it said it ("2019", "June 2019",
+"since she moved"). Null when nothing was said about when. Do not work one out: a date nobody
+said cannot be told apart, later, from one somebody knew.
 
 **Whether the fact is true is not part of this task and must not affect any answer.** This
 record holds what somebody said, including what contradicts common knowledge: "London is the
@@ -146,9 +214,24 @@ capital of France" is described exactly as "Paris is the capital of France" woul
 relation, same roles, London in the capital's role.
 
 JSON only, these keys and no others:
-{{"use": null, "subject_is": "...", "object_is": "...",
-  "one_object": true, "one_subject": true, "transitive": false,
-  "relation_is": "...", "subject": "...", "object": "...", "starts": null}}"""
+{{"use": null,
+  "subject_is": "...", "object_is": "...", "also_called": ["..."],
+  "subject_class": "...", "object_class": "...",
+  "one_object": true, "one_subject": true,
+  "implies": [],
+  "description": "...",
+  "subject": "...", "object": "...", "starts": null}}"""
+
+
+def classes_here(world) -> str:
+    """The classes a role may name, so a reader picks one rather than inventing a word.
+
+    Shown rather than remembered: a reader told to name a class and not shown which exist will
+    write a reasonable word that is nobody's class, and the world then holds a condition it
+    cannot check against anything.
+    """
+    names = sorted(n for n, c in world.classes.items() if not c._spec.get("relation"))
+    return "    " + ", ".join(names) + ", or \"any\""
 
 
 def held(world) -> str:
@@ -196,7 +279,7 @@ def read_them(world, reader, limit: int = 100) -> dict:
                 words=one["words"],
                 a=subject.display_name(), a_is=type(subject).__name__,
                 b=obj.display_name(), b_is=type(obj).__name__,
-                held=held(world)))
+                held=held(world), classes=classes_here(world)))
         except Exception:  # noqa: BLE001 - a reader that fails leaves the words for a later pass
             tally["failed"] += 1
             continue
@@ -277,15 +360,49 @@ def _type_for(world, said: dict, tally: dict) -> str | None:
         return None
     word = _one_word(subject_is) + "_of"
     try:
-        made = grow(word, said.get("relation_is") or f"{subject_is} and {object_is}",
-                    nature="related_to",
+        made = grow(word, said.get("description") or f"{subject_is} and {object_is}",
+                    nature=CLAIMS_NOTHING,
                     cardinality=_cardinality(said), over_time=False,
-                    subject_is=subject_is, object_is=object_is)
+                    subject_is=subject_is, object_is=object_is,
+                    subject=_class_named(world, said.get("subject_class")),
+                    object=_class_named(world, said.get("object_class")))
+        if "transitive" in (said.get("implies") or []):
+            # The one rule of `implies` this world already acts on: a read follows the chain.
+            # Written onto the type rather than asked of the nature, because the nature is not
+            # where it belongs and one of the two has to give.
+            made._spec["relation"]["transitive"] = True
+        for word_for_it in (said.get("also_called") or [])[:4]:
+            if isinstance(word_for_it, str) and word_for_it.strip():
+                made._spec["relation"].setdefault("labels", []).append(word_for_it.strip())
     except Exception:  # noqa: BLE001 - a word already taken is a word to join, not to force
         cls = world.classes.get("".join(p[:1].upper() + p[1:] for p in word.split("_")))
         return cls._spec["relation"]["kind"] if cls is not None else None
     tally["defined"] += 1
     return made._spec["relation"]["kind"]
+
+
+# `nature` is a field of the world as it stands and not of the relation as it was settled
+# (`docs/relation-properties.md`, `sketch/relation_class.py`). The argument that removed it: a
+# nature was meant to bundle properties and instead repeated them — cardinality said again in
+# other words — and what is left when the repetition is taken out is a **set of inference
+# rules**, which is `implies` and which one word cannot carry. So nothing here works one out.
+# The field is filled with the value that claims nothing, and the rules the reader gives are
+# kept where they belong: `transitive` on the type, the rest waiting for `implies` to exist.
+CLAIMS_NOTHING = "related_to"
+
+
+def _class_named(world, said):
+    """The class a reader named, if this world has it. Watched, never enforced.
+
+    `define_relation` takes the ends as classes and does not hold a link to them — the comment
+    there says why, and it was measured: ends declared from the first example refuse the second,
+    and the host answers by defining a second type with the class names in it. So this is
+    evidence for the checking and not a promise, and a word that names no class is simply not
+    taken rather than being made into one.
+    """
+    if not said or str(said).strip().lower() in ("any", "anything", "thing", ""):
+        return None
+    return world.classes.get(str(said).strip())
 
 
 def _cardinality(said: dict) -> str:
