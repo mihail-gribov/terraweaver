@@ -260,7 +260,7 @@ def main() -> int:
           isinstance(second, Person) and second is not petr)
 
     # --- a question in the middle of a batch holds its link instead of killing the run ---
-    held = world.about(Person, full_name="Pete Ivanson")  # two of them now, nothing to tell them apart
+    held = Person.get(full_name="Pete Ivanson")           # two of them now, nothing to tell them apart
     acme = Organization.ensure(name="Held Links Ltd")
     held.relate(acme, "membership", title="advisor")      # would have raised and discarded it all
     held.tag("conference")

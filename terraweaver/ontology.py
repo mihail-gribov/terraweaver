@@ -275,36 +275,6 @@ def note_world_call(kind: str) -> None:
         ACCESS[kind] = ACCESS.get(kind, 0) + 1
 
 
-_IDENTIFYING = False
-
-
-@contextmanager
-def identifying():
-    """Settling who is being talked about — the one place identity may be asked about.
-
-    A task has two halves and they want opposite things. First the host settles its context:
-    which Anna, which Acme, which of the two Berkeleys. That is where a question earns its
-    keep — it is asked once, about a handful of things, before anything has been written, and
-    the answer holds for everything that follows.
-
-    Then the host records, and there a question is only in the way. Matching in the middle of a
-    write turned "France" into "did you mean Acme?" and stopped a run on its fourteenth line;
-    worse, the same doubt is raised again on every mention, because nothing was settled. So
-    recording does not identify: it resolves what is certain, creates what is not, and leaves
-    the rest to a pass over the record, where twins are merged with the whole world in view.
-    """
-    global _IDENTIFYING
-    was, _IDENTIFYING = _IDENTIFYING, True
-    try:
-        yield
-    finally:
-        _IDENTIFYING = was
-
-
-def is_identifying() -> bool:
-    return _IDENTIFYING
-
-
 _SAID_IN_WORDS = False
 
 

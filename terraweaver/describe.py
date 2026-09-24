@@ -87,12 +87,14 @@ Rules the world enforces:
 - What isn't in the world isn't known. An empty result means the information isn't there — say
   so rather than filling the gap.
 - Settle who the task is about before you record anything about them. For each one the user
-  named: `anna = world.about(Person, full_name="Anna Weber")`. That is the one call that
-  settles identity, and the one place the world may ask which of two people you mean — once,
-  up front, with nothing written yet. Then say everything else about `anna`, the variable.
-  Writes do not identify: `Class.new(...)` and `Class.ensure(...)` take the name they are given
-  and record, because a question in the middle of a block stops the run and settles nothing.
-  Two records that turn out to be one thing are merged later, over the whole world at once.
+  named: `world.identify(Person, full_name="Anna Weber")` hands back who in the world could be
+  meant, best first. You have the conversation and the world does not, so you read them and
+  pick — hold the one you meant in a variable and say everything else about that variable. Too
+  many to read? Say more about them: `world.identify(Person, full_name="Anna", location="Berlin")`.
+  An empty list means nobody here fits, so `Class.new(...)` records them.
+  Writes do not identify: `Class.new(...)` and `Class.ensure(...)` take the name they are given,
+  because a question in the middle of a block stops the run and settles nothing. Two records
+  that turn out to be one thing are merged later, over the whole world at once.
   `Class.get(...)` reads an existing one (never creates; NotInWorld if absent).
   Three levels of detail, so a task carries only what it uses. The prompt lists class names.
   describe_classes(["Person", "Event"]) gives their attributes with types, their methods and
@@ -206,18 +208,17 @@ Every class below shares these, so they aren't repeated for each one:
         Person.get(full_name="Annie", organization=cloudnine). Returns that entity, or a
         NeedsResolution if several fit. Never creates: if nothing matches, it raises NotInWorld
         — then either the user means someone new (use new) or you misidentified them.
-    world.about(Class, **attrs)
-        "This is who we're talking about." Settles it before the work starts, and is the only
-        call that may come back a NeedsResolution about identity: answer it with
-        world.settle(needs, <the one they meant>) and hold the result in a variable for the
-        rest of the task. A twin with the same email is simply them, and is returned.
+    world.identify(Class, **attrs) -> list
+        "Who could this be?" The candidates, best first, for you to read and choose between —
+        it never creates and never chooses. Empty means nobody here fits. Use it at the start
+        of a task, once per thing the user named, and work with the one you picked.
     Class.new(**attrs)
         "Someone/something new." Creates it. A recognised twin (same email, same website) is
         returned instead of a second copy; anything short of that is recorded as given.
     Class.ensure(**attrs)
         "I can't tell." Finds it or creates it; the attributes are new information, so a value
         contradicting what's stored comes back as a question. Neither of these identifies by
-        resemblance — that is what world.about is for, at the start.
+        resemblance — that is what world.identify is for, at the start.
 
     After each run the result lists what happened: [created], [updated] with the attributes
     that changed, [found]. Check it matches what you meant.

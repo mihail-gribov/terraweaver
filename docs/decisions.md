@@ -1818,15 +1818,18 @@ a block half-written; and it asks at the one moment the host has least to answer
 
 So a task has two halves, and they want opposite things:
 
-    anna = world.about(Person, full_name="Anna Weber")   # settle who — here the world may ask
+    who = world.identify(Person, full_name="Anna Weber")      # settle who — a search, you pick
     anna.relate(acme, "Anna has worked at Acme since 2019")   # record — no questions, no matching
 
-`world.about` is the only call that raises an identity question, and inside it the world asks
-rather than assuming: `_only_match` ("one candidate and nothing against it is them") is right
-while recording, where a question costs a run, and wrong here, where a question is the point and
-is asked once. `new` and `ensure` still recognise a strong key — the same email is the same
-person and costs nothing to see — and otherwise record what they are given. Two records that
-turn out to be one thing are merged over the record, with the whole world in view.
+`world.identify` is a search and nothing more. It never creates and never chooses: it hands back
+who could be meant, best first, and the host reads them. Two or five of them are read by eye;
+twenty means say more and look again. The host has the conversation and the world does not, so
+the choice was never the world's to make — and a question machine here would be a machine for
+asking about what the host could see.
+
+`new` and `ensure` still recognise a strong key — the same email is the same person and costs
+nothing to see — and otherwise record what they are given. Two records that turn out to be one
+thing are merged over the record, with the whole world in view.
 
 This is the same division as the sentence door: take what the host can say now, do the
 engineering later where nothing is waiting.

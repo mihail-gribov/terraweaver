@@ -22,7 +22,6 @@ from terraweaver.resolution import (
     ResolutionRequired,
     ambiguous_identity,
     contradicting_value,
-    looks_existing,
 )
 
 
@@ -364,6 +363,37 @@ class World:
             return needs
         return None
 
+    def identify(self, cls, **attrs) -> list:
+        """Who in the world could this be — the candidates, best first, for you to read.
+
+        A task settles who it is about before it records anything about them, and this is how.
+        It reads and never creates, and it does not choose: it hands back what resembles what
+        the user said, and you pick. You have the conversation and the world does not, so with
+        two or five of them in front of you the choice is yours to make by eye; with twenty, say
+        more about them — `world.identify(Person, full_name="Anna", organization=acme)` — and
+        look again. An empty list means nobody here fits, so the user means somebody new:
+        `Class.new(...)` records them.
+
+        Recording does not do any of this. Matching in the middle of a write asks the same doubt
+        again on every mention and settles none of them, and it stops a block half-written:
+        "France" against a recorded "Acme" scored 0.6 on three letters they share, and the run
+        ended on its fourteenth line. Writes take what they are given, and what they cannot tell
+        apart is merged later, over the record, with the whole world in view.
+        """
+        if not attrs:
+            raise ValueError(
+                f"say who: world.identify({self._name(cls)}, <what the user called them>). This "
+                f"is where the task settles what it is about, so it needs something to go on.")
+        ontology.note_world_call("world_queries")
+        class_name = self._name(cls)
+        attrs = self._check_attrs(class_name, attrs)
+        scored = matching.score_candidates(self.all(cls, limit=None, history=True),
+                                           class_name, attrs, filter_others=True)
+        scored.sort(key=lambda pair: (-pair[1], -pair[0].accessed_at.timestamp()))
+        found = [inst for inst, _ in scored]
+        ontology.note_looked_up(found)
+        return found
+
     # --- writes ---
 
     def get(self, cls, **attrs):
@@ -489,11 +519,6 @@ class World:
                 self.apply_period(outcome, period)
             return outcome
         elsewhere = self._named_elsewhere(class_name, attrs)
-        if twins and ontology.is_identifying():
-            needs = looks_existing(class_name, attrs, twins)
-            needs.context["period"] = period
-            self.pending = needs
-            return needs
         created = self.create(class_name, attrs)
         if period:
             self.apply_period(created, period)
@@ -537,16 +562,8 @@ class World:
             outcome = self._apply_or_flag(self._determined(certain[0]), attrs)
         elif (chosen := self._remembered(class_name, attrs, certain or [inst for inst, _ in scored])) is not None:
             outcome = self._apply_or_flag(self._determined(chosen), attrs)
-        elif len(certain) > 1 and ontology.is_identifying():
-            outcome = ambiguous_identity(class_name, attrs, certain)
-        elif scored and not ontology.is_identifying() \
-                and (only := self._only_match(class_name, attrs, scored)) is not None:
-            # Taking the only candidate without asking is right while recording, where a
-            # question stops a run and settles nothing. Settling the task's context is the one
-            # place it is worth a turn: it is asked once and the answer holds for the task.
+        elif scored and (only := self._only_match(class_name, attrs, scored)) is not None:
             outcome = self._apply_or_flag(only, attrs)
-        elif scored and ontology.is_identifying():
-            outcome = ambiguous_identity(class_name, attrs, [inst for inst, _ in scored])
         else:
             outcome = self.create(class_name, attrs)
         if isinstance(outcome, NeedsResolution):
@@ -554,30 +571,6 @@ class World:
         elif period:
             self.apply_period(outcome, period)
         return outcome
-
-    def about(self, cls, **attrs):
-        """Settle who this task is about, before anything is written about them.
-
-        This is the one call that may come back with a question, and the one place a question
-        about identity is worth asking: once, at the start, about the handful of things the
-        conversation is going to name. Answer it and the entity is settled for the whole task —
-        the host holds it as a variable and says everything else about that variable.
-
-        Recording does not do this. Matching in the middle of a write asks the same doubt again
-        on every mention and settles none of them, and it stops a run over a resemblance that
-        was never there: "France" against a recorded "Acme" scored 0.6 on three letters they
-        share, and `Thing.ensure(name="France")` came back a question. So writes take what they
-        are given; what they cannot tell apart is merged later, over the record, with the whole
-        world in view rather than one line of one run.
-
-        Returns the entity, or a NeedsResolution to be answered — which is the point of it.
-        """
-        if not attrs:
-            raise ValueError(
-                f"say who: world.about({self._name(cls)}, <what the user called them>). This is "
-                f"where the task settles what it is about, so it needs something to go on.")
-        with ontology.identifying():
-            return self.ensure(cls, **attrs)
 
     def like(self, text: str, limit: int = 5, kind: str | None = None) -> list:
         """What in this world reads like that — by meaning, not by the words used.

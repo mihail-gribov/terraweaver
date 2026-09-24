@@ -150,11 +150,13 @@ def main() -> int:
     made = Person.new(full_name="William Chen", email="william.chen@stripe.com")
     check("a name that merely resembles doesn't block a new record",
           not isinstance(made, NeedsResolution) and made.full_name == "William Chen", f"got {made!r}")
-    # "William" is a name William Chen answers to, and there is nobody else it could be —
-    # settling the task's context is the one place that is a question worth asking.
-    twin = world.about(Person, full_name="William", email="other.william@example.com")
-    check("settling who the task is about is where a name they answer to asks",
-          isinstance(twin, NeedsResolution), f"got {twin!r}")
+    # Settling who the task is about is a search: it hands back who could be meant and the
+    # host, who has the conversation, reads them. "William" is a name William Chen answers to.
+    could_be = world.identify(Person, full_name="William")
+    check("settling who the task is about hands back the candidates to read",
+          [p.full_name for p in could_be] == ["William Chen"], str(could_be))
+    check("and finds nobody when nobody fits, so the user means somebody new",
+          world.identify(Person, full_name="Hokusai") == [])
     # The same write outside that, mid-recording, takes what it is given: a run is not stopped
     # over a resemblance, and what turns out to be one thing is merged over the record later.
     written = Person.new(full_name="William", email="other.william@example.com")

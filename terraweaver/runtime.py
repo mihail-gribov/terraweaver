@@ -113,8 +113,8 @@ class WorldView:
     def get(self, cls, **attrs):
         return self._world.get(cls, **attrs)
 
-    def about(self, cls, **attrs):
-        return self._world.about(cls, **attrs)
+    def identify(self, cls, **attrs) -> list:
+        return self._world.identify(cls, **attrs)
 
     def new(self, cls, *, starts=None, until=None, ttl=None, permanent: bool = False, **attrs):
         return self._world.new(cls, starts=starts, until=until, ttl=ttl, permanent=permanent, **attrs)
@@ -432,10 +432,10 @@ class WorldRuntime:
         lines = [f"Task {task.id} open: {stated} ({mode})."]
         if left:
             lines.append("The task before it was dropped. " + left)
-        lines.append("Settle who this is about first: world.about(Person, full_name=\"...\") "
-                     "for each one the user named, and hold what comes back in a variable. That "
-                     "is where the world may ask which of two people you mean — once, before "
-                     "anything is written, and the answer holds for the whole task.")
+        lines.append("Settle who this is about first: world.identify(Person, full_name=\"...\") "
+                     "for each one the user named hands back who could be meant. Read them, "
+                     "pick the one, hold it in a variable. Nobody fits — record them with "
+                     "Class.new(...). Do it before anything is written.")
         if mode == "recording":
             lines.append("Then write it against those variables. Writes don't ask about "
                          "identity: they take what they are given. Read what the world says "

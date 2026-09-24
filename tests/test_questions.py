@@ -50,7 +50,7 @@ def main() -> int:
     rt = WorldRuntime(":memory:", fixture="job_search")
     rt.run('Person.new(full_name="Olga Gribova", email="olga@example.com")\n'
            'Person.new(full_name="Olga Pavlova", email="olga.p@example.com")', "host")
-    made_new = rt.run('q = world.about(Person, full_name="Olga")\nolga = world.settle(q, new=True)', "host")
+    made_new = rt.run('q = Person.get(full_name="Olga")\nolga = world.settle(q, new=True)', "host")
     check("settling as new goes through", made_new["ok"], str(made_new["error"]))
     check("and leaves the doubt about the twin",
           any("the same one?" in q for q in made_new["questions"]), str(made_new["questions"]))
@@ -59,7 +59,7 @@ def main() -> int:
     answered = rt.run('q = olga.questions()[0]\nq.answer("a different Olga — the user said so")\n'
                       'print(olga.questions())', "host")
     check("answering closes it", answered["output"].strip() == "[]", answered["output"])
-    again = rt.run('other = world.about(Person, full_name="Olga")\nworld.settle(other, new=True)', "host")
+    again = rt.run('other = Person.get(full_name="Olga")\nworld.settle(other, new=True)', "host")
     check("the same doubt about the same pair isn't raised twice",
           not any("Olga Gribova" in q and "the same one?" in q for q in again["questions"]),
           str(again["questions"]))

@@ -188,10 +188,10 @@ def main() -> int:
     check("a relation reads as a sentence", mom.display_name() == "Maria Gribova is Michael's mom (kin)", mom.display_name())
     check("its period reads under the names it's written with", job.starts is not None and job.until is None)
 
-    # --- settling the task's context asks about someone the name merely resembles ---
-    maybe = world.about(Person, full_name="Darren", email="d@example.org")
-    check("world.about with a resembling name asks instead of creating",
-          getattr(maybe, "skill", None) == "resolve_ambiguity")
+    # --- settling the task's context is a search, and hands back who could be meant ---
+    maybe = world.identify(Person, full_name="Darren")
+    check("settling who the task is about hands back the candidates",
+          [p.full_name for p in maybe] == ["Darren Liu"], str(maybe))
 
     # --- find compares entities by identity, not name ---
     twin = Organization.new(name="Meridian Corp (Boston)")
@@ -286,7 +286,7 @@ def main() -> int:
     Organization.new(name="Tech Holdings")
     # "Tech" fits two of them and is the name of neither, so settling it is a question — and
     # the link written against the answer waits for it rather than taking the run down.
-    unsettled = world.about(Organization, name="Tech")
+    unsettled = Organization.get(name="Tech")
     linked = Person.new(full_name="Vera Holt", email="vera@holt.example")
     linked.relate(unsettled, "membership", title="director", primary=True)
     alongside = Person.new(full_name="Wes Holt", email="wes@holt.example")
@@ -299,7 +299,8 @@ def main() -> int:
           any(line.startswith("Vera Holt ") and "TechCorp" in line for line in made), str(made))
 
     # --- an unanswered question is not an entity to link, so the link waits for the answer ---
-    asked = world.about(Person, full_name="Darren")  # resembles Darren Liu: a question, not a person
+    Person.new(full_name="Darren Okafor", email="darren.o@example.org")
+    asked = Person.get(full_name="Darren")  # fits two of them: a question, not a person
     with ontology.record_changes() as waiting:
         owner.relate(asked, "social", label="friend")
     check("linking to an unsettled question is held, not refused",
