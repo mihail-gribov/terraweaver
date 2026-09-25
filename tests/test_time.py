@@ -152,8 +152,14 @@ def main() -> int:
         own_world = World(own_store, own)
         ontology.set_world(own_world)
         _authoring.install(own_world, where / "grown").define_relation(
+            # One chair per organisation at a time, which is the *object's* end — so
+            # "one-to-many": one subject per object, many objects per subject. Said as
+            # many-to-one it was the other end that was limited, and the organisation took a
+            # second chair happily. The two ends have to be said apart, which is what removing
+            # `over_time` forced: it used to set both from one boolean, so a type that limited
+            # one end silently limited the other.
             "chairs", "who leads an organisation, one at a time", nature="related_to",
-            cardinality="many-to-one", over_time=True)
+            cardinality="one-to-many")
         org = own["Organization"].new(name="Fatah")
         first = own["Person"].new(full_name="Mahmoud Abbas")
         second = own["Person"].new(full_name="Someone Else")
@@ -177,6 +183,27 @@ def main() -> int:
         check(f"and the first stays in the record, said as {said}",
               first in org.related("chairs_of", any_time=True))
     ontology.set_world(world)
+
+    # --- a date said the way people say dates ---
+    # A month by its name is read, because the alternative is measured: refused `starts="March
+    # 2023"`, a reader gave the year alone, the record took it, and a month somebody named went in
+    # as the first of January. A date degraded cannot be told apart later from one somebody knew.
+    from terraweaver import timeutil
+
+    for said, want in (("March 2023", datetime(2023, 3, 1)),
+                       ("march 2023", datetime(2023, 3, 1)),
+                       ("mar 2023", datetime(2023, 3, 1)),
+                       ("12 March 2023", datetime(2023, 3, 12)),
+                       ("March 12, 2023", datetime(2023, 3, 12))):
+        bound, _ = timeutil.told(said)
+        check(f"{said!r} is read as a date", bound.moment == want, str(bound))
+    # The side is read before the date, so the honest form of a month keeps working.
+    bound, _ = timeutil.told("since June 2015")
+    check("'since June 2015' is a side and a date",
+          bound.moment == datetime(2015, 6, 1) and bound.side == timeutil.AFTER, str(bound))
+    check("a month nobody has is not a date", refused(lambda: timeutil.told("Marching 2023")))
+    check("a day that month has not got is not a date",
+          refused(lambda: timeutil.told("February 30 2023")))
 
     print()
     if failures:

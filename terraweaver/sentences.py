@@ -11,8 +11,8 @@ So there is a second door. The host says the fact in words and names the two thi
 
 That is recorded at once and costs nothing. What relation it is, which end holds which role,
 how many may hold at a moment and when it began are read afterwards, at the close of the task,
-by a reader whose whole attention is that one question. A host's run is stopped after ten
-seconds and a reader takes four to twenty, so this cannot happen where the fact is said — and
+by the engineer, whose whole attention is that one question. A host's run is stopped after ten
+seconds and the engineer takes four to twenty, so this cannot happen where the fact is said — and
 it does not need to: the words are in the record and reading them is free of any hurry.
 
 What is never read and never guessed: **which two things**. They are handed over as things, not
@@ -117,9 +117,9 @@ def count(world) -> tuple[int, int]:
 
 
 def classes_here(world) -> str:
-    """The classes a role may name, so a reader picks one rather than inventing a word.
+    """The classes a role may name, so the engineer picks one rather than inventing a word.
 
-    Shown rather than remembered: a reader told to name a class and not shown which exist will
+    Shown rather than remembered: an engineer told to name a class and not shown which exist will
     write a reasonable word that is nobody's class, and the world then holds a condition it
     cannot check against anything.
     """
@@ -308,7 +308,12 @@ def _type_for(world, said: dict, tally: dict) -> str | None:
     try:
         made = grow(word, said.get("description") or f"{subject_is} and {object_is}",
                     nature=CLAIMS_NOTHING,
-                    cardinality=_cardinality(said), over_time=False,
+                    # The engineer is asked how many hold **at a moment** and the answer goes
+                    # straight through: that is what a cardinality says now. It used to be
+                    # followed by `over_time=False`, which put every type read out of a host's
+                    # words into the withdrawn "one ever" category — so a second employer was
+                    # called a correction of the first, and the first was never ended.
+                    cardinality=_cardinality(said),
                     subject_is=subject_is, object_is=object_is,
                     subject=_class_named(world, said.get("subject_class")),
                     object=_class_named(world, said.get("object_class")))
@@ -332,7 +337,7 @@ def _type_for(world, said: dict, tally: dict) -> str | None:
 # nature was meant to bundle properties and instead repeated them — cardinality said again in
 # other words — and what is left when the repetition is taken out is a **set of inference
 # rules**, which is `implies` and which one word cannot carry. So nothing here works one out.
-# The field is filled with the value that claims nothing, and the rules the reader gives are
+# The field is filled with the value that claims nothing, and the rules the engineer gives are
 # kept where they belong: `transitive` on the type, the rest waiting for `implies` to exist.
 CLAIMS_NOTHING = "related_to"
 
@@ -374,7 +379,7 @@ def _a_word(said) -> str | None:
 
 
 def _class_named(world, said):
-    """The class a reader named, if this world has it. Watched, never enforced.
+    """The class the engineer named, if this world has it. Watched, never enforced.
 
     `define_relation` takes the ends as classes and does not hold a link to them — the comment
     there says why, and it was measured: ends declared from the first example refuse the second,

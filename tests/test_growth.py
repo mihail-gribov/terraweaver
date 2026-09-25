@@ -144,7 +144,7 @@ def main() -> int:
     closed = base.run('made = world.define_relation("authorship", "who wrote what",\n'
                       '                             nature="related_to",\n'
                       '                             subject=Thing, object=Thing,\n'
-                      '                             cardinality="one-to-many", over_time=False)\n'
+                      '                             cardinality="one-to-many")\n'
                       'print(len(world.take_in(made)), len(Related.all(limit=None)))', "host")
     check("and the links already written join the type it defines",
           closed["output"].strip() == "3 0", closed["output"] + str(closed["error"]))
@@ -168,7 +168,7 @@ def main() -> int:
            'link.describe("Berlin is the capital of Germany")\n'
            'print("free link made")', "k")
     made.define_relation("capital_of", "the city that is a country's seat of government",
-                         nature="part_of", cardinality="one-to-one", over_time=False)
+                         nature="part_of", cardinality="one-to-one")
     rt._bind_classes(rt.session("k"))
     got = rt.run('world.take_in("capital_of", "capital of")\n'
                  'for link in world.all("CapitalOf", limit=None):\n'
@@ -185,7 +185,7 @@ def main() -> int:
     rt = WorldRuntime(":memory:", fixture="job_search")
     made = authoring.install(rt.world, None)
     made.define_relation("capital_of", "the city that is a country's seat of government",
-                         nature="part_of", cardinality="one-to-one", over_time=False)
+                         nature="part_of", cardinality="one-to-one")
     rt._bind_classes(rt.session("k2"))
     rt.start_task("k2", "record which cities are seats of government", "recording")
     rt.run('for city, land in (("Berlin", "Germany"), ("Tokyo", "Japan")):\n'

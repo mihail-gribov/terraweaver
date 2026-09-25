@@ -9,6 +9,8 @@
     "to": [
       "Person"
     ],
+    "functional": false,
+    "inverse_functional": false,
     "symmetric": true,
     "irreflexive": true,
     "labels": [
@@ -61,7 +63,8 @@
     ],
     "example": "priya.relate(michael, \"social\", label=\"friend\")",
     "reads": "Priya is Michael's friend",
-    "nature": "related_to"
+    "nature": "related_to",
+    "how_many": "Neither end: friendship is not a post, and nobody has one friend at a time."
   },
   "attributes": [
     {

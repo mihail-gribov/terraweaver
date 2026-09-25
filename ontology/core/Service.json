@@ -10,6 +10,8 @@
     "to": [
       "Person"
     ],
+    "functional": false,
+    "inverse_functional": false,
     "asymmetric": true,
     "reverse": "served_by",
     "labels": [
@@ -33,9 +35,10 @@
       }
     ],
     "example": "nina.relate(michael, \"service\", label=\"dentist\")",
-    "reads": "Nina is Michael's dentist \u2014 the provider is the subject, the client the object",
+    "reads": "Nina is Michael's dentist — the provider is the subject, the client the object",
     "one_of_a_label": true,
-    "nature": "related_to"
+    "nature": "related_to",
+    "how_many": "Neither end: somebody has a dentist and a lawyer at once, and a dentist has as many patients as they have. One *provider of a kind* at a time is `one_of_a_label`, which is already declared here."
   },
   "attributes": [
     {

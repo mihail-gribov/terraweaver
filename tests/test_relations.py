@@ -330,6 +330,32 @@ def main() -> int:
     check("a stated link is not retractable — what was said stays",
           "what was said stays" in refused_retract, refused_retract or "(allowed)")
 
+    # --- every type the core ships says how many hold at a moment, on both ends ---
+    # A gate, because the fields are read with `.get()` and an absent one behaves exactly like
+    # `false` — so a type that nobody thought about is indistinguishable, in code, from one thought
+    # about and left open. It is not the same thing to a reader, and it is not the same thing to the
+    # inspector, which proposes a property a type does not declare. Seven of the twelve said nothing
+    # at all until they were made to.
+    import json as _json
+    from terraweaver import ontology as _ont
+
+    for path in sorted(ONTOLOGY_DIR.glob("*.json")):
+        spec = _json.loads(path.read_text())
+        rel = spec.get("relation")
+        if not rel:
+            continue
+        for side in ("functional", "inverse_functional"):
+            check(f"{spec['name']} declares {side}", side in rel,
+                  f"{path.name} says nothing about it")
+            # "One ever" is withdrawn: a record only accumulates and nothing in it is one forever.
+            # A side is one at a time or it is not, and `True` means the branch that printed a note
+            # and ended nothing.
+            check(f"{spec['name']}.{side} is one-at-a-time or open",
+                  rel.get(side) in (False, _ont.AT_A_TIME), repr(rel.get(side)))
+        check(f"{spec['name']} says why, for a reader",
+              isinstance(rel.get("how_many"), str) and len(rel["how_many"]) > 40,
+              str(rel.get("how_many"))[:60])
+
     print()
     if failures:
         print(f"{len(failures)} failed: {', '.join(failures)}")

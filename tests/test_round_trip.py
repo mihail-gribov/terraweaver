@@ -182,7 +182,7 @@ kind_of = thing.set_kind_of(other,  starts=t)
 loose = thought.relate(plan, "related", label="raised_for", starts=t)
 loose.nature = "related_to"
 world.define_relation("stands_beside", "one specimen standing next to another, one at a time",
-                      nature="related_to", cardinality="one-to-one", over_time=True,
+                      nature="related_to", cardinality="one-to-one",
                       subject_is="the near one", object_is="the far one")
 one.set_stands_beside(two,  starts=t)
 print("links in")

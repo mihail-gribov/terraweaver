@@ -2427,3 +2427,163 @@ Both were asked for and neither can be answered. `Related` declared `label` requ
 world nagged for a word about a link whose whole point is that nobody has one yet; and it
 declared a `nature` attribute, so the world asked what *sort of thing* a link is. Both are
 residue of the design that had natures. What an untyped link is, is the fact in its own words.
+
+### The classes a world starts with hold no privilege
+
+Stated as a principle: **a class that was there when the world opened exists on exactly the same
+terms as one the world grew for itself.** Nothing marks it, nothing is forbidden to it, nothing
+is forbidden *because of* it.
+
+`BASE_CLASSES` is a starting set, not a rank. It names the five a world cannot begin without —
+`Thing` to put anything at all, `Related` for a link with no type yet, `Person` and `AIAgent` so
+there is a "me" and a "you", `Event` for the one kind whose time is part of what it is — and
+that is the whole of what the tuple means. After the world opens, `Thing` and a class the world
+made last night are the same kind of object: both are read from a spec, both can be extended,
+both can be wrong, both are judged by what has accumulated under them.
+
+Where the world still breaks this, and it is one place: `growth` refuses to extend anything that
+is not in the base (`extends 'City', which isn't a core class`), and refuses to redefine an
+attribute a base class declares. That is two privileges — only the shipped classes may be built
+on, and only their attributes are beyond correction — and it means a world cannot deepen its own
+vocabulary past the first step it took away from ours.
+
+What may honestly differ is **maturity**, which is read from the world and not from provenance:
+how much has accumulated under a class, how long it has stood, how often it has been corrected.
+Where a class came from is a *fact about it*, recorded beside it, of the same kind as any other
+fact — never a category that changes how it is treated. This sharpens the rule of 2026-09-24,
+that the inspector must look at every class and not only the ones a world grew: that said don't
+*judge* by source, this says don't *mark* by it either.
+
+### A date degraded is worse than a date refused
+
+`starts="March 2023"` was refused: the record read `'in 2006'`, `'3 years ago'`, `'2006-01-01'` and
+not the commonest way anybody says a date. What the writer did next is the whole lesson — it gave
+the year alone, which the record *took*, and a month somebody named went in as **1 January**. A
+refusal costs a line; a degradation costs the fact, because nothing afterwards tells it from a day
+somebody knew. `timeutil.told` reads a named month now, with a month and no day being the first of
+it, which is exactly what `'2006-03'` and `'2006'` already came to.
+
+## 2026-09-25 — `over_time` is gone: cardinality says how many, and it says it about a moment
+
+Decided long ago in `docs/relation-properties.md` (part three) and carried out now, because
+experiment 01 measured what it cost. One axis, per end, about one moment:
+
+    cardinality="many-to-one"    this thing has one of those at a time   -> functional
+    cardinality="one-to-many"    that thing has one of these at a time   -> inverse_functional
+    cardinality="many-to-many"   neither is limited, they accumulate
+    cardinality="one-to-one"     both ends
+
+**What a limited end means, and it is the whole of it:** adding a link never removes one. The
+standing link's period is closed where the new one begins, both stay in the record, and if only one
+can hold then the periods do not overlap. That is all "supersession" is here — there is no separate
+act, and no category of "correction".
+
+### Why the second axis had to go
+
+`over_time` was a boolean beside the cardinality, and the two cancelled each other in both
+directions. Measured in experiment 01, on a type the world had just read out of a host's sentence:
+
+    over_time=True    made **both** ends one-at-a-time whatever the cardinality said. `works_at`
+                      was declared many-to-one — many employees per employer — and came out with
+                      one employee per employer too. Hiring Boris at Brightwork **ended Anna's
+                      job there**, with a hint to say so and nothing else. A fact about a third
+                      party, rewritten, because a boolean overruled the thing that was asked.
+    over_time=False   put the type in the withdrawn "one ever" category, where a second telling
+                      was called a correction. That branch only ever printed a note: nothing was
+                      ended and nothing marked, so two links stood and "which now" had two
+                      answers. Its own docstring said the earlier one was "marked as no longer
+                      held", and nothing marked it.
+
+And "one ever" is not a category. A record only ever accumulates, and nothing in it is one forever:
+a birthplace changes in the record not because anybody moved but because sources disagreed or
+somebody was wrong. Forever is a property of the world, not of the record.
+
+### An undated second telling ends the first *before now*
+
+The case that was never reachable, and the reason it was not. `relate` computed
+`start = period.get("valid_from") or timeutil.now()`, so a link nobody dated arrived at the check
+looking like one dated today — the standing link was ended today, exactly, and the hint said "the
+date this one starts" about a link with no start. A day nobody said, indistinguishable later from
+one somebody knew: the rule the substitution was quietly breaking.
+
+The start is now passed as it was said, `None` and all, and the undated case ends the standing link
+at the one boundary that needs no day: **some time before now**, `until_is = before`. Asked whether
+it holds now the answer is no; asked whether it held in 2020 the answer is *nobody knows*, which is
+true and which a host can act on. `_not_ours_to_end` used to refuse here — "nothing to end it at but
+a date nobody gave" — and there is something to end it at after all.
+
+### What went with it
+
+- **`_correct` and the `functional is True` branches** in `_check_functional`. The question the
+  second of them raised — two subjects holding one object, worth asking about once — stays, under
+  the per-subject side.
+- **`_only_what_still_holds`** and `_note_it_rests_on_order`. That filter decided what holds on the
+  way *out* of a read, by which telling arrived last, because the "one ever" category had no periods
+  to decide with. Periods decide now, so a read cannot answer differently from the record.
+- **`kind.changes`**, the switch that chose between the two categories, and with it the line in
+  `questions._SAYS` that mapped "at a time", "over time", "current" onto it — those words mean
+  `one_per_subject = True` now.
+- `True` in a spec on disk is read as `at_any_time` when the class is built. Nothing to migrate:
+  the branch it named printed a note and ended nothing, so no world loses behaviour it had.
+
+### Where a test was measuring the bug
+
+`tests/test_time.py` declared `chairs` as many-to-one and relied on `over_time=True` to limit the
+*other* end — the organisation's. Written honestly it is `one-to-many`. `tests/test_superseding.py`
+had a whole section for "a correction", which is now the undated handover: the earlier link is ended
+before-now, and the checks are that no day was invented and that the world says so and asks when.
+All 25 test files pass.
+
+### The core's own types say how many, on both ends
+
+Written into `ontology/core/*.json`, with a gate in `tests/test_relations.py`. Seven of the twelve
+relation types the core ships said **nothing at all** about how many may hold; five said something
+about one end and nothing about the other. In code an absent field and `false` behave identically —
+both read through `.get()` — and to a reader they are not the same thing at all: absent says nobody
+thought about it, and a side nobody thought about is a side that limits nothing by accident.
+
+    Authority        —            one at a time     one manager per report; a manager has many
+    Ownership        —            one at a time     a thing has one owner; a person owns many
+    PartOf           one at a time  —               a part has one whole; a whole has many parts
+    Partner          one at a time  —               symmetric: the two ends are one, said once
+    Kin, Kind, Located, Membership, Participation, Related, Service, Social — neither end
+
+Each also carries `how_many`, a sentence saying why, because the reasoning is the part that cannot
+be recovered from the two booleans. The rule behind every line: **limit a side only where the word
+itself means one at a time.** An under-limited side keeps both facts and the world can ask; an
+over-limited one rewrites a fact about a third party, which is what hiring Boris did to Anna.
+
+Two of these are new claims rather than transcriptions. **Ownership** gains one owner at a time on
+the thing's end — ownership transfers, and two owners of one thing over one stretch is a handover.
+**Located** gains `one_of_a_label`: a person has a home and an office at once, so the type limits
+neither end, but one *home* at a time is true and the limit belongs to the word the user said.
+
+### A link that arrives where something stood begins today
+
+The other half of the same rule, and the user's: if the new link says nothing about when it began
+**and something was standing there**, it begins today — marked `before`, because the change happened
+at some point before today and nobody said when. The standing one ends at the same moment, from the
+same `now()`, marked the same way.
+
+    Acme Corp hq in Tallinn   starts 2026-09-25 (before)   —
+    Acme Corp hq in Dublin    —                            until 2026-09-25 (before)
+
+Left with no start at all, as the first cut of this had it, the pair read as two links that both held
+from the beginning of time and only the end of one said otherwise. **A fact with no start and nothing
+before it keeps having none**, which is −∞ and means what it says: held as long as anybody knows. An
+event is not this case — an event's time is `start_time`, a required attribute, not a period.
+
+### "Reader" named three different things, and now names none of them
+
+The word meant the engineer in `sentences`, `portraits`, `runtime` and `timeutil`; the picker in
+`outside.Closed` and `portraits`; either of them in `inspector`; and *whoever reads the record later*
+in a dozen honest places. Asked what a reader was, the only true answer was "it depends which line".
+Every use that meant one of the two parties now names the role — including `server._give_it_a_reader`,
+which sets `world.engineer` and nothing else — and the uses that mean a later reader of the record
+stay, because that was never the ambiguity. What keeps the word: two columns in the inspector's own
+side tables, where renaming it would want an ALTER on every world already on disk.
+
+**A NameError fell out of it.** `inspector.write_the_questions` guarded on `if reader is None` in a
+function whose parameter is `engineer` — nothing bound that name, so the call raised every time it
+ran. Offline work, run rarely, and nothing in the suite reached it.
+

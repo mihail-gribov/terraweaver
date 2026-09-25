@@ -9,6 +9,8 @@
     "to": [
       "Organization"
     ],
+    "functional": false,
+    "inverse_functional": false,
     "asymmetric": true,
     "irreflexive": true,
     "transitive_via": "PartOf",
@@ -120,8 +122,9 @@
       }
     ],
     "example": "kevin.relate(acme, \"membership\", title=\"logistics lead\")",
-    "reads": "Kevin belongs to Acme as logistics lead \u2014 the member is the subject",
-    "nature": "related_to"
+    "reads": "Kevin belongs to Acme as logistics lead — the member is the subject",
+    "nature": "related_to",
+    "how_many": "Neither end: somebody belongs to an employer, a gym and an alumni body at once, and an organisation has as many members as it has. The one that is one at a time is the primary membership, which is an attribute with its own check, and the posts inside it, which are roles with their own max."
   },
   "attributes": [
     {
@@ -134,7 +137,7 @@
       "name": "role",
       "type": "str",
       "required": false,
-      "description": "Their role from this type's roles (ceo, founder, employee\u2026); filled from the label or title when it matches one."
+      "description": "Their role from this type's roles (ceo, founder, employee…); filled from the label or title when it matches one."
     },
     {
       "name": "title",
@@ -153,7 +156,7 @@
       "name": "primary",
       "type": "bool",
       "required": false,
-      "description": "The main one \u2014 what Person.organization shows. One at a time.",
+      "description": "The main one — what Person.organization shows. One at a time.",
       "default": false
     },
     {

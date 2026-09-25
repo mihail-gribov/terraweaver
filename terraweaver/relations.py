@@ -7,8 +7,9 @@ ontology with a `relation` section that says how the link behaves; the world che
     from / to              which classes may stand at each end ("any" for anything)
     symmetric              seen the same from both ends (Kin, Partner, Social)
     irreflexive            nothing relates to itself
-    functional             "at_any_time": a subject has at most one current such relation
-    inverse_functional     "at_any_time": an object has at most one current such relation
+    functional             "at_any_time": a subject has one such relation at a time, and a new
+                           one ends the standing one's period rather than replacing it
+    inverse_functional     "at_any_time": the same of the object's end
     acyclic                no cycle through the chain (Authority, PartOf)
     transitive             the chain counts (PartOf: a department of a division of a company)
     transitive_via         another type's chain extends this one (Membership via PartOf)
@@ -381,11 +382,12 @@ def _make_the_type(world, subject, obj, kind: str, period: dict, attrs: dict, wh
             or f"one {type(subject).__name__.lower()} {word.replace('_', ' ')} "
                f"one {type(obj).__name__.lower()}",
             nature="related_to", subject=None, object=None,
-            # One value per subject, and a later telling corrects an earlier one. Made with no
-            # limit, a person was born in two cities and played two positions at once: the type
-            # the world invents is the type most of what a person says needs, and saying "as many
-            # as you like" is not the cautious choice — it is a claim that nothing supersedes.
-            cardinality="many-to-one", over_time=False)
+            # One per subject at a time, so a later telling ends the standing one rather than
+            # standing beside it. Made with no limit, a person was born in two cities and played
+            # two positions at once: the type the world invents is the type most of what a person
+            # says needs, and saying "as many as you like" is not the cautious choice — it is a
+            # claim that nothing supersedes.
+            cardinality="many-to-one")
     except Exception as refused:               # noqa: BLE001 - a world with no authoring, or a bad word
         free = next((n for n, c in relation_classes(world.classes).items()
                      if spec(c).get("free")), None)
@@ -403,13 +405,12 @@ def _make_the_type(world, subject, obj, kind: str, period: dict, attrs: dict, wh
     else:
         ontology.note_hint(
             f"there was no type for '{kind}', so I made one: nature=related_to, between "
-            f"anything and anything, one value per subject — saying it again with something "
-            f"else corrects it, and the first stays in the record. If there can be several at "
-            f"once (everything somebody has written, every place they have lived), or if it is "
-            f"a part, a kind or the same thing, say so the way you would of anything: "
-            f"{word}.nature = \"part_of\" (or kind_of / same_as / derived_from / related_to), "
-            f"{word}.one_per_subject = False, {word}.changes = True — changes means a new one "
-            f"ends the last instead of correcting it."
+            f"anything and anything, one per subject at a time — saying it again with something "
+            f"else ends the first where the second begins, and both stay in the record. If there "
+            f"can be several at once (everything somebody has written, every place they have "
+            f"lived), or if it is a part, a kind or the same thing, say so the way you would of "
+            f"anything: {word}.nature = \"part_of\" (or kind_of / same_as / derived_from / "
+            f"related_to), {word}.one_per_subject = False."
         )
     kept = {k: v for k, v in attrs.items()
             if k in {a["name"] for a in theirs.get("attributes", [])}}
@@ -445,10 +446,11 @@ def relate(world, a, b, kind: str, period: dict, attrs: dict):
             raise ValueError(
                 f"There is no relation type {word!r}. Define it, then say this again:\n"
                 f"    world.define_relation(\"{word}\", \"<what this link is>\", "
-                f"nature=\"related_to\", cardinality=\"many-to-one\", over_time=False)\n"
+                f"nature=\"related_to\", cardinality=\"many-to-one\")\n"
                 f"nature is one of related_to / part_of / kind_of / same_as / derived_from. "
-                f"over_time=True when one holds at a time and a new one ends the last (an "
-                f"employer, a spouse); False when they simply accumulate.\n{unknown}"
+                f"cardinality is about one moment: \"many-to-one\" when this thing has one of "
+                f"those at a time (an employer, a spouse) and a new one ends the last, "
+                f"\"many-to-many\" when they simply accumulate.\n{unknown}"
             ) from None
         return _make_the_type(world, a, b, kind, period, attrs, str(unknown))
     subject, obj = (b, a) if reverse else (a, b)
@@ -586,9 +588,25 @@ def relate(world, a, b, kind: str, period: dict, attrs: dict):
     # by which was told last, and both stay in the record. What does have a time is an event,
     # and an event is a class, not a link: `Event.start_time` is required and always was. So
     # the world insists on a date exactly where the date is the fact, and nowhere else.
-    start = period.get("valid_from") or timeutil.now()
+    # The start **as it was said**, which is None when nothing was said. Substituted with now()
+    # here, an undated link arrived at the check looking like one dated today: the standing one
+    # was then ended today, exactly, and the hint said "the date this one starts" about a link
+    # that had no start. A day nobody said cannot be told apart, later, from one somebody knew —
+    # which is the rule the substitution was quietly breaking. Where a moment is needed to compare
+    # periods at all, `_check_functional` takes now() for itself.
+    start = period.get("valid_from")
     end = period.get("valid_until")
-    _check_functional(world, name, rel, subject, obj, start, end, attrs)
+    took_over = _check_functional(world, name, rel, subject, obj, start, end, attrs)
+    if took_over is not None and start is None:
+        # Something held and this holds instead, and nobody said since when — so it begins where
+        # the other one ended, which is today, marked `before` because the change itself happened
+        # at some point before today and nobody said when. Left with no start at all, the two read
+        # as a pair that both held from the beginning of time, and the one that is over says so
+        # only by its end. A fact with no start and nothing before it keeps having none: that is
+        # not the same case, and it means exactly what it says — held as long as anybody knows.
+        period["valid_from"] = took_over
+        period["from_is"] = timeutil.BEFORE
+        start = took_over
     if attrs.get("role"):
         _check_roles(world, name, cls, subject, obj, attrs["role"], start, end)
     if rule(rel, "acyclic") and _reaches(world, name, obj, subject):
@@ -611,8 +629,9 @@ def relate(world, a, b, kind: str, period: dict, attrs: dict):
         ontology.note_hint(
             f"{name} holds one at a time, so when it began is part of the fact — and none was "
             f"said, so this one has no start. Say when, in whatever words you have: "
-            f"starts='now', 'yesterday', '3 years ago', '2006-01-01', or, when that is all you "
-            f"know, starts=before(now) / starts=after(date(2006, 1, 1)). Until then I cannot "
+            f"starts='now', 'yesterday', '3 years ago', 'March 2006', '2006-01-01', or, when "
+            f"that is all you know, starts=before(now) / starts=after(date(2006, 1, 1)). Until "
+            f"then I cannot "
             f"tell this from the one before it except by which you told me last."
         )
     if rel.get("free"):
@@ -656,7 +675,7 @@ def _note_a_type_is_wanted(world, created) -> None:
         f"{a} and {b}. That is a type this world hasn't got: "
         f"world.define_relation(\"{idea.replace(' ', '_')}\", \"<what it is>\", "
         f"nature=\"related_to\", subject={a}, object={b}, "
-        f"cardinality=<how many?>, over_time=<one at a time?>). "
+        f"cardinality=<how many at a time?>). "
         f"Then world.take_in(<the type>, \"{idea}\") moves the ones already written into "
         f"it — nothing is "
         f"re-read, they were structured all along."
@@ -923,7 +942,11 @@ def _not_ours_to_end(link, start=None) -> bool:
     when = getattr(link, "valid_from", None)
     if when is not None:
         if start is None:
-            return True          # nothing to end it at but a date nobody gave
+            # There is something to end it at after all, and it is not a date: *some time before
+            # now*. The record keeps which side of a date a bound is on, so the end can be said
+            # without a day being invented — and this used to refuse instead, which left two
+            # periods open on a side that can hold one.
+            return False
         # The new one's own start is where the old one ends. That is not the world deciding
         # anything: the boundary is a date the host gave, on the link it gave it for. The rule
         # this replaces was written when ending a dated link meant inventing its end, and it
@@ -962,24 +985,6 @@ def _why_not_to_assume(link, start=None) -> str:
             "something to decide from one side.")
 
 
-def _correct(world, standing, name: str, instead) -> None:
-    """A second value for something that has only one, ever: the later reading is taken.
-
-    A handover and a correction are not the same thing and the world had only the first. Work
-    changes — both employers are true, in their turn. A birthplace does not: only one of the two
-    is so, and the later telling is the one to believe, because it is the one the person said
-    last. The earlier stays in the record as what was said, marked as no longer held, so the
-    change is visible and reversible. Nothing is erased; `functional: True` was simply never
-    checked at all, and a person could be born in two cities.
-    """
-    ontology.note_hint(
-        f"{name} has one value and no more: {standing.display_name()} was recorded and this says "
-        f"{instead.display_name()} instead. Taking the later as a correction — what was said "
-        f"earlier stays in the record and is not what holds. Nothing is dated by this: a "
-        f"correction is not a change, and saying it ended today would be inventing a day."
-    )
-
-
 # How many times one end can be handed over before the type itself is in doubt. A thing that
 # changes hands three times may simply have changed hands three times; by the sixth the type is
 # more likely to be wrong about how many there can be.
@@ -1009,11 +1014,11 @@ def _too_many_handovers(world, name: str, rel: dict, end, side: str) -> None:
     )
 
 
-def _hand_over(world, standing, held, start, name: str) -> None:
+def _hand_over(world, standing, held, start, name: str, at=None) -> None:
     """A new holder of a one-at-a-time relation ends the last one, rather than being refused.
 
-    This relation exists to be changed — that is what `over_time` says about it — and the change
-    is the commonest thing anybody records: a new employer, a new capital, the sport a position
+    This relation exists to be changed — that is what one-at-a-time says about it — and the
+    change is the commonest thing anybody records: a new employer, a new capital, the sport a position
     turns out to belong to. Refusing it made the world answer "which one now" with the first
     thing it had ever been told: eight of ten wrong answers in one run were a superseded value
     still standing, because the statement that would have replaced it was turned away at the
@@ -1035,23 +1040,28 @@ def _hand_over(world, standing, held, start, name: str) -> None:
             f"time, so that one ends {timeutil.show(start)} — the date this one starts."
         )
         return
-    # No date, so none is written. Ending it today would say the world changed today, when all
-    # that happened today is that somebody mentioned it; the two live in different fields and
-    # putting the telling time into the other one invents an event. What holds is decided by what
-    # was said last, the way it has always been decided for an attribute.
-    #
-    # This is the one case where the missing date changed the answer — it decided which of two
-    # holds — so it is worth more than a hint that dies with the run.
+    # No date was said, so the boundary is today — the one moment anybody can defend. Something
+    # held, something else holds now, and now is when the record learned it. Both bounds are marked
+    # `before`, which is the field the record keeps for exactly this: the change happened at some
+    # point *before* today and nobody said when. Written as exact dates they would say the world
+    # changed today, when all that happened today is that somebody mentioned it; written as nothing
+    # at all — which is what this did — two periods stayed open on a side that can hold one, so
+    # "who is it now" had two answers and a read answered by the order things were said in.
+    with ontology.trusted_writes(), ontology.stating("world"):
+        standing.valid_until = at if at is not None else timeutil.now()
+        standing.until_is = timeutil.BEFORE
+        world.save(standing)
+    # The missing date decided a boundary, so it is worth more than a hint that dies with the run.
     world.questions.raise_(
         standing, "when_it_changed",
         f"{held.display_name()} had {standing.display_name()} and now has this instead. Neither "
-        f"was dated, so I am going by which I was told last. When did it change?",
+        f"was dated, so that one is recorded as having ended some time before now. When did it "
+        f"change?",
     )
     ontology.note_hint(
-        f"{held.display_name()} had {standing.display_name()} and now has "
-        f"{'this' if True else ''} — {name} holds one at a time, so the later telling is what "
-        f"holds. Neither is dated: if you know when it changed, say starts=... and I will put "
-        f"the boundary there."
+        f"{held.display_name()} had {standing.display_name()} and now has this — {name} holds one "
+        f"at a time, so that one is ended: some time before now, since nothing said when. Say "
+        f"starts=... and the boundary goes exactly there."
     )
 
 
@@ -1067,8 +1077,21 @@ def _how_to_make_room(start) -> str:
     return "end that one first (its .expire(), or keep(until=...)), or give this one starts= after it ends"
 
 
-def _check_functional(world, name, rel, subject, obj, start, end, attrs) -> None:
-    candidates = [r for r in world.all(name, limit=None, history=True) if _overlaps(r, start, end)]
+def _check_functional(world, name, rel, subject, obj, start, end, attrs):
+    """Whether a standing link was handed over, and the moment it was handed over at.
+
+    The moment is returned because the new link needs it too: a link that says nothing about when
+    it began, arriving where something else stood, begins **today** — the record learned today that
+    this is what holds, and a link with no start at all would leave the pair reading as two things
+    that held forever. Both bounds are one moment, taken once, and both say `before`: the change
+    happened at some point before today and nobody said when.
+    """
+    # Which links this one could collide with. A link with no start holds from now, so now is what
+    # its period is compared against — but `start` stays as it was said, because what the world may
+    # write on the standing link depends on whether anybody gave a date.
+    at = start if start is not None else timeutil.now()
+    handed_over = False
+    candidates = [r for r in world.all(name, limit=None, history=True) if _overlaps(r, at, end)]
     if rel.get("functional") == "at_any_time":
         for r in candidates:
             if same(r.subject, subject) or (rule(rel, "symmetric") and (same(r.object, subject) or same(r.subject, obj) or same(r.object, obj))):
@@ -1084,18 +1107,15 @@ def _check_functional(world, name, rel, subject, obj, start, end, attrs) -> None
                         f"{subject.display_name()} already has a {name} for that time: "
                         f"{r.display_name()}. {_why_not_to_assume(r, start)} {_how_to_make_room(start)}."
                     )
-                _hand_over(world, r, subject, start, name)
-    if rule(rel, "functional") is True:          # one ever, not one at a time
-        for r in candidates:
-            if same(r.subject, subject) and not same(r.object, obj):
-                _correct(world, r, name, obj)
-        # One per subject says nothing about the object, and that is where half of what people
-        # say lands: "the chairperson of Fatah is Mahmoud Abbas" makes the person the subject,
-        # so a later "the chairperson of Fatah is Yasser Arafat" is a different subject and
-        # nothing supersedes. Measured on the benchmark's own pair: the world held both. The
-        # world cannot know whether an organisation has one chairperson — that is what the word
-        # means, and it has only the shape — but it can count, and two holders at once is worth
-        # asking about once.
+                _hand_over(world, r, subject, start, name, at)
+                handed_over = True
+    if rel.get("functional") == ontology.AT_A_TIME and not rel.get("inverse_functional"):
+        # One per subject says nothing about the object, and that is where half of what people say
+        # lands: "the chairperson of Fatah is Mahmoud Abbas" makes the person the subject, so a
+        # later "the chairperson of Fatah is Yasser Arafat" is a different subject and nothing
+        # supersedes. Measured on the benchmark's own pair: the world held both. The world cannot
+        # know whether an organisation has one chairperson — that is what the word means, and it
+        # has only the shape — but it can count, and two holders at once is worth asking about once.
         for r in candidates:
             if same(r.object, obj) and not same(r.subject, subject):
                 world.questions.raise_(
@@ -1109,10 +1129,6 @@ def _check_functional(world, name, rel, subject, obj, start, end, attrs) -> None
                     involves=[r.subject, subject],
                 )
                 break
-    if rule(rel, "inverse_functional") is True:
-        for r in candidates:
-            if same(r.object, obj) and not same(r.subject, subject):
-                _correct(world, r, name, subject)
     if rel.get("inverse_functional") == "at_any_time":
         for r in candidates:
             if same(r.object, obj) and not same(r.subject, subject):
@@ -1121,7 +1137,8 @@ def _check_functional(world, name, rel, subject, obj, start, end, attrs) -> None
                         f"{obj.display_name()} already has a {name} for that time: "
                         f"{r.display_name()}. {_why_not_to_assume(r, start)} {_how_to_make_room(start)}."
                     )
-                _hand_over(world, r, obj, start, name)
+                _hand_over(world, r, obj, start, name, at)
+                handed_over = True
                 _too_many_handovers(world, name, rel, obj, "object")
     if name == "Membership" and attrs.get("primary"):
         for r in candidates:
@@ -1135,6 +1152,7 @@ def _check_functional(world, name, rel, subject, obj, start, end, attrs) -> None
                        if later else
                        "Assign person.organization instead — it closes the old one and opens the new one.")
                 )
+    return at if handed_over else None
 
 
 def _note_same_label(world, name: str, rel: dict, subject, obj, attrs: dict, start, end, created) -> None:
@@ -1277,80 +1295,9 @@ def relations_of(world, entity, kind: str | None = None, history: bool = False,
     found.sort(key=lambda r: (_stated_rank(world, r),
                               timeutil.as_datetime(r.valid_from or r.created_at), r.created_at),
                reverse=True)
-    if not history:
-        found = _only_what_still_holds(world, found)
     for relation in found:  # so rel.counterpart knows which end the host asked from
         relation.__dict__["_asked_from"] = entity
     return found
-
-
-def _only_what_still_holds(world, found: list) -> list:
-    """For a type with one value and no more, the latest telling — the rest is history.
-
-    A correction has no date to it: saying "its head office is Tallinn" after "…is Dublin" is
-    not news that it moved, it is being told the first was wrong, and writing an end date would
-    invent the day it moved. So the earlier one is not ended, it is simply not what holds — and
-    that is decided here, on the way out, the way a slot has always decided it.
-
-    It has to be decided somewhere. Removing the invented end date left `_correct` announcing a
-    correction and doing nothing, so a thing had two head offices and a person two birthplaces,
-    and every count agreed with the host that ten facts were recorded.
-
-    `history=True` (and `any_time=True`, which passes through it) still gives everything: what
-    was said is never lost, it is only read as past.
-    """
-    # Counted per type, not across them. Held in one set, a person with a birthplace and a book
-    # lost the book: both types say one value per subject, and the second link of the *second*
-    # type was taken for a second value of the first. It showed as "the fact is not in the
-    # world" while `relations("author_of")` returned it and its period was open.
-    kept, seen_subject, seen_object = [], set(), set()
-    undated: dict = {}
-    for relation in found:              # already latest-first: stated over concluded, then time
-        rel = spec(type(relation))
-        kind = rel["kind"]
-        subject_id = getattr(relation.subject, "id", None)
-        object_id = getattr(relation.object, "id", None)
-        if rule(rel, "functional") is True and subject_id is not None:
-            if (kind, subject_id) in seen_subject:
-                _note_it_rests_on_order(undated, kind, kept, relation)
-                continue
-            seen_subject.add((kind, subject_id))
-        if rule(rel, "inverse_functional") is True and object_id is not None:
-            if (kind, object_id) in seen_object:
-                _note_it_rests_on_order(undated, kind, kept, relation)
-                continue
-            seen_object.add((kind, object_id))
-        kept.append(relation)
-    for said in list(undated.values())[:2]:
-        ontology.note_hint(said)
-    return kept
-
-
-def _note_it_rests_on_order(undated: dict, kind: str, kept: list, passed_over) -> None:
-    """Say when the answer rests on the order things arrived rather than on a date anybody gave.
-
-    Most links need no date and the world stopped asking for one — but some questions turn on
-    it, and those are the questions where the world has to say what its answer stands on. Two
-    tellings with no date between them are ordered by which arrived later, which is right far
-    more often than not and is still not the same as being told when. Said out loud, the host
-    can go back to the user for the date; said silently, an ordering artefact reads as a fact.
-
-    Only when it decided something: two links that both hold, or one dated pair, say nothing.
-    """
-    if kind in undated:
-        return
-    holding = next((r for r in kept if spec(type(r))["kind"] == kind), None)
-    if holding is None:
-        return
-    if any(getattr(one, "valid_from", None) is not None for one in (holding, passed_over)):
-        return                          # somebody gave a date; the answer stands on that
-    undated[kind] = (
-        f"{holding.display_name()} is what holds for {kind}, and {passed_over.display_name()} "
-        f"is read as the earlier telling — but neither was ever given a date, so that rests on "
-        f"the order they reached this world, not on anything anybody said. If which came first "
-        f"matters to the question you are answering, it is not settled here: ask, and record "
-        f"the date with starts= (now(), long_ago(), or the day itself)."
-    )
 
 
 def _stated_rank(world, relation) -> int:

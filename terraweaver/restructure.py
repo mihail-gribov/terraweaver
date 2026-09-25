@@ -438,11 +438,16 @@ def apply(world, answer: dict, *, specs_dir=None, dry_run: bool = False) -> dict
             continue
         try:
             if proposal.get("kind") == "relation":
+                # "changes" is the engineer's word for a thing having one of these at a time, and
+                # for a relation that is the cardinality and nothing else: one object per subject
+                # at a time, a new one ending the standing one. Passed as a second argument beside
+                # a fixed many-to-many it used to cancel it — the type came out with one subject
+                # per object too, so a second person joining a project displaced the first.
                 author.define_relation(proposal["name"], proposal["description"],
                                        subject=(proposal.get("from") or ["Thing"])[0],
                                        object=(proposal.get("to") or ["Thing"])[0],
-                                       cardinality="many-to-many",
-                                       over_time=bool(proposal.get("changes", True)))
+                                       cardinality="many-to-one"
+                                       if proposal.get("changes", True) else "many-to-many")
             else:
                 author.attribute(proposal.get("on"), proposal["name"], proposal["description"],
                                  changes=bool(proposal.get("changes", True)))

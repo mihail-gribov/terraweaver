@@ -9,6 +9,8 @@
     "to": [
       "Place"
     ],
+    "functional": false,
+    "inverse_functional": false,
     "asymmetric": true,
     "reverse": "hosts",
     "labels": [
@@ -20,7 +22,9 @@
     ],
     "example": "michael.relate(berlin, \"located\", label=\"lives in\")",
     "reads": "Michael lives in Berlin",
-    "nature": "related_to"
+    "nature": "related_to",
+    "one_of_a_label": true,
+    "how_many": "Neither end: a person has a home and an office at once, and a place holds as many things as it holds. What is one at a time is one *label* — one home, one office — which is `one_of_a_label`, and it is the right instrument because the limit belongs to the word the user said and not to being located anywhere at all."
   },
   "attributes": [
     {

@@ -43,6 +43,16 @@ _CHANGED: "Recording | None" = None
 MANAGED_VALUE_ATTRS = ("created_at", "accessed_at", "valid_from", "valid_until",
                        "from_is", "until_is")
 
+# What a side of a relation says when it holds one: **one at a time**, and a new one ends the
+# standing one's period where it begins. Nothing is deleted and nothing is called a mistake; if
+# only one can hold, the periods do not overlap, and that is the whole of it.
+#
+# It is the only value the two sides take besides False. A side once also took `True`, meaning
+# "one ever", and that was withdrawn: history only accumulates, because a record is only ever
+# added to, and nothing in a record is one forever — a birthplace changes in the record when
+# sources disagree or somebody was wrong. Specs written while `True` existed are read as this.
+AT_A_TIME = "at_any_time"
+
 
 def set_write_guard(guard) -> None:
     global _WRITE_GUARD
@@ -327,20 +337,21 @@ def trusted_writes():
 # has to earn its place by making the work easier than the base alone, or it is not help but
 # noise. `Idea` was noise: seventy things were forced into a class meant for notes, ten were lost
 # saying so, and the rest got through by inventing what the host did not know.
-# Task is in the base because the boundary has to exist before any work does: a world
-# that could be written to without one is a world where facts land outside every task,
-# which is the state every check added here was built to end.
 # Three kinds of thing, and a world is made of them: entities (Thing, Person), the links
-# between them (Related, PartOf, Kind), and events. An event is not an entity that happens to
+# between them (Related), and events. An event is not an entity that happens to
 # have a date — it is the one kind whose time is part of what it is, which is why `start_time`
 # is required on it and required nowhere else. A world without Event has nowhere to put "when"
 # except on links that merely hold, and asking a link that merely holds when it began cost a
 # 455-fact run most of its capitals and every one of its marriages.
-# The least a world can be. `PartOf` and `Kind` were here as two links every world was thought
+# `PartOf` and `Kind` were here as two links every world was thought
 # to need, and they are not: a part and a whole is a relation like any other and the world finds
 # the word for it from what was said. Kept in the base they were two words a reading could reach
 # for instead of the one the fact used — "the capital of France" went in as `part_of`, true and
 # unanswerable, because `part_of` was there and `capital_of` was not.
+#
+# A starting set, not a rank. Being named here buys a class nothing: once the world is open it
+# stands on the same terms as one the world grew last night, and nothing downstream may ask
+# which of the two it is looking at.
 BASE_CLASSES = ("Thing", "Related", "Person", "AIAgent", "Event")
 
 # Not the world's picture of anything — the world's own record of the work done on it. It stood
@@ -359,8 +370,6 @@ BASE_KEEPS = {
     "AIAgent": ("name", "owner", "character"),      # the soul file's body goes into character
     "Thing": ("name", "aliases", "nature"),
     "Related": ("label", "nature"),
-    "PartOf": (),
-    "Kind": (),
     # `kind` and `status` are left out: their words (interview, call, offer, cancelled) are
     # one world's vocabulary, and a base world is the one that has none yet. What stays is what
     # makes an event an event — what it was, when it began, when it ended, what it was about.
@@ -667,8 +676,8 @@ class Entity:
 
         Asking the host for a type before the fact can be said asks a storyteller to do an
         engineer's work, and it was measured: two ideas collected under one word, three links
-        written backwards because an argument order had to be got right, `over_time` answered
-        by guess. None of that was carelessness.
+        written backwards because an argument order had to be got right, how many there may be
+        answered by guess. None of that was carelessness.
 
         A relation takes a period like anything else, and a cyclic one the same way: a cleaner
         every other week, a class every Tuesday term-time."""
@@ -1765,27 +1774,16 @@ class _RelationClass(type):
         if was and not cls._spec["relation"]["inverse_functional"]:
             _reopen_what_the_world_ended(cls, "object")
 
-    @property
-    def changes(cls):
-        return cls._spec["relation"].get("functional") == "at_any_time"
-
-    @changes.setter
-    def changes(cls, value):
-        rel = cls._spec["relation"]
-        for side in ("functional", "inverse_functional"):
-            if rel.get(side):
-                rel[side] = "at_any_time" if value else True
-        _RelationClass._now_said(cls)
-        note_hint(f"{cls.__name__}: a new one "
-                  + ("ends the last, both true in their turn"
-                     if value else "corrects the last, only one of them so"))
-
 
 def _one_or_many(cls, value):
-    """True/False on a side, keeping whether a new one ends the last or corrects it."""
-    if not value:
-        return False
-    return "at_any_time" if cls._spec["relation"].get("functional") == "at_any_time" else True
+    """What a side says about how many: one at a time, or as many as there are.
+
+    `changes` stood here as a second switch — does a new one end the last, or correct it — and it
+    is gone with the category it belonged to. A new one always ends the last: the record keeps
+    both, with periods that do not overlap, and which of them was a change in the world and which
+    a change of somebody's mind is not a thing a record can tell or has to.
+    """
+    return AT_A_TIME if value else False
 
 
 def _relation_rules(nature: str) -> list[str]:
@@ -2142,6 +2140,13 @@ def define_class(classes: dict[str, type], spec: dict[str, Any], name: str | Non
             from terraweaver.relations import Relation
 
             base = Relation
+            # A side that says it holds one holds one at a time. Specs on disk from when "one
+            # ever" was a category say `True`, and there is nothing to migrate: read as what the
+            # world now does, which is the only thing it ever did — the "one ever" branch printed
+            # a note and ended nothing, so a world reopened here loses no behaviour it had.
+            for side in ("functional", "inverse_functional"):
+                if spec["relation"].get(side) is True:
+                    spec["relation"][side] = AT_A_TIME
             # The ends take anything. What classes a relation runs between is not a promise the
             # world holds a host to — it is something the world watches and can count, and it was
             # wrong as a promise: declared from the first example anybody saw, it refused the

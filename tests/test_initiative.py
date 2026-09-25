@@ -52,7 +52,7 @@ def main() -> int:
         initiative.TAKES_NEAR_WORD = flag
         rt = world_with_authoring()
         rt.run('world.define_relation("born_in_city", "where somebody was born",\n'
-               '    nature="related_to", cardinality="many-to-one", over_time=False)', "k")
+               '    nature="related_to", cardinality="many-to-one")', "k")
         got = landed_in(rt, "worked_in_city")
         check(f"TAKES_NEAR_WORD={flag}: an unknown word {what}", got == expected, got)
     initiative.TAKES_NEAR_WORD = False

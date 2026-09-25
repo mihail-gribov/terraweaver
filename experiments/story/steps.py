@@ -20,7 +20,7 @@ STEPS = [
     {
         "said": "Thomas Kyd was born in the city of London.",
         "code": 'world.define_relation("born_in", "the place somebody was born", nature="related_to", '
-                'cardinality="many-to-one", over_time=False)\n'
+                'cardinality="many-to-one")\n'
                 'Person.ensure(full_name="Thomas Kyd")'
                 '.relate(Thing.ensure(name="London"), "born_in")',
         "gained": [("born_in", "Thomas Kyd", "London")],
@@ -28,7 +28,7 @@ STEPS = [
     {
         "said": "The chairperson of Fatah is Mahmoud Abbas.",
         "code": 'world.define_relation("chairperson_of", "the body somebody chairs", nature="related_to", '
-                'cardinality="many-to-one", over_time=True)\n'
+                'cardinality="many-to-one")\n'
                 'Person.ensure(full_name="Mahmoud Abbas")'
                 '.relate(Thing.ensure(name="Fatah"), "chairperson_of")',
         "gained": [("chairperson_of", "Mahmoud Abbas", "Fatah")],
@@ -36,7 +36,7 @@ STEPS = [
     {
         "said": "Amy Winehouse died in the city of Camden Town.",
         "code": 'world.define_relation("died_in", "the place somebody died", nature="related_to", '
-                'cardinality="many-to-one", over_time=False)\n'
+                'cardinality="many-to-one")\n'
                 'Person.ensure(full_name="Amy Winehouse")'
                 '.relate(Thing.ensure(name="Camden Town"), "died_in")',
         "gained": [("died_in", "Amy Winehouse", "Camden Town")],
@@ -44,7 +44,7 @@ STEPS = [
     {
         "said": "Hines Ward plays the position of wide receiver.",
         "code": 'world.define_relation("plays_position", "the position somebody plays in their sport", nature="related_to", '
-                'cardinality="many-to-one", over_time=True)\n'
+                'cardinality="many-to-one")\n'
                 'Person.ensure(full_name="Hines Ward")'
                 '.relate(Thing.ensure(name="wide receiver"), "plays_position")',
         "gained": [("plays_position", "Hines Ward", "wide receiver")],

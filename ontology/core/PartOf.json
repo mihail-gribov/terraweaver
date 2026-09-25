@@ -11,12 +11,13 @@
       "Organization",
       "Place"
     ],
+    "functional": "at_any_time",
+    "inverse_functional": false,
     "same_class": true,
     "asymmetric": true,
     "irreflexive": true,
     "acyclic": true,
     "transitive": true,
-    "functional": "at_any_time",
     "reverse": "parts",
     "labels": [
       "department",
@@ -27,8 +28,9 @@
       "building"
     ],
     "example": "logistics.relate(acme, \"part_of\")",
-    "reads": "Logistics is part of Acme \u2014 the part is the subject",
-    "nature": "part_of"
+    "reads": "Logistics is part of Acme — the part is the subject",
+    "nature": "part_of",
+    "how_many": "One whole at a time on the part's end: a department belongs to one division, and moving it is a handover. The whole's end is not limited — a company has as many departments as it has."
   },
   "attributes": [
     {

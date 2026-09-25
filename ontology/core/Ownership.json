@@ -10,6 +10,8 @@
     "to": [
       "any"
     ],
+    "functional": false,
+    "inverse_functional": "at_any_time",
     "asymmetric": true,
     "reverse": "owned_by",
     "labels": [
@@ -19,8 +21,9 @@
       "leases"
     ],
     "example": "michael.relate(car, \"ownership\", label=\"owns\")",
-    "reads": "Michael owns the car \u2014 the owner is the subject",
-    "nature": "related_to"
+    "reads": "Michael owns the car — the owner is the subject",
+    "nature": "related_to",
+    "how_many": "One owner at a time on the thing's end: ownership of a thing transfers, and two owners of one thing for one stretch is a handover. The owner's end is not limited — a person owns as many things as they own."
   },
   "attributes": [
     {

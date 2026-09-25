@@ -306,10 +306,10 @@ class Authoring:
 
     def define_relation(self, name: str, description: str, subject=None, object=None,
                         nature: str | None = None,
-                        cardinality: str | None = None, over_time: bool | None = None,
+                        cardinality: str | None = None,
                         attributes: list[dict] | None = None, reads: str | None = None,
                         subject_is: str | None = None, object_is: str | None = None):
-        """A new relation type: the sides, how many may stand on each, and whether one at a time.
+        """A new relation type: the sides, and how many may stand on each at one moment.
 
         `subject_is` / `object_is` name what each end *is* in this link — "driver" and "vehicle",
         "owner" and "owned". That is what a class cannot say: a car is not barred from driving
@@ -325,10 +325,21 @@ class Authoring:
         something with it — the one thing a named side buys is noticing a link written backwards,
         and for that the two sides only have to differ.
 
-        `over_time` has no default on purpose. It is what makes "who is it *now*" answerable — a
-        new holder ends the previous one's period instead of standing beside it — and a run where
-        it was quietly left off answered every changed citizenship with the first one it was told
-        (`benchmarks/README.md`, experiment zero). Cardinality never decides this; saying so does.
+        **Cardinality is about a moment, and it is the whole of what decides behaviour.** "One of
+        those" means one at a time: a new one ends the standing one's period, both stay in the
+        record, and neither is called a mistake. "How many were there ever" is not a question about
+        a type — history only accumulates, because a record is only ever added to — and "one ever"
+        is not a category either: nothing in a record is one forever. A birthplace changes in the
+        record not because anybody moved but because sources disagree, somebody was wrong, or an
+        opinion was sharpened. Forever is a property of the world, not of the record.
+
+        This is why there is no `over_time` any more. It was a second axis saying what cardinality
+        already says, and the two cancelled each other: `over_time=True` made *both* sides one-at-a
+        -time whatever the cardinality said, so a `many-to-one` employment came out as one employee
+        per employer, and hiring somebody ended the last person's job. `over_time=False` put the
+        type in the "one ever" branch, where a second telling was called a correction and — since
+        that branch only ever printed a note — two links stood side by side and "which now" had two
+        answers.
         """
         from terraweaver import ontology
 
@@ -342,9 +353,6 @@ class Authoring:
         if nature in ("part_of", "kind_of") and cardinality is None:
             cardinality = "many-to-one"   # a part has one whole, a kind has what it is a kind of
         wants = []
-        if over_time is None:
-            wants.append("over_time=False      # True when one holds at a time and a new one "
-                         "ends the last (an employer, a spouse)")
         if nature not in NATURES:
             wants.append(f'nature="related_to"  # one of {", ".join(NATURES)}')
         if cardinality is None:
@@ -361,13 +369,10 @@ class Authoring:
         if cardinality not in CARDINALITY:
             raise Refused(f"cardinality is one of {', '.join(CARDINALITY)}")
         one_subject, one_object = CARDINALITY[cardinality]
-        # Two axes, named apart so they cannot be read as one. Cardinality says how many there
-        # may be across all of time; `over_time` says whether one of them holds *now* and a new
-        # one ends the last. They were once multiplied together in a line nobody could read, and
-        # the default cardinality silently switched supersession off for most types defined here.
-        holds_now_only = "at_any_time" if over_time else True
-        one_object_ever = over_time or one_object
-        one_subject_ever = over_time or one_subject
+        # One axis, per side, and it is about a moment. `AT_A_TIME` on a side says that side holds
+        # one at a time: a new one ends the standing one where it begins, and nothing is deleted or
+        # called a mistake. There is no other value — a side is one-at-a-time or it is not.
+        holds = ontology.AT_A_TIME
         already = self._relation_like(f"{kind.replace('_', ' ')}. {description}", word=kind)
         if already:
             # Said, not done. The world used to hand back the type it thought was meant, and
@@ -398,14 +403,13 @@ class Authoring:
                 "nature": nature,
                 "from": self._sides(subject),
                 "to": self._sides(object),
-                # `over_time` and cardinality are different axes and must not cancel each
-                # other. Many-to-many says "many over all time"; over_time says "one of them
-                # holds now, and a new one ends the last". Reading cardinality first turned
-                # supersession off for every type declared with the default many-to-many —
-                # which was most of them — and the world then answered "which now" with the
+                # Each side straight from the cardinality, and nothing else touches them. Read
+                # through a second axis, a many-to-one employment came out with one employee per
+                # employer — hiring somebody ended the last person's job — and a many-to-many one
+                # came out with no supersession at all, so the world answered "which now" with the
                 # first thing it had ever been told. Eight of ten wrong answers in one run.
-                "functional": holds_now_only if one_object_ever else False,
-                "inverse_functional": holds_now_only if one_subject_ever else False,
+                "functional": holds if one_object else False,
+                "inverse_functional": holds if one_subject else False,
                 "reverse": f"{kind}_of",
                 "labels": [],
                 "example": self._example(kind, subject, object),
@@ -434,7 +438,7 @@ class Authoring:
             pass
         if not subject_is:
             # Asked for, never demanded. A type without named ends works perfectly well — it is
-            # the *checking* of it that cannot be done: told what each end is, an outside reader
+            # the *checking* of it that cannot be done: told what each end is, the picker
             # tells a link written backwards from one written right and abstains where it cannot
             # (12 of 14 against 7 of 12, and every miss an abstention rather than a wrong call).
             # Told only the type's name and description, it guesses, and guesses confidently.

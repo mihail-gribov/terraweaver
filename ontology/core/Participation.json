@@ -11,6 +11,8 @@
       "Event",
       "Project"
     ],
+    "functional": false,
+    "inverse_functional": false,
     "asymmetric": true,
     "reverse": "participants",
     "labels": [
@@ -21,7 +23,8 @@
     ],
     "example": "michael.relate(summit, \"participation\", label=\"speaker\")",
     "reads": "Michael takes part in the summit as a speaker",
-    "nature": "related_to"
+    "nature": "related_to",
+    "how_many": "Neither end: an event has as many participants as it has, and a person takes part in as many events as they do."
   },
   "attributes": [
     {

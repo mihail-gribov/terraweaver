@@ -9,9 +9,10 @@
     "to": [
       "Person"
     ],
+    "functional": "at_any_time",
+    "inverse_functional": false,
     "symmetric": true,
     "irreflexive": true,
-    "functional": "at_any_time",
     "labels": [
       "wife",
       "husband",
@@ -35,13 +36,14 @@
           "boyfriend",
           "fiancee",
           "fiance",
-          "fianc\u00e9e"
+          "fiancée"
         ]
       }
     ],
     "example": "emma.relate(darren, \"partner\", label=\"girlfriend\")",
     "reads": "Emma is Darren's girlfriend",
-    "nature": "related_to"
+    "nature": "related_to",
+    "how_many": "One at a time, and said once. The type is symmetric, so the two ends are one end: the check follows a symmetric link from both sides off this single field, and declaring the object's end as well would hand the same link over twice."
   },
   "attributes": [
     {

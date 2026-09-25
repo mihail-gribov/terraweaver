@@ -6,7 +6,7 @@ where one is allowed. What it cannot check is whether the link says what somebod
 perfectly ordinary row. Measured on a hundred-fact world, that was the commonest wrong fact
 left standing once the ones that never landed were fixed.
 
-So: hand the whole link to a reader outside the world and ask three things about it.
+So: hand the whole link to one of the two outside parties and ask three things about it.
 
 **Which way it runs.** Not whether it is true — this record deliberately holds claims that
 contradict common knowledge, and those are what it exists to keep. Whether each end is the kind
@@ -20,12 +20,12 @@ answer for neither.
 
 **Once.** A link checked is a link marked, and a link that has not changed since is not asked
 about again — the mark is over the link's own content, so an end that moves is asked afresh.
-What the reader says is kept as a question on the link, which is how everything uncertain in
+What it says is kept as a question on the link, which is how everything uncertain in
 this world is kept: it outlives the run, it is asked once, and answering it closes it.
 
-The reader is passed in. Nemotron through Token Factory is the one this was written for; Jev
+The party is passed in. Nemotron through Token Factory is the one this was written for; Jev
 answers the direction question with calibrated probabilities and is the one it was measured on.
-Neither is required — a world with no reader simply does not run this.
+Neither is required — a world with neither simply does not run this.
 """
 import hashlib
 from terraweaver import prompts
@@ -34,7 +34,7 @@ from datetime import datetime, timezone
 
 from terraweaver.store import run_script
 
-# How long an outside reader is given before the world stops waiting for it. Measured on the
+# How long an outside party is given before the world stops waiting for it. Measured on the
 # naming question: most answers come back in four or five seconds and one in several takes
 # twenty. So most are had for nothing and the slow one is not paid for in a host's patience —
 # it is marked unread and picked up by a later pass, which is what `unread` and `unread_types`
@@ -47,12 +47,12 @@ TTL = 10.0
 #
 #   deterministic — the world works it out from its own record. Free, certain, and the only
 #                   kind that may correct anything by itself.
-#   closed        — one question with named options to an outside reader. Cheap, calibrated,
+#   closed        — one question with named options, to the picker. Cheap, calibrated,
 #                   and the volume: one per link.
 #   open          — a word has to be invented. Expensive, so once per type, never per link.
 #
 # `fixes` says whether a finding may be acted on or only said. Only a deterministic finding may
-# be acted on, and only where it is certain: what an outside reader makes of the words is one
+# be acted on, and only where it is certain: what an outside party makes of the words is one
 # more account of the fact, and the person's own account outranks it. Nothing is said when
 # nothing was changed — the agent does not need to hear that all is well. What was changed is
 # said, because a fact that turned round while nobody was looking is one the agent can no
@@ -84,7 +84,7 @@ CREATE TABLE IF NOT EXISTS link_checks (
     link_id TEXT NOT NULL,
     digest TEXT NOT NULL,      -- the link as it was when read; changed, it is read again
     looked_at TEXT NOT NULL,
-    reader TEXT NOT NULL,
+    reader TEXT NOT NULL,        -- which party looked: the engineer or the picker
     verdict TEXT NOT NULL,     -- right | reversed | impossible | unsure
     said TEXT,
     PRIMARY KEY (link_id, digest)
@@ -99,10 +99,10 @@ def digest_of(account: dict) -> str:
 
 
 def account_of(world, link) -> dict | None:
-    """Everything the world holds about one link, in the form a reader is given it.
+    """Everything the world holds about one link, in the form it is given in.
 
     Both ends by name and by class and by whatever was said about them, the type by its name and
-    description and the words for its ends, and the link's own description. A reader given only
+    description and the words for its ends, and the link's own description. A party given only
     "Author: a → b" has to guess what a and b are; given "a is a Person described as the writer
     of six novels" it does not.
     """
@@ -159,7 +159,7 @@ def unread(world, limit: int = 200) -> list:
     return out
 
 
-def note(world, link, account: dict, reader: str, verdict: str, said: str = "",
+def note(world, link, account: dict, looked_by: str, verdict: str, said: str = "",
          can_ask: bool = True) -> None:
     """Mark the link as read, and keep what was said about it where it can be answered.
 
@@ -172,12 +172,12 @@ def note(world, link, account: dict, reader: str, verdict: str, said: str = "",
     world.store.conn.execute(
         "INSERT OR REPLACE INTO link_checks (link_id, digest, looked_at, reader, verdict, said) "
         "VALUES (?, ?, ?, ?, ?, ?)",
-        (link.id, digest_of(account), datetime.now(timezone.utc).isoformat(), reader,
+        (link.id, digest_of(account), datetime.now(timezone.utc).isoformat(), looked_by,
          verdict, said))
     world.store.conn.commit()
     if verdict == "right" or not can_ask:
         return
-    # Kept as a question, not acted on. A reader outside the world is one more account of the
+    # Kept as a question, not acted on. A party outside the world is one more account of the
     # fact, and the person's own account outranks it — the world says what it noticed and the
     # host decides, which is the rule everything unasked in this world is held to.
     world.questions.raise_(
@@ -188,7 +188,7 @@ def note(world, link, account: dict, reader: str, verdict: str, said: str = "",
                   "it is right as written"]))
 
 
-def look(world, ask, reader: str = "outside", limit: int = 200,
+def look(world, ask, looked_by: str = "outside", limit: int = 200,
          can_ask: bool = True) -> dict:
     """Read every link nobody has read yet. `ask(account) -> (verdict, said)`.
 
@@ -198,18 +198,18 @@ def look(world, ask, reader: str = "outside", limit: int = 200,
     for link, account in unread(world, limit):
         try:
             verdict, said = ask(account)
-        except Exception as wrong:  # noqa: BLE001 - a reader that fails is not a world that fails
+        except Exception as wrong:  # noqa: BLE001 - one that fails is not a world that fails
             tally["failed"] += 1
             continue
         if verdict not in tally:
             verdict = "unsure"
         tally[verdict] += 1
-        note(world, link, account, reader, verdict, said, can_ask=can_ask)
+        note(world, link, account, looked_by, verdict, said, can_ask=can_ask)
     return tally
 
 
 def type_account(world, name: str) -> dict | None:
-    """One link type as a reader is given it: its word, what it says it is, its ends, its use."""
+    """One link type as it is handed over: its word, what it says it is, its ends, its use."""
     cls = world.classes.get(name)
     rel = cls._spec.get("relation") if cls else None
     if not rel:
@@ -233,9 +233,9 @@ def type_account(world, name: str) -> dict | None:
 def naming(world, ask, only: set | None = None) -> list[dict]:
     """Ask whether each type's word says plainly what the link is. `ask(account) -> dict`.
 
-    A word is the whole of what a type offers a later reader: `Author` does not say which end it
-    starts from, `Plays` does not say what is played, `Related` says nothing at all. The reader
-    is asked for a clearer word, and nothing is renamed — a name that can be changed afterwards
+    A word is the whole of what a type offers whoever comes to it later: `Author` does not say
+    which end it starts from, `Plays` does not say what is played, `Related` says nothing at all.
+    The engineer is asked for a clearer word, and nothing is renamed — a name that can be changed afterwards
     makes every statement written under the old one unreadable in the way it was written. The
     honest rename is `world.define_relation(<the clear word>, ...)` and then
     `world.take_in(<it>, "<the old word>")`, which moves the links across and leaves the record
@@ -250,7 +250,7 @@ def naming(world, ask, only: set | None = None) -> list[dict]:
             continue
         try:
             said = ask(account)
-        except Exception:  # noqa: BLE001 - a reader that fails is not a world that fails
+        except Exception:  # noqa: BLE001 - one that fails is not a world that fails
             continue
         if said and not said.get("clear", True):
             out.append({**said, "class": name, "kind": account["kind"]})
@@ -261,14 +261,14 @@ TYPE_CHECKS = """
 CREATE TABLE IF NOT EXISTS type_checks (
     class_name TEXT PRIMARY KEY,
     looked_at TEXT,
-    reader TEXT,
-    said TEXT                  -- JSON: what the reader offered, or null while nobody has looked
+    reader TEXT,               -- which party looked
+    said TEXT                  -- JSON: what the engineer offered, or null while nobody has looked
 );
 """
 
 
 def engineer_of(world):
-    """The outside reader this world was given, or None. A world without one simply skips."""
+    """The engineer this world was given, or None. A world without one simply skips."""
     return getattr(world, "engineer", None)
 
 
@@ -282,7 +282,7 @@ def on_new_type(world, name: str) -> list[str]:
     argument on the call being made.
 
     Nothing is refused and nothing is changed: what comes back is said to the host, which is
-    the rule everything the world notices is held to. If no reader is configured, or it does
+    the rule everything the world notices is held to. If no engineer is configured, or it does
     not answer in time, the type is marked as unread and `unread_types` finds it later — the
     check is worth doing late, and never worth making the host wait.
     """
@@ -297,7 +297,7 @@ def on_new_type(world, name: str) -> list[str]:
                 f"{name} was written with>\") moves the links across. If they are two ideas, "
                 f"say so in the descriptions — that is what tells them apart later.")
     # Nothing that talks to the outside happens here. A host's run is stopped after ten
-    # seconds and a reader that thinks before it answers takes longer than that, so asking one
+    # seconds and an engineer that thinks before it answers takes longer than that, so asking one
     # from inside a run is asking for the run to die — which is the opposite of the point. What
     # the world can do for free it does now; the rest is marked unread and done at the close,
     # where nothing is waiting. The user's rule: online where it keeps up, deferred with a mark
@@ -310,7 +310,7 @@ def on_new_type(world, name: str) -> list[str]:
 
 
 def look_at_types(world, limit: int = 20, can_ask: bool = True) -> dict[str, list[str]]:
-    """Read the types nobody has read, and say what the reader offered. Called at the close.
+    """Read the types nobody has read, and say what the engineer offered. Called at the close.
 
     Here there is no ten-second limit and the host is between pieces of work, which is where
     everything else this world asks for is asked. One open question per type, asked once.
@@ -326,7 +326,7 @@ def look_at_types(world, limit: int = 20, can_ask: bool = True) -> dict[str, lis
             continue
         try:
             said = ask(account)
-        except Exception:  # noqa: BLE001 - a reader that fails is not a world that fails
+        except Exception:  # noqa: BLE001 - one that fails is not a world that fails
             continue
         # Written in either way: a blank filled is not a question, and a pass with
         # nobody listening still leaves the type checkable for the next one.
@@ -539,7 +539,7 @@ def write_the_questions(world, engineer=None, least: int = A_FEW, limit: int = 5
     from terraweaver import ontology
 
     engineer = engineer or engineer_of(world)
-    if reader is None:
+    if engineer is None:
         return []
     written = []
     for name in silent_classes(world, least)[:limit]:

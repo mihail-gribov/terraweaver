@@ -132,7 +132,7 @@ def main() -> int:
           str(held)[:140])
 
     rt.run('world.define_relation("capital_of", "the city that is a country\'s seat of '
-           'government", nature="part_of", cardinality="one-to-one", over_time=False)\n'
+           'government", nature="part_of", cardinality="one-to-one")\n'
            'print("defined")', key)
     rt._bind_classes(rt.session(key))
     rt.run('Thing.get(name="Tokyo").relate(Thing.get(name="Japan"), "capital_of")\n'

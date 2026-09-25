@@ -268,8 +268,8 @@ def _token() -> str:
     return TOKEN_FILE.read_text().strip()
 
 
-def _give_it_a_reader(world) -> None:
-    """A reader from outside, if this machine has the key for one. Optional, always.
+def _give_it_an_engineer(world) -> None:
+    """The engineer, if this machine has the key for one. Optional, always.
 
     Without it `world.say` still works and still joins the two things — the link is made at
     once and stays untyped, which is a poor link and a real one. With it, the untyped links are
@@ -283,7 +283,7 @@ def _give_it_a_reader(world) -> None:
         from terraweaver import outside
 
         world.engineer = outside.Nemotron(ttl=25)
-    except Exception:  # noqa: BLE001 - a world with no reader is a world that does not read
+    except Exception:  # noqa: BLE001 - a world with no engineer is a world that does not read
         pass
 
 
@@ -374,7 +374,7 @@ def main() -> None:
         specs = growth.apply_growth(ont.base_specs(here), growth.load_grown(grown_dir))
         runtime = WorldRuntime(args.db, fixture=None, specs=specs, selves=True)
         authoring.install(runtime.world, grown_dir, one_door=args.one_door)
-        _give_it_a_reader(runtime.world)
+        _give_it_an_engineer(runtime.world)
     elif args.blank:
         # A world with the mechanism and no vocabulary. The host defines the classes; the world
         # keeps them uniform and answers "is there already something for this?".

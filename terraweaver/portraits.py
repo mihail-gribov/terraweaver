@@ -130,7 +130,7 @@ NEW_ONE = "none of these"
 # and finding the class is walking down from where the thing already sits, asking at each level
 # which child it is. Each of those is a closed question — a list of named options — and a closed
 # question is answered by a model an order of magnitude cheaper than one answering in words.
-# Only the last step is open, and only when nothing fitted. `world.jev` is that reader, named
+# Only the last step is open, and only when nothing fitted. `world.jev` is the picker, named
 # for the class of model rather than for one of them: a system-one model answering a question
 # with named options, and which weights are behind it is a deployment question, not the world's.
 ROOTS = ("Thing", "Event")
@@ -373,16 +373,15 @@ def _a_word_it_has_not(world) -> str:
     return ('A word this record has not got has to be declared before it can be used, on its '
             'own line first:\n\n'
             '    world.define_relation("capital_of", "a city that is the seat of a country\'s '
-            'government", nature="related_to", cardinality="many-to-one", over_time=False)\n'
+            'government", nature="related_to", cardinality="many-to-one")\n'
             '    it.set_capital_of(italy)\n\n'
             'The second argument is a sentence saying what that kind of link is — about the '
             'kind, not about these two — and a record refuses anything shorter than a few '
             'words. `nature` is one of related_to / part_of / kind_of / same_as / derived_from. '
-            '`cardinality` is "many-to-one" when this thing has one of those, "one-to-many" the '
-            'other way, "many-to-many" when neither is limited. `over_time=True` when one holds '
-            'at a time and a new one ends the last (an employer, a spouse), False when they '
-            'simply accumulate.')
-
+            '`cardinality` is about one moment: "many-to-one" when this thing has one of those '
+            'at a time, "one-to-many" the other way, "many-to-many" when neither is limited. '
+            'One at a time means a new one ends the standing one where it begins, and both stay '
+            'in the record.')
 
 def _already_joined(world, entity) -> str:
     """What this thing is joined to now, so the same fact is not said a second time.

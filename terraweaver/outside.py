@@ -16,7 +16,7 @@ once per type, never per link. `Open` is the connector, `Nemotron` the implement
 Measured on a hundred-fact world: 26 open questions against 115 closed ones. The closed side is
 always the volume, which is why it is the side worth having a connector for.
 
-Neither is required. A world with no reader does everything it did before; `inspector` checks
+Neither is required. A world with neither does everything it did before; `inspector` checks
 for one and marks what it could not read, so a later pass finds it.
 """
 import json
@@ -36,7 +36,7 @@ NEBIUS = "https://api.tokenfactory.nebius.com/v1/"
 
 
 class Closed:
-    """A reader that answers questions with named options, returning a probability for each.
+    """The picker: one question with named options, and a probability for each.
 
     One state, several questions: everything asked about one thing goes in one call, because
     the state is billed once however many questions ride on it. That is why `ask` takes a
@@ -96,24 +96,24 @@ class TypecastLM(Closed):
     depend on where the weights are. One thing it has that Jev has not: `tfu`, the same question
     read over three answers — the two criteria and `unsure`, which is what is left when neither
     fits. That is the abstention this world wants and had to be built out of thresholds: a
-    reader that must call something a yes will, and a link turned round on a forced yes is a
+    picker that must call something a yes will, and a link turned round on a forced yes is a
     wrong fact where there was a right one.
 
     `Client()` when a service is running (`TYPECASTLM_ENDPOINT`), `Reader(...)` for the weights
     in this process. Which one is a deployment question and not the world's.
     """
 
-    def __init__(self, reader=None, endpoint: str | None = None, model: str | None = None):
-        if reader is not None:
-            self.reader = reader
+    def __init__(self, in_process=None, endpoint: str | None = None, model: str | None = None):
+        if in_process is not None:
+            self.closed = in_process
         elif model:
             from typecastlm import Reader
 
-            self.reader = Reader(model)
+            self.closed = Reader(model)
         else:
             from typecastlm import Client
 
-            self.reader = Client(endpoint) if endpoint else Client()
+            self.closed = Client(endpoint) if endpoint else Client()
 
     def ask(self, state: str, questions: dict) -> dict:
         """The Jev shape, answered question by question — `noul` becomes `tfu` for the third
@@ -123,12 +123,12 @@ class TypecastLM(Closed):
         for key, question in questions.items():
             criteria = question.get("criteria", {})
             if question.get("type") == "choice":
-                said = self.reader.choice(state, question["instructions"],
+                said = self.closed.choice(state, question["instructions"],
                                           [(name, text) for name, text in criteria.items()])
                 out[key] = {"probabilities": dict(said.get("probabilities", said)),
                             "choice": said.get("choice")}
                 continue
-            said = self.reader.tfu(state, question["instructions"],
+            said = self.closed.tfu(state, question["instructions"],
                                    true=criteria.get("true", ""), false=criteria.get("false", ""))
             probabilities = said.get("probabilities", said)
             out[key] = {"noul": float(probabilities.get("true", 0.0)),
@@ -141,9 +141,9 @@ Local = TypecastLM
 
 
 def _one_of(options: dict, said: str) -> str | None:
-    """The option a reader meant, when it did not echo the name exactly.
+    """The option the picker meant, when it did not echo the name exactly.
 
-    A reader asked to repeat a name repeats it nearly: different case, a trailing full stop, the
+    A picker asked to repeat a name repeats it nearly: different case, a trailing full stop, the
     name wrapped in a sentence. Insisting on the character-for-character match threw away every
     answer and the walk never moved.
     """
@@ -161,7 +161,7 @@ def _one_of(options: dict, said: str) -> str | None:
 
 
 class AsChoices(Closed):
-    """A closed question put to a reader that answers in words, when no closed one is configured.
+    """A closed question put to the engineer, when there is no picker configured.
 
     The choice between classes is a closed question and belongs to a model that answers those —
     it is asked once per level of the tree, several times per thing, and a word-answering model
@@ -169,15 +169,15 @@ class AsChoices(Closed):
     hand: the same question, the same options, one of them returned with all the weight.
     """
 
-    def __init__(self, open_reader):
-        self.reader = open_reader
+    def __init__(self, engineer):
+        self.engineer = engineer
 
     def ask(self, state: str, questions: dict) -> dict:
         out = {}
         for key, asked in questions.items():
             options = asked.get("criteria") or {}
             shown = "\n".join(f"    {name} — {why}" for name, why in options.items())
-            said = self.reader.json(
+            said = self.engineer.json(
                 "You choose one of the named options and answer with JSON only.",
                 f"{state}\n\n{asked.get('instructions', '')}\n\n{shown}\n\n"
                 f'JSON only: {{"choice": "<exactly one of the option names above>"}}') or {}
@@ -200,10 +200,10 @@ class Logged:
     and adds nothing to what the world sees.
     """
 
-    def __init__(self, reader, where):
+    def __init__(self, party, where):
         import pathlib
 
-        self.reader, self.where = reader, pathlib.Path(where)
+        self.party, self.where = party, pathlib.Path(where)
         self.where.parent.mkdir(parents=True, exist_ok=True)
 
     def _note(self, how: str, asked, said) -> None:
@@ -225,32 +225,32 @@ class Logged:
             }, ensure_ascii=False, default=str) + "\n")
 
     def json(self, system: str, asked: str):
-        said = self.reader.json(system, asked)
+        said = self.party.json(system, asked)
         self._note("json", asked, said)
         return said
 
     def say(self, system: str, asked: str):
-        said = self.reader.say(system, asked)
+        said = self.party.say(system, asked)
         self._note("say", asked, said)
         return said
 
     def ask(self, state: str, questions: dict) -> dict:
-        said = self.reader.ask(state, questions)
+        said = self.party.ask(state, questions)
         self._note("ask", {"state": state, "questions": questions}, said)
         return said
 
     def choose(self, state: str, question: str, options: dict) -> dict:
-        said = self.reader.choose(state, question, options)
+        said = self.party.choose(state, question, options)
         self._note("choose", {"state": state, "question": question,
                               "options": list(options)}, said)
         return said
 
     def __getattr__(self, name):
-        return getattr(self.reader, name)
+        return getattr(self.party, name)
 
 
 class Open:
-    """A reader that answers in words, for the one kind of question options cannot hold."""
+    """The engineer: answers in words, for the one kind of question options cannot hold."""
 
     def say(self, system: str, asked: str) -> str:
         raise NotImplementedError
@@ -272,8 +272,16 @@ class Open:
 class Nemotron(Open):
     """Nemotron through Nebius Token Factory."""
 
+    # A reasoning model thinks inside the same budget it answers in, so a budget that is merely
+    # generous for the answer is a cliff for the pair: measured on one question of experiment 01,
+    # 3000 tokens came back `finish_reason='length'` with **nothing at all** — 3000 spent thinking
+    # and none left to say it — and 8000 finished the same question in 2845 with the right answer.
+    # Two of nine readings in one run were lost that way and reported as "the engineer answered with
+    # nothing", which is true and points at the wrong thing.
+    ROOM = 8000
+
     def __init__(self, model: str = NEMOTRON, key: str | None = None, ttl: float = TTL,
-                 thinking_room: int = 3000):
+                 thinking_room: int = ROOM):
         from openai import OpenAI
 
         self.model, self.room = model, thinking_room
@@ -285,7 +293,19 @@ class Nemotron(Open):
             model=self.model, temperature=0, max_tokens=self.room,
             messages=[{"role": "system", "content": system},
                       {"role": "user", "content": [{"type": "text", "text": asked}]}])
-        return answer.choices[0].message.content or ""
+        choice = answer.choices[0]
+        said = choice.message.content or ""
+        if not said.strip() and choice.finish_reason == "length":
+            # Said out loud rather than returned as an empty string. Every caller of this treats
+            # nothing as "the engineer had nothing to say" and moves on, which is the one reading
+            # this is not: it was cut off mid-thought, and the answer to that is room, not
+            # another try at the same size.
+            raise RuntimeError(
+                f"the engineer was cut off after {answer.usage.completion_tokens} tokens with "
+                f"nothing said — it spent the whole budget thinking. Give it room: "
+                f"Nemotron(thinking_room={max(self.room * 2, 8000)})."
+            )
+        return said
 
 
 # --- the two questions the inspector asks, each built on its connector ---
@@ -300,21 +320,21 @@ FITS = "yes — a thing of that sort fills that role"
 DOESNT = "no — a thing of that sort does not fill that role"
 
 
-def namer(reader: Open):
+def namer(engineer: Open):
     """Name the two ends of a type, and say whether its word carries the direction."""
     def ask(account: dict) -> dict | None:
         if not account:
             return None
-        return reader.json(NAMER_IS, ASK_NAMES.format(
+        return engineer.json(NAMER_IS, ASK_NAMES.format(
             kind=account["kind"], type_is=account.get("type_is") or "(nobody said)",
             examples="; ".join(account.get("examples") or []) or "(nothing yet)"))
     return ask
 
 
-def judge(reader: Closed, floor: float = 0.30, clear: float = 2.0):
+def judge(picker: Closed, floor: float = 0.30, clear: float = 2.0):
     """Which way a link runs, as four closed questions about its two ends.
 
-    Four, not one. Asked as a single judgement — "is this the right way round" — the same reader
+    Four, not one. Asked as a single judgement — "is this the right way round" — the same picker
     inverted correct links at p=0.93; asked as four questions about whether each thing fits each
     end, it answered or abstained (12 of 14, every miss an abstention). The difference is not
     the model, it is that the second shape has somewhere to be uncertain.
@@ -338,7 +358,7 @@ def judge(reader: Closed, floor: float = 0.30, clear: float = 2.0):
                          ("b_o", f"Is '{a['object']['name']}' {object_is}?"),
                          ("b_s", f"Is '{a['object']['name']}' {subject_is}?"),
                          ("a_o", f"Is '{a['subject']['name']}' {object_is}?"))}
-        got = reader.ask(state, questions)
+        got = picker.ask(state, questions)
         as_written = got["a_s"]["noul"] * got["b_o"]["noul"]
         swapped = got["b_s"]["noul"] * got["a_o"]["noul"]
         said = (f"{a['subject']['name']} {a['kind'].replace('_', ' ')} {a['object']['name']}: "

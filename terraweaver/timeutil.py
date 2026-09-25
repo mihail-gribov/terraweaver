@@ -348,12 +348,50 @@ def told(said, *, sure: bool = True) -> tuple:
         return Bound(datetime(int(text), 1, 1), EXACT), sure
     if re.fullmatch(r"\d{4}-\d{2}", text):
         return Bound(datetime(int(text[:4]), int(text[5:]), 1), EXACT), sure
+    named = _a_month(text)
+    if named is not None:
+        return Bound(named, EXACT), sure
     try:
         return Bound(datetime.fromisoformat(text), EXACT), sure
     except ValueError:
         raise ValueError(
             f"I cannot read {said!r} as a time. Say a date — date(2006, 1, 1) or '2006-01-01' — "
-            f"or words: 'now', 'today', 'yesterday', '3 years ago', 'in 2006', or a side and a "
-            f"date when you only know that much: 'before now', before(now()), "
-            f"after(date(2006, 1, 1))."
+            f"or words: 'now', 'today', 'yesterday', '3 years ago', 'in 2006', 'March 2006', "
+            f"'12 March 2006', or a side and a date when you only know that much: 'before now', "
+            f"before(now()), after(date(2006, 1, 1))."
         ) from None
+
+
+MONTHS = {name: n for n, name in enumerate(
+    ("january", "february", "march", "april", "may", "june", "july", "august", "september",
+     "october", "november", "december"), start=1)}
+MONTHS.update({name[:3]: n for name, n in list(MONTHS.items())})
+
+
+def _a_month(text: str):
+    """A month said by its name: "march 2023", "12 march 2023", "march 12 2023".
+
+    Here because it is how people say a date, and the engineer writes down what was said. Left out,
+    `starts="March 2023"` was refused, and what the writer did next was give the year alone — so a
+    month somebody named came into the record as the first of January. A date degraded is worse
+    than a date refused, because nothing afterwards can tell it from one somebody knew.
+
+    A month with no day is the first of it, which is what `'2006-03'` and `'2006'` already come to:
+    the coarser word names the moment its span begins. What makes that honest is the side — "since
+    March 2023" is `after` that moment, and the side is read before this is reached.
+    """
+    words = text.split()
+    if not (2 <= len(words) <= 3):
+        return None
+    month = next((MONTHS[w] for w in words if w in MONTHS), None)
+    if month is None:
+        return None
+    numbers = [w for w in words if w.isdigit()]
+    year = next((int(w) for w in numbers if len(w) == 4), None)
+    if year is None:
+        return None
+    day = next((int(w) for w in numbers if len(w) <= 2), 1)
+    try:
+        return datetime(year, month, day)
+    except ValueError:   # a day that month has not got is not a date
+        return None

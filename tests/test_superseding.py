@@ -28,13 +28,19 @@ def check(name: str, condition: bool, detail: str = "") -> None:
 
 
 def world(**types):
-    """A world with the types this case needs, and a task open to record into."""
+    """A world with the types this case needs, and a task open to record into.
+
+    The value is the cardinality, which is the whole of what says how many may hold — and it says
+    it **per end**: "many-to-one" is one object per subject at a time, "one-to-many" is one subject
+    per object. It used to be a boolean called `over_time` that set both ends from one word, which
+    is why every type here limited an end nobody meant to limit.
+    """
     work = Path(tempfile.mkdtemp(prefix="tw-sup-"))
     rt = WorldRuntime(str(work / "w.db"), fixture="job_search", rebuild=True)
     made = authoring.install(rt.world, work / "grown")
-    for kind, over_time in types.items():
+    for kind, cardinality in types.items():
         made.define_relation(kind, f"what {kind.replace('_', ' ')} means here, for the test",
-                             nature="related_to", cardinality="many-to-one", over_time=over_time)
+                             nature="related_to", cardinality=cardinality)
     rt.start_task("k", "record what the user said, more than once about one thing", "recording")
     return rt
 
@@ -50,21 +56,28 @@ def settle_direction(rt):
 
 
 def main() -> int:
-    # --- a correction: one value and no more, and no date is invented ---
-    rt = world(hq_in=False)
+    # --- a second telling with no date: the earlier ends some time before now ---
+    rt = world(hq_in="many-to-one")
     out, _ = ran(rt, 'org = Thing.ensure(name="Acme Corp", nature="agent")\n'
                      'org.set_hq_in(Thing.ensure(name="Dublin", nature="place"))\n'
                      'org.set_hq_in(Thing.ensure(name="Tallinn", nature="place"))\n'
                      'print([t.display_name() for t in org.related("hq_in")])\n'
                      'print([t.display_name() for t in org.related("hq_in", any_time=True)])\n'
-                     'print([l.until for l in org.relations("hq_in", any_time=True)])')
+                     'print([getattr(l, "until_is", None) '
+                     'for l in org.relations("hq_in", any_time=True)])')
     holds, ever, ends = out.splitlines() if out.count("\n") == 2 else ("", "", "")
-    check("a correction leaves the later one holding", holds == "['Tallinn']", holds)
-    check("and the earlier one still in the record", "Dublin" in ever and "Tallinn" in ever, ever)
-    check("and invents no end date for it", ends.count("None") == 2, ends)
+    check("the later telling holds", holds == "['Tallinn']", holds)
+    check("and the earlier one is still in the record", "Dublin" in ever and "Tallinn" in ever, ever)
+    # The earlier one is ended, because one can hold at a time and two periods may not overlap —
+    # and the end says *before now*, not a day. Nobody said when it moved, and a day written here
+    # could not be told apart later from one somebody knew. Left un-ended instead, as it was while
+    # "a correction" was a category of its own, the thing had two head offices and every count
+    # agreed it was fine.
+    check("and its end is before now rather than a day nobody said",
+          ends == "[None, 'before']", ends)
 
     # --- a handover: one at a time, and the new one's start is where the last ends ---
-    rt = world(chairs=True)
+    rt = world(chairs="one-to-many")
     out, _ = ran(rt, 'org = Thing.ensure(name="Fatah", nature="agent")\n'
                      'Person.new(full_name="Yasser Arafat").set_chairs(org,  starts=date(1969, 2, 3))\n'
                      'Person.new(full_name="Mahmoud Abbas").set_chairs(org,  starts=date(2004, 11, 11))\n'
@@ -89,10 +102,11 @@ def main() -> int:
     _, got = ran(rt, 'dept = Organization.new(name="Newsroom")\ndept.set_part_of(b)')
     check("a part_of link needs no start", got["ok"], str(got.get("error"))[:80])
 
-    # Nothing is demanded on the way in, so on the way out the world says what its answer
-    # stands on. Two undated tellings are ordered by which arrived later — right more often
-    # than not, and not the same as having been told.
-    rt = world(led_by=False)          # over_time=False: a correction, decided on the way out
+    # Nothing is demanded on the way in, and on the way out nothing rests on the order things
+    # arrived in: the earlier one is ended — some time before now, since nobody said when — so what
+    # holds is read from the periods like everything else. It used to rest on the order, because a
+    # type could say "one ever", which has no periods to decide with.
+    rt = world(led_by="many-to-one")
     out, got = ran(rt, 'boss = Person.new(full_name="The Boss")\n'
                        'boss.set_led_by(Organization.new(name="Told First"))\n'
                        'boss.set_led_by(Organization.new(name="Told Second"))\n'
@@ -100,28 +114,33 @@ def main() -> int:
     said = " ".join(got.get("hints", []))
     check("with no dates, the later telling holds", "Told Second" in out and "Told First" not in out,
           out.replace("\n", " | ")[:100])
-    check("and the world says the answer rests on the order they arrived",
-          "the order they reached this world" in said, said[:140] or "(no hint)")
-    dated = world(led_by=False)
+    check("and the world says the earlier one is ended, without inventing a day",
+          "some time before now" in said, said[:140] or "(no hint)")
+    check("and asks when it changed, since that decided a boundary",
+          any("when_it_changed" in q or "When did it change" in q
+              for q in (got.get("questions") or []) + (got.get("ask_now") or [])),
+          str(got.get("questions"))[:140])
+    dated = world(led_by="many-to-one")
     _, got = ran(dated, 'boss = Person.new(full_name="The Boss")\n'
                         'boss.set_led_by(Organization.new(name="Told First"),  '
                         'starts=date(2019, 1, 1))\n'
                         'boss.set_led_by(Organization.new(name="Told Second"),  '
                         'starts=date(2022, 1, 1))\n'
                         'print(len(boss.relations("led_by")))')
-    check("and says nothing when somebody did give a date",
-          "the order they reached this world" not in " ".join(got.get("hints", [])),
+    check("and puts the boundary on the date when somebody gave one",
+          "some time before now" not in " ".join(got.get("hints", []))
+          and "2022" in " ".join(got.get("hints", [])),
           " ".join(got.get("hints", []))[:140])
 
     # --- a date given earlier than the standing one is a conflict, not a handover ---
-    rt = world(chairs=True)
+    rt = world(chairs="one-to-many")
     _, got = ran(rt, 'org = Thing.ensure(name="Fatah", nature="agent")\n'
                      'Person.new(full_name="Later").set_chairs(org,  starts=date(2024, 1, 1))\n'
                      'Person.new(full_name="Earlier").set_chairs(org,  starts=date(2020, 1, 1))')
     check("a start before the standing one is refused", not got["ok"], str(got.get("error"))[:70])
 
     # --- the same moment, taken once, is a handover and not an overlap ---
-    rt = world(chairs=True)
+    rt = world(chairs="one-to-many")
     out, got = ran(rt, 'org = Thing.ensure(name="Fatah", nature="agent")\nt = now()\n'
                        'Person.new(full_name="First").set_chairs(org,  starts=t)\n'
                        'Person.new(full_name="Second").set_chairs(org,  starts=t)\n'
@@ -129,7 +148,7 @@ def main() -> int:
     check("one moment passed to both hands over", out == "['Second']", out or str(got.get("error"))[:70])
 
     # --- the other shape: the subject changes, and the world can only count ---
-    rt = world(led_by=False)
+    rt = world(led_by="many-to-one")
     out, got = ran(rt, 'org = Thing.ensure(name="Fatah", nature="agent")\n'
                        'Person.new(full_name="One").set_led_by(org)\n'
                        'Person.new(full_name="Two").set_led_by(org)\n'
@@ -146,7 +165,7 @@ def main() -> int:
     # --- a link written from the wrong end is a different fact, and the world had the check ---
     # `relations.verify` worked this out from the day it was written and nothing called it, so
     # the world noticed a type running both ways and told nobody.
-    rt = world(author_of=False)
+    rt = world(author_of="many-to-one")
     ran(rt, 'p1 = Person.new(full_name="Ursula K. Le Guin")\n'
             'b1 = Thing.ensure(name="A Wizard of Earthsea", nature="object")\n'
             'p1.set_author_of(b1)\n'
@@ -168,7 +187,7 @@ def main() -> int:
     # value per subject, and the second link of the second type was taken for a second value
     # of the first. It read as "the fact is not in the world" while asking for it by name
     # returned it with its period still open.
-    rt = world(born_in=False, wrote=False)
+    rt = world(born_in="many-to-one", wrote="many-to-one")
     out, _ = ran(rt, 'p = Person.new(full_name="Ursula K. Le Guin")\n'
                      'p.set_born_in(Thing.ensure(name="Portland", nature="place"))\n'
                      'p.set_wrote(Thing.ensure(name="Earthsea", nature="object"))\n'
@@ -179,7 +198,7 @@ def main() -> int:
     # --- a type that keeps ending the last one on the same thing is a type in doubt ---
     # `citizen_of` was declared one citizen per country, so every American ended the last
     # American's citizenship: twelve links to the United States, six still holding.
-    rt = world(citizen_of=True)
+    rt = world(citizen_of="one-to-many")
     out, got = ran(rt, 'usa = Thing.ensure(name="United States", nature="place")\nt = now()\n'
                        'for n in ("A One", "B Two", "C Three", "D Four", "E Five"):\n'
                        '    Person.new(full_name=n).set_citizen_of(usa,  starts=t)\n'
@@ -201,7 +220,7 @@ def main() -> int:
     # Taking the moment once is what the world asks for, and it makes every fact in a breath
     # share a date. Which of them holds is then a question the dates cannot answer, and the
     # record answers it: `stated_at` is kept per statement and rises with every one.
-    rt = world(chairs=True)
+    rt = world(chairs="one-to-many")
     out, _ = ran(rt, 'org = Thing.ensure(name="Fatah", nature="agent")\nt = now()\n'
                      'for n in ("First", "Second", "Third"):\n'
                      '    Person.new(full_name=n).set_chairs(org,  starts=t)\n'

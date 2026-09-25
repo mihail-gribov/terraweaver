@@ -45,16 +45,18 @@ What you can do:
     world.attribute(Position, "sport", "the sport this position belongs to")
     world.define_relation("heads", "who currently leads an organisation",
                           subject=Person, object=Organization,
-                          cardinality="one-to-many", over_time=True)
+                          cardinality="one-to-many")
 
 Two things the world insists on. Every class, attribute and relation type needs a description of \
 what it is — that is what a later lookup searches. And an attribute for something that can \
 change must be a value, not free text: several tellings of prose sit side by side and none of \
 them replaces the others, so "what is it now" stops having an answer.
 
-`over_time` on a relation has to be said: True when a thing has one current holder and a new one \
-ends the last (an employer, a spouse, a citizenship somebody changes), False when they simply \
-accumulate. Without it, asking later gives back the first answer you were ever told.
+`cardinality` on a relation has to be said, and it is about **one moment**: "many-to-one" when \
+this thing has one of those at a time (an employer, a spouse, a citizenship somebody changes) and \
+a new one ends the last, "one-to-many" when it is the other end that has one, "many-to-many" when \
+they simply accumulate. Get it wrong one way and asking later gives back the first answer you were \
+ever told; wrong the other way and hiring somebody ends the last person's job.
 
 Three habits that matter more than the modelling you choose:
 

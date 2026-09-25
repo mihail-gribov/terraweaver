@@ -101,10 +101,10 @@ class Question:
         """For a question about a type the world invented: has the type actually been amended?
 
         An answer in words settles nothing on its own. A recorder wrote "one spouse at a time,
-        can change" and moved on, and the type kept `functional: True` — which means the world
-        reads a second marriage as a correction of the first rather than as one that ended.
-        The prose was right and the world was unchanged, and nothing connected the two. So the
-        answer is not accepted until the type says what the answer says.
+        can change" and moved on, and the type still said several could hold at once — so the
+        world read a second marriage as one standing beside the first. The prose was right and
+        the world was unchanged, and nothing connected the two. So the answer is not accepted
+        until the type says what the answer says.
         """
         from terraweaver import ontology
 
@@ -128,7 +128,7 @@ class Question:
                 f"instead — any of these settles it, and setting one to what it already is says "
                 f"my guess was right:\n"
                 f"    {kind}.nature = \"related_to\"    # or part_of / kind_of / same_as / derived_from\n"
-                f"    {kind}.changes = True          # one at a time, a new one ends the last\n"
+                f"    {kind}.one_per_subject = True   # one at a time, a new one ends the last\n"
                 f"    {kind}.one_per_subject = False  # several can hold at once"
             )
         return None
@@ -387,9 +387,11 @@ CHECKS = {
 # implies costs the agent one edit instead of a fresh reading of the manual, and an agent that
 # has just explained a thing in its own words should not have to work out how to say it again.
 _SAYS = (
+    # One at a time is the only thing "how many" says now, and a new one always ends the last:
+    # `changes` was a second switch beside it and is gone with the category it belonged to.
     (("at a time", "one at a time", "ends the last", "can change", "may change", "changes over",
-      "over time", "current", "at any one time", "succeed"), "changes", "True",
-     "You said it holds one at a time and changes, which is:"),
+      "over time", "current", "at any one time", "succeed"), "one_per_subject", "True",
+     "You said it holds one at a time, which is:"),
     (("several", "many", "more than one", "multiple", "accumulate", "one or many", "any number"),
      "one_per_subject", "False", "You said several can hold at once, which is:"),
     (("part of", "a part", "belongs to"), "nature", '"part_of"',

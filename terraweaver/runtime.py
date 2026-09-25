@@ -219,8 +219,8 @@ class WorldView:
 
         The type is not asked for. `a.relate(b, kind)` needs it chosen before the fact can be
         said, and a host that must choose before it has anything to choose with chooses badly —
-        measured: two ideas under one word, three links written backwards, `over_time` answered
-        by guess. Here the words are recorded at once, the two things are joined at once, and
+        measured: two ideas under one word, three links written backwards, how many there may be
+        answered by guess. Here the words are recorded at once, the two things are joined at once, and
         what the joining *is* gets read at the close of the task, where nothing waits on it.
         """
         from terraweaver import ontology as ont, sentences
@@ -987,7 +987,7 @@ class WorldRuntime:
         """Read what was said about the things that came in as bare names. At the close.
 
         The twin of `_read_what_was_said`, and here for the same reason: a run is stopped after
-        ten seconds and a reader takes four to twenty.
+        ten seconds and the engineer takes four to twenty.
         """
         engineer = getattr(self.world, "engineer", None)
         if engineer is None:
@@ -1009,12 +1009,12 @@ class WorldRuntime:
         """Run code the world wrote itself, by exactly the door a host's code goes through.
 
         Not a second interpreter, and that is the point of asking for code at all. What the
-        reader may say is what a host may say, the sandbox is the same sandbox, the statements
+        engineer may say is what a host may say, the sandbox is the same sandbox, the statements
         are committed one at a time the same way, and every refusal the world makes of a host
         it makes of itself. A reading that can express only what a hand-written translator
         thought of is a reading that quietly drops the rest.
 
-        `it` is the thing being filled in, bound before the code runs so the reader never has
+        `it` is the thing being filled in, bound before the code runs so the engineer never has
         to name it — identity is handed over here as it is everywhere else in this world, never
         recovered from words. The writes are the world's own (`stating("world")`), which is the
         lowest standing there is and comes off in one move.
@@ -1049,7 +1049,7 @@ class WorldRuntime:
     def _read_what_was_said(self) -> dict:
         """Turn the sentences this task said into links. At the close, where nothing waits.
 
-        A run is stopped after ten seconds and a reader takes four to twenty, so this cannot
+        A run is stopped after ten seconds and the engineer takes four to twenty, so this cannot
         happen where the fact is said. It does not need to: the words are in the record.
         """
         engineer = getattr(self.world, "engineer", None)
@@ -1077,7 +1077,7 @@ class WorldRuntime:
     def _read_the_new_types(self) -> dict:
         """Types nobody has read, read now — at the close, where no run is waiting on it.
 
-        A host's run is stopped after ten seconds and a reader that thinks first takes longer,
+        A host's run is stopped after ten seconds and an engineer that thinks first takes longer,
         so this cannot happen where the type is defined. It happens here, once per type, and
         what it offers is said rather than applied.
         """

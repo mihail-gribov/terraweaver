@@ -9,6 +9,8 @@
     "to": [
       "Person"
     ],
+    "functional": false,
+    "inverse_functional": false,
     "symmetric": true,
     "irreflexive": true,
     "labels": [
@@ -251,7 +253,8 @@
     ],
     "example": "maria.relate(michael, \"kin\", label=\"mother\")",
     "reads": "Maria is Michael's mother",
-    "nature": "related_to"
+    "nature": "related_to",
+    "how_many": "Neither end is limited: a person has as many relatives as they have, and all of them at once. How many of one *kind* there may be is the role's business — `parent` says max 2 — and a role is not the type."
   },
   "attributes": [
     {
@@ -270,7 +273,7 @@
       "name": "label_reverse",
       "type": "str",
       "required": false,
-      "description": "The label seen from the other side (brother \u2194 sister)."
+      "description": "The label seen from the other side (brother ↔ sister)."
     }
   ],
   "methods": [],
