@@ -2219,3 +2219,40 @@ three it had read stayed read — which is what the mark is for.
 **Three of the day's defects were found only by a live model**, and all three lived in the code
 that talks to one: a branch with no import, a prompt naming a class this world has not got, and
 a server that reads nothing without a key. The suite cannot see any of them.
+
+## 2026-09-25 — one door per kind of work: the portrait door stops writing links
+
+Ten facts through a live host, with the engineer on, produced twenty-five links. Half were
+facts nobody had stated: `Washington, D.C. capital of United States`, `Camden Town part of
+London`, `Bengaluru located in India`, `North America contains United States`.
+
+The source was exact. London, recorded as a bare name and described by the host as "the city
+Thomas Kyd was born in", went to the portrait engineer, which wrote:
+
+    world.define_relation("birthplace_of", "a city that is the place where a person was born", …)
+    it.set_birthplace_of(Person.identify(full_name="Thomas Kyd")[0])
+
+The same fact the sentence door had already recorded as `born_in` — from the other end, under a
+second word. And the rest followed the same path: the host describes a thing the way anybody
+describes a thing, encyclopedically, and the engineer faithfully formalises that description.
+The prompt's "everything comes out of those words and nothing else" was obeyed to the letter.
+The words were there. They were in the description.
+
+**So the portrait door cannot write links any more.** Its prompt has no `set_`, no `relate`, no
+`define_relation`, no way to look another thing up, and no list of the words this world holds.
+Its work is a class and this thing's own values; links are the sentence door's work and only its.
+An account of a city names its country and its famous dead, and neither is a fact about the city
+alone.
+
+Two of the portrait tests went with the fix — they covered a thing *the world named itself*,
+which only happened because this door reached for a second end by name. Nothing here names
+anything now. The hole closed by taking a capability away rather than by adding a rule.
+
+**And the counterexample came out of the prompt too.** Naming the forbidden call, even to forbid
+it, is how a model picks it up — the same way an example naming a class this world has not got
+had it writing `Place.identify(...)` three times.
+
+**The two doors now:**
+
+    sentence door    two things and the fact in words    →  a typed link
+    portrait door    one thing and an account of it      →  a class and its own values

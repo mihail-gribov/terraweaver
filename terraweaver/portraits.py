@@ -214,42 +214,15 @@ record something nobody said.
 record uses. `it` is already bound to the thing; never make it again, never rename it.
 
     it.population = 2800000                      a value the words gave
-    italy = Thing.identify(name="Italy")[0]      another thing the words named
-    it.set_capital_of(italy)                     what this thing is to that one
+    it.founded = date(1871, 1, 18)               a date, where the words gave one
+    it.describe("...")                           something no attribute can hold
 
-`<Class>.identify(name="...")` is how another thing is reached: it finds the one of that
-name or records it, and hands back a list. Take `[0]`. The class must be one of these, and
-`Thing` is always right for something you have no narrower word for here:
+**Only this thing.** Nothing here joins it to anything else and nothing here reaches for
+another thing at all. An account of a city says what country it is in and who was born there,
+and both of those are facts about two things: they are recorded by whoever said them, and
+putting them here would put the same fact in twice, from the other end, under a second word.
 
-{classes}
-
-A class that is not on that list does not exist and the line will fail.
-
-A link is written from this thing outward, and the word is what THIS one is to the other:
-"Rome is the capital of Italy" is a link from Rome with the word `capital_of`, because Rome is
-Italy's capital and not the other way round.
-
-**`it.set_<the_word>(other)` is how a link is written**, one at a time, from this thing
-outward. It exists for every word the record has and for no other, so a word it has not got is
-a missing method and the line fails.
-
-{new_words}
-
-**A link is never an attribute.** `it.capital_of = italy` is refused, and rightly: that slot
-is how the link reads back, not how it is written — `it.capital_of` gives Italy afterwards, and
-a word that may hold several gives the list of them. If a line joining two things fails, the
-answer is to declare the word, never `world.attribute`: a thing sitting in an attribute cannot
-be asked about by type, nothing can supersede it, and everything that reads links is blind.
-
-Words the record already has, to use rather than invent a second for the same idea:
-
-{held}
-
-Anything else is one of these, and nothing else is available:
-
-    it.<attribute> = <value>                    only attributes the class has, never a thing
-    it.describe("...")                          something with no attribute to go in
-    it.set_<word>(other)                        what this thing is to another thing
+So: values of this thing, and a description for whatever no attribute can hold.
 
 Dates as `date(2019, 6, 1)`, and only where the words gave one; do not work one out.
 
@@ -414,8 +387,6 @@ def _say(engineer, asked: str) -> dict | None:
 
 def _asking(world, entity, words: str, at: str, make_new: bool) -> str:
     """The one open question: describe the class, and write the code that fills this one in."""
-    from terraweaver import sentences
-
     parent = world.classes.get(at)
     parent_is = (parent._spec.get("brief") or parent._spec.get("description") or at)[:150] \
         if parent is not None else at
@@ -426,8 +397,7 @@ def _asking(world, entity, words: str, at: str, make_new: bool) -> str:
         standing = f"The attributes it has: {', '.join(named)}"
     return FORMALISE.format(
         name=entity.display_name(), parent=at, parent_is=parent_is, standing=standing,
-        words=words, held=sentences.held(world), classes=_classes_here(world),
-        new_words=_a_word_it_has_not(world),
+        words=words,
         class_ask=(MAKE_ONE if make_new else KEEP_ONE).format(parent=at),
         class_shape=MAKE_SHAPE if make_new else "null")
 

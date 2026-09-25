@@ -95,11 +95,7 @@ def main() -> int:
                   "description": "A populated place with a permanent community.",
                   "attributes": [{"name": "population",
                                   "description": "how many people live there", "type": "int"}]},
-        "code": 'it.population = 2800000\n'
-                'world.define_relation("capital_of", "a city that is the seat of a country\'s '
-                'government", nature="related_to", cardinality="many-to-one", over_time=False)\n'
-                'italy = Thing.identify(name="Italy")[0]\n'
-                'it.relate(italy, "capital_of")',
+        "code": 'it.population = 2800000\nit.describe("where the user lived until 2019")',
     }])
     tally = portraits.read_them(rt.world, engineer, jev=jev, run=rt._the_world_writes)
     rt._hand_back_what_moved(tally.pop("moved", []))
@@ -109,9 +105,8 @@ def main() -> int:
     rome = rt.world.find(rt.world.classes["City"], name="Rome").matches[0]
     check("the thing is read under the class that was made", type(rome).__name__ == "City")
     check("what the words gave is on it", rome.population == 2800000, str(rome.population))
-    check("and the link the code wrote is a link, not a slot",
-          [r.display_name() for r in rome.relations()] == ["Rome capital of Italy (capital_of)"],
-          str([r.display_name() for r in rome.relations()]))
+    check("and this door joined it to nothing: links are the other door's work",
+          rome.relations() == [], str([r.display_name() for r in rome.relations()]))
 
     # --- the new class sits under the one the walk stopped at, and inherits its question ---
     city = rt.world.classes["City"]
@@ -132,22 +127,22 @@ def main() -> int:
     # of Thing the walk comes down through.
     check("the walk offers the kinds of Thing and a way out",
           set(asked) == {"AIAgent", "Person", portraits.NEW_ONE}, str(asked))
-    check("the engineer is shown the classes this world actually has, by the door it calls them",
-          'Person.identify(full_name="...")' in engineer.asked[0]
-          and "Place.identify(" not in engineer.asked[0], engineer.asked[0][:400])
-    check("and told how a word this record has not got is declared here",
-          "world.define_relation(" in engineer.asked[0] and "define it" not in engineer.asked[0].lower()
-          or "define_relation" in engineer.asked[0])
+    # What this door is not for. Given a way to join two things, the engineer used it on every
+    # account that mentioned another thing: London described as "the city Thomas Kyd was born
+    # in" came back as `London.set_birthplace_of(Thomas Kyd)` — the same fact the sentence door
+    # had already recorded as `born_in`, from the other end, under a second word. An account of
+    # a city names its country and its famous dead; none of that is a fact about the city alone.
+    asked_for = engineer.asked[0]
+    check("the engineer is offered no way to join this thing to another",
+          not any(bad in asked_for for bad in
+                  ("set_", "relate(", "define_relation", ".identify(")), asked_for[-700:])
+    check("and is told plainly that this is about one thing only",
+          "Only this thing" in asked_for, asked_for[-700:])
 
-    # --- a thing the world named while reading is asked about too, by a line anybody can run ---
-    next_turn = rt.run('print("on with it")', "k")
-    check("the agent is asked about the thing the world named",
-          any('Thing.identify(name="Italy")[0].describe(' in line
-              for line in next_turn.get("clarify") or []), str(next_turn.get("clarify")))
-    said_again = rt.run('print("still here")', "k")
-    check("and asked again every run until something is said",
-          any("Italy" in line for line in said_again.get("clarify") or []),
-          str(said_again.get("clarify")))
+    # There is no case here for a thing the world named itself: this door names nothing. That
+    # it once did — reaching for "Italy" out of an account of Rome — is the defect the check
+    # above guards against. `runtime._reachable` still words a question about such a thing by
+    # a lookup anybody can run, for whenever the world does make one.
 
     # --- the loop: a line the world refuses comes back, and the next answer is run ---
     rt.run('turin = Thing.identify(name="Turin")[0]\n'
