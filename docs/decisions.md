@@ -2381,3 +2381,49 @@ The store now keeps what it made for the *run*, and the runtime clears that at t
 This is the loop the agent learns from — what it did, said back to it — and it was wrong on
 every write. No test could see it: the tests read the world, and this was about what the world
 *said*.
+
+## 2026-09-25 — walking the agent's own path, on the core it actually starts with
+
+**A methodical mistake first.** Every observation of the day was made against the `job_search`
+fixture, because it has people and links already and writes nice examples — and conclusions
+about "what the world is by default" were drawn from it. The fixture holds fifteen classes the
+core has not got, including `Kin` with its fourteen labels. The minimal core is five.
+
+### What the core holds
+
+    Thing, Related, Person, AIAgent, Event     the world's picture
+    Task                                       the world's own record of work done on it
+
+**`PartOf` and `Kind` are out of it.** They were two links every world was thought to need, and
+they are not: a part and a whole is a relation like any other and the word for it comes from
+what was said. Standing in the core they were two words a reading could reach for instead of the
+one the fact used — "the capital of France" went in as `part_of`, true and unanswerable.
+
+**`Task` is out of the agent's sight.** It is the world's own bookkeeping, written about the
+agent by the world. It was in the namespace and listed in the catalogue under a line saying it
+was the world's and not the person's — and being listed is being offered: a host asked what is
+in this world read its own task record as somewhere to put things. The test that checked the
+task record did so by running `Task.all(...)` as the host, which is exactly the thing that
+should be impossible; it reads from the world now.
+
+### Two names that rhyme are not one name
+
+On the bare core, the first line written found it:
+
+    Person.identify(full_name="Sasha")[0]  ->  Masha
+
+`Sasha` against `Masha` scored .80 — higher than `Anna` against `Anne`, which is one name spelled
+two ways — because four of five letters are shared. The measure was ranking rhymes above
+variants. What tells them apart is where the difference falls: a variant differs at the end, two
+names differ at the start, and the first letter of a name is the one nobody misspells.
+
+    Sasha ~ Masha  .80 -> 0        Anna ~ Anne        .75 kept
+    Boris ~ Doris  .80 -> 0        Kate ~ Katherine   .62 kept
+    Kate  ~ Nate   .75 -> 0        Dr. Rao ~ Arun Rao .90 kept
+
+### An untyped link has neither a label nor a nature
+
+Both were asked for and neither can be answered. `Related` declared `label` required, so the
+world nagged for a word about a link whose whole point is that nobody has one yet; and it
+declared a `nature` attribute, so the world asked what *sort of thing* a link is. Both are
+residue of the design that had natures. What an untyped link is, is the fact in its own words.

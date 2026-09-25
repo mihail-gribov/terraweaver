@@ -84,13 +84,16 @@ def main() -> int:
     left = rt.finish_task(key)
     check("and then it closes", not left.startswith("Not closed"), left[:90])
 
-    read = rt.run('t = [x for x in Task.all(limit=10)][0]\n'
-                  'print(t.mode, t.runs, t.closed_as, len(t.touched or []))', "check")
+    # Read from the world and not through a host's code: the task record is the world's own,
+    # and an agent has neither the need for it nor the name to reach it. Offered as one more
+    # class it can make, it reads as somewhere to put things.
+    done = rt.world.all("Task", limit=10, history=True)[0]
     check("the task is in the world afterwards, with how it closed",
-          read["output"].strip().startswith("recording") and "for_the_user" in read["output"],
-          read["output"] or str(read.get("error"))[:120])
-    check("and with what it touched", read["output"].strip().split()[-1] != "0", read["output"])
-    check("a closed task is still readable — it did happen", read["ok"])
+          done.mode == "recording" and done.closed_as == "for_the_user",
+          f"{done.mode} {done.runs} {done.closed_as}")
+    check("and with what it touched", len(done.touched or []) > 0, str(done.touched))
+    check("and the agent cannot reach it: the world's ledger is the world's",
+          not rt.run("print(Task)", "looking on")["ok"])
 
     # Giving up is allowed, and it is on the record — an agent with no way out of the check
     # would answer the doubts at random, which is worse than saying it could not do the task.
@@ -100,8 +103,8 @@ def main() -> int:
     gave_up = rt.finish_task(key, abandon="the message never said whose address it was")
     check("a task can be abandoned, with the reason kept",
           "abandoned" in gave_up.lower() and "never said" in gave_up, gave_up[:100])
-    how = rt.run('print([t.closed_as for t in Task.all(limit=10)])', "check")
-    check("and it is recorded as abandoned", "abandoned" in how["output"], how["output"])
+    how = [t.closed_as for t in rt.world.all("Task", limit=10, history=True)]
+    check("and it is recorded as abandoned", "abandoned" in how, str(how))
 
     # Nothing open about what it touched is what "done" means, and it is worked out, not said.
     rt.start_task(key, "look up which organizations are already known", "answering")

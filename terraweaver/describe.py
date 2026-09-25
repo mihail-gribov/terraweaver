@@ -614,8 +614,10 @@ def catalogue(specs: dict[str, dict[str, Any]]) -> str:
     # The world's own bookkeeping is listed apart from the person's life. A host asked "what is
     # in this world" and got the world's record-keeping back mixed in with the people in it,
     # which is a different question wearing the same words.
-    own = [f"{n} — {s.get('description', '').strip().split('.')[0]}." for n, s in specs.items()
-           if s.get("own")]
+    # The world's own bookkeeping is not shown at all. It used to be listed apart, under a line
+    # saying it was the world's and not the person's — and being listed is being offered, so a
+    # host asked "what is in this world" read its own task record as somewhere to put things.
+    own: list[str] = []
     links = []
     for name, spec in specs.items():
         rel = spec.get("relation")

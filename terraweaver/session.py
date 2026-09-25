@@ -17,7 +17,12 @@ from terraweaver.ontology import Entity
 class Session:
     def __init__(self, classes: dict[str, type], seed: dict[str, Any] | None = None, world=None):
         self.classes = classes
-        self.namespace: dict[str, Any] = dict(classes)
+        # Everything the world holds except its own bookkeeping. A Task is the world's record of
+        # the work done on it, written about the agent by the world; handed to the agent as one
+        # more class it can make, it reads as somewhere to put things.
+        self.namespace: dict[str, Any] = {
+            name: cls for name, cls in classes.items()
+            if not (getattr(cls, "_spec", {}) or {}).get("own")}
         self.variables: dict[str, dict] = {}
         # Names the harness puts in the namespace besides the classes (helpers, modules); they
         # aren't the agent's variables and aren't reported as such.

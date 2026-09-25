@@ -100,6 +100,13 @@ def _ratio(a: str, b: str) -> float:
     ratio = matcher.ratio()
     if ratio >= CERTAIN:
         return ratio
+    # Two spellings of one name differ at the end; two names differ at the start. "Sasha" and
+    # "Masha" share four letters of five and score .80 — higher than "Anna" against "Anne",
+    # which is the same name — so a world holding one Masha answered `identify(full_name="Sasha")`
+    # with her, and the host, told to take the first candidate, bound the wrong person. The
+    # first letter of a name is the one nobody misspells.
+    if a[:1] != b[:1]:
+        return 0.0
     run = matcher.find_longest_match(0, len(a), 0, len(b)).size
     return ratio if run >= min(3, len(a), len(b)) else 0.0
 

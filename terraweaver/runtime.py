@@ -405,6 +405,11 @@ class WorldRuntime:
         that raised NameError.
         """
         for name, cls in self.world.classes.items():
+            if (getattr(cls, "_spec", {}) or {}).get("own"):
+                # The world's own record of the work done on it. An agent has no use for it and
+                # no business in it: it is written about the agent, by the world, and offering
+                # it as one more class to record into reads as an invitation to do so.
+                continue
             if name not in session.namespace:
                 session.namespace[name] = cls
                 session.preset.add(name)

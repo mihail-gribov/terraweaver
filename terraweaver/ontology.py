@@ -336,7 +336,17 @@ def trusted_writes():
 # is required on it and required nowhere else. A world without Event has nowhere to put "when"
 # except on links that merely hold, and asking a link that merely holds when it began cost a
 # 455-fact run most of its capitals and every one of its marriages.
-BASE_CLASSES = ("Thing", "Related", "PartOf", "Kind", "Person", "AIAgent", "Event", "Task")
+# The least a world can be. `PartOf` and `Kind` were here as two links every world was thought
+# to need, and they are not: a part and a whole is a relation like any other and the world finds
+# the word for it from what was said. Kept in the base they were two words a reading could reach
+# for instead of the one the fact used — "the capital of France" went in as `part_of`, true and
+# unanswerable, because `part_of` was there and `capital_of` was not.
+BASE_CLASSES = ("Thing", "Related", "Person", "AIAgent", "Event")
+
+# Not the world's picture of anything — the world's own record of the work done on it. It stood
+# in the list above and read as one more kind of thing a person's life is made of, which it is
+# not: nobody tells the world about a Task, the world writes them about itself.
+OWN_CLASSES = ("Task",)
 
 
 # What each base class keeps. A Person in the base is a name, not a name with an employer and a
@@ -364,7 +374,7 @@ def base_specs(ontology_dir: Path) -> dict[str, dict[str, Any]]:
     """The least a world can be: the base classes, each cut back to what a world needs of it."""
     specs = load_specs(ontology_dir, grown_dir=Path("/nonexistent"))
     out = {}
-    for name in BASE_CLASSES:
+    for name in BASE_CLASSES + OWN_CLASSES:
         spec = dict(specs[name])
         keep = BASE_KEEPS.get(name, ()) + _ALWAYS
         spec["attributes"] = [dict(a) for a in spec["attributes"] if a["name"] in keep]

@@ -19,8 +19,8 @@
     {
       "name": "label",
       "type": "str",
-      "required": true,
-      "description": "What the user calls this relation, in their words."
+      "required": false,
+      "description": "A word for this link, where somebody had one. An untyped link usually has none \u2014 what it is, is the fact in its own words, and the word for it is found when the link is read."
     },
     {
       "name": "description",
@@ -29,12 +29,6 @@
       "description": "The latest of this one's descriptions, as one string. Writing it adds a description; they all live there.",
       "derived": "self.descriptions",
       "settable": true
-    },
-    {
-      "name": "nature",
-      "type": "enum[related_to, kind_of, part_of, same_as, derived_from]",
-      "required": false,
-      "description": "What kind of link this is: related_to (they stand in some relation), kind_of (the subject is a narrower kind of the object), part_of (the subject is part of the object), same_as (one and the same), derived_from (the subject was worked out from the object)."
     }
   ],
   "methods": [],
