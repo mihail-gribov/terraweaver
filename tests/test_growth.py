@@ -191,7 +191,7 @@ def main() -> int:
     rt.run('for city, land in (("Berlin", "Germany"), ("Tokyo", "Japan")):\n'
            '    a = Thing.ensure(name=city, nature="place")\n'
            '    b = Thing.ensure(name=land, nature="place")\n'
-           '    a.relate(b, "capital_of")\n'
+           '    a.set_capital_of(b)\n'
            'print("two links")', "k2")
     # Break one of them the way retype used to: take its ends out of the image, not the record.
     links = rt.world.all(rt.world.classes["CapitalOf"], limit=None)

@@ -20,6 +20,7 @@ as names in a sentence, because identity cannot be recovered from words and no l
 repairs a confusion of two Annas.
 """
 import json
+from terraweaver import prompts
 from datetime import datetime, timezone
 
 from terraweaver.store import run_script
@@ -149,117 +150,9 @@ def count(world) -> tuple[int, int]:
     return said, waiting
 
 
-SYSTEM = ("You place a fact in a record of relations. A relation joins two things and each end "
-          "has a role. You answer with JSON and nothing else.")
+SYSTEM = prompts.TYPING_A_FACT
 
-ASK = """Two things are in a record of facts, and somebody has said how they are related.
-Your task is to describe that relation, and nothing else.
-
-    the first thing:   {a}   (a {a_is})
-    the second thing:  {b}   (a {b_is})
-    what was said:     {words}
-
-{held}
-
-**First: can this be typed as a relation?** The link is already in the record either way — two
-things are joined and the words are on it, and nothing you say takes that away. The question is
-only whether it can be given a type, and sometimes it cannot, because what was said is not
-about two things at all:
-
-    a value        a characteristic of one thing — "Anna is tall", "the salary is 60000".
-                   "tall" is not a thing; it is what Anna is like, and a type made for it
-                   invents a thing called "tall" and hangs somebody off it.
-    a kind         one thing said to be OF a class — "Paris is a city", "Anna is a person".
-                   "city" is a class, not another thing: this says what Paris IS.
-
-Both ends were handed to you as things this record holds, not as words in a sentence, so "kind"
-is right only when the second of them is one of the classes listed above. "wide receiver" and
-"cornerback" are things; "plays the position of" joins two of them and is a link. The word "of"
-in a sentence is not the test — `part_of`, `capital_of` and `mother_of` all have it.
-
-Say `ill_typed` as "value" or "kind" when it is one of those, with `description` and nothing
-else, and stop. The link stays; it stays untyped, which is a poor link and a real one, and the
-writer is told which door would have served it better. Guessing a type for what has none is
-worse than saying there is none.
-
-Null when it can be typed, and then:
-
-A relation in this record is four things and no others. Give them.
-
-**use** — the name of one of the relations listed above, **only when this fact is that same
-relation**. A second word for one idea answers for neither — and so does one word for two, which
-is worse and cannot be taken apart afterwards: being born somewhere and dying somewhere are not
-the same link because both join a person to a place. Null whenever the word you give below is
-not already there, and then give the rest.
-
-**the word** — `word`: what this kind of link is called, as somebody writing it would write
-it, lower case with underscores. It is read from the fact, not from what the ends are: "Thomas
-Kyd was born in the city of London" is `born_in`, not `person_of`. Say what one is TO the other
-in the direction the fact runs.
-
-**the roles** — `subject_is` and `object_is`: what each END of the relation IS, as a short noun
-phrase a thing could be checked against. "a city that serves as a capital", not "Paris"; "the
-country whose capital it is", not "France". When both ends hold the same role, give the same
-word — two siblings are both siblings, and that sameness is the whole of what symmetry is here,
-so there is no separate thing to say about it. `also_called`: up to four other words this
-relation is said with, so the next person who says it another way lands here instead of making
-a second word for it.
-
-**what may stand there** — `subject_class` and `object_class`: what sort of thing may fill each
-role, chosen from the classes this record has:
-
-{classes}
-
-Widely, not narrowly. A role written tight turns every honest fact into an alarm: a religion's
-followers are people as well as bodies, so an affiliation takes both and not just one. Give
-"any" when anything may stand there, and say nothing a first example taught you that a second
-would contradict. These are watched, not enforced — a fact whose ends do not fit is reported
-and kept, because a fact refused goes somewhere nothing can find it.
-
-**how many** — `one_object` is true when the first end may have only one of the second AT ONE
-MOMENT; `one_subject` is the same the other way. About one moment, never about a lifetime:
-somebody has one employer now and many over a life, so that is true. A parent has several
-children at once, so for a parent that is false.
-
-**what follows** — `implies`, a list of what becomes true *in addition* when a link of this kind
-is written. Only these words, and empty is a common and honest answer:
-
-    "transitive"   A to B and B to C makes A to C. A part of a part is part of the whole.
-                   A mother of a mother is not a mother.
-    "inherits"     what holds of the second end holds of the first by virtue of this link.
-                   A dog is a kind of mammal, so what is true of mammals is true of dogs.
-                   A wheel is part of a car and is not a car.
-    "identity"     the two are one and the same thing under two names — "Bombay is Mumbai".
-                   A part is not the whole and a member is not the group.
-
-**what it is** — `description`: one sentence saying what this kind of relation is, for somebody
-who has never seen it. About the kind of link, not about these two things.
-
-Then, about this one fact rather than about the relation:
-
-**which end is which** — `subject` and `object`, by the names given at the top. This is the
-whole of the direction; nothing else decides it. Do not name anything that is not one of those
-two things.
-
-**when** — `starts`, if what was said says so, in the words it said it ("2019", "June 2019",
-"since she moved"). Null when nothing was said about when. Do not work one out: a date nobody
-said cannot be told apart, later, from one somebody knew.
-
-**Whether the fact is true is not part of this task and must not affect any answer.** This
-record holds what somebody said, including what contradicts common knowledge: "London is the
-capital of France" is described exactly as "Paris is the capital of France" would be — same
-relation, same roles, London in the capital's role.
-
-JSON only, these keys and no others:
-{{"ill_typed": null,
-  "use": null,
-  "word": "...",
-  "subject_is": "...", "object_is": "...", "also_called": ["..."],
-  "subject_class": "...", "object_class": "...",
-  "one_object": true, "one_subject": true,
-  "implies": [],
-  "description": "...",
-  "subject": "...", "object": "...", "starts": null}}"""
+ASK = prompts.A_FACT_SAID
 
 
 def classes_here(world) -> str:
@@ -273,23 +166,45 @@ def classes_here(world) -> str:
     return "    " + ", ".join(names) + ", or \"any\""
 
 
-def held(world) -> str:
-    """What the world already holds, so a reader joins rather than invents."""
-    from terraweaver import relations
+def held(world, subject=None, obj=None) -> str:
+    """What the world already holds, so a reading joins rather than invents.
 
-    lines = []
+    Shown ends-first when there are two things to hand: a word whose ends have run Person →
+    Place is the one worth reading a fact about a person and a place against, and
+    `chairperson_of`, which has run Person → Organization, is thirty lines of list that this
+    fact can only be distracted by. The narrowing orders, it does not hide — the declared ends
+    are evidence and not a promise, and a word whose ends were written down from one example
+    would otherwise be unreachable for its second.
+    """
+    def fits(rel: dict) -> bool:
+        if subject is None or obj is None:
+            return False
+        ends = (rel.get("from") or ["any"], rel.get("to") or ["any"])
+        return all(type(end).__name__ in side or "any" in side
+                   for end, side in ((subject, ends[0]), (obj, ends[1])))
+
+    near, far = [], []
     for name, cls in sorted(world.classes.items()):
         rel = cls._spec.get("relation")
-        if not rel:
+        if not rel or rel.get("free"):
             continue
         roles = (rel.get("roles") or [{}])[0]
         if not roles.get("name"):
             continue
-        lines.append(f"    {name}: {roles['name']} ↔ {roles.get('inverse') or '?'}"
-                     f" — {cls._spec.get('description', '')[:70]}")
-    if not lines:
+        line = (f"    {rel['kind']}: {roles['name']} ↔ {roles.get('inverse') or '?'}"
+                f" — {cls._spec.get('description', '')[:70]}")
+        (near if fits(rel) else far).append(line)
+    if not near and not far:
         return "The record holds no relations with named ends yet."
-    return "Relations the record already holds:\n" + "\n".join(lines[:30])
+    out = []
+    if near:
+        out.append("Relations that have run between these two sorts of thing:")
+        out += near[:20]
+    if far:
+        out.append("Relations the record holds between other sorts of thing — one of these may "
+                   "still be the word, and its ends are behind the times:")
+        out += far[:20]
+    return "\n".join(out)
 
 
 def read_them(world, engineer, limit: int = 100) -> dict:
@@ -318,7 +233,7 @@ def read_them(world, engineer, limit: int = 100) -> dict:
                 words=one["words"],
                 a=subject.display_name(), a_is=type(subject).__name__,
                 b=obj.display_name(), b_is=type(obj).__name__,
-                held=held(world), classes=classes_here(world)))
+                held=held(world, subject, obj), classes=classes_here(world)))
         except Exception:  # noqa: BLE001 - one that fails leaves the words for a later pass
             tally["failed"] += 1
             continue
@@ -420,7 +335,7 @@ def _type_for(world, said: dict, tally: dict) -> str | None:
         rel = cls._spec.get("relation")
         if not rel or rel.get("free"):
             continue
-        if asked_for and asked_for in (rel["kind"], rel.get("reverse")):
+        if asked_for and _the_same_word(asked_for, rel["kind"]):
             tally["joined"] += 1
             return rel["kind"]
         roles = rel.get("roles") or [{}]
@@ -468,12 +383,40 @@ def _type_for(world, said: dict, tally: dict) -> str | None:
 CLAIMS_NOTHING = "related_to"
 
 
+def _the_same_word(asked: str, held: str) -> bool:
+    """Whether these are one word. A trailing `_of` on a verb is not a second idea.
+
+    One record ended up with `plays_position` and `plays_position_of` for one idea, and another
+    with `chairperson` beside `chairperson_of`. The tail is a habit picked up from the words
+    this record shows — `capital_of`, `mother_of`, `part_of` all carry it — and a reading that
+    adds it where the last reading did not is not naming something new.
+    """
+    return asked == held or asked.removesuffix("_of") == held.removesuffix("_of")
+
+
+# Every word for a link ends in a preposition, and in exactly one. That is the whole of the
+# shape: a name and the preposition that joins it to the other end — `born_in`, `capital_of`,
+# `married_to`, `headquarters_in`. Without it a reading gives a bare noun (`chairperson`,
+# `director`) or a bare verb (`plays`), which read as nothing between two names; with two of
+# them it gives `born_in_of`. Settled here and not only asked for, because an instruction is a
+# hope and this is not: one record held `chairperson` beside `chairperson_of` for one idea.
+PREPOSITIONS = ("of", "in", "at", "for", "to", "from", "on", "with", "by", "into", "about",
+                "under", "over", "against", "between", "through")
+
+
 def _a_word(said) -> str | None:
-    """A word for a type, as a host would write it: lower case, underscores, nothing else."""
+    """A word for a link, in the shape this record names them with: a name and a preposition."""
     import re
 
     word = re.sub(r"[^a-z0-9_]+", "_", str(said or "").strip().lower()).strip("_")
-    return word or None
+    if not word:
+        return None
+    parts = word.split("_")
+    while len(parts) > 2 and parts[-1] in PREPOSITIONS and parts[-2] in PREPOSITIONS:
+        parts.pop()
+    if parts[-1] not in PREPOSITIONS:
+        parts.append("of")
+    return "_".join(parts)
 
 
 def _class_named(world, said):

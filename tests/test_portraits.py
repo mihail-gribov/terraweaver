@@ -149,7 +149,7 @@ def main() -> int:
            'turin.describe("Turin is a city in the north of Italy")', "k")
     loop_jev = AJev(["City"])
     loop_engineer = Engineer([
-        {"class": None, "code": 'it.population = 900_000\nit.relate(nowhere, "near")'},
+        {"class": None, "code": 'it.population = 900_000\nit.set_near(nowhere)'},
         {"class": None, "code": 'it.describe("in the north")'},
     ])
     tally = portraits.read_them(rt.world, loop_engineer, jev=loop_jev, run=rt._the_world_writes)

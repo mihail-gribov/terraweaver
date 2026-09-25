@@ -36,9 +36,9 @@ flat = Place.new(name="Rua Anjos 12", city="Lisbon", category="other", tags=["mo
 rita = Person.new(full_name="Rita Chen", descriptions=["does battery cell chemistry"],
                   tags=["move", "berlin"])
 lars = Person.new(full_name="Lars Ek", descriptions=["writes payroll software"], tags=["berlin"])
-rita.relate(acme, "membership", title="engineer", primary=True)
-lars.relate(acme, "membership", title="engineer", primary=True)
-acme.relate(rita, "service", label="employer")
+rita.set_membership(acme,  title="engineer", primary=True)
+lars.set_membership(acme,  title="engineer", primary=True)
+acme.set_service(rita,  label="employer")
 rita.tag("apartment-hunt", starts=date(2026, 3, 1), until=date(2026, 6, 1))
 ''', "host")
     assert not out["error"], out["error"]

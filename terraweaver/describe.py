@@ -251,12 +251,19 @@ Every class below shares these, so they aren't repeated for each one:
     and recorded as `part_of` the word "capital" is lost, so define capital_of and give it that
     nature. Likewise do not reach for a type you made earlier because it is roughly the area:
     "is a citizen of" is not "is associated with the sport of".
-    Direction is one rule: the subject is the one the link describes, so a.set_<kind>(b) reads
-    "a is b's kind". maria.set_kin(michael, label="mother") says Maria is Michael's mother;
-    nina.set_service(michael, label="dentist") says Nina is Michael's dentist. Read the sentence
-    before you write the call — "my dentist is Nina" puts Nina first, not the owner. From the
-    other end, use the reverse name: michael.set_served_by(greg, label="landlord") says Greg is
-    Michael's landlord. Results show each relation as that
+    Direction is one rule: `a.set_<word>(b)` says a is the one the word is about. It reads back
+    two ways, and which one depends on the word, not on you:
+
+        kyd.set_born_in(london)      -> "Thomas Kyd born in London"     a predicate
+        maria.set_kin(michael, label="mother") -> "Maria is Michael's mother"   a role
+
+    A role is possessed and reads with an apostrophe; a predicate is not. Do not translate a
+    predicate into the possessive to check it — "Thomas Kyd is London's born_in" is not English
+    and not what the world says, and a host that tested its work that way concluded its correct
+    links were backwards, expired them, and wrote them the other way round. Read the sentence
+    the world gives you back, which is the one above. "my dentist is Nina" puts Nina first, not
+    the owner. From the other end, use the reverse name:
+    michael.set_served_by(greg, label="landlord") says Greg is Michael's landlord. Results show each relation as that
     sentence — check it reads the way you meant. A relation's period
     reads back under the same names it's written with: rel.starts, rel.until. The label is matched to the type's roles ("mom" -> mother,
     "older brother" -> sibling), and the world checks each role's limits — a second mother is

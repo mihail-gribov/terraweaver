@@ -28,6 +28,7 @@ answers the direction question with calibrated probabilities and is the one it w
 Neither is required — a world with no reader simply does not run this.
 """
 import hashlib
+from terraweaver import prompts
 import json
 from datetime import datetime, timezone
 
@@ -503,31 +504,9 @@ def twins(world, close: float = 0.82) -> list[tuple]:
 # "what sort of sport and where it is played" was wanted. Three is a kind.
 A_FEW = 3
 
-WRITING = ("You write the one line a record puts to whoever records a thing of this kind and "
-           "says nothing about it. You write what somebody would have to say for one of these "
-           "to be known again. You answer with JSON only.")
+WRITING = prompts.WRITING
 
-WRITE_ONE = """A record holds a class and has nothing to ask about one of these.
-
-The class: {name} — {description}
-It is a kind of: {parent}, which asks: {inherited}
-The attributes it has: {attributes}
-
-What has been said about the {count} of them here:
-{said}
-
-Write the line the record will put after the word "say". It asks for what makes one of these
-known again and tells two of them apart — for a person that is the full name and who they are
-to the user; for a place, what sort of place and where.
-
-About the kind, never about these ones: not "the Finnish bat-and-ball game" but "what sort of
-sport it is and where it is played". Someone recording the next one of these has not met any of
-the ones above.
-
-Shorter than a sentence and a half. It is read after "say", so it needs no verb of its own, and
-no second person.
-
-JSON only: {{"what_to_say": "..."}}"""
+WRITE_ONE = prompts.WRITE_ONE
 
 
 def silent_classes(world, least: int = A_FEW) -> list[str]:

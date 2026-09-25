@@ -55,45 +55,45 @@ def main() -> int:
     # --- symmetric: seen from both ends ---
     darren = Person.new(full_name="Darren Liu", email="darren@example.com")
     kevin = Person.new(full_name="Kevin Liu", email="kevin.liu@example.com")
-    kevin.relate(darren, "kin", label="older brother")
+    kevin.set_kin(darren,  label="older brother")
     check("a symmetric relation is seen from both ends",
           darren.related("kin") == [kevin] and kevin.related("kin") == [darren])
-    again = kevin.relate(darren, "kin", label="older brother")
+    again = kevin.set_kin(darren,  label="older brother")
     check("relating again updates, doesn't duplicate", len(darren.relations("kin")) == 1 and again is darren.relations("kin")[0])
-    darren.relate(kevin, "kin", label="younger brother")
+    darren.set_kin(kevin,  label="younger brother")
     tie = darren.relations("kin")[0]
     check("each side of a symmetric relation keeps its own label",
           tie.label == "older brother" and tie.label_reverse == "younger brother", f"{tie.label} / {tie.label_reverse}")
-    check("a relation can't link something to itself", refused(lambda: kevin.relate(kevin, "social")) is not None)
+    check("a relation can't link something to itself", refused(lambda: kevin.set_social(kevin)) is not None)
 
     # --- one at a time: overlapping periods, not "now" ---
     naomi = Person.new(full_name="Naomi Park", email="naomi@example.com")
     lena = Person.new(full_name="Lena Ross", email="lena@example.com")
-    first = darren.relate(naomi, "partner", label="girlfriend", starts=date(2024, 9, 1))
-    check("a second current partner is refused", refused(lambda: darren.relate(lena, "partner")) is not None)
+    first = darren.set_partner(naomi,  label="girlfriend", starts=date(2024, 9, 1))
+    check("a second current partner is refused", refused(lambda: darren.set_partner(lena)) is not None)
     first.keep(until=date(2026, 1, 1))
     check("after the first one ended, a new one goes through",
-          refused(lambda: darren.relate(lena, "partner", starts=date(2026, 3, 1))) is None)
+          refused(lambda: darren.set_partner(lena,  starts=date(2026, 3, 1))) is None)
     check("and the ended one is history", darren.related("partner") == [lena]
           and naomi in darren.related("partner", history=True))
 
     # --- direction, reverse names, chains ---
     company = Organization.new(name="Meridian Corp")
     b04 = Organization.new(name="Supply Chain Operations", aliases=["B04"])
-    b04.relate(company, "part_of", label="department")
+    b04.set_part_of(company,  label="department")
     chen = Person.new(full_name="Kevin Chen", email="kchen@meridian.example")
-    job = chen.relate(b04, "membership", title="vendor logistics lead", starts=date(2026, 1, 15))
+    job = chen.set_membership(b04,  title="vendor logistics lead", starts=date(2026, 1, 15))
     linda = Person.new(full_name="Linda Zhao", email="lzhao@meridian.example")
-    linda.relate(b04, "authority", label="manager", starts=date(2025, 6, 1))
+    linda.set_authority(b04,  label="manager", starts=date(2025, 6, 1))
     check("read from the object's end by the reverse name", b04.related("members") == [chen])
     check("a membership extends along part_of", chen.related("membership") == [b04, company],
           str(chen.related("membership")))
     check("who manages the department", b04.related("managed_by") == [linda])
-    check("a cycle of parts is refused", refused(lambda: company.relate(b04, "part_of")) is not None)
+    check("a cycle of parts is refused", refused(lambda: company.set_part_of(b04)) is not None)
     # A department's manager changing is a handover, not a conflict: authority runs one way, so
     # the role moved and nobody is displaced by it. What the world refuses to decide alone is a
     # symmetric link — a partnership is a state two people are in together.
-    chen.relate(b04, "authority", starts=date(2026, 3, 1))
+    chen.set_authority(b04,  starts=date(2026, 3, 1))
     check("a new manager takes over from the last", b04.related("managed_by") == [chen],
           str(b04.related("managed_by")))
     check("and the one before is still in the record",
@@ -102,7 +102,7 @@ def main() -> int:
     # Classes are not fixed on a relation. What a type has run between so far describes it; a
     # link between other ends is news about the type, not an error in the link, so it is recorded
     # as asked and the world says what it noticed.
-    kept = b04.relate(chen, "kin")
+    kept = b04.set_kin(chen)
     check("an endpoint of another class is recorded all the same",
           type(kept).__name__ == "Kin" and kept.subject is b04, repr(kept))
     # Something the world does on its own, so the test says so: initiative.MAKES_TYPES is off
@@ -126,13 +126,13 @@ def main() -> int:
     where = Organization.new(name="Acme Corp")
     first_seat = Person.new(full_name="Dublin Seat")
     later_seat = Person.new(full_name="Tallinn Seat")
-    where.relate(first_seat, "authority", label="manager", starts=date(2020, 1, 1))
+    where.set_authority(first_seat,  label="manager", starts=date(2020, 1, 1))
     check("one at a time: the later one holds",
           [p.full_name for p in where.related("managed_by")] == ["Dublin Seat"],
           str([p.full_name for p in where.related("managed_by")]))
     thing = Person.new(full_name="Twice Told")
-    thing.relate(Organization.new(name="First Place"), "membership", title="a")
-    thing.relate(Organization.new(name="Second Place"), "membership", title="b")
+    thing.set_membership(Organization.new(name="First Place"),  title="a")
+    thing.set_membership(Organization.new(name="Second Place"),  title="b")
     both = [o.name for o in thing.related("membership", any_time=True)]
     check("and what was said before is still in the record", len(both) >= 2, str(both))
 
@@ -164,27 +164,27 @@ def main() -> int:
 
     # --- roles: limits, inverses, chains ---
     maria = Person.new(full_name="Maria Gribova", email="maria@example.com")
-    mom = maria.relate(owner, "kin", label="mom")
+    mom = maria.set_kin(owner,  label="mom")
     check("a label is matched to a role", mom.role == "mother" and mom.role_of(owner) == "child")
     olga = Person.new(full_name="Olga Petrova", email="olga.p@example.com")
-    second = refused(lambda: olga.relate(owner, "kin", label="mother"))
+    second = refused(lambda: olga.set_kin(owner,  label="mother"))
     check("a second mother is refused, naming the alternative", second is not None and "stepmother" in second, str(second))
-    check("a stepmother goes through", refused(lambda: olga.relate(owner, "kin", label="stepmother")) is None)
+    check("a stepmother goes through", refused(lambda: olga.set_kin(owner,  label="stepmother")) is None)
     sister = Person.new(full_name="Olga Gribova", email="olga@example.com")
-    owner.relate(sister, "kin", label="brother")
+    owner.set_kin(sister,  label="brother")
     mark = Person.new(full_name="Mark Stone", email="mark@example.com")
-    mark.relate(sister, "partner", label="husband", starts=date(2021, 5, 8))
+    mark.set_partner(sister,  label="husband", starts=date(2021, 5, 8))
     check("a chain is named", (owner.how_related(mark) or "").startswith("Mark Stone is Michael's sibling in law"),
           str(owner.how_related(mark)))
     meridian = Organization.get(name="Meridian Corp")
     ceo = Person.new(full_name="Ruth Adler", email="ruth@meridian.example")
-    ceo.relate(meridian, "membership", role="Chief Executive Officer")
+    ceo.set_membership(meridian,  role="Chief Executive Officer")
     check("a free-text role becomes the title, and the role is found in it",
           ceo.relations("membership")[0].title == "Chief Executive Officer" and ceo.relations("membership")[0].role == "ceo")
     other = Person.new(full_name="Sam Cole", email="sam@meridian.example")
-    check("a second current CEO is refused", refused(lambda: other.relate(meridian, "membership", title="CEO")) is not None)
-    check("founders can be many", refused(lambda: other.relate(meridian, "membership", title="co-founder")) is None
-          and refused(lambda: ceo.relate(meridian, "membership", label="founder")) is None)
+    check("a second current CEO is refused", refused(lambda: other.set_membership(meridian,  title="CEO")) is not None)
+    check("founders can be many", refused(lambda: other.set_membership(meridian,  title="co-founder")) is None
+          and refused(lambda: ceo.set_membership(meridian,  label="founder")) is None)
     check("a relation reads as a sentence", mom.display_name() == "Maria Gribova is Michael's mom (kin)", mom.display_name())
     check("its period reads under the names it's written with", job.starts is not None and job.until is None)
 
@@ -234,23 +234,23 @@ def main() -> int:
     # --- a handover that leaves a day with nobody in the post ---
     with ontology.record_changes() as handover:
         leaving = Person.new(full_name="Otto Vane")
-        old_post = leaving.relate(owner, "service", label="gardener")
+        old_post = leaving.set_service(owner,  label="gardener")
         old_post.keep(until=date(2026, 9, 30))
-        Person.new(full_name="Vera Lund").relate(owner, "service", label="gardener",
+        Person.new(full_name="Vera Lund").set_service(owner,  label="gardener",
                                                  starts=date(2026, 10, 1))
     said = " ".join(handover.hints)
     check("a gap between two spells of one post is pointed out",
           "leaving no gardener in between" in said and "2026-10-01" in said, said or "(no hint)")
     with ontology.record_changes() as clean:
-        Person.new(full_name="Wim Toll").relate(owner, "service", label="plumber",
+        Person.new(full_name="Wim Toll").set_service(owner,  label="plumber",
                                                 starts=date(2026, 10, 1))
     check("and nothing is said when there was nobody in the post before",
           not any("in between" in line for line in clean.hints), str(clean.hints))
 
     with ontology.record_changes() as ended_today:
         gone = Person.new(full_name="Nils Board")
-        post = gone.relate(owner, "service", label="tutor")
-        Person.new(full_name="Ida Board").relate(owner, "service", label="tutor",
+        post = gone.set_service(owner,  label="tutor")
+        Person.new(full_name="Ida Board").set_service(owner,  label="tutor",
                                                  starts=date(2026, 10, 1))
         post.expire()
     check("ending the old one today when the new starts later is pointed out too",
@@ -260,13 +260,13 @@ def main() -> int:
     # --- a link that runs against every other of its label, where no type check can see it ---
     with ontology.record_changes() as flipped:
         vet = Person.new(full_name="Hugo Salt")
-        vet.relate(owner, "service", label="vet")
+        vet.set_service(owner,  label="vet")
         pet_person = Person.new(full_name="Mila Salt")
-        owner.relate(pet_person, "service", label="vet")  # the wrong way round; both are people
+        owner.set_service(pet_person,  label="vet")  # the wrong way round; both are people
     check("a reversed link is caught by the world's own data",
           any("goes the other way" in line for line in flipped.hints), str(flipped.hints))
     with ontology.record_changes() as first_of_its_kind:
-        Person.new(full_name="Cleo Salt").relate(owner, "service", label="chiropractor")
+        Person.new(full_name="Cleo Salt").set_service(owner,  label="chiropractor")
     check("and the first link of a label is not second-guessed",
           not any("goes the other way" in line for line in first_of_its_kind.hints),
           str(first_of_its_kind.hints))
@@ -275,8 +275,8 @@ def main() -> int:
     holder = Person.new(full_name="Rita Vale")
     north = Organization.new(name="Northwind Freight")
     south = Organization.new(name="Southwind Freight")
-    holder.relate(north, "membership", title="lead", primary=True)
-    clash = refused(lambda: holder.relate(south, "membership", title="lead", primary=True,
+    holder.set_membership(north,  title="lead", primary=True)
+    clash = refused(lambda: holder.set_membership(south,  title="lead", primary=True,
                                           starts=date(2027, 3, 1)))
     check("a link that starts later is refused with the date that makes room",
           clash is not None and "keep(until=2027-03-01)" in clash, str(clash))
@@ -288,7 +288,7 @@ def main() -> int:
     # the link written against the answer waits for it rather than taking the run down.
     unsettled = Organization.get(name="Tech")
     linked = Person.new(full_name="Vera Holt", email="vera@holt.example")
-    linked.relate(unsettled, "membership", title="director", primary=True)
+    linked.set_membership(unsettled,  title="director", primary=True)
     alongside = Person.new(full_name="Wes Holt", email="wes@holt.example")
     check("the rest of the block survives a question at the far end", isinstance(alongside, Person))
     settled = world.settle(unsettled, Organization.get(name="TechCorp"))
@@ -302,7 +302,7 @@ def main() -> int:
     Person.new(full_name="Darren Okafor", email="darren.o@example.org")
     asked = Person.get(full_name="Darren")  # fits two of them: a question, not a person
     with ontology.record_changes() as waiting:
-        owner.relate(asked, "social", label="friend")
+        owner.set_social(asked,  label="friend")
     check("linking to an unsettled question is held, not refused",
           any("held until that is settled" in line for line in waiting.hints), str(waiting.hints))
     friend = world.settle(asked, Person.get(full_name="Darren Liu"))

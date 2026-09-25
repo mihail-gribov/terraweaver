@@ -2270,3 +2270,62 @@ had it writing `Place.identify(...)` three times.
 
     sentence door    two things and the fact in words    →  a typed link
     portrait door    one thing and an account of it      →  a class and its own values
+
+## 2026-09-25 — the old door closed in the code, and what that showed
+
+The texts had taught only the new doors for hours — primer, guide, the engineer's prompts — while
+the old ones stayed open in the code. That is not a tidy state, it is two designs running at once,
+and a live host found the old door a primer never mentions and wrote most of a run through it.
+
+`a.relate(b, "born_in")` now refuses and names `a.set_born_in(b)`. Closing it touched eleven of
+twenty-five test files — in setups, in refusal checks, inside `exec` over a built string. Nothing
+was in the wrong place; the door was simply everywhere, and the size of that only became visible
+when the change went into code rather than into prose.
+
+**Three things broke that no prompt edit could have shown.**
+
+*Held writes were lost.* A write against an unsettled question used to wait — refusing raises, and
+a raise takes the whole block down, so one unidentifiable Anna in a list of four took the other
+three with her. That machinery hung off `relate`. Moving the word onto the class made
+`q.set_membership(...)` a plain missing attribute. `NeedsResolution` now holds every `set_` too.
+
+*The ends became a refusal.* They are declared per type and the code says why they are evidence
+and not a promise: a type declared from its first example refuses its second, and the host answers
+that by defining a second type for one idea. Attaching `set_<word>` only to the declared ends
+turned that into `Organization has no 'set_kin'. Did you mean 'set_kinds'?` — which reads as the
+class being wrong, and in one earlier session a host that was told that stopped using the class.
+The word is now visible on the declared ends and refuses nowhere.
+
+*A word the world has not got has no `set_`.* Three tests say what the world does with an unknown
+word, and those belong on `relate` — which is exactly the split: `set_` for a word the record
+holds, `relate` for a fact it has no word for.
+
+### Every prompt in one file
+
+They lived in five modules beside the code that sent them, which reads well and hides the one
+thing worth seeing: what does this world ask, altogether? Three defects in a day were the world
+telling a model something other than what was so, and none is visible from inside the module that
+holds it. `terraweaver/prompts.py` has them all. A prompt for a door that no longer exists is now
+a line nothing imports — `restructure.ASK` is one, in a module nothing has imported for weeks.
+
+Gathering them found a collision that living apart had hidden: the sentence door and the portrait
+door both called their system prompt `SYSTEM`.
+
+### A naming rule, and it is in the code
+
+Who invents a relation's word: the engineer, from the fact. What the world does with it was
+nothing but a lowercase-and-underscores pass, and the same idea came back as `born_in`,
+`birthplace_of`, `plays_position`, `plays_position_of`, `plays`, `chairperson`, `chairperson_of`.
+
+The rule is **a name and a preposition, exactly one**: `capital_of`, `born_in`, `married_to`,
+`headquarters_in`. A bare noun or a bare verb reads as nothing between two names; two prepositions
+is a word with two endings. `_a_word` settles it rather than asking for it, and `_the_same_word`
+treats `chairperson` and `chairperson_of` as one, so no second type is made for one idea.
+
+### The list of words is narrowed by the classes at the ends
+
+A fact about a person and a place is read against the words that have run between a person and a
+place; `chairperson_of`, which has run Person → Organization, is a line of list it can only be
+distracted by. Narrowed, not hidden — the ends are evidence, and a word whose ends were written
+down from one example must stay reachable for its second. The rest follow, said to be what they
+are.

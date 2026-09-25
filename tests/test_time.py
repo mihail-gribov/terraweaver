@@ -44,7 +44,7 @@ def main() -> int:
 
     # --- a relation that starts later is not a current one ---
     nina = Person.new(full_name="Nina Patel")
-    later = nina.relate(michael, "service", label="dentist", starts=date(2100, 1, 1))
+    later = nina.set_service(michael,  label="dentist", starts=date(2100, 1, 1))
     with ontology.record_changes() as run:
         current = michael.related("served_by")
     check("a relation starting later is out of ordinary reads", nina not in current)
@@ -58,7 +58,7 @@ def main() -> int:
     # 2016-2018, Vera from 2019. Overlapping them is the conflict this section is about, so
     # they must not overlap by accident. Ended on a date rather than with `expire()`, which
     # puts the end at this moment — after everything that follows.
-    marriage = olga.relate(michael, "partner", label="wife", starts=date(2016, 1, 1))
+    marriage = olga.set_partner(michael,  label="wife", starts=date(2016, 1, 1))
     marriage.keep(until=date(2018, 1, 1))
     with ontology.record_changes() as run:
         partners = michael.related("partner")
@@ -68,13 +68,13 @@ def main() -> int:
 
     # --- overlapping periods, not "now", make a conflict ---
     vera = Person.new(full_name="Vera Ilyina")
-    vera.relate(michael, "partner", label="wife", starts=date(2019, 7, 6))
+    vera.set_partner(michael,  label="wife", starts=date(2019, 7, 6))
     check("a new partner after the old one ended goes through", vera in michael.related("partner"))
     another = Person.new(full_name="Zoya Belova")
-    refusal = refused(lambda: another.relate(michael, "partner", label="wife", starts=date(2019, 7, 6)))
+    refusal = refused(lambda: another.set_partner(michael,  label="wife", starts=date(2019, 7, 6)))
     check("a second partner at the same time is refused", refusal is not None, str(refusal))
     past = Person.new(full_name="Nadia Orlova")
-    past.relate(michael, "partner", label="wife", starts=date(2010, 1, 1), until=date(2015, 1, 1))
+    past.set_partner(michael,  label="wife", starts=date(2010, 1, 1), until=date(2015, 1, 1))
     check("a marriage that ended before this one is no conflict",
           past in michael.related("partner", any_time=True))
 
@@ -110,17 +110,17 @@ def main() -> int:
     # so the test turns that on and puts it back.
     initiative.REROUTES_BY_LABEL = True
     sister = Person.new(full_name="Lena Gribova")
-    refusal = refused(lambda: sister.relate(michael, "kin", label="wife"))
+    refusal = refused(lambda: sister.set_kin(michael,  label="wife"))
     initiative.REROUTES_BY_LABEL = False
     check("a partner label is refused inside kin", refusal is not None and "partner" in (refusal or ""),
           str(refusal))
-    check("the fitting label still goes through", sister.relate(michael, "kin", label="sister") is not None)
+    check("the fitting label still goes through", sister.set_kin(michael,  label="sister") is not None)
 
     # --- a second provider of the same kind, at the same time, is worth a word ---
     with ontology.record_changes() as run:
         rao = Person.new(full_name="Arun Rao")
-        rao.relate(michael, "service", label="dentist")
-        Person.new(full_name="Sonia Roy").relate(michael, "service", label="dentist",
+        rao.set_service(michael,  label="dentist")
+        Person.new(full_name="Sonia Roy").set_service(michael,  label="dentist",
                                                  starts=date(2100, 2, 1))
     check("a second dentist for the same time is hinted at, not refused",
           any("already has a dentist" in h for h in run.hints), str(run.hints))
@@ -165,11 +165,11 @@ def main() -> int:
         # every fact written after it. What has a time is an event, and Event.start_time is
         # required. Checked on a pair of its own so the dated pair below is not disturbed.
         spare = own["Organization"].new(name="Spare Body")
-        undated = refused(lambda: own["Person"].new(full_name="Undated One").relate(spare, "chairs"))
+        undated = refused(lambda: own["Person"].new(full_name="Undated One").set_chairs(spare))
         check("a type that changes takes a link with no start",
               undated is None, str(undated)[:110])
-        exec(f'first.relate(org, "chairs"{said})', {"first": first, "org": org, "held": held})
-        kept = refused(lambda: exec(f'second.relate(org, "chairs"{said})',
+        exec(f'first.set_chairs(org{said})', {"first": first, "org": org, "held": held})
+        kept = refused(lambda: exec(f'second.set_chairs(org{said})',
                                     {"second": second, "org": org, "held": held}))
         holds = [p.display_name() for p in org.related("chairs_of")]
         check(f"a second one hands over, said as {said}",

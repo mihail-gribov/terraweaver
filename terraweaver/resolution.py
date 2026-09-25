@@ -84,6 +84,13 @@ class NeedsResolution:
     HELD = ("relate", "tag", "untag", "add", "drop", "describe", "keep", "repeat", "expire",
             "save", "forget", "question")
 
+    # Every word this world has for a link is a call of its own on the class — `set_kin`,
+    # `set_membership` — and those are held too. They were not, for a while, and the whole point
+    # of holding was lost the moment the typed door moved onto the class: a link written against
+    # a name the world could not settle raised instead of waiting, and took the rest of the
+    # block with it.
+    HELD_PREFIX = "set_"
+
     def _hold(self, name: str):
         def held(*args, **kwargs):
             self.context.setdefault("held", []).append((name, args, kwargs))
@@ -97,6 +104,8 @@ class NeedsResolution:
         return held
 
     def __getattr__(self, name: str):
+        if name.startswith(self.HELD_PREFIX) and not name.startswith("__"):
+            return self._hold(name)
         # Reached only for attributes this object doesn't have — usually an entity's, because
         # the host is treating the question as the answer. Say what it is and what settles it,
         # so the next run is the right one rather than the same mistake.

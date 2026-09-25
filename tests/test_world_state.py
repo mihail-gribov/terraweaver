@@ -262,7 +262,7 @@ def main() -> int:
     # --- a question in the middle of a batch holds its link instead of killing the run ---
     held = Person.get(full_name="Pete Ivanson")           # two of them now, nothing to tell them apart
     acme = Organization.ensure(name="Held Links Ltd")
-    held.relate(acme, "membership", title="advisor")      # would have raised and discarded it all
+    held.set_membership(acme,  title="advisor")      # would have raised and discarded it all
     held.tag("conference")
     held.describe("met at the conference")
     alongside = Person.new(full_name="Quinn Ivers", email="quinn@x.org")

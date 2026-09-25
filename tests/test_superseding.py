@@ -53,8 +53,8 @@ def main() -> int:
     # --- a correction: one value and no more, and no date is invented ---
     rt = world(hq_in=False)
     out, _ = ran(rt, 'org = Thing.ensure(name="Acme Corp", nature="agent")\n'
-                     'org.relate(Thing.ensure(name="Dublin", nature="place"), "hq_in")\n'
-                     'org.relate(Thing.ensure(name="Tallinn", nature="place"), "hq_in")\n'
+                     'org.set_hq_in(Thing.ensure(name="Dublin", nature="place"))\n'
+                     'org.set_hq_in(Thing.ensure(name="Tallinn", nature="place"))\n'
                      'print([t.display_name() for t in org.related("hq_in")])\n'
                      'print([t.display_name() for t in org.related("hq_in", any_time=True)])\n'
                      'print([l.until for l in org.relations("hq_in", any_time=True)])')
@@ -66,8 +66,8 @@ def main() -> int:
     # --- a handover: one at a time, and the new one's start is where the last ends ---
     rt = world(chairs=True)
     out, _ = ran(rt, 'org = Thing.ensure(name="Fatah", nature="agent")\n'
-                     'Person.new(full_name="Yasser Arafat").relate(org, "chairs", starts=date(1969, 2, 3))\n'
-                     'Person.new(full_name="Mahmoud Abbas").relate(org, "chairs", starts=date(2004, 11, 11))\n'
+                     'Person.new(full_name="Yasser Arafat").set_chairs(org,  starts=date(1969, 2, 3))\n'
+                     'Person.new(full_name="Mahmoud Abbas").set_chairs(org,  starts=date(2004, 11, 11))\n'
                      'for l in sorted(org.relations("chairs_of", any_time=True), key=lambda x: x.starts):\n'
                      '    print(f"{l.subject.display_name()} {l.starts.date()} -> {l.until.date() if l.until else None}")')
     check("a handover ends the first where the second begins",
@@ -77,7 +77,7 @@ def main() -> int:
     # --- what the nature decides ---
     rt = world()
     _, got = ran(rt, 'a = Person.new(full_name="A One")\nb = Organization.new(name="B Two")\n'
-                     'a.relate(b, "authority", label="manager")')
+                     'a.set_authority(b,  label="manager")')
     # Recorded, not refused, and that is the settled end of three attempts. Refusing turned away
     # sixty facts in a 455-fact run; taking now() by itself dated a fact nobody dated; refusing
     # while offering now() turned away the same facts again, because a raise stops the block and
@@ -86,7 +86,7 @@ def main() -> int:
     # needs no beginning: supersession orders an undated pair by which was told last.
     check("a related_to link that changes is made without a start", got["ok"],
           str(got.get("error"))[:120])
-    _, got = ran(rt, 'dept = Organization.new(name="Newsroom")\ndept.relate(b, "part_of")')
+    _, got = ran(rt, 'dept = Organization.new(name="Newsroom")\ndept.set_part_of(b)')
     check("a part_of link needs no start", got["ok"], str(got.get("error"))[:80])
 
     # Nothing is demanded on the way in, so on the way out the world says what its answer
@@ -94,8 +94,8 @@ def main() -> int:
     # than not, and not the same as having been told.
     rt = world(led_by=False)          # over_time=False: a correction, decided on the way out
     out, got = ran(rt, 'boss = Person.new(full_name="The Boss")\n'
-                       'boss.relate(Organization.new(name="Told First"), "led_by")\n'
-                       'boss.relate(Organization.new(name="Told Second"), "led_by")\n'
+                       'boss.set_led_by(Organization.new(name="Told First"))\n'
+                       'boss.set_led_by(Organization.new(name="Told Second"))\n'
                        'print([r.object.name for r in boss.relations("led_by")])')
     said = " ".join(got.get("hints", []))
     check("with no dates, the later telling holds", "Told Second" in out and "Told First" not in out,
@@ -104,9 +104,9 @@ def main() -> int:
           "the order they reached this world" in said, said[:140] or "(no hint)")
     dated = world(led_by=False)
     _, got = ran(dated, 'boss = Person.new(full_name="The Boss")\n'
-                        'boss.relate(Organization.new(name="Told First"), "led_by", '
+                        'boss.set_led_by(Organization.new(name="Told First"),  '
                         'starts=date(2019, 1, 1))\n'
-                        'boss.relate(Organization.new(name="Told Second"), "led_by", '
+                        'boss.set_led_by(Organization.new(name="Told Second"),  '
                         'starts=date(2022, 1, 1))\n'
                         'print(len(boss.relations("led_by")))')
     check("and says nothing when somebody did give a date",
@@ -116,30 +116,30 @@ def main() -> int:
     # --- a date given earlier than the standing one is a conflict, not a handover ---
     rt = world(chairs=True)
     _, got = ran(rt, 'org = Thing.ensure(name="Fatah", nature="agent")\n'
-                     'Person.new(full_name="Later").relate(org, "chairs", starts=date(2024, 1, 1))\n'
-                     'Person.new(full_name="Earlier").relate(org, "chairs", starts=date(2020, 1, 1))')
+                     'Person.new(full_name="Later").set_chairs(org,  starts=date(2024, 1, 1))\n'
+                     'Person.new(full_name="Earlier").set_chairs(org,  starts=date(2020, 1, 1))')
     check("a start before the standing one is refused", not got["ok"], str(got.get("error"))[:70])
 
     # --- the same moment, taken once, is a handover and not an overlap ---
     rt = world(chairs=True)
     out, got = ran(rt, 'org = Thing.ensure(name="Fatah", nature="agent")\nt = now()\n'
-                       'Person.new(full_name="First").relate(org, "chairs", starts=t)\n'
-                       'Person.new(full_name="Second").relate(org, "chairs", starts=t)\n'
+                       'Person.new(full_name="First").set_chairs(org,  starts=t)\n'
+                       'Person.new(full_name="Second").set_chairs(org,  starts=t)\n'
                        'print([p.display_name() for p in org.related("chairs_of")])')
     check("one moment passed to both hands over", out == "['Second']", out or str(got.get("error"))[:70])
 
     # --- the other shape: the subject changes, and the world can only count ---
     rt = world(led_by=False)
     out, got = ran(rt, 'org = Thing.ensure(name="Fatah", nature="agent")\n'
-                       'Person.new(full_name="One").relate(org, "led_by")\n'
-                       'Person.new(full_name="Two").relate(org, "led_by")\n'
+                       'Person.new(full_name="One").set_led_by(org)\n'
+                       'Person.new(full_name="Two").set_led_by(org)\n'
                        'print(len(org.related("led_by_of")))')
     check("two subjects on one object both stand, since nothing said otherwise", out == "2", out)
     check("and the world asks about it once, naming the fix",
           any("one_per_object" in q for q in (got.get("questions") or [])),
           str(got.get("questions"))[:110])
     out, _ = ran(rt, 'led_by.one_per_object = True\n'
-                     'Person.new(full_name="Three").relate(org, "led_by")\n'
+                     'Person.new(full_name="Three").set_led_by(org)\n'
                      'print([p.display_name() for p in org.related("led_by_of")])')
     check("and once it is said, the later one supersedes", out == "['Three']", out)
 
@@ -149,10 +149,10 @@ def main() -> int:
     rt = world(author_of=False)
     ran(rt, 'p1 = Person.new(full_name="Ursula K. Le Guin")\n'
             'b1 = Thing.ensure(name="A Wizard of Earthsea", nature="object")\n'
-            'p1.relate(b1, "author_of")\n'
+            'p1.set_author_of(b1)\n'
             'b2 = Thing.ensure(name="Starship Troopers", nature="object")\n'
             'p2 = Person.new(full_name="Robert A. Heinlein")\n'
-            'b2.relate(p2, "author_of")\n'
+            'b2.set_author_of(p2)\n'
             'for x in (p1, b1, b2, p2): x.describe("mentioned while recording")\n'
             'for l in AuthorOf.all(limit=None): l.describe("as the user stated it")')
     settle_direction(rt)
@@ -170,8 +170,8 @@ def main() -> int:
     # returned it with its period still open.
     rt = world(born_in=False, wrote=False)
     out, _ = ran(rt, 'p = Person.new(full_name="Ursula K. Le Guin")\n'
-                     'p.relate(Thing.ensure(name="Portland", nature="place"), "born_in")\n'
-                     'p.relate(Thing.ensure(name="Earthsea", nature="object"), "wrote")\n'
+                     'p.set_born_in(Thing.ensure(name="Portland", nature="place"))\n'
+                     'p.set_wrote(Thing.ensure(name="Earthsea", nature="object"))\n'
                      'print(sorted(type(l).__name__ for l in p.relations()))')
     check("two links of two one-value types both stand",
           out == "['BornIn', 'Wrote']", out)
@@ -182,7 +182,7 @@ def main() -> int:
     rt = world(citizen_of=True)
     out, got = ran(rt, 'usa = Thing.ensure(name="United States", nature="place")\nt = now()\n'
                        'for n in ("A One", "B Two", "C Three", "D Four", "E Five"):\n'
-                       '    Person.new(full_name=n).relate(usa, "citizen_of", starts=t)\n'
+                       '    Person.new(full_name=n).set_citizen_of(usa,  starts=t)\n'
                        'print(len(usa.related("citizen_of_of")))')
     check("one per object leaves only the last", out == "1", out)
     check("and the world asks whether it can have several at once",
@@ -204,7 +204,7 @@ def main() -> int:
     rt = world(chairs=True)
     out, _ = ran(rt, 'org = Thing.ensure(name="Fatah", nature="agent")\nt = now()\n'
                      'for n in ("First", "Second", "Third"):\n'
-                     '    Person.new(full_name=n).relate(org, "chairs", starts=t)\n'
+                     '    Person.new(full_name=n).set_chairs(org,  starts=t)\n'
                      'print([p.display_name() for p in org.related("chairs_of")])\n'
                      'print([p.display_name() for p in org.related("chairs_of", any_time=True)])')
     holds, ever = out.splitlines() if "\n" in out else (out, "")

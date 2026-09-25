@@ -90,7 +90,7 @@ def main() -> int:
            'cloudnine = Organization.new(name="CloudNine")\n'
            'dataworks = Organization.new(name="DataWorks Two")\n'
            'thing = Thing.ensure(name="pesapallo", nature="abstraction")\n'
-           'born = anna.relate(london, "kin", label="mother")\n'
+           'born = anna.set_kin(london, label="mother")\n'
            'linda = Person.new(full_name="Linda Zhao")\n'
            # The primer's own cast, bound the way the primer's first lines bind it: its
            # examples are written for a host that has already settled who it is talking about,

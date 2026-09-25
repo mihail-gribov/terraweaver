@@ -281,7 +281,7 @@ def main() -> int:
     # --- the small accommodations, each one seen costing a live host a statement ---
     ivo = Person.new(full_name="Ivo Sand", email="ivo@sand.example")
     ivo.job_title = "analyst"                      # before there is an employer to hold it
-    ivo.relate(Organization.get(name="TechCorp"), "membership", primary=True)
+    ivo.set_membership(Organization.get(name="TechCorp"),  primary=True)
     check("a title set before the job lands when the job does", ivo.job_title == "analyst",
           str(ivo.job_title))
     link = ivo.relations("membership")[0]

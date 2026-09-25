@@ -24,9 +24,9 @@ def main() -> int:
 
     # --- two providers of the same kind: taken, and remembered ---
     first = rt.run('rao = Person.new(full_name="Arun Rao")\n'
-                   'old = rao.relate(owner, "service", label="dentist")\n'
+                   'old = rao.set_service(owner,  label="dentist")\n'
                    'nina = Person.new(full_name="Nina Patel")\n'
-                   'nina.relate(owner, "service", label="dentist", starts=date(2026, 10, 1))', "host")
+                   'nina.set_service(owner,  label="dentist", starts=date(2026, 10, 1))', "host")
     check("the write goes through", first["ok"], str(first["error"]))
     check("and the doubt is recorded", any("two dentists" in q for q in first["questions"]),
           str(first["questions"]))
@@ -76,9 +76,9 @@ def main() -> int:
     # --- there is always one reading, even unanswered ---
     rt = WorldRuntime(":memory:", fixture="job_search")
     rt.run('rao = Person.new(full_name="Arun Rao")\n'
-           'rao.relate(owner, "service", label="dentist")\n'
+           'rao.set_service(owner,  label="dentist")\n'
            'nina = Person.new(full_name="Nina Patel")\n'
-           'nina.relate(owner, "service", label="dentist", starts=date(2026, 10, 1))', "host")
+           'nina.set_service(owner,  label="dentist", starts=date(2026, 10, 1))', "host")
     rule = rt.run('q = owner.questions()[0]\nprint(q.assumption)', "host")
     check("the standing reading is the later statement", "Nina Patel" in rule["output"], rule["output"])
     order = rt.run('print([r.subject.full_name for r in owner.relations("served_by", any_time=True)])', "host")

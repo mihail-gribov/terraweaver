@@ -20,6 +20,7 @@ Neither is required. A world with no reader does everything it did before; `insp
 for one and marks what it could not read, so a later pass finds it.
 """
 import json
+from terraweaver import prompts
 import math
 import os
 import time
@@ -185,6 +186,69 @@ class AsChoices(Closed):
         return out
 
 
+class Logged:
+    """Everything that crosses the boundary to an outside model, written down as it happens.
+
+    Not for debugging one answer — for seeing the boundary whole. What the world asks, from
+    where, and how many different shapes of question there really are: three defects in one day
+    were the world telling a model something other than what was so, and none of them is visible
+    from inside a single answer. The caller is recorded too, because "the engineer got a bad
+    word" and "the engineer got that question from the portrait door at the close" are different
+    problems.
+
+    Wraps either kind — the one that answers in words and the one that answers with options —
+    and adds nothing to what the world sees.
+    """
+
+    def __init__(self, reader, where):
+        import pathlib
+
+        self.reader, self.where = reader, pathlib.Path(where)
+        self.where.parent.mkdir(parents=True, exist_ok=True)
+
+    def _note(self, how: str, asked, said) -> None:
+        import inspect
+        import json as _json
+        from datetime import datetime, timezone
+
+        came_from = "?"
+        for frame in inspect.stack()[2:8]:
+            module = frame.frame.f_globals.get("__name__", "")
+            if module.startswith("terraweaver.") and not module.endswith(".outside"):
+                came_from = f"{module.split('.')[-1]}.{frame.function}"
+                break
+        with self.where.open("a") as log:
+            log.write(_json.dumps({
+                "at": datetime.now(timezone.utc).isoformat(),
+                "how": how, "from": came_from,
+                "asked": asked, "said": said,
+            }, ensure_ascii=False, default=str) + "\n")
+
+    def json(self, system: str, asked: str):
+        said = self.reader.json(system, asked)
+        self._note("json", asked, said)
+        return said
+
+    def say(self, system: str, asked: str):
+        said = self.reader.say(system, asked)
+        self._note("say", asked, said)
+        return said
+
+    def ask(self, state: str, questions: dict) -> dict:
+        said = self.reader.ask(state, questions)
+        self._note("ask", {"state": state, "questions": questions}, said)
+        return said
+
+    def choose(self, state: str, question: str, options: dict) -> dict:
+        said = self.reader.choose(state, question, options)
+        self._note("choose", {"state": state, "question": question,
+                              "options": list(options)}, said)
+        return said
+
+    def __getattr__(self, name):
+        return getattr(self.reader, name)
+
+
 class Open:
     """A reader that answers in words, for the one kind of question options cannot hold."""
 
@@ -226,43 +290,11 @@ class Nemotron(Open):
 
 # --- the two questions the inspector asks, each built on its connector ---
 
-NAMER_IS = ("You name the parts of a link type in a record of facts. A link has a subject — the "
-            "end it starts from — and an object — the end it leads to. You answer with JSON and "
-            "nothing else.")
+NAMER_IS = prompts.NAMER_IS
 
-ASK_NAMES = """Link type: {kind}
-What it is: {type_is}
-Written like: {examples}
+ASK_NAMES = prompts.ASK_NAMES
 
-Name what each end IS, as a short noun phrase a thing could be checked against — "a city that
-serves as a capital", not "the capital". Keep it wide enough for everything that honestly
-belongs there: a religion's followers include people as well as organisations. A role written
-too tightly turns every honest link into a false alarm.
-
-Then: does the word '{kind}' tell a reader which end it starts from? `capital_of` does — "a
-capital_of b" reads "a is b's capital". `author` does not: it could start from the writer or
-from the book. Give a word that would, or the same word if it already does. It must be a name
-for the link type, not for one of its ends.
-
-JSON only:
-{{"subject_is": "...", "object_is": "...", "clear_name": "..."}}"""
-
-ENDS_FRAME = """One link out of a record of links. A link has two ends and they are not
-interchangeable: the subject is the end it starts from, the object is the end it leads to.
-
-    relation:    {kind} — {type_is}
-    subject is:  {subject_is}
-    object is:   {object_is}
-
-    subject:  {s_name} (a {s_class}){s_said}
-    object:   {o_name} (a {o_class}){o_said}
-    {link_said}
-
-Judge only whether each end holds the right KIND of thing for its role. Whether the claim is
-TRUE is not asked and must not affect the answer: this record deliberately holds claims that
-contradict common knowledge and they are meant to be kept. With subject "a city that is a
-capital" and object "the country whose capital it is", the pair Rome / Japan is correct in kind
-even though Rome is not Japan's capital."""
+ENDS_FRAME = prompts.ENDS_FRAME
 
 FITS = "yes — a thing of that sort fills that role"
 DOESNT = "no — a thing of that sort does not fill that role"

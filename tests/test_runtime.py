@@ -63,7 +63,7 @@ def main() -> int:
     rt = WorldRuntime(":memory:", fixture="job_search")
     from terraweaver.runtime import format_result
     broken = rt.run('mark = Person.new(full_name="Mark Stone")\n'
-                    'mark.relate(Organization.get(name="FinEdge"), "membership", title="analyst")\n'
+                    'mark.set_membership(Organization.get(name="FinEdge"),  title="analyst")\n'
                     'raise RuntimeError("later line fails")', "host")
     shown = format_result(broken)
     check("the failure says where it stopped and that what came before is kept",
@@ -94,13 +94,13 @@ def main() -> int:
 
     # --- a relation's own attribute may be called kind ---
     ok = rt.run('rita = Person.new(full_name="Rita Sandoval")\n'
-                'm = rita.relate(Organization.get(name="FinEdge"), "membership", kind="employment")\n'
+                'm = rita.set_membership(Organization.get(name="FinEdge"),  kind="employment")\n'
                 'print(m.kind)', "host")
     check("relate takes kind= as the relation's attribute", ok["output"].strip() == "employment",
           str(ok["error"]) or ok["output"])
 
     # --- periods compare with plain dates ---
-    dates = rt.run('r = Person.new(full_name="Nina Patel").relate(owner, "service", label="dentist", '
+    dates = rt.run('r = Person.new(full_name="Nina Patel").set_service(owner,  label="dentist", '
                    'starts=date(2026, 10, 1))\n'
                    'print(r.starts >= date(2026, 9, 1), r.starts == date(2026, 10, 1), r.starts < today())', "host")
     check("a period bound compares with a date instead of raising",
@@ -108,7 +108,7 @@ def main() -> int:
 
     # --- a remark on an entity is visible when the entity is printed ---
     marked = rt.run('greg = Person.new(full_name="Greg Hunt")\n'
-                    'rel = greg.relate(owner, "service", label="landlord")\n'
+                    'rel = greg.set_service(owner,  label="landlord")\n'
                     'rel.describe("rent is $2,100 a month", permanent=True)\n'
                     'print(rel)', "host")
     check("printing an entity shows it carries remarks", "1 remark" in marked["output"], marked["output"])

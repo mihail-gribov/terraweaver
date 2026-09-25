@@ -162,6 +162,12 @@ def _note_changed(entity, attr: str | None = None) -> None:
             _CHANGED.attrs.setdefault(id(entity), set()).add(attr)
 
 
+def _name_of_me(entity) -> str:
+    """What to call this one in a message to whoever wrote the line."""
+    word = str(getattr(entity, "name", None) or getattr(entity, "full_name", None) or "it")
+    return "".join(ch if ch.isalnum() else "_" for ch in word.lower()).strip("_").split("_")[0] or "it"
+
+
 def _is_a_sentence(how: str) -> bool:
     """Words about a fact, or the name of a type this world holds.
 
@@ -658,6 +664,17 @@ class Entity:
         every other week, a class every Tuesday term-time."""
         if _is_a_sentence(how):
             return current_world().said_of(self, other, how, starts=starts)
+        # A word this world already holds has a call of its own on the class, and that is where
+        # a host looks for it — in the class's own description, beside its attributes. Taken
+        # here as well, there were two ways to say one thing and the texts could only teach one
+        # of them: a live host read a primer that never mentions this door, found it anyway,
+        # and wrote most of a run through it.
+        word = str(how).strip()
+        if hasattr(self, f"set_{word}"):
+            raise TypeError(
+                f"say it with the word: {_name_of_me(self)}.set_{word}(other) — that is where "
+                f"{word} lives, and it reads back as .{word}. This call is for a fact there is "
+                f"no word for yet: relate(other, \"<the fact, in the words the user used>\").")
         made = current_world().relate(self, other, how, starts=starts, until=until, ttl=ttl,
                                       permanent=permanent, **attrs)
         return _also_repeats(made, every, lasting, starts, until)
@@ -1105,6 +1122,23 @@ class Entity:
         """
         if name.startswith("_"):
             raise AttributeError(name)
+        if name.startswith("set_"):
+            # A word this world holds, on a thing whose class was not among the ends declared
+            # for it. The ends are evidence and not a promise — a type declared from its first
+            # example would otherwise refuse its second, and the host answers that by making a
+            # second type for one idea. So this is not refused: it is written, and the world
+            # says what it noticed. Attached to the declared ends only (`_lend_relations`), it
+            # would have been an AttributeError here, which reads as the class being wrong.
+            world = current_world()
+            word = name[len("set_"):]
+            for cls in (getattr(world, "classes", {}) or {}).values():
+                rel = cls._spec.get("relation") or {}
+                if rel and not rel.get("free") and word in (rel.get("kind"), rel.get("reverse")):
+                    import types
+
+                    return types.MethodType(
+                        _sets_the_role(cls._spec["name"], rel, backwards=word != rel["kind"]),
+                        self)
         spec = type(self)._spec
         known = [a["name"] for a in spec.get("attributes", [])]
         from terraweaver import matching

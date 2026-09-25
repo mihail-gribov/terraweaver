@@ -153,38 +153,38 @@ anna.tag("colleague", "berlin")
 firm.tag("employer")
 one.tag("kept", "looked at", starts=t)
 
-held = anna.relate(firm, "membership", starts=date(2018, 4, 1))
+held = anna.set_membership(firm,  starts=date(2018, 4, 1))
 held.role, held.title, held.kind, held.primary, held.team = ("engineer", "Backend engineer",
                                                              "employment", True, "platform")
 held.describe("as the user put it: she has been there since spring")
-lives = anna.relate(town, "located", starts=t)
+lives = anna.set_located(town,  starts=t)
 lives.kind, lives.detail = "home", "near the river"
-knows = anna.relate(mila, "social", starts=t)
+knows = anna.set_social(mila,  starts=t)
 knows.role, knows.how_met, knows.closeness = "colleague", "at the old firm", 4
-kin = anna.relate(mila, "kin", starts=t)
+kin = anna.set_kin(mila,  starts=t)
 kin.role, kin.label_reverse = "cousin", "cousin"
-runs = mila.relate(firm, "authority", starts=t)
+runs = mila.set_authority(firm,  starts=t)
 runs.role = "head of engineering"
-owns = anna.relate(thing, "ownership", starts=t)
+owns = anna.set_ownership(thing,  starts=t)
 owns.price = 240.0
-joins = anna.relate(meeting, "participation", starts=t)
+joins = anna.set_participation(meeting,  starts=t)
 joins.role = "candidate"
-serves = mila.relate(anna, "service", starts=t)
+serves = mila.set_service(anna,  starts=t)
 serves.role, serves.fee, serves.schedule = "recruiter", 0.0, "when there is a post"
-pairs = anna.relate(mila, "partner", starts=t)
+pairs = anna.set_partner(mila,  starts=t)
 pairs.role = "co-author"
 district = Place.new(name="Neustadt", city="Bremen", country="Germany", category="other")
 district.describe("the part of the city she is looking in")
-part = district.relate(town, "part_of", starts=t)
+part = district.set_part_of(town,  starts=t)
 other = Thing.new(name="A desk", nature="object")
 other.describe("what any desk is, not this one")
-kind_of = thing.relate(other, "kind_of", starts=t)
+kind_of = thing.set_kind_of(other,  starts=t)
 loose = thought.relate(plan, "related", label="raised_for", starts=t)
 loose.nature = "related_to"
 world.define_relation("stands_beside", "one specimen standing next to another, one at a time",
                       nature="related_to", cardinality="one-to-one", over_time=True,
                       subject_is="the near one", object_is="the far one")
-one.relate(two, "stands_beside", starts=t)
+one.set_stands_beside(two,  starts=t)
 print("links in")
 """
 
