@@ -53,6 +53,14 @@ class Relation(Entity):
             # "you's dentist" is nobody's English: the owner reads as a person being spoken to.
             whose = "your" if right.lower() in ("you", "yourself") else f"{right}'s"
             return f"{left} is {whose} {said} ({kind})"
+        if type(self)._spec["relation"].get("free"):
+            # An untyped link has no word of its own, so it reads by what was said of it. Read
+            # by its kind instead it came out "Tony Hall related BBC", which says nothing and
+            # looks like a fact the world made up.
+            words = next((t for t in (self.__dict__.get("descriptions") or [])
+                          if isinstance(t, str) and t.strip()), "")
+            if words:
+                return f"{left} — \u201c{words}\u201d — {right} (not yet read)"
         return f"{left} {kind.replace('_', ' ')} {right} ({kind})"
 
     def both_ways(self) -> str:
@@ -518,14 +526,17 @@ def relate(world, a, b, kind: str, period: dict, attrs: dict):
     first_of_its_kind = (rel["kind"] not in ("part_of", "kind_of", "related") 
                          and not world.all(name, limit=1, history=True))
     if rel.get("free"):
-        # A label is what makes a free link readable; a description is prose about it. Requiring
-        # the prose to accept the structure is backwards, and it refused four links in one run.
-        if not str(attrs.get("label") or "").strip():
-            raise ValueError("a Related link needs a label — one word for what this link is")
-        if not str(attrs.get("description") or "").strip():
-            attrs = {**attrs, "description": f"{subject.display_name()} "
-                                             f"{attrs['label'].replace('_', ' ')} {obj.display_name()}"}
-        fitting = type_for_label(world.classes, attrs["label"])
+        # An untyped link has to say what it is, and either a word or the fact in words will do
+        # it. Insisting on the word is what put a placeholder label on every link the sentence
+        # door makes — and the world then wrote that placeholder into the record as prose. What
+        # it must not be is empty: a link joining two things and saying nothing about how is a
+        # row nothing can read and nothing can check.
+        if not str(attrs.get("label") or "").strip() \
+                and not str(attrs.get("description") or "").strip():
+            raise ValueError(
+                "an untyped link needs to say what it is: either a word for it "
+                "(label=\"...\") or the fact in the words it came in (description=\"...\")")
+        fitting = type_for_label(world.classes, attrs.get("label") or "")
         if fitting:
             ontology.note_hint(f"'{attrs['label']}' is what {fitting} is for — "
                                f"{spec(world.classes[fitting])['kind']} knows how that link behaves")

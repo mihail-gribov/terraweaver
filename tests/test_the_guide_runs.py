@@ -91,7 +91,15 @@ def main() -> int:
            'dataworks = Organization.new(name="DataWorks Two")\n'
            'thing = Thing.ensure(name="pesapallo", nature="abstraction")\n'
            'born = anna.relate(london, "kin", label="mother")\n'
-           'linda = Person.new(full_name="Linda Zhao")', "k")
+           'linda = Person.new(full_name="Linda Zhao")\n'
+           # The primer's own cast, bound the way the primer's first lines bind it: its
+           # examples are written for a host that has already settled who it is talking about,
+           # so they are checked in that context and not in an empty one.
+           'paris = Thing.identify(name="Paris")[0]\n'
+           'france = Thing.identify(name="France")[0]\n'
+           'acme = Organization.identify(name="Acme")[0]\n'
+           'kyd = Person.identify(full_name="Thomas Kyd")[0]\n'
+           'boris = Person.identify(full_name="Boris Weber")[0]', "k")
 
     total = broke = 0
     for where, text in shown.items():

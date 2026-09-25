@@ -41,117 +41,87 @@ RESULTS = ROOT / "benchmarks" / "results"
 
 PRIMER = """\
 A world is made of three kinds of thing, and this one starts with the least of each: \
-**entities** — Thing (anything at all — it has a name and whatever you say about it) and \
-Person; **links** between them — Related (one you have no type for yet), PartOf, Kind; and \
-**events** — Event, the one kind whose time is part of what it is. Also Agent, which is you. \
-Two entities are already in it: world.owner, the person it belongs to, and world.me, you.
+**entities** — Thing (anything that *is*: a city, a book, a sport) and Person, which is a kind \
+of Thing; **links** between them; and **events** — Event, the one kind whose time is part of \
+what it is. Also Agent, which is you. Two entities are already here: `world.owner`, the person \
+it belongs to, and `world.me`, you.
 
-What belongs in an Event is what *happened* at a moment — a meeting, a launch, a death, a \
-founding. `Event.new(title=..., start_time=...)`, and `start_time` is required, because an \
-event without a when is not an event. Nothing else in this world is asked for a date: a link \
-that merely holds — a capital, a language, an employer — needs no beginning, and a later \
-telling supersedes an earlier one without one. Say `starts=` when the user gave a date, \
-`starts=long_ago()` when the thing has been so longer than anybody cares to say, and nothing \
-at all when there is nothing to say.
+**First, settle who you are talking about.** Once per thing the user names, before you record \
+anything about it:
 
-Everything else you define as you go:
+    paris = Thing.identify(name="Paris")[0]
+    anna  = Person.identify(full_name="Anna Weber")[0]
 
-    world.classes_like("a sport")            — is there already a class for this? Look first.
-    world.classes_here()                     — every class this world has now, most used first
-    world.anything_like("rugby")             — is there already a thing called this, of any kind?
-    Sport = world.define("Sport", "a game people play and follow", identified_by="name")
-    world.attribute(Person, "email", "the address they are written to at", type="email")
-    world.define_relation("authorship", "who wrote what", nature="related_to",   # or part_of,
-                          # kind_of, same_as, derived_from — the five a link can be
-                          subject=Person, object=Book,
-                          cardinality="one-to-many", over_time=False)
+It hands back who in this world could be meant, best first, and you choose — you have the \
+conversation and it does not. Two or five, read them; twenty, say more about them \
+(`Person.identify(full_name="Anna", location="Berlin")`). Nobody here of that name and it \
+records them, so it is one call and never two. Then say everything else about the variable.
 
-**Three things you can tell this world, and it does something different with each.** Say \
-which you mean — most of what went wrong in the past was a fact put in the wrong one of them:
+**Three things you can tell this world, and it does something different with each.** Most of \
+what has gone wrong here was a fact put into the wrong one:
 
-    a.relate(b, "...")           what joins two things, in the words it came in
-    a.set_<word>(b)              the same, where this world already has the word
-    thing.describe("...")        what one thing is
-    thing.attribute = value      what a thing's value is — never a thing
+    a.relate(b, "...")           what joins two things, in the words the fact came in
+    thing.describe("...")        what one thing is, and why it is here
+    thing.attribute = value      a value of one thing — never another thing
 
-**For a link, the second way is usually the one.**
+**A link is said as a fact, in the words it came in.**
 
-    Thing.identify(name="Paris")[0].relate(Thing.identify(name="France")[0],
-                                           "Paris is the capital of France")
+    paris.relate(france, "Paris is the capital of France")
+    anna.relate(acme, "Anna has been an employee of Acme since 2019")
 
-Two things and the fact stated plainly. No type, no role, no argument order to get right, no \
-date as a separate thing. The two things you must give, because only you know which Paris is \
-meant. The link is made at once; what kind of link it is, is worked out at the close.
+Two things handed over and the fact stated plainly. Nothing else to decide: no role, no \
+argument order to get right, no date as a separate thing. The fact is in the world the moment \
+you say it.
 
-**State it, do not hint at it.** Nothing here is trying to work out what you meant from a \
-narrative — you know what the user said and you can say it outright, so say it outright. The \
-form that always works is the relation named, with both things in it and any date the user \
-gave:
+Afterwards it reads back under a word of its own, and the words this world already has are on \
+the things themselves — to say and to read:
 
-    anna.relate(acme, "Anna has been an employee of Acme since 2019")      say it
-    anna.relate(acme, "She started there a while back")                    a riddle
+    paris.set_capital_of(france)        stating it — always one link at a time
+    paris.capital_of      -> France     a value, where only one can hold
+    anna.mother_of        -> [Boris]    a list, where several can
 
-    kyd.relate(london, "Thomas Kyd was born in London")                    say it
-    kyd.relate(london, "that is where he is from")                         a riddle
+Never `paris.capital_of = france`: that slot is how the link reads back, not how it is written.
 
-`is` is a perfectly good word for it — "Paris is the capital of France", "Anna is Boris's \
-mother". What is not good is leaving out the thing the whole fact turns on.
+**State it, do not hint at it.** Nothing here works out what you meant from a narrative. You \
+know what the user said, so say it outright:
 
-**And it must be a fact about the two of them.** What one thing is like — "Anna is tall" — is a \
-value and belongs on the thing: `anna.height = "tall"`. What a thing IS — "Paris is a city" — \
-is its class or its nature. Put either through relate and it is kept, but it stays a link \
-with no type, which cannot supersede anything and cannot be asked about.
+    kyd.relate(london, "Thomas Kyd was born in London")     say it
+    kyd.relate(london, "that is where he is from")          a riddle
 
-The other way is below, and it is for when you already know the type and want it exactly — \
-relate, with the type named. It is not better or worse: it is the same fact through a door you \
-have to have the type for.
+**And it must be a fact about the two of them.** What one thing is *like* — "Anna is tall" — is \
+a value and belongs on the thing. What a thing *is* — "Paris is a city" — is its class, and you \
+do not have to name it: say it in words on the thing itself.
 
-A fact with no class goes in as a Thing. A link needs a type, and the world will not invent \
-one for you — say what the link is, then say the fact:
+**A thing you have just recorded is only a name.** Say what it is, in your own words, and the \
+world gives it a class when the task closes — it finds one or makes one, and fills in what your \
+words gave:
 
-    world.define_relation("created_in", "where a game or a work first came about",
-                          nature="related_to", cardinality="many-to-one", over_time=False)
-    Thing.identify(name="pesäpallo")[0].set_created_in(Thing.identify(name="Finland")[0])
+    paris.describe("Paris is the capital of France, where the user lived until 2019")
 
-Writing the link before its type raises, and the refusal hands you the exact call to write, so \
-the cost of not knowing is one run, not a lost fact. `relate(x, "related", label="created in")` \
-is the escape hatch for a link you cannot name at all, and it buys nothing: a labelled free \
-link cannot be asked about by type, cannot supersede anything, and the world has nothing to \
-check it against. Use it only when there is genuinely no word.
+If you forget, every run hands you the line to run next, with your own variable in it. That is \
+a question about the work, not a complaint: answer it by describing the thing, and it closes \
+itself.
 
-A nature is not a name. `part_of`, `kind_of`, `same_as`, `related_to` say how a link behaves; \
-what the link is *called* is the fact's own word. "The capital of France is Paris" is a part_of \
-link — Paris is part of France, that much is true — but recorded as `part_of` the word "capital" \
-is gone, and the question it answers can no longer be asked. Define the word and give it the \
-nature:
+**An event is the one thing that needs a time.** `Event.new(title=..., start_time=...)` — an \
+event without a when is not an event. Nothing else is asked for a date: a capital, a language, \
+an employer needs no beginning, and a later telling supersedes an earlier one without one. Say \
+`starts=` when the user gave a date, and nothing at all when there is nothing to say.
 
-    world.define_relation("capital_of", "the city that is a country's seat of government",
-                          nature="part_of", cardinality="one-to-one", over_time=False)
+**Writing a value nobody declared is fine** — it is taken and kept. Before the task closes \
+you are asked what the word means and whether a later telling replaces it, because neither can \
+be read off a value. Answer then; what you wrote stays.
 
-The same goes for reaching for a type you defined earlier because it is roughly the area: \
-"is a citizen of" is not "is associated with the sport of". One word, one type; a type that \
-collects several ideas answers for none of them.
+**Ask rather than guess.** Everything here says what it is, and asking is cheap beside a turn \
+spent undoing a guess:
 
-The world says when your word reads like a type already here — it does not swap one for the \
-other, because whether two words are one idea depends on what the user said, which you have and \
-it does not. If they are one, `world.take_in(<the type>, "<the word>")` moves the links over. \
-`world.wanted()` asks what is still untyped. A Thing that turns out to have a name of its own \
-joins a class the same way: `thing.become("Sport")`, and nothing it holds is lost.
+    world.classes_here()                 every class there is now, most used first
+    describe_classes(["Person"])         its attributes, its methods, the words it is linked by
+    describe_methods(["describe"])       what one call does, in full, with examples
+    world.anything_like("rugby")         is there already a thing called this, of any kind
 
-If you write to an attribute no class has, the world takes it and guesses the type from what \
-you wrote — nothing is lost and the block keeps running. Before the task closes it asks what the \
-word means and whether a later telling replaces the value, because neither can be read off a \
-value: `world.attribute(Person, "salary", "what they are paid a year", type="int", \
-changes=True)`. Answer it then; the values you already wrote stay where they are.
-
-Two things the world insists on. Every class, attribute and relation type needs a description \
-of what it is — that is what a later lookup searches. And `over_time` on a relation has to be \
-said: True when a thing has one current holder and a new one ends the last (an employer, a \
-spouse), False when they simply accumulate. Without it, asking later gives the first answer you \
-were ever told. This is the decision that decides whether a correction can ever reach the \
-reader, and it is made once, from the first example — so make it for the word, not for the \
-sentence in front of you: a country has one capital and a person one current employer, however \
-the first fact you saw happened to read.
+The words this world has for links are on the things themselves, and `describe_classes` shows \
+them. If you find none there for what the user told you, that is not a problem to solve: say \
+the fact in words and it is recorded.
 
 How this goes, every time:
 
@@ -159,10 +129,9 @@ How this goes, every time:
     ... your runs ...
     finish_task
 
-The world answers every fact. It says what it assumed, what it could not tell apart, and what \
-it still needs — and it will not let the task close while any of that is still nobody's \
-decision. `[undecided N]` on a run is the running count; `world.undecided()` reaches them all \
-(they hang on the links you made, not on one entity). Settle each:
+The world answers every fact: what it assumed, what it could not tell apart, what it still \
+needs. It will not close the task while any of that is nobody's decision. `[undecided N]` is \
+the running count and `world.undecided()` reaches them all:
 
     q.answer("...")          you know
     q.for_the_user("...")    you genuinely cannot — it goes to the user and stops blocking
@@ -170,38 +139,21 @@ decision. `[undecided N]` on a run is the running count; `world.undecided()` rea
 
 Handing one to the user is not failing. Guessing at it is.
 
-Time is said, never assumed — and it is yours to say, because it is in what the user told you \
-and nowhere in the world. A relation that holds one at a time has a date in it and will not be \
-recorded without one. **If the date does not matter for the fact, or it is simply now, say \
-`now()`** — that is an answer. Take the moment once, `t = now()`, and pass the same `t` to \
-everything you record in one breath. Otherwise say when, in whatever words you have: \
-`starts="now"`, `"yesterday"`, `"3 years ago"`, `"in 2006"`, `date(2006, 1, 1)` — or, when all \
-you know is which side of something it falls on, `starts=before(now())`, \
-`starts=after(date(2006, 1, 1))`. If the fact came with no time at all, say nothing and the \
-world records it undated rather than dating it today.
+Time is yours to say, because it is in what the user told you and nowhere here. In whatever \
+words you have: `starts="in 2006"`, `"3 years ago"`, `date(2006, 1, 1)`, or `starts=now()` when \
+it is simply now. Came with no time at all — say nothing, and it is recorded undated rather \
+than dated today.
 
-A name you want to keep at hand goes in with `world.pin(x, value, "what it is", keep=False)` \
-for this task, or `keep=True` to outlive it. There is no default — the world will not choose \
-for you.
+Three habits that matter more than any modelling you choose:
 
-Before you record anything, learn what is already here: call `world.classes_here()` for the whole list, \
-and `describe_classes([...])` for the ones you are about to use. Do it once, now — what you know \
-about this world decides what you build in it.
+- **Never write a fact as a sentence on one thing to get it in.** "X is the CEO of Y" as a \
+  description is a fact nothing can supersede and nothing can find. It is a link: say it as one.
+- **Never invent a value to satisfy a field.** Leave it out. The record cannot tell what you \
+  supplied from what the user said.
+- **One thing is one thing.** Settle who you mean first, and let one idea have one name.
+"""
 
-Three habits that matter more than the modelling you choose:
 
-- **Never write a fact as a sentence to get it in.** Prose cannot be superseded and cannot be \
-  searched by value. A Thing with a description is fine; "X is the CEO of Y" as a description \
-  is a fact you have lost.
-- **Never invent a value to satisfy a required field.** Leave it out. The record cannot tell \
-  what you supplied from what the user said.
-- **One thing is one thing.** Look before you create, and let one idea have one name."""
-
-# The same world with one door into it. Everything about choosing a type is gone — not reworded,
-# gone — because there is nothing left to choose: `relate` works the type out from what was
-# said. What that leaves is the shape of the thing rather than the machinery of it, which is the
-# whole claim being tried: the load a host carries is mostly the decisions it is made to take
-# before it has anything to decide them with.
 ONE_DOOR = """\
 A world is made of three kinds of thing: **entities** — Thing (anything at all) and Person; \
 **events** — Event, the one kind whose time is part of what it is; and the **links** between \
@@ -330,6 +282,22 @@ Answer from what is recorded, with the value and nothing else. If a thing was re
 than once over time, give the one that holds now, not the first one."""
 
 
+def _the_key() -> bool:
+    """Put the key where a child process will find it, from the places it is kept here."""
+    import os
+
+    if os.environ.get("NEBIUS_API_KEY"):
+        return True
+    for env in (ROOT / ".env", Path(os.path.expanduser("~/Projects/ai-safity/.env"))):
+        if not env.exists():
+            continue
+        for line in env.read_text().splitlines():
+            if line.startswith("NEBIUS_API_KEY"):
+                os.environ["NEBIUS_API_KEY"] = line.split("=", 1)[1].strip().strip('"')
+                return True
+    return False
+
+
 def start_base_server(db: Path, port: int, one_door: bool = False) -> subprocess.Popen:
     """A world server holding the base and nothing else.
 
@@ -337,6 +305,17 @@ def start_base_server(db: Path, port: int, one_door: bool = False) -> subprocess
     business, so it is started here rather than by adding a flag to somebody else's file.
     """
     import urllib.request
+
+    # The served world reads what a host says in words only when it has somebody to read with,
+    # and it takes that from its environment (`server._with_a_reader`). Started without the key,
+    # it says nothing and simply does not read — and a run then measures the door that is still
+    # switched on while looking like a measurement of the one that is not. That happened once,
+    # for ten facts and eleven minutes, and every sentence in that world came back unread.
+    told = _the_key()
+    if not told:
+        print("!! NEBIUS_API_KEY is not set, so this world has no engineer: nothing said in "
+              "words will be read into a link. What this run measures is the other door.",
+              flush=True)
 
     server = subprocess.Popen(
         [sys.executable, "-m", "terraweaver.server", "--db", str(db), "--port", str(port),

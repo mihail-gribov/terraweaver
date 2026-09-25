@@ -2184,3 +2184,38 @@ receiver" is a thing.
 were seen on the same input across the day. And each fact here has a task to itself, so the
 engineer reads one sentence at a time; in the full slice it is ten facts to a task, where the
 list of words already held is longer and so is the chance of collapsing two ideas into one.
+
+## 2026-09-25 — a live host, and what a run measures when a door is switched off
+
+Ten benchmark facts, one to a task, through a live host (haiku over MCP) — the first time an
+agent rather than a hand-written script has used these doors. It came back 9 of 10, and the
+number was worthless: **the world had no engineer.** The server only sets one when
+`NEBIUS_API_KEY` is in its environment, says nothing when it is not, and simply does not read.
+Every sentence in that world came back unread, and what the run measured was the door that was
+still switched on. `start_base_server` now carries the key in, and says so loudly when it cannot.
+
+**What the host actually wrote is the finding worth keeping.** Five of its six sentences were
+not facts but the names of relations:
+
+    tony.relate(bbc, "director of")          chairperson of / married to / plays the position
+
+Those name neither of the two things, so there is nothing in them to read. The primer says to
+say the fact; the host still thinks in the word for the link. Its `Thing.identify(full_name=...)`
+is the same habit — it reached for Person's key.
+
+**The placeholder label is gone.** `sentences.say` made its link with `label="said"`, because a
+free link demanded a word, and `relations.relate` then composed a description out of that word:
+"Mahmoud Abbas said Fatah" went into the record as a statement nobody had made, beside what the
+host really said. An untyped link now carries the words it was said in and nothing else; a free
+link must say what it is with either a word or the fact, and reads by its words while it waits —
+`Tony Hall — "director of" — BBC (not yet read)`.
+
+**The reading can be late, and the record does not care.** `experiments/catch_up.py` opens a
+world as it stands, gives it an engineer, and goes over everything unread. On the world built
+without one it found six sentences and eighteen accounts of bare names, all intact: the words
+are in the record, the marks are open. It crashed partway through on a missing import, and the
+three it had read stayed read — which is what the mark is for.
+
+**Three of the day's defects were found only by a live model**, and all three lived in the code
+that talks to one: a branch with no import, a prompt naming a class this world has not got, and
+a server that reads nothing without a key. The suite cannot see any of them.

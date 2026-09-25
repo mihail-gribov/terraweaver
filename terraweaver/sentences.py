@@ -75,8 +75,12 @@ def say(world, subject, obj, words: str, task_id: str | None = None):
     from terraweaver import ontology
 
     with ontology.said_in_words():
-        link = subject.relate(obj, "related", label="said", nature="related_to")
-    link.describe(words.strip())
+        # An untyped link carrying the words it was said in, and nothing else. It used to be
+        # given a label — "said" — because a free link demanded one, and the world then composed
+        # a description out of that label: "Mahmoud Abbas said Fatah" went into the record as a
+        # statement nobody had made, beside what the host actually said. There is nothing to
+        # invent here. The words are what this link is until somebody reads them.
+        link = world.relate(subject, obj, "related", description=words.strip())
     cursor = world.store.conn.execute(
         "INSERT INTO sentences (subject_id, object_id, words, said_at, task_id, link_id) "
         "VALUES (?, ?, ?, ?, ?, ?)",
@@ -384,7 +388,7 @@ def _let_go_of_the_bare_one(world, link_id: str | None) -> None:
 
 def _type_for(world, said: dict, tally: dict) -> str | None:
     """The relation this reading names — one already here, or one defined now."""
-    from terraweaver import relations
+    from terraweaver import ontology, relations
 
     asked_for = _a_word(said.get("word"))
     if said.get("use"):
