@@ -2102,3 +2102,56 @@ class is now handed back to whoever is holding it.
 
 Neither is a logic error a test would find by walking the same path twice, and neither shows in a
 live run — the second one looks like the reading simply not having worked.
+
+## 2026-09-25 — one word, two members: an end reads, a call states
+
+A relation end is now on the class twice, and they are deliberately not the same name:
+
+    rome.set_capital_of(italy)      states the link, one at a time
+    rome.capital_of      -> Italy   reads it back: a value where only one can hold
+    anna.mother_of       -> [Boris, Vera]   a list where more can
+    italy.capital_of_of  -> [Rome]  the other end reads by its own word
+
+**Assignment was tried and refused.** `=` claims replacement, and writing a link is addition
+wherever the type allows several: `anna.mother_of = vera` reads as though Boris were gone. The
+one place `=` would be honest is a single end, and there it gains nothing over saying it. What a
+second statement does — corrects the first, ends it, or stands beside it — is the type's rule,
+not the syntax's, which is the other reason nothing about it belongs in an assignment.
+
+**`relate` keeps the words.** Two ways to state a link and both are calls: the word when the
+record has one, the fact in words when it does not, read at the close.
+
+### The controlled six, both doors
+
+`experiments/story/` holds the benchmark's own facts with the code an ideal host writes and what
+each must change. `new_doors.py` says the same six through the door that takes words and checks
+them against the same table. Four things had to be fixed before either number meant anything:
+
+- the table's code was a two-word kind (`"born in"`), which is now a *sentence*, so every fact
+  went in as prose and the old door measured nothing;
+- it relied on unknown words making their own type, which `initiative.MAKES_TYPES` turns off;
+- the check compared the class name (`BornIn`) to the type's word (`born_in`);
+- and it read `valid_until`, which is only half of superseding. A type that holds one at a time
+  hands over and the old link is given an end; a type that holds one value is *corrected* and the
+  row keeps standing, because what was said was said. So the measure is what the world **reads
+  back** — the question anybody asking this world would ask.
+
+With that, the type-first door is **6/6**. The door that takes words went 0 → 2 → 3 → 4 over three
+fixes, each a defect the run exposed:
+
+**The reading came after the close's checks.** A task that said six facts in words could not
+close, because the things it named had nothing said about them — and so was never read, and so
+never closed. Readings are marked, so doing them first costs nothing on a second attempt.
+
+**The type's word was derived, not asked for.** `_one_word(subject_is) + "_of"` gives `capital_of`
+for a capital and `person_of` for "Thomas Kyd was born in London", because a person is what the
+subject is. A type nobody would write is a type nobody looks under.
+
+**The type was matched by its pair of role nouns.** Being born somewhere and dying somewhere are
+both person → city; chairing something and playing a position are both person → thing. Three of
+six facts came out under a word that meant something else — and a fact under the wrong word cannot
+be told from a right one afterwards, because both read the same. The word identifies a type; the
+roles describe it.
+
+One of six still misses: a reading that came back empty, so the link was never made and the one
+it should have superseded still stands.

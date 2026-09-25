@@ -20,16 +20,28 @@ CORE = ROOT / "ontology" / "core"
 
 
 def holding(world) -> set:
-    """(type, from, to, holds) for every link in the world, however it was written."""
+    """(kind, from, to, holds) for every link — holds meaning the world reads it back.
+
+    Not `valid_until`, which is only half of superseding. A type that holds one at a time hands
+    over: the old link is given an end. A type that holds one value full stop is *corrected*:
+    the statement is superseded and the row keeps standing, because what was said was said. Both
+    rows are there afterwards and only one is the answer — so the question to ask is the one
+    anybody asking this world would ask, which is what it reads back.
+    """
     out = set()
     for name, cls in world.classes.items():
-        if not cls._spec.get("relation"):
+        if not cls._spec.get("relation") or cls._spec["relation"].get("free"):
             continue
+        kind = cls._spec["relation"]["kind"]
         for link in world.all(name, limit=None, history=True):
             if link.subject is None or link.object is None:
                 continue
-            out.add((name, link.subject.display_name(), link.object.display_name(),
-                     link.valid_until is None))
+            try:
+                answered = [one.display_name() for one in link.subject.related(kind)]
+            except Exception:  # noqa: BLE001 - a link the world cannot read is not an answer
+                answered = []
+            out.add((kind, link.subject.display_name(), link.object.display_name(),
+                     link.object.display_name() in answered))
     return out
 
 

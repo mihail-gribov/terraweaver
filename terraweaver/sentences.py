@@ -177,9 +177,16 @@ Null when it can be typed, and then:
 
 A relation in this record is four things and no others. Give them.
 
-**use** — the name of one of the relations listed above, when this is that same relation. Give
-it and stop: a second word for an idea the record already holds answers for neither. Null when
-none of them is this, and then give the four below.
+**use** — the name of one of the relations listed above, **only when this fact is that same
+relation**. A second word for one idea answers for neither — and so does one word for two, which
+is worse and cannot be taken apart afterwards: being born somewhere and dying somewhere are not
+the same link because both join a person to a place. Null whenever the word you give below is
+not already there, and then give the rest.
+
+**the word** — `word`: what this kind of link is called, as somebody writing it would write
+it, lower case with underscores. It is read from the fact, not from what the ends are: "Thomas
+Kyd was born in the city of London" is `born_in`, not `person_of`. Say what one is TO the other
+in the direction the fact runs.
 
 **the roles** — `subject_is` and `object_is`: what each END of the relation IS, as a short noun
 phrase a thing could be checked against. "a city that serves as a capital", not "Paris"; "the
@@ -237,6 +244,7 @@ relation, same roles, London in the capital's role.
 JSON only, these keys and no others:
 {{"ill_typed": null,
   "use": null,
+  "word": "...",
   "subject_is": "...", "object_is": "...", "also_called": ["..."],
   "subject_class": "...", "object_class": "...",
   "one_object": true, "one_subject": true,
@@ -373,24 +381,52 @@ def _type_for(world, said: dict, tally: dict) -> str | None:
     """The relation this reading names — one already here, or one defined now."""
     from terraweaver import relations
 
+    asked_for = _a_word(said.get("word"))
     if said.get("use"):
         cls = world.classes.get(said["use"])
+        # The same answer says what this link is called and which type it belongs to, and the
+        # two must agree. Told that `born_in` was already here, one reading put "Amy Winehouse
+        # died in Camden Town" under it — one word for two ideas, which no later pass can take
+        # apart, because both facts then read the same. Disagreeing, the word wins: it came out
+        # of the fact, and `use` came out of a list.
         if cls is not None and cls._spec.get("relation"):
-            tally["joined"] += 1
-            return cls._spec["relation"]["kind"]
+            theirs = cls._spec["relation"]
+            if asked_for and asked_for not in (theirs["kind"], theirs.get("reverse")):
+                ontology.note_hint(
+                    f"'{asked_for}' was read as {theirs['kind']}, which is a different word. "
+                    f"Recorded as '{asked_for}'.")
+            else:
+                tally["joined"] += 1
+                return theirs["kind"]
     subject_is, object_is = said.get("subject_is"), said.get("object_is")
-    if not subject_is:
+    if not subject_is and not asked_for:
         return None
+    # The word is what a type is, and the only thing that identifies it. Matched on the pair of
+    # role nouns instead, every relation between the same two kinds of thing was the same
+    # relation: being born somewhere and dying somewhere are both person → city, and so are
+    # chairing something and playing a position both person → thing. Three of six statements in
+    # the measured set came out under a word that meant something else, and a fact filed under
+    # the wrong word cannot be told from the right one afterwards — both read the same.
     for name, cls in world.classes.items():
         rel = cls._spec.get("relation")
-        roles = (rel or {}).get("roles") or [{}]
-        if roles[0].get("name") == subject_is and roles[0].get("inverse") == object_is:
+        if not rel or rel.get("free"):
+            continue
+        if asked_for and asked_for in (rel["kind"], rel.get("reverse")):
+            tally["joined"] += 1
+            return rel["kind"]
+        roles = rel.get("roles") or [{}]
+        if not asked_for and roles[0].get("name") == subject_is \
+                and roles[0].get("inverse") == object_is:
             tally["joined"] += 1
             return rel["kind"]
     grow = (world.extras or {}).get("define_relation")
     if grow is None:
         return None
-    word = _one_word(subject_is) + "_of"
+    # The word the reading gave, and only failing that one built out of the subject's role.
+    # Built, it named the link after what the ends are rather than after the fact: "Thomas Kyd
+    # was born in the city of London" came back `person_of`, because a person is what the
+    # subject is. A type nobody would write is a type nobody looks under.
+    word = _a_word(said.get("word")) or (_one_word(subject_is) + "_of")
     try:
         made = grow(word, said.get("description") or f"{subject_is} and {object_is}",
                     nature=CLAIMS_NOTHING,
@@ -421,6 +457,14 @@ def _type_for(world, said: dict, tally: dict) -> str | None:
 # The field is filled with the value that claims nothing, and the rules the reader gives are
 # kept where they belong: `transitive` on the type, the rest waiting for `implies` to exist.
 CLAIMS_NOTHING = "related_to"
+
+
+def _a_word(said) -> str | None:
+    """A word for a type, as a host would write it: lower case, underscores, nothing else."""
+    import re
+
+    word = re.sub(r"[^a-z0-9_]+", "_", str(said or "").strip().lower()).strip("_")
+    return word or None
 
 
 def _class_named(world, said):

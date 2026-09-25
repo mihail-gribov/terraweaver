@@ -189,7 +189,7 @@ def main() -> int:
     check("its period reads under the names it's written with", job.starts is not None and job.until is None)
 
     # --- settling the task's context is a search, and hands back who could be meant ---
-    maybe = world.identify(Person, full_name="Darren")
+    maybe = Person.identify(full_name="Darren")
     check("settling who the task is about hands back the candidates",
           [p.full_name for p in maybe] == ["Darren Liu"], str(maybe))
 

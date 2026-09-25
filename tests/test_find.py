@@ -152,15 +152,15 @@ def main() -> int:
           not isinstance(made, NeedsResolution) and made.full_name == "William Chen", f"got {made!r}")
     # Settling who the task is about is a search: it hands back who could be meant and the
     # host, who has the conversation, reads them. "William" is a name William Chen answers to.
-    could_be = world.identify(Person, full_name="William")
+    could_be = Person.identify(full_name="William")
     check("settling who the task is about hands back the candidates to read",
           [p.full_name for p in could_be] == ["William Chen"], str(could_be))
-    made = world.identify(Person, full_name="Hokusai")
+    made = Person.identify(full_name="Hokusai")
     check("and a name nobody here has is recorded rather than handed back empty",
           [p.full_name for p in made] == ["Hokusai"], str(made))
     check("while a search narrowed until nothing is left makes nothing — the name is here, "
           "the narrowing was too tight",
-          world.identify(Person, full_name="William", location="Reykjavik") == [])
+          Person.identify(full_name="William", location="Reykjavik") == [])
     # The same write outside that, mid-recording, takes what it is given: a run is not stopped
     # over a resemblance, and what turns out to be one thing is merged over the record later.
     written = Person.new(full_name="William", email="other.william@example.com")

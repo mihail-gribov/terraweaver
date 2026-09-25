@@ -5,7 +5,7 @@ that must choose a class before it can name a city chooses badly, for the same r
 relation types badly: the choice comes before it has anything to choose with. So it names the
 thing, the world records it as a bare `Thing`, and the host says what it is in the words it has:
 
-    rome = world.identify(Thing, name="Rome")[0]     # nobody here of that name — recorded
+    rome = Thing.identify(name="Rome")[0]     # nobody here of that name — recorded
     rome.describe("Rome is the capital of Italy, where the user lived until 2019")
 
 What class that is, which attributes it fills, whether a class for it has to be made at all —
@@ -214,10 +214,10 @@ record something nobody said.
 record uses. `it` is already bound to the thing; never make it again, never rename it.
 
     it.population = 2800000                      a value the words gave
-    italy = world.identify(Thing, name="Italy")[0]    another thing the words named
-    it.relate(italy, "capital_of")               what this thing is to that one
+    italy = Thing.identify(name="Italy")[0]      another thing the words named
+    it.set_capital_of(italy)                     what this thing is to that one
 
-`world.identify(<class>, name="...")` is how another thing is reached: it finds the one of that
+`<Class>.identify(name="...")` is how another thing is reached: it finds the one of that
 name or records it, and hands back a list. Take `[0]`. The class must be one of these, and
 `Thing` is always right for something you have no narrower word for here:
 
@@ -229,15 +229,17 @@ A link is written from this thing outward, and the word is what THIS one is to t
 "Rome is the capital of Italy" is a link from Rome with the word `capital_of`, because Rome is
 Italy's capital and not the other way round.
 
-**`it.relate(other, "the_word")` is how a link is written, always.** `it.the_word(other)` is a
-short form that exists only for words the record already has — used for any other word it is a
-missing attribute and the line fails.
+**`it.set_<the_word>(other)` is how a link is written**, one at a time, from this thing
+outward. It exists for every word the record has and for no other, so a word it has not got is
+a missing method and the line fails.
 
 {new_words}
 
-**A link is never an attribute.** `it.capital_of = italy` puts a thing in a slot: it cannot be
-asked about by type, nothing can supersede it, and it is invisible to everything that reads
-links. If a line joining two things fails, the answer is `relate`, never `world.attribute`.
+**A link is never an attribute.** `it.capital_of = italy` is refused, and rightly: that slot
+is how the link reads back, not how it is written — `it.capital_of` gives Italy afterwards, and
+a word that may hold several gives the list of them. If a line joining two things fails, the
+answer is to declare the word, never `world.attribute`: a thing sitting in an attribute cannot
+be asked about by type, nothing can supersede it, and everything that reads links is blind.
 
 Words the record already has, to use rather than invent a second for the same idea:
 
@@ -247,7 +249,7 @@ Anything else is one of these, and nothing else is available:
 
     it.<attribute> = <value>                    only attributes the class has, never a thing
     it.describe("...")                          something with no attribute to go in
-    it.relate(other, "<word>")                  what this thing is to another thing
+    it.set_<word>(other)                        what this thing is to another thing
 
 Dates as `date(2019, 6, 1)`, and only where the words gave one; do not work one out.
 
@@ -442,13 +444,14 @@ def _a_word_it_has_not(world) -> str:
     from terraweaver import initiative
 
     if initiative.MAKES_TYPES:
-        return ("A word this record has not got makes its own type when you use it, so write "
-                "the link and say no more about it.")
+        return ("A word this record has not got makes its own type the first time it is "
+                "said, so `it.relate(other, \"the_word\")` writes the link and makes the word "
+                "in one go. `set_` exists only for words that are already here.")
     return ('A word this record has not got has to be declared before it can be used, on its '
             'own line first:\n\n'
             '    world.define_relation("capital_of", "a city that is the seat of a country\'s '
             'government", nature="related_to", cardinality="many-to-one", over_time=False)\n'
-            '    it.relate(italy, "capital_of")\n\n'
+            '    it.set_capital_of(italy)\n\n'
             'The second argument is a sentence saying what that kind of link is — about the '
             'kind, not about these two — and a record refuses anything shorter than a few '
             'words. `nature` is one of related_to / part_of / kind_of / same_as / derived_from. '
@@ -462,7 +465,7 @@ def _classes_here(world) -> str:
     """Every class something can be looked up under, so a name that is not one is not written.
 
     Shown rather than remembered: an engineer given an example that names a class this world has
-    not got copies the example. `world.identify(Place, ...)` came back a NameError three times
+    not got copies the example. `Place.identify(...)` came back a NameError three times
     running in a world whose widest classes were Thing and Event.
     """
     from terraweaver import matching
@@ -472,7 +475,7 @@ def _classes_here(world) -> str:
         if cls._spec.get("relation") or cls._spec.get("own"):
             continue
         by = cls._spec.get("identified_by") or matching.NAME_KEYS.get(name) or "name"
-        lines.append(f"    {name}({by}=\"...\") — "
+        lines.append(f"    {name}.identify({by}=\"...\") — "
                      f"{(cls._spec.get('brief') or cls._spec.get('description') or '')[:70]}")
     return "\n".join(lines[:40])
 

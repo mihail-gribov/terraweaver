@@ -493,6 +493,18 @@ class Entity:
         return current_world().get(cls, **attrs)
 
     @classmethod
+    def identify(cls, **attrs) -> list:
+        """Who this could be — the candidates, best first, for you to read and choose between.
+
+        On the class like every other door here, because a host thinks in the class it is
+        talking about. `get` is the one that must already be here and shouts when it is not;
+        this one settles who a task is about before anything is written about them, and a name
+        nobody here has is recorded rather than refused — there is no other branch to take when
+        the user has just spoken about a city this world has never heard of.
+        """
+        return current_world().identify(cls, **attrs)
+
+    @classmethod
     def new(cls, *, starts=None, until=None, ttl=None, permanent: bool = False,
             every=None, lasting=None, **attrs):
         """A new entity. If one just like it already exists, the user is asked before creating."""
@@ -622,16 +634,20 @@ class Entity:
     def relate(self, other, how: str, /, *, starts=None, until=None, ttl=None,
                permanent: bool = False, every=None, lasting=None,
                **attrs):
-        """Relate this entity to another — by the fact in words, or by a type you already know.
+        """Say what joins this entity to another, in the words the fact came in.
 
             paris.relate(france, "Paris is the capital of France")    the fact, in words
-            paris.relate(france, "capital_of")                        a type this world has
+            paris.set_capital_of(france)                              the word, where there is one
 
-        One verb, and what it takes says which. A type this world holds is a word it knows; a
-        fact is a sentence. Nothing has to be chosen between them, and the first form is the one
-        for a host that is telling what happened rather than modelling it: the roles, how many
-        hold at a moment, what follows and when it began are worked out afterwards, by a reader
+        This one takes the words. A word the record already holds has a call of its own on the
+        class — `set_capital_of` — which is where a host looks and what the class's description
+        shows; this is what stays for a fact there is no word for yet, and it is the form for a
+        host telling what happened rather than modelling it. The word, the roles, how many hold
+        at a moment, what follows and when it began are worked out afterwards, by an engineer
         whose whole task that is.
+
+        A word this world already knows is taken here too, rather than refused for being said
+        the shorter way — but it is not what this door is for.
 
         Asking the host for a type before the fact can be said asks a storyteller to do an
         engineer's work, and it was measured: two ideas collected under one word, three links
@@ -1734,10 +1750,15 @@ def _relation_rules(nature: str) -> list[str]:
 def _lend_relations(classes: dict, defined: str) -> None:
     """Give every class the relations it can stand in, as methods of its own.
 
-    `anna.born_in(london)` reads as the sentence and turns up where a host actually looks — in
-    the class, beside its attributes. `anna.relate(london, "born_in")` says the same thing and
-    is what stays for a link with no type yet, but nothing in a class's description ever
-    mentioned it, so a host had to know the type existed before it could find out that it did.
+    Two of them per word: `anna.born_in` reads the end back, `anna.set_born_in(london)` states
+    it. Both turn up where a host actually looks — in the class, beside its attributes — while
+    `anna.relate(london, "...")` stays for a fact there is no word for yet, and nothing in a
+    class's description ever mentioned that, so a host had to know a type existed before it
+    could find out that it did.
+
+    Read and written apart, because the two are not the same shape: writing is always one link,
+    this thing to that one, and reading a plural end is every link there is. An assignment would
+    claim replacement over an addition.
 
     Called after any class is built, for that class and for anything already here, because a
     relation type may be defined before or after the classes it runs between.
@@ -1763,24 +1784,79 @@ def _lend_relations(classes: dict, defined: str) -> None:
                 declared = {a["name"] for a in cls._spec.get("attributes", [])}
                 if not word or hasattr(cls, word) or word in declared:
                     continue
-                setattr(cls, word, _relation_method(type_name, rel, backwards=side == "to"))
+                backwards = side == "to"
+                setattr(cls, word, _relation_role(type_name, rel, backwards))
+                setattr(cls, f"set_{word}", _sets_the_role(type_name, rel, backwards))
 
 
-def _relation_method(type_name: str, rel: dict, backwards: bool):
-    """`anna.born_in(london)` — the same as `anna.relate(london, "born_in")`, said as a sentence."""
+def _relation_role(type_name: str, rel: dict, backwards: bool):
+    """The end of a relation, on the class, read as the attribute it reads like.
+
+        rome.capital_of  -> Italy            anna.mother_of -> [Boris, Vera]
+
+    One at each end or several: the type says which, so this gives a value where only one can
+    hold at a moment and a list where more can. Each end reads by its own word — the city is
+    the capital of the country, the country has the city as its capital — so a host asking
+    about either one asks in the words of that end.
+
+    **Reading only.** There is one way to state a link and it is to say the fact in words:
+    `rome.relate(italy, "Rome is the capital of Italy")`, and the world finds the word for it.
+    Assignment looked like the short way to say the same thing and is not: on a single end it
+    reads as replacement, on a plural one it would either quietly accumulate (and then `=` is a
+    lie) or end every link left out of the list (and then a short list erases what somebody
+    said). Neither is what the host means, and the world already knows which of them applies —
+    from the type, not from the syntax. So it is not offered.
+    """
     kind = rel["kind"]
+    word = (rel.get("reverse") or kind) if backwards else kind
+    # Which end may hold several at one moment. `functional` says a subject has one object;
+    # `inverse_functional` says an object has one subject.
+    only_one = rel.get("inverse_functional") if backwards else rel.get("functional")
 
-    def say(self, other=None, **attrs):
-        world = current_world()
-        if other is None:                       # asked with no other end: read, don't write
-            return self.related(rel.get("reverse") if backwards else kind)
+    def read(self):
+        got = self.related(word)
+        if only_one:
+            return got[0] if got else None
+        return got
+
+    def refuse(self, value):
+        raise TypeError(
+            f"{word} is read, not assigned. Say it: a.set_{word}(b) — one at a time, which is "
+            f"what writing a link is" + ("" if only_one else
+            f", while {word} reads back every one of them") + ". Whether a second one corrects "
+            f"the first or stands beside it is the type's rule, not the syntax's.")
+
+    return property(read, refuse, doc=(f"{rel.get('reads') or kind}. Reads "
+                                       f"{'one' if only_one else 'a list'}; "
+                                       f"written with set_{word}(other)."))
+
+
+def _sets_the_role(type_name: str, rel: dict, backwards: bool):
+    """`rome.set_capital_of(italy)` — state this link, from this end, one at a time.
+
+    A method and not an assignment, because the two sides are not the same shape. Writing is
+    always one link: this thing to that one. Reading a plural end is every link there is. `=`
+    would claim replacement over an addition — `anna.mother_of = vera` reads as though Boris
+    were gone — and the one place it would be honest, a single end, is the one place it gains
+    nothing over saying it plainly.
+
+    What a second statement does is the type's rule and is not repeated here: one value per
+    subject and the later corrects the earlier; one at a time and the later ends the earlier;
+    several and they stand together.
+    """
+    kind = rel["kind"]
+    word = (rel.get("reverse") or kind) if backwards else kind
+
+    def state(self, other, *, starts=None, until=None, ttl=None, permanent: bool = False,
+              **attrs):
         a, b = (other, self) if backwards else (self, other)
-        return world.relate(a, b, kind, **attrs)
+        return current_world().relate(a, b, kind, starts=starts, until=until, ttl=ttl,
+                                      permanent=permanent, **attrs)
 
-    say.__name__ = rel.get("reverse") if backwards else kind
-    say.__doc__ = (f"{rel.get('reads') or kind}. Written: "
-                   f"a.{kind}(b). With no argument, reads instead of writing.")
-    return say
+    state.__name__ = f"set_{word}"
+    state.__doc__ = (f"{rel.get('reads') or kind}. Written: a.set_{word}(b). "
+                     f"Reads back as a.{word}.")
+    return state
 
 
 def _relation_property(class_name: str, attr: dict):

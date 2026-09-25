@@ -373,7 +373,7 @@ class World:
         A task settles who it is about before it records anything about them, and this is how.
         It does not choose: it hands back what resembles what the user said and you pick, because
         you have the conversation and the world does not. Two or five of them are read by eye;
-        twenty means say more — `world.identify(Person, full_name="Anna", location="Berlin")` —
+        twenty means say more — `Person.identify(full_name="Anna", location="Berlin")` —
         and look again.
 
         **Nobody here of that name, and it makes them.** There is no second branch for the host
@@ -393,7 +393,7 @@ class World:
         """
         if not attrs:
             raise ValueError(
-                f"say who: world.identify({self._name(cls)}, <what the user called them>). This "
+                f"say who: {self._name(cls)}.identify(<what the user called them>). This "
                 f"is where the task settles what it is about, so it needs something to go on.")
         ontology.note_world_call("world_queries")
         class_name = self._name(cls)

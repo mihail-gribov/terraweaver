@@ -67,7 +67,7 @@ def main() -> int:
     # --- a bare name is noted, and the agent is asked about it in its own words ---
     rt = a_world()
     rt.start_task("k", "record what the user said about Rome", "recording")
-    made = rt.run('rome = world.identify(Thing, name="Rome")[0]', "k")
+    made = rt.run('rome = Thing.identify(name="Rome")[0]', "k")
     check("a name nobody here has is recorded by the lookup that asked for it",
           made["ok"] and "Rome" in (made.get("new_variables") or {}).get("rome", ""),
           str(made.get("new_variables") or made.get("error")))
@@ -98,7 +98,7 @@ def main() -> int:
         "code": 'it.population = 2800000\n'
                 'world.define_relation("capital_of", "a city that is the seat of a country\'s '
                 'government", nature="related_to", cardinality="many-to-one", over_time=False)\n'
-                'italy = world.identify(Thing, name="Italy")[0]\n'
+                'italy = Thing.identify(name="Italy")[0]\n'
                 'it.relate(italy, "capital_of")',
     }])
     tally = portraits.read_them(rt.world, engineer, jev=jev, run=rt._the_world_writes)
@@ -132,8 +132,9 @@ def main() -> int:
     # of Thing the walk comes down through.
     check("the walk offers the kinds of Thing and a way out",
           set(asked) == {"AIAgent", "Person", portraits.NEW_ONE}, str(asked))
-    check("the reader is shown the classes this world actually has",
-          'Person(full_name="...")' in engineer.asked[0] and "Place(" not in engineer.asked[0])
+    check("the engineer is shown the classes this world actually has, by the door it calls them",
+          'Person.identify(full_name="...")' in engineer.asked[0]
+          and "Place.identify(" not in engineer.asked[0], engineer.asked[0][:400])
     check("and told how a word this record has not got is declared here",
           "world.define_relation(" in engineer.asked[0] and "define it" not in engineer.asked[0].lower()
           or "define_relation" in engineer.asked[0])
@@ -141,7 +142,7 @@ def main() -> int:
     # --- a thing the world named while reading is asked about too, by a line anybody can run ---
     next_turn = rt.run('print("on with it")', "k")
     check("the agent is asked about the thing the world named",
-          any('world.identify(Thing, name="Italy")[0].describe(' in line
+          any('Thing.identify(name="Italy")[0].describe(' in line
               for line in next_turn.get("clarify") or []), str(next_turn.get("clarify")))
     said_again = rt.run('print("still here")', "k")
     check("and asked again every run until something is said",
@@ -149,7 +150,7 @@ def main() -> int:
           str(said_again.get("clarify")))
 
     # --- the loop: a line the world refuses comes back, and the next answer is run ---
-    rt.run('turin = world.identify(Thing, name="Turin")[0]\n'
+    rt.run('turin = Thing.identify(name="Turin")[0]\n'
            'turin.describe("Turin is a city in the north of Italy")', "k")
     loop_jev = AJev(["City"])
     loop_engineer = Engineer([

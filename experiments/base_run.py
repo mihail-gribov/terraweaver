@@ -69,14 +69,15 @@ Everything else you define as you go:
 **Three things you can tell this world, and it does something different with each.** Say \
 which you mean — most of what went wrong in the past was a fact put in the wrong one of them:
 
-    a.relate(b, "...")           what joins two things
+    a.relate(b, "...")           what joins two things, in the words it came in
+    a.set_<word>(b)              the same, where this world already has the word
     thing.describe("...")        what one thing is
-    thing.attribute = value      what a thing's value is
+    thing.attribute = value      what a thing's value is — never a thing
 
 **For a link, the second way is usually the one.**
 
-    Thing.ensure(name="Paris").relate(Thing.ensure(name="France"),
-                                      "Paris is the capital of France")
+    Thing.identify(name="Paris")[0].relate(Thing.identify(name="France")[0],
+                                           "Paris is the capital of France")
 
 Two things and the fact stated plainly. No type, no role, no argument order to get right, no \
 date as a separate thing. The two things you must give, because only you know which Paris is \
@@ -110,7 +111,7 @@ one for you — say what the link is, then say the fact:
 
     world.define_relation("created_in", "where a game or a work first came about",
                           nature="related_to", cardinality="many-to-one", over_time=False)
-    Thing.ensure(name="pesäpallo").relate(Thing.ensure(name="Finland"), "created_in")
+    Thing.identify(name="pesäpallo")[0].set_created_in(Thing.identify(name="Finland")[0])
 
 Writing the link before its type raises, and the refusal hands you the exact call to write, so \
 the cost of not knowing is one run, not a lost fact. `relate(x, "related", label="created in")` \
@@ -208,9 +209,10 @@ them. Two entities are already here: world.owner, the person it belongs to, and 
 
 **Three things you can tell this world, and it does something different with each.**
 
-    a.relate(b, "...")           what joins two things
+    a.relate(b, "...")           what joins two things, in the words it came in
+    a.set_<word>(b)              the same, where this world already has the word
     thing.describe("...")        what one thing is, and why it is here
-    thing.attribute = value      what a thing's value is
+    thing.attribute = value      what a thing's value is — never a thing
 
 **A fact about two things goes through link, and you say it plainly:**
 

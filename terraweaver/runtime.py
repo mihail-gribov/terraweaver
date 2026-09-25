@@ -436,7 +436,7 @@ class WorldRuntime:
         lines = [f"Task {task.id} open: {stated} ({mode})."]
         if left:
             lines.append("The task before it was dropped. " + left)
-        lines.append("Settle who this is about first: world.identify(Person, full_name=\"...\") "
+        lines.append("Settle who this is about first: Person.identify(full_name=\"...\") "
                      "for each one the user named hands back who could be meant. Read them, "
                      "pick the one, hold it in a variable. A name nobody here has is recorded "
                      "as you ask, so that is one call, not two. Do it before anything else.")
@@ -655,6 +655,13 @@ class WorldRuntime:
             # cannot tell those apart reports a clean finish over work nobody checked.
             return None
         task = self.store.load(session.task_id, self.classes)
+        # Read what was said before weighing what is open, not after. The readings are what
+        # settle half of it — a sentence is a bare link until it is read, a bare name is a
+        # doubt until something is said about it — so checking first meant a task that said six
+        # facts in words could never close, and therefore was never read, and therefore never
+        # closed. Each reading is marked, so a second attempt pays for nothing.
+        typed = self._read_what_was_said()
+        placed, still = self._read_what_things_are()
         standing = self.unresolved(key)
         if standing and not abandon and closing is None:
             lines = "\n".join(f"    {q.line()}" for q in standing[:8])
@@ -800,11 +807,6 @@ class WorldRuntime:
                 if abandon:
                     task.describe(f"abandoned: {abandon.strip()}")
                 self.world.save(task)
-        # Asked only once the task is actually closing. Called before the checks above, the
-        # reader was paid for on every attempt that came back "not closed yet" and its answer
-        # thrown away with the rest of the message.
-        typed = self._read_what_was_said()
-        placed, still = self._read_what_things_are()
         unnamed = self._types_without_named_ends()
         turned = self._turn_the_odd_ones()
         offered = self._read_the_new_types()
@@ -1686,7 +1688,7 @@ def _reachable(entity, written: str, mine: bool) -> str:
         return written
     cls = type(entity)
     key = cls._spec.get("identified_by") or matching.NAME_KEYS.get(cls.__name__) or "name"
-    return f'world.identify({cls.__name__}, {key}="{entity.display_name()}")[0]'
+    return f'{cls.__name__}.identify({key}="{entity.display_name()}")[0]'
 
 
 def _waiting_on_answers(session) -> list[str]:

@@ -87,10 +87,10 @@ Rules the world enforces:
 - What isn't in the world isn't known. An empty result means the information isn't there — say
   so rather than filling the gap.
 - Settle who the task is about before you record anything about them. For each one the user
-  named: `world.identify(Person, full_name="Anna Weber")` hands back who in the world could be
+  named: `Person.identify(full_name="Anna Weber")` hands back who in the world could be
   meant, best first. You have the conversation and the world does not, so you read them and
   pick — hold the one you meant in a variable and say everything else about that variable. Too
-  many to read? Say more about them: `world.identify(Person, full_name="Anna", location="Berlin")`.
+  many to read? Say more about them: `Person.identify(full_name="Anna", location="Berlin")`.
   Nobody here of that name and it makes them, so the list is never empty on a plain lookup and
   you never need a second call to record a city the world hasn't heard of; the run's [created]
   line says it was made rather than found. Empty means only one thing: you narrowed a search
@@ -211,7 +211,7 @@ Every class below shares these, so they aren't repeated for each one:
         Person.get(full_name="Annie", organization=cloudnine). Returns that entity, or a
         NeedsResolution if several fit. Never creates: if nothing matches, it raises NotInWorld
         — then either the user means someone new (use new) or you misidentified them.
-    world.identify(Class, **attrs) -> list
+    Class.identify(**attrs) -> list
         "Who could this be?" The candidates, best first, for you to read and choose between —
         it never chooses. A name nobody here has is recorded and comes back as the one
         candidate. Use it at the start of a task, once per thing the user named, and work with
@@ -222,7 +222,7 @@ Every class below shares these, so they aren't repeated for each one:
     Class.ensure(**attrs)
         "I can't tell." Finds it or creates it; the attributes are new information, so a value
         contradicting what's stored comes back as a question. Neither of these identifies by
-        resemblance — that is what world.identify is for, at the start.
+        resemblance — that is what Class.identify is for, at the start.
 
     After each run the result lists what happened: [created], [updated] with the attributes
     that changed, [found]. Check it matches what you meant.
@@ -231,9 +231,18 @@ Every class below shares these, so they aren't repeated for each one:
         Persist that entity and everything it references.
 
     Relations link two entities and carry their own data (docs: "Relation types" below).
-    Say the link with the word you would say it with: anna.relate(london, "born_in"). A type
-    has to exist first — `world.define_relation(...)`, and the refusal writes the call for you
-    if you get there the other way round. A word you have is always better than a label,
+    Two ways to say one, and both are a call — never an assignment, because writing is always
+    one link while a plural end reads back every one of them:
+
+        rome.set_capital_of(italy)     — the word is here already: say it with the word
+        rome.relate(italy, "…")        — no word for this yet: say the fact in the words the
+                                         user used, and I find the word when the task closes
+        rome.capital_of   -> Italy     — each end reads by its own word: a value where only
+        anna.mother_of    -> [Boris, Vera]   one can hold, a list where more can
+
+    The second is read when the task closes and becomes a link of its own type, so nothing
+    waits on it and you never choose a word before you have anything to choose with. A word you
+    have is always better than a label,
     because a type can be asked about, superseded and checked, and a label can do none of the
     three. `label=` is for naming a role inside a type that has
     roles ("mother" inside kin, "dentist" inside service), never a type of its own.
@@ -242,22 +251,22 @@ Every class below shares these, so they aren't repeated for each one:
     and recorded as `part_of` the word "capital" is lost, so define capital_of and give it that
     nature. Likewise do not reach for a type you made earlier because it is roughly the area:
     "is a citizen of" is not "is associated with the sport of".
-    Direction is one rule: the subject is the one the link describes, so a.relate(b, kind)
-    reads "a is b's kind". maria.relate(michael, "kin", label="mother") says Maria is
-    Michael's mother; nina.relate(michael, "service", label="dentist") says Nina is Michael's
-    dentist. Read the sentence before you write the call — "my dentist is Nina" puts Nina first,
-    not the owner. From the other end, use the reverse name: michael.relate(greg, "served_by",
-    label="landlord") says Greg is Michael's landlord. Results show each relation as that
+    Direction is one rule: the subject is the one the link describes, so a.set_<kind>(b) reads
+    "a is b's kind". maria.set_kin(michael, label="mother") says Maria is Michael's mother;
+    nina.set_service(michael, label="dentist") says Nina is Michael's dentist. Read the sentence
+    before you write the call — "my dentist is Nina" puts Nina first, not the owner. From the
+    other end, use the reverse name: michael.set_served_by(greg, label="landlord") says Greg is
+    Michael's landlord. Results show each relation as that
     sentence — check it reads the way you meant. A relation's period
     reads back under the same names it's written with: rel.starts, rel.until. The label is matched to the type's roles ("mom" -> mother,
     "older brother" -> sibling), and the world checks each role's limits — a second mother is
     refused with the alternatives (stepmother). relation.role_of(entity) says what an end is to
     the other ("child" for Michael). a.how_related(b) walks the relations and names the chain
     ("sister's husband" -> sibling in law).
-        anna.relate(london, "born_in")                      # no such type yet — it is made
-        kevin.relate(b04, "membership", title="vendor logistics lead", starts="3 years ago")
-        kevin.relate(darren, "kin", label="older brother")   # a role inside a type that has them
-        b04.relate(company, "part_of")
+        anna.relate(london, "Anna was born in London")       # no word for it here yet
+        kevin.set_membership(b04, title="vendor logistics lead", starts="3 years ago")
+        kevin.set_kin(darren, label="older brother")          # a role inside a type that has them
+        b04.set_part_of(company)
     entity.relations(kind)[i].counterpart is the end that isn't the entity you asked from.
     descriptions — every class has them, relations included, and the type is list[text]: not one
     paragraph but many texts, each said on its own and each able to hold for a time. This is
