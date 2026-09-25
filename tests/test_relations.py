@@ -99,12 +99,17 @@ def main() -> int:
     check("and the one before is still in the record",
           linda in b04.related("managed_by", history=True),
           str(b04.related("managed_by", history=True)))
-    # Classes are not fixed on a relation. What a type has run between so far describes it; a
-    # link between other ends is news about the type, not an error in the link, so it is recorded
-    # as asked and the world says what it noticed.
-    kept = b04.set_kin(chen)
-    check("an endpoint of another class is recorded all the same",
-          type(kept).__name__ == "Kin" and kept.subject is b04, repr(kept))
+    # Classes are not fixed on a relation, and a link between other ends is news about the type
+    # rather than an error in the link. The door for it is the one that takes words: a word on a
+    # class lives on the classes it was declared between, so `b04.set_kin(chen)` says what kin
+    # has run between and offers the other door. Said in words, the fact is in the world at once
+    # — joined, findable, untyped until somebody reads it.
+    refused_word = refused(lambda: b04.set_kin(chen))
+    check("a word on a class is only on the classes it was declared between",
+          refused_word is not None and "Person → Person" in refused_word, str(refused_word)[:110])
+    kept = b04.relate(chen, "B04 has had Kevin Chen in the family business for years")
+    check("and the fact said in words is recorded all the same",
+          kept is not None and kept.subject is b04, repr(kept)[:110])
     # Something the world does on its own, so the test says so: initiative.MAKES_TYPES is off
     # by default and the switch is turned on here and put back after.
     initiative.MAKES_TYPES = True
@@ -126,7 +131,9 @@ def main() -> int:
     where = Organization.new(name="Acme Corp")
     first_seat = Person.new(full_name="Dublin Seat")
     later_seat = Person.new(full_name="Tallinn Seat")
-    where.set_authority(first_seat,  label="manager", starts=date(2020, 1, 1))
+    # Written from the end the type names as its subject — a manager manages somebody, and the
+    # word lives on Person because that is what authority has run from.
+    first_seat.set_authority(where, label="manager", starts=date(2020, 1, 1))
     check("one at a time: the later one holds",
           [p.full_name for p in where.related("managed_by")] == ["Dublin Seat"],
           str([p.full_name for p in where.related("managed_by")]))

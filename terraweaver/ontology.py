@@ -1123,22 +1123,25 @@ class Entity:
         if name.startswith("_"):
             raise AttributeError(name)
         if name.startswith("set_"):
-            # A word this world holds, on a thing whose class was not among the ends declared
-            # for it. The ends are evidence and not a promise — a type declared from its first
-            # example would otherwise refuse its second, and the host answers that by making a
-            # second type for one idea. So this is not refused: it is written, and the world
-            # says what it noticed. Attached to the declared ends only (`_lend_relations`), it
-            # would have been an AttributeError here, which reads as the class being wrong.
+            # A word this world holds, reached on a class it was not declared between. The call
+            # lives on the ends the type names (`_lend_relations`) and nowhere else, so this is
+            # the place to say which those are — Python's own "has no attribute … did you mean
+            # set_kinds?" reads as the class being wrong, and a host told that in one session
+            # stopped using the class altogether.
             world = current_world()
             word = name[len("set_"):]
             for cls in (getattr(world, "classes", {}) or {}).values():
                 rel = cls._spec.get("relation") or {}
-                if rel and not rel.get("free") and word in (rel.get("kind"), rel.get("reverse")):
-                    import types
-
-                    return types.MethodType(
-                        _sets_the_role(cls._spec["name"], rel, backwards=word != rel["kind"]),
-                        self)
+                if not rel or rel.get("free"):
+                    continue
+                if word in (rel.get("kind"), rel.get("reverse")):
+                    ends = " → ".join(("/".join(rel.get(side) or ["any"]) for side in ("from", "to")))
+                    raise TypeError(
+                        f"{word} has run between {ends}, and this one is a "
+                        f"{type(self).__name__}. If that is the fact, say it in the words it "
+                        f"came in — {_name_of_me(self)}.relate(other, \"…\") — and the word for "
+                        f"it is found here; the ends a type names are what it has seen, not a "
+                        f"rule about what it may see.")
         spec = type(self)._spec
         known = [a["name"] for a in spec.get("attributes", [])]
         from terraweaver import matching

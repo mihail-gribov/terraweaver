@@ -2329,3 +2329,28 @@ place; `chairperson_of`, which has run Person → Organization, is a line of lis
 distracted by. Narrowed, not hidden — the ends are evidence, and a word whose ends were written
 down from one example must stay reachable for its second. The rest follow, said to be what they
 are.
+
+### A word lives on the classes it was declared between
+
+The setter and the reader for a relation's word are attached to the ends the type names, and
+nowhere else. For a while today they were everywhere, because `Organization has no 'set_kin'.
+Did you mean: 'set_kinds'?` reads as the class being wrong — and a host told that in an earlier
+session stopped using the class altogether. The answer was the wrong one: the message was the
+problem, not the confinement.
+
+    techcorp.set_kin(anna)
+    → kin has run between Person → Person, and this one is a Organization. If that is the
+      fact, say it in the words it came in — techcorp.relate(other, "…") — and the word for it
+      is found here; the ends a type names are what it has seen, not a rule about what it may
+      see.
+
+**The rule that the ends are evidence and not a promise is kept, and moved to where it does
+something.** A link between unexpected ends is news about the type — so it is said the way any
+fact with no word is said, in words, and the world finds the word. What is gone is the silent
+version: recorded with a note nobody reads. Twenty such notes in a run leave a world full of
+backwards links, each with an honest remark attached.
+
+It paid for itself immediately. Two cases in the suite were writing a link from the wrong end —
+`where.set_authority(first_seat)` had an Organization managing a person, when the word says a
+manager manages — and both had been passing for months under a note. A note changes nothing; a
+refusal changes the line.
