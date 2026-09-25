@@ -2238,15 +2238,29 @@ describes a thing, encyclopedically, and the engineer faithfully formalises that
 The prompt's "everything comes out of those words and nothing else" was obeyed to the letter.
 The words were there. They were in the description.
 
-**So the portrait door cannot write links any more.** Its prompt has no `set_`, no `relate`, no
-`define_relation`, no way to look another thing up, and no list of the words this world holds.
-Its work is a class and this thing's own values; links are the sentence door's work and only its.
-An account of a city names its country and its famous dead, and neither is a fact about the city
-alone.
+**The first fix was to stop the portrait door writing links at all, and it was wrong.** An
+account of a thing says what it is to other things — "the capital of Italy" is a fact worth
+having, and dropping it leaves it as prose, which this world's own primer calls the worst place
+for a fact. What was wrong was never that the engineer wrote links. It was how, and there were
+three separate faults, each with its own guard:
 
-Two of the portrait tests went with the fix — they covered a thing *the world named itself*,
-which only happened because this door reached for a second end by name. Nothing here names
-anything now. The hole closed by taking a capability away rather than by adding a rule.
+**The other end was made, not found.** `identify` records a name nobody here has, so the
+engineer's own spelling became a second thing: `BBC` beside `British Broadcasting Corporation`,
+with nothing afterwards able to tell them apart. It is `get` now, which finds what is here and
+raises when it is not — which Italy is meant is the business of whoever said the words. A line
+that raises costs that one link and nothing else, and the loop carries the rest.
+
+**It could not see what was already there.** London, described as the city somebody was born in,
+came back as `set_birthplace_of` beside the `born_in` that already held: one birth, two words,
+and nothing afterwards can tell they are one fact. The prompt now shows what this thing is
+already joined to, and the words this record already has.
+
+**And the encyclopaedia.** `Washington, D.C. capital of United States` was never stated by
+anybody; it came out of a description the host wrote from its own knowledge. That is the host's
+doing and the world has its own answer to it — a task does not close while a description is a
+fact about two things written about one. That check's advice was itself stale, telling the host
+to define a type and use the old door; it now says the one thing that is true, which is that
+saying which two things is all the host is asked for.
 
 **And the counterexample came out of the prompt too.** Naming the forbidden call, even to forbid
 it, is how a model picks it up — the same way an example naming a class this world has not got

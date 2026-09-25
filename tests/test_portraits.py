@@ -105,7 +105,7 @@ def main() -> int:
     rome = rt.world.find(rt.world.classes["City"], name="Rome").matches[0]
     check("the thing is read under the class that was made", type(rome).__name__ == "City")
     check("what the words gave is on it", rome.population == 2800000, str(rome.population))
-    check("and this door joined it to nothing: links are the other door's work",
+    check("and it joined nothing, because these words joined nothing",
           rome.relations() == [], str([r.display_name() for r in rome.relations()]))
 
     # --- the new class sits under the one the walk stopped at, and inherits its question ---
@@ -127,17 +127,17 @@ def main() -> int:
     # of Thing the walk comes down through.
     check("the walk offers the kinds of Thing and a way out",
           set(asked) == {"AIAgent", "Person", portraits.NEW_ONE}, str(asked))
-    # What this door is not for. Given a way to join two things, the engineer used it on every
-    # account that mentioned another thing: London described as "the city Thomas Kyd was born
-    # in" came back as `London.set_birthplace_of(Thomas Kyd)` — the same fact the sentence door
-    # had already recorded as `born_in`, from the other end, under a second word. An account of
-    # a city names its country and its famous dead; none of that is a fact about the city alone.
+    # An account of a thing says what it is to other things — "the capital of Italy" — and that
+    # is a fact worth having. What went wrong was never that the engineer wrote links; it was
+    # how. Two guards, and both are in what it is shown.
     asked_for = engineer.asked[0]
-    check("the engineer is offered no way to join this thing to another",
-          not any(bad in asked_for for bad in
-                  ("set_", "relate(", "define_relation", ".identify(")), asked_for[-700:])
-    check("and is told plainly that this is about one thing only",
-          "Only this thing" in asked_for, asked_for[-700:])
+    check("the engineer may join this thing to another, and is shown the word for it",
+          "it.set_capital_of(italy)" in asked_for, asked_for[-900:])
+    check("the other end is looked up by a call that cannot create one",
+          'Thing.get(name="Italy")' in asked_for and ".identify(" not in asked_for,
+          asked_for[-900:])
+    check("and it is shown what this thing is already joined to, so it does not say it twice",
+          "already joined to" in asked_for, asked_for[-900:])
 
     # There is no case here for a thing the world named itself: this door names nothing. That
     # it once did — reaching for "Italy" out of an account of Rome — is the defect the check

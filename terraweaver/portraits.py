@@ -214,15 +214,28 @@ record something nobody said.
 record uses. `it` is already bound to the thing; never make it again, never rename it.
 
     it.population = 2800000                      a value the words gave
-    it.founded = date(1871, 1, 18)               a date, where the words gave one
     it.describe("...")                           something no attribute can hold
+    italy = Thing.get(name="Italy")              another thing, if this record has it
+    it.set_capital_of(italy)                     what the words say this one is to that one
 
-**Only this thing.** Nothing here joins it to anything else and nothing here reaches for
-another thing at all. An account of a city says what country it is in and who was born there,
-and both of those are facts about two things: they are recorded by whoever said them, and
-putting them here would put the same fact in twice, from the other end, under a second word.
+**The other end is looked up, never made.** `get` finds what is here and raises when it is not,
+and that is the right end of it: which Italy is meant is the business of whoever said the words,
+not yours. A record that held "British Broadcasting Corporation" got a second thing called "BBC"
+this way, and nothing afterwards could tell them apart. If the line raises, the thing is not
+here — say the rest and leave that out.
 
-So: values of this thing, and a description for whatever no attribute can hold.
+**Do not say again what is already said.** What this thing is already joined to:
+
+{joined}
+
+A link here for any of those is the same fact a second time, from the other end and under
+another word — one record held `born_in` and `birthplace_of` for one birth. The words this
+record has for links, to use rather than invent a second for the same idea:
+
+{held}
+
+**Only what these words say.** An account of a city knows its country and its famous dead; if
+these words did not say it, it is not here.
 
 Dates as `date(2019, 6, 1)`, and only where the words gave one; do not work one out.
 
@@ -387,6 +400,8 @@ def _say(engineer, asked: str) -> dict | None:
 
 def _asking(world, entity, words: str, at: str, make_new: bool) -> str:
     """The one open question: describe the class, and write the code that fills this one in."""
+    from terraweaver import sentences
+
     parent = world.classes.get(at)
     parent_is = (parent._spec.get("brief") or parent._spec.get("description") or at)[:150] \
         if parent is not None else at
@@ -397,7 +412,7 @@ def _asking(world, entity, words: str, at: str, make_new: bool) -> str:
         standing = f"The attributes it has: {', '.join(named)}"
     return FORMALISE.format(
         name=entity.display_name(), parent=at, parent_is=parent_is, standing=standing,
-        words=words,
+        words=words, joined=_already_joined(world, entity), held=sentences.held(world),
         class_ask=(MAKE_ONE if make_new else KEEP_ONE).format(parent=at),
         class_shape=MAKE_SHAPE if make_new else "null")
 
@@ -429,6 +444,23 @@ def _a_word_it_has_not(world) -> str:
             'other way, "many-to-many" when neither is limited. `over_time=True` when one holds '
             'at a time and a new one ends the last (an employer, a spouse), False when they '
             'simply accumulate.')
+
+
+def _already_joined(world, entity) -> str:
+    """What this thing is joined to now, so the same fact is not said a second time.
+
+    Not shown, it was said again from the other end under another word: London, described as
+    the city somebody was born in, came back as `London.set_birthplace_of(...)` beside the
+    `born_in` that already held. Two words for one birth, and nothing afterwards can tell that
+    they are one fact.
+    """
+    lines = []
+    try:
+        for link in entity.relations():
+            lines.append(f"    {link.display_name()[:100]}")
+    except Exception:  # noqa: BLE001 - a thing whose links cannot be read is joined to nothing
+        return "    (nothing yet)"
+    return "\n".join(sorted(set(lines))[:30]) or "    (nothing yet)"
 
 
 def _classes_here(world) -> str:
