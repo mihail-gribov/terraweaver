@@ -97,7 +97,7 @@ def main() -> int:
                                   "description": "how many people live there", "type": "int"}]},
         "code": 'it.population = 2800000\nit.describe("where the user lived until 2019")',
     }])
-    tally = portraits.read_them(rt.world, engineer, jev=jev, run=rt._the_world_writes)
+    tally = portraits.formalise(rt.world, engineer, jev=jev, run=rt._the_world_writes)
     rt._hand_back_what_moved(tally.pop("moved", []))
     check("the prose-fact is read, the class made, the code run",
           tally == {"read": 1, "placed": 1, "defined": 1, "ran": 1, "failed": 0, "gave_up": 0},
@@ -152,7 +152,7 @@ def main() -> int:
         {"class": None, "code": 'it.population = 900_000\nit.set_near(nowhere)'},
         {"class": None, "code": 'it.describe("in the north")'},
     ])
-    tally = portraits.read_them(rt.world, loop_engineer, jev=loop_jev, run=rt._the_world_writes)
+    tally = portraits.formalise(rt.world, loop_engineer, jev=loop_jev, run=rt._the_world_writes)
     rt._hand_back_what_moved(tally.pop("moved", []))
     check("a refused line is handed back and the next answer runs",
           tally["ran"] == 1 and tally["gave_up"] == 0 and len(loop_engineer.asked) == 2, str(tally))
@@ -176,7 +176,7 @@ def main() -> int:
           len(portraits.unread(rt.world)) == 1, str(portraits.unread(rt.world)))
 
     # --- a reader that says nothing usable costs the reading, never the thing ---
-    silent = portraits.read_them(rt.world, Engineer([]), jev=AJev(["City"]),
+    silent = portraits.formalise(rt.world, Engineer([]), jev=AJev(["City"]),
                                  run=rt._the_world_writes)
     silent.pop("moved", None)
     check("an engineer that answers nothing leaves the words for a later pass",

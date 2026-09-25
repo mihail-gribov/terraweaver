@@ -49,10 +49,10 @@ def main() -> int:
           f"{unread} account(s) of {asked} bare name(s) are unread.\n", flush=True)
 
     if waiting:
-        got = sentences.read_them(runtime.world, runtime.world.engineer, limit=args.limit)
+        got = sentences.formalise(runtime.world, runtime.world.engineer, limit=args.limit)
         print("facts said in words:", got, flush=True)
     if unread:
-        got = portraits.read_them(runtime.world, runtime.world.engineer, limit=args.limit,
+        got = portraits.formalise(runtime.world, runtime.world.engineer, limit=args.limit,
                                   run=runtime._the_world_writes)
         runtime._hand_back_what_moved(got.pop("moved", []))
         print("things that came in as names:", got, flush=True)

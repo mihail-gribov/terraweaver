@@ -43,7 +43,7 @@ CREATE INDEX IF NOT EXISTS idx_portraits_entity ON portraits(entity_id);
 """
 
 
-def wanted(world, entity, task_id: str | None = None) -> None:
+def comes_in(world, entity, task_id: str | None = None) -> None:
     """Note that this thing arrived as a bare name, so the close knows to read what is said of it.
 
     Called where the name was recorded, not where it is read. Nothing waits on this: the thing is
@@ -229,7 +229,7 @@ def words_about(world, entity) -> str:
 GOES = 3
 
 
-def read_them(world, engineer, limit: int = 50, jev=None, run=None) -> dict:
+def formalise(world, engineer, limit: int = 50, jev=None, run=None) -> dict:
     """Read the prose-facts nobody has read, and put each into the record's own terms.
 
     Two steps, and the split between them is where the cost is. Finding the class is a walk down

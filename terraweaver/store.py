@@ -89,6 +89,12 @@ class Store:
         # received their id inside it.
         self._tx_depth = 0
         self._tx_new_ids: list = []
+        # What got an id during this run, as against during one transaction. Statements are
+        # committed one at a time on purpose, so a per-transaction list is empty by the time
+        # anybody asks — and the run then reported everything the host had just made as
+        # *updated*, in every slot it has, which reads as "you changed something that was
+        # already here". Cleared by whoever is running, not by a transaction ending.
+        self.made: list = []
 
     @contextmanager
     def transaction(self):
@@ -126,6 +132,7 @@ class Store:
         if instance.id is None:
             instance.id = uuid.uuid4().hex
             self._tx_new_ids.append(instance)
+            self.made.append(instance)
 
     def save(self, instance) -> str:
         with self.transaction():

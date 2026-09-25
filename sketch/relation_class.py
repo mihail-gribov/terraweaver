@@ -1,12 +1,13 @@
-"""A relation as a class, found before it is made.
+"""A relation as a class: everything a relation is, and everything it deliberately is not.
 
 The mechanism, end to end:
 
     the host wants to say "Sasha is Masha's husband"
       -> LOOK: is there already a relation with these roles, or near enough?
            yes -> use it. Nothing is defined, nothing is named twice.
-           no  -> DESCRIBE it: two roles and the properties. The host can do this itself,
-                  because it is given what the world already holds; or it is asked of a reader.
+           no  -> DESCRIBE it: the roles and the properties below. The host can do this
+                  itself, because it is given what the world already holds; or it is asked
+                  of a reader whose whole task that is.
                   -> the description becomes a class that inherits Relation
                   -> the class is registered, and from then on step one finds it
 
@@ -14,31 +15,152 @@ Looking first is not tidiness. In a measured run one recorder wrote `Chairperson
 `DirectorOf` (0.86 alike) and `CreatedBy` beside `FoundedBy` — two words for one idea, and a
 world that holds both answers for neither. The look is what makes a vocabulary converge.
 
-The class is the artefact because it is what the host can read, write and reason about with no
-new notation: six class attributes, a docstring, and `Relation` above it.
+
+## What is in it
+
+    subject_is / object_is        what each END IS in this link: capital ↔ country,
+                                  wife ↔ husband, part ↔ whole. This is what a class cannot
+                                  say — a car is not barred from driving because it is a Car
+                                  but because nothing that drives is a vehicle — and it is
+                                  what makes a link written backwards visible as a wrong fact
+                                  rather than a type mismatch. An outside reader told the roles
+                                  found 13 backwards links in 115; told only the type's name
+                                  and description it found none.
+
+    subject_class / object_class  what may stand at each end, from the classes the world
+                                  holds. "" is open, and open is the honest answer while the
+                                  first example is all anybody has seen: a side named after it
+                                  refuses the second, and the answer to that refusal is a
+                                  second type for one idea. Watched, never enforced.
+
+    one_object / one_subject      how many hold AT A MOMENT. Not over a life.
+
+    implies                       what becomes true in addition: transitive · inherits ·
+                                  identity. Only these words, and empty is a common and honest
+                                  answer.
+
+    descriptions                  what this kind of link is, in prose, by whoever said it —
+                                  a list, like everything else described in this world.
+
+
+## What is not in it, and why
+
+**No `kind`.** The word is read off the roles: a capital is `capital_of`, a wife is `wife_of`.
+A type is not a name somebody chose; it is the two roles, and the name follows.
+
+**No `symmetric`.** It is the roles being the same word. Two siblings are both siblings; a wife
+and a husband are not the same word, so that link is not symmetric even though it joins two
+people and reads from both ends.
+
+**No `over_time`.** A period belongs to the statement, not to the type. It was a field once and
+it wiped out the cardinality standing next to it: all four cardinalities with `over_time=True`
+came to the same thing.
+
+**No cardinality.** "How many were there ever" is not a question about a type: history always
+accumulates, because the record is only ever added to. And "one ever" is not a category —
+nothing in a record is one forever. A birthplace changes in the record not because anybody
+moved but because sources disagree, somebody was wrong, an opinion was sharpened. "Forever" is
+a property of the world, not of the record.
+
+**No nature.** `part_of`/`kind_of`/`same_as`/`derived_from` was one word carrying a set of
+inference rules, which is `implies` and which one word cannot hold. Deriving it from
+transitivity was rubbish left from an earlier iteration.
+
+
+## How a later telling meets an earlier one
+
+There is no "superseding" as an action of its own:
+
+    **Everything has a period. One at a moment means the periods do not overlap.**
+
+A link arrives with start T: the world finds what held at T and ends it there. That is all.
+
+Correction ("I was told wrong") and handover ("he changed jobs") are the same record and the
+world does not tell them apart — two statements with their own periods, one of which holds at
+any given moment. What happened in life is not something the record has to know. The only
+difference is what closes the earlier period:
+
+    the new start is named   ->  the earlier ends exactly there          until_is = exact
+    no start was named       ->  the earlier ended some time before now  until_is = before
+                                 — when, nobody said, and the world does not invent it
+
+
+## The words
+
+One word per end, out of that end's own role, and each is a name and exactly one preposition:
+
+    rome.capital_of   -> Italy        italy.country_of   -> Rome
+    masha.wife_of     -> Sasha        sasha.husband_of   -> Masha
+    kyd.born_in       -> London       london.birthplace_of -> [Kyd]
+
+A bare noun (`chairperson`) or a bare verb (`plays`) reads as nothing between two names; two
+prepositions (`born_in_of`) is a word with two endings. Built from a type's word plus a tail it
+gave `capital_of_of`, because the tail was already there.
+
+Reading gives a value where only one can hold at a moment and a list where several can. Writing
+is a call and never an assignment: writing is always one link, reading a plural end is every
+link there is, and `=` would claim replacement over an addition.
+
+
+## Measured, including what missed
+
+On five sentences: part/whole gives `transitive`; dog/mammal gives `transitive` and `inherits`;
+employment gives one employer at a moment; "London is the capital of France" is placed exactly
+as a true one would be. **`identity` missed twice running** on "Bombay is Mumbai", giving
+`transitive` instead. And "Princess Alice was an Anglican" got `inherits`, which is arguable.
+Both misses are in the inference rules — the newest part of this.
 """
 from dataclasses import dataclass
 
+# Every word for an end is a name and one preposition — `capital_of`, `born_in`, `married_to`.
+# A bare noun or a bare verb reads as nothing between two names.
+PREPOSITIONS = ("of", "in", "at", "for", "to", "from", "on", "with", "by", "into", "about")
+
 
 class Relation:
-    """What every relation is. A class body says the six things and nothing else.
+    """What every relation is. A class body says these and nothing else.
 
     No `kind`: the word is read off the roles. No `symmetric`: it is the roles being the same
-    word. No `over_time`: a period belongs to the statement, not to the type.
+    word. No `over_time`: a period belongs to the statement, not to the type. No cardinality:
+    "how many were there ever" is not a question about a type — history always accumulates,
+    because the record is only ever added to. The one question about how many is about a
+    moment (`docs/relation-properties.md`, part three).
     """
-    subject_is: str = ""
-    object_is: str = ""
-    one_object: bool = False      # at a moment, may the subject have several objects?
-    one_subject: bool = False     # at a moment, may the object have several subjects?
-    transitive: bool = False
+    subject_is: str = ""          # what the subject IS in this link: "capital", "mother"
+    object_is: str = ""           # and the other end: "country", "child"
+    subject_class: str = ""       # what may stand there, from the classes the world holds;
+    object_class: str = ""        #   "" is open, and open is the honest answer at first
+    one_object: bool = False      # at a moment, the subject has one object — not one ever
+    one_subject: bool = False     # at a moment, the object has one subject
+    implies: tuple = ()           # what becomes true in addition: transitive · inherits · identity
 
     @classmethod
     def symmetric(cls) -> bool:
         return bool(cls.object_is) and cls.subject_is == cls.object_is
 
     @classmethod
+    def transitive(cls) -> bool:
+        return "transitive" in cls.implies
+
+    # A word for each end, out of that end's own role. The city is the capital of the country
+    # and the country is the country of the capital, so `rome.capital_of` and `italy.country_of`
+    # each read as what that end IS — which is the one thing a class cannot say and the roles
+    # can. Built from the type's word plus a tail it gave `capital_of_of`, because the tail was
+    # already there. Both are a name and one preposition, the shape every word here has.
+    @classmethod
     def word(cls) -> str:
-        return f"{cls.subject_is.strip().split()[-1].lower()}_of"
+        """What the subject's end is called: `capital_of`, `mother_of`, `born_in`."""
+        return cls._as_a_word(cls.subject_is)
+
+    @classmethod
+    def word_back(cls) -> str:
+        """And the object's end, by its own role: `country_of`, `child_of`, `birthplace_of`."""
+        return cls._as_a_word(cls.object_is) if cls.object_is else ""
+
+    @staticmethod
+    def _as_a_word(role: str) -> str:
+        said = "_".join(role.strip().lower().split())
+        return said if said.rsplit("_", 1)[-1] in PREPOSITIONS else f"{said}_of"
 
     @classmethod
     def roles(cls) -> tuple[str, str]:

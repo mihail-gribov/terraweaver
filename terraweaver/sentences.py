@@ -23,37 +23,20 @@ import json
 from terraweaver import prompts
 from datetime import datetime, timezone
 
-from terraweaver.store import run_script
 
-SCHEMA = """
-CREATE TABLE IF NOT EXISTS sentences (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    subject_id TEXT NOT NULL,
-    object_id TEXT NOT NULL,
-    words TEXT NOT NULL,
-    said_at TEXT NOT NULL,
-    task_id TEXT,
-    read_as TEXT,              -- JSON of what a reader made of it, once it has been read
-    link_id TEXT               -- the link it became, if it became one
-);
-CREATE INDEX IF NOT EXISTS idx_sentences_unread ON sentences(read_as);
-"""
+def comes_in(world, subject, obj, words: str, task_id: str | None = None):
+    """Write the fact down as an untyped link between these two, in the words it came in.
 
+    Nothing waits. The link is there from that moment — joined, findable, countable — and what
+    kind of link it is comes later, from a reading with nothing else to attend to. An untyped
+    link is a poor link, and a poor link is more than a fact nobody recorded because no type
+    could be found for it.
 
-def say(world, subject, obj, words: str, task_id: str | None = None):
-    """Write down the fact in the words it came in, and join the two things at once.
-
-    The link is made immediately, untyped — the world's bare `related`, carrying the host's
-    words as its description. The fact is in the world from that moment: joined, findable,
-    countable, answerable. Typing it is an improvement on a fact that is already there, not a
-    condition of it being there at all.
-
-    This is the difference between a fact and a fact-in-waiting, and it is the whole lesson of
-    the day. A sentence held in a side table until somebody could type it is a fact nothing can
-    find, and if the reader never runs it is a fact that was never recorded. An untyped link is
-    a poor link — it cannot supersede, cannot be asked about by type, has nothing to be checked
-    against — and it is still a link. The world knows that these two are joined and what the
-    host said about it, which is exactly what the host said and no less.
+    **Nothing is written down about it besides the link.** There was a side table here, holding
+    the words, when they were said, which task said them, and whether anybody had read them yet
+    — and every one of those was already in the record: the words are the link's description,
+    the time and the run are on the statement, and *unread* is not a mark at all but a state.
+    An untyped link that still holds IS a link nobody has read.
     """
     if not (words or "").strip():
         raise ValueError(
@@ -62,33 +45,10 @@ def say(world, subject, obj, words: str, task_id: str | None = None):
             "afterwards. \"Anna has worked at Brightwork since 2019\" is a fact; \"employment\" "
             "is a type, and choosing one is the thing this call exists to spare you.")
     _about_two(subject, obj, words)
-    run_script(world.store.conn, SCHEMA)
-    # `related_to` on purpose, and it is the honest one: it means nothing follows from this
-    # link but the link itself, which is exactly true of a link nobody has read yet. Any other
-    # nature would be a claim about what may be inferred, made before anybody knows what the
-    # link is.
-    #
-    # The label is the sore point and is left as it is knowingly. A free link must carry one,
-    # and an unread link has no word — `display_name` renders it "Tokyo is Japan's said", which
-    # is nonsense. It is nonsense for a few minutes: the link is read at the close of the task
-    # and becomes what it is. Choosing a better word would be inventing the very thing that has
-    # not been read, and a word read as content is the failure measured all day.
     from terraweaver import ontology
 
     with ontology.said_in_words():
-        # An untyped link carrying the words it was said in, and nothing else. It used to be
-        # given a label — "said" — because a free link demanded one, and the world then composed
-        # a description out of that label: "Mahmoud Abbas said Fatah" went into the record as a
-        # statement nobody had made, beside what the host actually said. There is nothing to
-        # invent here. The words are what this link is until somebody reads them.
-        link = world.relate(subject, obj, "related", description=words.strip())
-    cursor = world.store.conn.execute(
-        "INSERT INTO sentences (subject_id, object_id, words, said_at, task_id, link_id) "
-        "VALUES (?, ?, ?, ?, ?, ?)",
-        (subject.id, obj.id, words.strip(), datetime.now(timezone.utc).isoformat(), task_id,
-         link.id))
-    world.store.conn.commit()
-    return link
+        return world.relate(subject, obj, "related", description=words.strip())
 
 
 def _about_two(subject, obj, words: str) -> None:
@@ -124,35 +84,36 @@ def _about_two(subject, obj, words: str) -> None:
         f"{named[0].display_name()}.describe(...). Recorded as a link either way.")
 
 
-def unread(world, limit: int = 100) -> list[dict]:
-    """Sentences nobody has read yet."""
-    run_script(world.store.conn, SCHEMA)
-    rows = world.store.conn.execute(
-        "SELECT id, subject_id, object_id, words, link_id FROM sentences WHERE read_as IS NULL "
-        "ORDER BY id LIMIT ?", (limit,)).fetchall()
-    return [{"id": r[0], "subject_id": r[1], "object_id": r[2], "words": r[3], "link_id": r[4]}
-            for r in rows]
+def unread(world, limit: int = 100) -> list:
+    """Links nobody has read: the untyped ones that still hold.
 
-
-def mark(world, sentence_id: int, read_as: dict, link_id: str | None = None) -> None:
-    world.store.conn.execute(
-        "UPDATE sentences SET read_as = ?, link_id = ? WHERE id = ?",
-        (json.dumps(read_as), link_id, sentence_id))
-    world.store.conn.commit()
+    Not a list somebody keeps — a question asked of the record. A link with no type is one the
+    world has not made sense of yet, and it stops being one the moment it does, because the
+    reading ends it and puts a typed link in its place. Kept as a mark instead, the mark and the
+    record could disagree, and the one that lies is always the one nobody rebuilds.
+    """
+    out = []
+    for name, cls in world.classes.items():
+        if not (cls._spec.get("relation") or {}).get("free"):
+            continue
+        for link in world.all(name, limit=None):
+            if getattr(link, "valid_until", None) is not None:
+                continue
+            if getattr(link, "subject", None) is None or getattr(link, "object", None) is None:
+                continue
+            out.append(link)
+            if len(out) >= limit:
+                return out
+    return out
 
 
 def count(world) -> tuple[int, int]:
-    """How many sentences are down, and how many are still unread."""
-    run_script(world.store.conn, SCHEMA)
-    said = world.store.conn.execute("SELECT count(*) FROM sentences").fetchone()[0]
-    waiting = world.store.conn.execute(
-        "SELECT count(*) FROM sentences WHERE read_as IS NULL").fetchone()[0]
-    return said, waiting
-
-
-SYSTEM = prompts.TYPING_A_FACT
-
-ASK = prompts.A_FACT_SAID
+    """How many facts were said in words, and how many are still unread."""
+    ever = 0
+    for name, cls in world.classes.items():
+        if (cls._spec.get("relation") or {}).get("free"):
+            ever += len(world.all(name, limit=None, history=True))
+    return ever, len(unread(world, limit=10_000))
 
 
 def classes_here(world) -> str:
@@ -207,30 +168,29 @@ def held(world, subject=None, obj=None) -> str:
     return "\n".join(out)
 
 
-def read_them(world, engineer, limit: int = 100) -> dict:
-    """Read the sentences nobody has read, and make each one a link. Called at the close.
+def formalise(world, engineer, limit: int = 100) -> dict:
+    """Give a type to the links nobody has read. Called at the close, and by a later pass.
 
-    Everything that happens after the reading is the world as it already is: `define_relation`
-    makes the type, `relate` writes the link, and periods, supersession and questions are the
-    ones that were there. What is new is only where the type comes from — read out of the words
+    Everything after the reading is the world as it already is: `define_relation` makes the
+    type, `relate` writes the link, and periods, supersession and questions are the ones that
+    were there. What is new is only where the type comes from — read out of what was said
     rather than chosen by a host before it had anything to choose with.
+
+    A link the reading cannot place stays as it is and stays unread, which is true of it: the
+    next pass, in a world that has grown, may do better. Nothing is marked as hopeless.
     """
     from terraweaver import ontology
 
     tally = {"read": 0, "joined": 0, "defined": 0, "astray": 0, "failed": 0}
-    for one in unread(world, limit):
-        try:
-            subject = world.store.load(one["subject_id"], world.classes)
-            obj = world.store.load(one["object_id"], world.classes)
-        except Exception:  # noqa: BLE001 - a thing that has gone is not a sentence we can read
-            mark(world, one["id"], {"gone": True})
-            continue
-        if subject is None or obj is None:
-            mark(world, one["id"], {"gone": True})
+    for bare in unread(world, limit):
+        subject, obj = bare.subject, bare.object
+        words = next((t for t in (bare.__dict__.get("descriptions") or [])
+                      if isinstance(t, str) and t.strip()), "")
+        if not words:
             continue
         try:
             said = engineer.json(SYSTEM, ASK.format(
-                words=one["words"],
+                words=words,
                 a=subject.display_name(), a_is=type(subject).__name__,
                 b=obj.display_name(), b_is=type(obj).__name__,
                 held=held(world, subject, obj), classes=classes_here(world)))
@@ -244,38 +204,32 @@ def read_them(world, engineer, limit: int = 100) -> dict:
         if said.get("ill_typed") in ("value", "kind"):
             # The link stays exactly as it was written, untyped. Nothing is undone and nothing
             # is refused: what was said stands, and the writer is told which door would have
-            # served it better. An untyped link is a poor link — it cannot supersede and cannot
-            # be asked about by type — and it is a link, which is more than a fact nobody
-            # recorded because a type could not be found for it.
+            # served it better.
             tally.setdefault("ill_typed", []).append(
-                (one["words"], said["ill_typed"], subject.display_name()))
-            mark(world, one["id"], said)
+                (words, said["ill_typed"], subject.display_name()))
             continue
         kind = _type_for(world, said, tally)
         if kind is None:
             tally["failed"] += 1
-            mark(world, one["id"], {**said, "no_type": True})
             continue
-        # The roles must be given to the two things handed over. Given names that say nothing, a
-        # reader once made "She" the subject of a fact about X and Y — a role given to somebody
-        # who is not in the record. The two things are the one part of this the world is sure of.
+        # The roles must be given to the two things the link already joins. Given names that say
+        # nothing, a reading once made "She" the subject of a fact about X and Y — a role given
+        # to somebody not in the record. The two things are what the world is sure of.
         by_name = {subject.display_name(): subject, obj.display_name(): obj}
         near = by_name.get(said.get("subject"))
         far = by_name.get(said.get("object"))
         if near is None or far is None or near is far:
-            near, far, = subject, obj
+            near, far = subject, obj
             tally["astray"] += 1
-        link = None
         try:
             with ontology.stating("world"):
-                link = near.relate(far, kind, starts=_when(said.get("starts")))
-                _let_go_of_the_bare_one(world, one.get("link_id"))
-        except Exception as wrong:  # noqa: BLE001 - the world's own refusals still stand
-            # The bare link stays. A typing the world could not apply is a typing lost, not a
-            # fact lost: the two are still joined and the host's words are still on it.
-            mark(world, one["id"], {**said, "refused": str(wrong)[:200]})
+                near.relate(far, kind, starts=_when(said.get("starts")))
+                _let_go_of_the_bare_one(world, bare.id)
+        except Exception:  # noqa: BLE001 - the world's own refusals still stand
+            # The bare link stays, and stays unread. A typing the world could not apply is a
+            # typing lost, not a fact lost.
+            tally["failed"] += 1
             continue
-        mark(world, one["id"], said, getattr(link, "id", None))
     return tally
 
 

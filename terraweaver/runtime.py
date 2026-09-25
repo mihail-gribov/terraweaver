@@ -228,7 +228,7 @@ class WorldView:
         if not ont._is_a_sentence(how):
             return self._world.relate(subject, obj, how, **attrs)
         task = getattr(self._session, "task_id", None) if self._session else None
-        sentences.say(self._world, subject, obj, how, task)
+        sentences.comes_in(self._world, subject, obj, how, task)
         ontology.note_world_call("world_writes")
         return f"said: {how.strip()}"
 
@@ -994,7 +994,7 @@ class WorldRuntime:
             silent = len(portraits.still_only_a_name(self.world))
             if not waiting:
                 return {}, silent
-            tally = portraits.read_them(self.world, engineer, run=self._the_world_writes)
+            tally = portraits.formalise(self.world, engineer, run=self._the_world_writes)
             self._hand_back_what_moved(tally.pop("moved", []))
             return tally, silent
         except Exception:  # noqa: BLE001 - reading is never what stops a task closing
@@ -1056,7 +1056,7 @@ class WorldRuntime:
             said, waiting = sentences.count(self.world)
             if not waiting:
                 return {}
-            return sentences.read_them(self.world, engineer)
+            return sentences.formalise(self.world, engineer)
         except Exception:  # noqa: BLE001 - reading is never what stops a task closing
             return {}
 
@@ -1352,6 +1352,8 @@ class WorldRuntime:
         # `for p in annie.similar` left the last candidate bound — which once taught the world
         # the wrong Anna.
         before = {name: id(value) for name, value in namespace.items()}
+        # What this run makes, kept for the run and not for one statement's transaction.
+        self.store.made = []
         try:
             ontology.set_open_tokens(self.world.questions.tokens())
             skipped_imports: list[str] = []
@@ -1379,7 +1381,7 @@ class WorldRuntime:
                 access = dict(counts)
                 self._persist(recording, namespace)
                 learned = self._learn_name_choice(session, recording, before)
-                effects = _effects(recording, created={id(o) for o in self.store._tx_new_ids})
+                effects = _effects(recording, created={id(o) for o in self.store.made if o.id is not None})
                 effects["assumed"] += learned
                 session.touched |= {e.id for e in _entities_of(recording)}
                 # Said in this run's reply, not left for the next one: the question is about a
@@ -1387,7 +1389,7 @@ class WorldRuntime:
                 # raised outside the recorder — the run has already finished — so it is added
                 # here by hand rather than arriving through it.
                 effects["clarify"] = self._ask_about_bare_things(
-                    namespace, recording, {id(o) for o in self.store._tx_new_ids},
+                    namespace, recording, {id(o) for o in self.store.made if o.id is not None},
                     mine=key != THE_WORLDS_OWN)
                 effects["questions"] += _waiting_on_answers(session)
                 # Only what this run raised. Repeating every doubt about every entity a run
@@ -1406,7 +1408,7 @@ class WorldRuntime:
             # recording to report from.
             if recording is not None:
                 with self.store.transaction():
-                    effects = _effects(recording, created={id(o) for o in self.store._tx_new_ids})
+                    effects = _effects(recording, created={id(o) for o in self.store.made if o.id is not None})
                     effects["assumed"] += self._learn_name_choice(session, recording, before)
                     # The statements that finished are in the world, so the task did touch
                     # things. Counting them only on a clean run left a close saying nothing

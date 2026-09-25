@@ -2354,3 +2354,30 @@ It paid for itself immediately. Two cases in the suite were writing a link from 
 `where.set_authority(first_seat)` had an Organization managing a person, when the word says a
 manager manages — and both had been passing for months under a note. A note changes nothing; a
 refusal changes the line.
+
+## 2026-09-25 — the agent was never told what it had made
+
+Walking the path from the agent's own call, step one: `anna.set_kin(darren, label="mother")`.
+The link is made, it reads as a sentence from both ends, and the run came back saying:
+
+    [updated] Kin «A One is B Two's mother (kin)»: descriptions, id, label, label_reverse,
+              object, role, subject, tags, valid_from, valid_until
+
+Nothing was ever reported as created — not a link, not a person. `Person.new(...)` twice gave
+`created: []`. Every write a host made came back as *changed in every slot it has*, which reads
+as "you altered something that was already here".
+
+The cause is mechanical and had been there since statements became one transaction each: the
+store's list of what got an id is cleared when a transaction ends, statements are committed one
+at a time on purpose, and the run asks for that list afterwards — inside a further transaction,
+which clears it again. It was empty every time.
+
+The store now keeps what it made for the *run*, and the runtime clears that at the start of one.
+
+    created: ['Person «A One»', 'Person «B Two»']
+    created: ["Kin «A One is B Two's mother (kin)»"]
+    created: ['Person «C Three»', 'Related «A One — "A One is C Three mother" — C Three (not yet read)»']
+
+This is the loop the agent learns from — what it did, said back to it — and it was wrong on
+every write. No test could see it: the tests read the world, and this was about what the world
+*said*.

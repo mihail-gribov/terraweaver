@@ -159,7 +159,7 @@ class World:
         """A fact about two things, in the words it was said in. See `sentences.say`."""
         from terraweaver import sentences
 
-        return sentences.say(self, subject, obj, words)
+        return sentences.comes_in(self, subject, obj, words)
 
     def is_protected(self, entity) -> bool:
         """The two parties are not the host's to remove or replace."""
@@ -435,7 +435,7 @@ class World:
         from terraweaver import portraits
 
         try:
-            portraits.wanted(self, entity)
+            portraits.comes_in(self, entity)
         except Exception:  # noqa: BLE001 - never what stops a name being recorded
             return
 
