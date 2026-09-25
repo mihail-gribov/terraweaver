@@ -304,8 +304,8 @@ class Authoring:
                     out.append((name, attr["name"], attr.get("type", "str")))
         return out
 
-    def define_relation(self, name: str, description: str, subject=None, object=None,
-                        nature: str | None = None,
+    def define_relation(self, name: str, description: str, *said_in_order,
+                        subject=None, object=None, nature: str | None = None,
                         cardinality: str | None = None,
                         attributes: list[dict] | None = None, reads: str | None = None,
                         subject_is: str | None = None, object_is: str | None = None):
@@ -346,6 +346,19 @@ class Authoring:
         kind = _clean(name).lower()
         if not kind:
             raise Refused("a relation type needs a name")
+        # Everything after the description is said by name. Taken in order, it landed in slots from
+        # an older shape of this call: `define_relation("kind_of", "…", "many-to-many", "a dog",
+        # "a mammal")` put the cardinality where the subject's class goes and "a mammal" where the
+        # nature went, and the refusal that followed talked about natures — so the engineer added
+        # one, and the call failed a third way. Named, a value can only go where it was meant.
+        if said_in_order:
+            raise Refused(
+                f"after the word and the description, say each by name — in order they land in "
+                f"the wrong places:\n"
+                f"    world.define_relation(\"{kind}\", \"{description}\",\n"
+                f"        cardinality=\"many-to-one\",\n"
+                f"        subject_is=\"<what the first end is>\",\n"
+                f"        object_is=\"<what the second end is>\")")
         # Everything missing, in one refusal, with the call written out. Refusing one argument
         # at a time costs a run each: a recorder that gave none of the three spent forty-one
         # runs collecting them, then reported ten facts recorded into a world that held eight
@@ -353,8 +366,14 @@ class Authoring:
         if nature in ("part_of", "kind_of") and cardinality is None:
             cardinality = "many-to-one"   # a part has one whole, a kind has what it is a kind of
         wants = []
-        if nature not in NATURES:
-            wants.append(f'nature="related_to"  # one of {", ".join(NATURES)}')
+        # Not asked for. A structured fact arrives as the word, what the kind is, what each end is
+        # and how many hold at a moment — the structure the sentence door hands over, measured in
+        # experiments/01 — and a nature is not part of it. It was one word meant to bundle a type's
+        # behaviour and it carried a set of rules instead, which one word cannot hold; the door
+        # stopped asking for it on 2026-09-24 and then passed a stand-in to get past this refusal.
+        # Given, it is still read; not given, the type claims nothing beyond the link itself.
+        if nature is not None and nature not in NATURES:
+            raise Refused(f"nature is one of {', '.join(NATURES)}, or leave it out")
         if cardinality is None:
             wants.append(f'cardinality="many-to-one"  # one of {", ".join(CARDINALITY)}')
         if wants:

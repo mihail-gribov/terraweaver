@@ -19,7 +19,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from terraweaver import authoring, ontology, outside, portraits, sentences  # noqa: E402
+from terraweaver import authoring, formalise, ontology, outside, portraits, sentences  # noqa: E402
 from terraweaver.runtime import WorldRuntime  # noqa: E402
 
 from experiments.base_run import _the_key  # noqa: E402
@@ -49,8 +49,8 @@ def main() -> int:
           f"{unread} account(s) of {asked} bare name(s) are unread.\n", flush=True)
 
     if waiting:
-        got = sentences.formalise(runtime.world, runtime.world.engineer, limit=args.limit)
-        print("facts said in words:", got, flush=True)
+        got = formalise.formalise(runtime, runtime.world.engineer, limit=args.limit)
+        print("facts said in words:", {k: v for k, v in got.items() if k != "read"}, flush=True)
     if unread:
         got = portraits.formalise(runtime.world, runtime.world.engineer, limit=args.limit,
                                   run=runtime._the_world_writes)

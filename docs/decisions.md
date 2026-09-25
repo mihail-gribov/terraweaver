@@ -2463,6 +2463,15 @@ refusal costs a line; a degradation costs the fact, because nothing afterwards t
 somebody knew. `timeutil.told` reads a named month now, with a month and no day being the first of
 it, which is exactly what `'2006-03'` and `'2006'` already came to.
 
+### Facts are read in the order they were said
+
+Everything the world does with a second fact about the same two ends assumes the second one arrived
+second — a new employer ends the standing one, and the line the world offers when it refuses, *end
+that one where this one begins*, is written for a fact that starts later than what is there. The
+reading was going newest-first, because `sentences.unread` returns whatever order the tables give,
+and against a 2023 employment the 2019 one had no honest line at all. One fact in nine was lost to
+that, and it is sorted by the moment the host said it now.
+
 ## 2026-09-25 — `over_time` is gone: cardinality says how many, and it says it about a moment
 
 Decided long ago in `docs/relation-properties.md` (part three) and carried out now, because
@@ -2573,6 +2582,37 @@ from the beginning of time and only the end of one said otherwise. **A fact with
 before it keeps having none**, which is −∞ and means what it says: held as long as anybody knows. An
 event is not this case — an event's time is `start_time`, a required attribute, not a period.
 
+## 2026-09-25 — a claim is put to the picker before it is written, and "reader" is gone
+
+**The engineer wrote a date nobody said.** Given "Rome is the capital of Italy", which carries no
+date, it wrote `starts="1792"`, and the record then held `Rome capital of Italy from 1792-01-01`,
+indistinguishable from a date somebody gave. The question already said *nothing is worked out from
+elsewhere*, in the words that say why. An instruction is a hope.
+
+*Corrected the same day:* the date did not come from the Paris fact, as first written here, nor from
+anything the model knew. It came from **the question's own example** — the definition was shown as
+`capital_of` with `a.set_capital_of(b, starts="1792")`, which for Rome is the right line whole, so it
+was copied whole. See "an example is copied, not read" below; the check stays, because a claim the
+sentence does not bear out should never be written whatever planted it.
+
+So every claim the lines make is put to the **picker**, one closed question each, all in one call —
+**before the lines run**. Measured over nine facts: 17 claims, one refused, and it was the invented
+one at 1.0; every date that was really in a sentence passed (1792 in the Paris fact at 1.0, "since
+June 2015" at 0.99, 1558 at 0.94), and every link claim came back borne out at 0.92 upward.
+
+**Before, not after, and that is the whole shape of it.** A check that reads the record afterwards
+has to delete what it finds: the write is committed, whoever holds the instance holds a stale one,
+and a link taken back leaves the fact it came from unrecorded. Asked first, a claim nobody made is
+never added — the lines go back to whoever wrote them with what is wrong, through the loop a refusal
+already uses, and the three goes are the three goes.
+
+Two boundaries, both deliberate. **Only what came from the sentence is asked about** — the link,
+which way round, and every attribute the line writes onto it as a literal: when it began and ended, a
+label, a role. Those are the only places a claim nobody made can get in, because they are the only
+places filled from the text; the rest of a line is the world's own structure. And **the doubt goes
+to the line, not against it**: below 0.6 the verdict is not acted on, because a false alarm spends a
+go out of three and takes the fact with it, while a missed claim is still there for a later pass.
+
 ### "Reader" named three different things, and now names none of them
 
 The word meant the engineer in `sentences`, `portraits`, `runtime` and `timeutil`; the picker in
@@ -2587,3 +2627,69 @@ side tables, where renaming it would want an ALTER on every world already on dis
 function whose parameter is `engineer` — nothing bound that name, so the call raised every time it
 ran. Offline work, run rarely, and nothing in the suite reached it.
 
+## 2026-09-25 — the reading moved into the world, in modules, and the old one is gone
+
+**The boundary.** Storage takes structured facts and it works: links, periods, statements, the
+image, the sandbox. What was rebuilt is the part in front of it — from a host saying two things and
+a sentence to the lines of code that create the facts. That part was designed and measured in
+experiments/01 and then not carried in: for a day the work went into patching the storage side
+instead (`over_time`, `nature`, a half-started rewrite of `relations.py`), each patch finding the
+next layer of an older design. The rewrite of `relations.py` was reverted before it went anywhere.
+
+**`terraweaver/formalise/`**, one module per question, because each is asked of its own party and
+each has been wrong in its own way:
+
+    look.py      the picker — is there already a word for this kind of link?
+    make.py      the engineer — the lines that record the fact, declaring a word if none
+    check.py     the picker — is every attribute that came from the text borne out? before running
+    write.py     run through the host's door with the two things bound; confirm what landed;
+                 end the bare link where the typed one begins
+    __init__.py  every bare link, in the order it was said
+
+The questions are in `prompts.py`, where every prompt lives. The code is the experiment's, moved,
+not redesigned; the experiment now runs the world's module and keeps its own old copy in `earlier/`.
+
+**What was replaced, and why it had to be.** `sentences.formalise` asked the engineer for data and
+rendered the call itself — and the renderer is where `nature` and `over_time` survived long after the
+structure had dropped them (`nature=CLAIMS_NOTHING`, `over_time=False` on every type). Worse, it had
+**not run at all since commit 7c15f16**: it referred to `SYSTEM` and `ASK`, which that commit removed
+from the module, and the close caught every exception and returned an empty dict. Every task since
+closed with its sentences unread and nothing to say so. The close now reports a failed reading in its
+reply instead of swallowing it.
+
+**One change on the storage side, at the boundary itself:** `define_relation` no longer requires a
+`nature`. A structured fact is the word, what the kind is, what each end is and how many hold at a
+moment; a nature is not part of it, and the door had been passing a stand-in only to get past the
+refusal. Given, it is still read; not given, the type claims nothing beyond the link itself.
+
+**Under a gate:** `tests/test_formalise.py` drives the whole pipeline with both parties scripted — a
+word made once and found again, an invented date refused before anything runs, facts read in the
+order said so the later employment hands over, and the close reading through the same path.
+
+### An example is copied, not read
+
+The first run through the world's module read Rome, wrote `starts="1792"`, was refused by the check,
+and wrote it again — three goes, three refusals, and the link stayed bare. The stubbornness was the
+clue: the definition's example in `NO_WORD_YET` was `capital_of` with `starts="1792"`, which for "Rome
+is the capital of Italy" is the correct line in every other respect. The engineer was not inventing a
+date; it was copying the one line it had been shown that fitted.
+
+Examples in the sentence door now name a word no fact in sight is likely to need (`mayor_of`) and carry
+no date at all, and every date in the question is a placeholder — `starts="<the time the words give,
+in their words>"` — which the record refuses if it arrives unfilled. Copied, it fails loudly at the
+door instead of landing quietly in the record. The lesson is the one `_classes_here` already carried
+for classes: an engineer given an example that names something copies the example.
+
+### Everything after the description is said by name
+
+The next run through the world's module lost "a dog is a kind of mammal" three goes running, and the
+record's answers showed why. The engineer wrote the call in order —
+`define_relation("kind_of", "…", "many-to-many", "a dog", "a mammal")` — and the storage call still
+had the slots of its older shape in those positions: subject class, object class, nature. "a mammal"
+landed as a nature, the refusal said what a nature may be, the engineer added `nature="kind_of"`, and
+the third go failed on a duplicate argument. A structured fact walked into the positional layout of the
+design it replaced, and the refusal pulled the dropped field back into the conversation.
+
+After the word and the description every argument is now said by name, and a call that gives more in
+order is refused with the form written out. Nothing in the code called it positionally, so nothing
+else moved.

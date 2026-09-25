@@ -15,128 +15,200 @@ Written as text, formatted by the caller. Nothing here decides anything.
 
 
 # --- the sentence door: a fact said in words becomes a link, at the close ---
+#
+# Asked by `terraweaver.formalise`, measured in experiments/01_relation_formalisation. Two parties,
+# and the kind of question decides which: the picker answers "is this one of the words the record
+# already has" and "does the sentence say this"; the engineer answers "what are the lines that
+# record it". What comes back from the engineer is code, run through the door a host's code runs
+# through, so every refusal the world makes of a host it makes of this too.
 
-TYPING_A_FACT = ("You place a fact in a record of relations. A relation joins two things and each end "
-          "has a role. You answer with JSON and nothing else.")
+# The picker, first: is there already a word for this kind of link? A way out is always among the
+# options — with none, the least bad word is taken, which is how "Amy Winehouse died in Camden
+# Town" once went in as `born_in`.
+WHICH_WORD = "Which of these is the link between {a} and {b}?"
+NONE_OF_THESE = "none of these"
+NONE_OF_THESE_IS = "no word here is this link — it is a kind of link this record has not got yet"
 
-A_FACT_SAID = """Two things are in a record of facts, and somebody has said how they are related.
-Your task is to describe that relation, and nothing else.
+# The engineer: the lines that record one fact.
+WRITING_A_LINK = ("You write the lines of Python that record one link in a record of facts. You are given "
+          "the two things it is about, already found and bound to names, and the fact in the words "
+          "it was said in. You answer with code and nothing else — no prose, no fences, no "
+          "imports.")
 
-    the first thing:   {a}   (a {a_is})
-    the second thing:  {b}   (a {b_is})
-    what was said:     {words}
+A_LINK_SAID = """Two things in a record of facts, and a fact about the two of them. Write the lines that
+record it.
+
+    a = {a}   (a {a_is})
+    b = {b}   (a {b_is})
+
+    what was said:   {words}
+
+Both are bound already. Never look either of them up again and never name them any other way:
+which two things this is about is settled, and a line that fetches "Anna" afresh may fetch a
+different Anna. `world` is bound too.
+
+{class_ask}
+
+## Writing the link — required
+
+A word for a link gives both things a method for it:
+
+    a.set_{{word}}(b)      a is the subject — the end the fact starts from
+    b.set_{{word}}(a)      the other way round, when the fact runs that way
+
+Which way it runs is the whole of the direction and nothing else decides it. "Rome is the capital of
+Italy" makes Rome the subject of `capital_of`; "Italy's capital is Rome" is the same link, said from
+the same end. Read your line back with the underscores as spaces — "Rome capital of Italy" is a
+sentence, "Italy capital of Rome" is a false one.
+
+## When it began — required if the words say, left out if they do not
+
+    a.set_{{word}}(b, starts="<the time the words give, in their words>")
+
+The record reads these and only these: `'now'`, `'today'`, `'yesterday'`, `'3 years ago'`,
+`'1792'`, `'March 2023'`, `'12 March 2023'`, `'2023-03-12'`, and any of them behind `'since '`,
+`'before '` or `'after '` — `starts="since June 2015"` is the honest form of a date somebody gave
+as a month.
+
+Say exactly what the words said and no more precisely: a year said as a year stays a year. Nothing
+is worked out from elsewhere — a date nobody said cannot be told apart, later, from one somebody
+knew. Say nothing at all when the words say nothing: a link with no start is a true record of a
+fact that came without one.
+
+## When it ended — only if the words say it ended
+
+    a.set_{{word}}(b, starts="<when it began>", until="<when it ended>")
+
+**Otherwise there is no end.** A link holds from its start until something says otherwise, and
+that is the normal case: do not pass `until=`, do not end anything, do not tidy anything up.
+
+If what was said is that one thing replaced another — she left one employer for another — record
+the new one with its start. Whether the earlier one ends there is the type's own rule and the
+record applies it; your line says the fact, not the consequence.
+
+## Everything else
+
+**Whether the fact is true is not part of this task and must not change a single line.** This record
+holds what somebody said, including what contradicts common knowledge: "London is the capital of
+France" is recorded exactly as "Paris is the capital of France" would be.
+
+Nothing is recorded but what the words say. No second link, no attribute nobody mentioned, no
+account of either thing, no tidying up.
 
 {held}
 
-**First: can this be typed as a relation?** The link is already in the record either way — two
-things are joined and the words are on it, and nothing you say takes that away. The question is
-only whether it can be given a type, and sometimes it cannot, because what was said is not
-about two things at all:
-
-    a value        a characteristic of one thing — "Anna is tall", "the salary is 60000".
-                   "tall" is not a thing; it is what Anna is like, and a type made for it
-                   invents a thing called "tall" and hangs somebody off it.
-    a kind         one thing said to be OF a class — "Paris is a city", "Anna is a person".
-                   "city" is a class, not another thing: this says what Paris IS.
-
-Both ends were handed to you as things this record holds, not as words in a sentence, so "kind"
-is right only when the second of them is one of the classes listed above. "wide receiver" and
-"cornerback" are things; "plays the position of" joins two of them and is a link. The word "of"
-in a sentence is not the test — `part_of`, `capital_of` and `mother_of` all have it.
-
-Say `ill_typed` as "value" or "kind" when it is one of those, with `description` and nothing
-else, and stop. The link stays; it stays untyped, which is a poor link and a real one, and the
-writer is told which door would have served it better. Guessing a type for what has none is
-worse than saying there is none.
-
-Null when it can be typed, and then:
-
-A relation in this record is four things and no others. Give them.
-
-**use** — the name of one of the relations listed above, **only when this fact is that same
-relation**. A second word for one idea answers for neither — and so does one word for two, which
-is worse and cannot be taken apart afterwards: being born somewhere and dying somewhere are not
-the same link because both join a person to a place. Null whenever the word you give below is
-not already there, and then give the rest.
-
-**the word** — `word`: what this kind of link is called. Four rules, and they are what keep one
-idea under one word:
-
-  1. Lower case, underscores between words, nothing else.
-  2. It comes from the fact, never from what the ends are: "Thomas Kyd was born in the city of
-     London" is `born_in`, not `person_of` and not `city_of`.
-  3. **A name and a preposition, always, and exactly one preposition.** That is the shape:
-     `capital_of`, `mother_of`, `born_in`, `died_in`, `worked_in`, `married_to`,
-     `headquarters_in`. A bare noun (`chairperson`) or a bare verb (`plays`) reads as nothing
-     between two names; two prepositions (`born_in_of`) is a word with two endings. Use the
-     preposition the fact itself uses, and `of` when it uses none.
-  4. Read it back between the two names, in the order the link runs, with the underscores as
-     spaces. "Thomas Kyd born in London" is a sentence. If it is not one, the word is wrong or
-     the ends are the wrong way round.
-
-**the roles** — `subject_is` and `object_is`: what each END of the relation IS, as a short noun
-phrase a thing could be checked against. "a city that serves as a capital", not "Paris"; "the
-country whose capital it is", not "France". When both ends hold the same role, give the same
-word — two siblings are both siblings, and that sameness is the whole of what symmetry is here,
-so there is no separate thing to say about it. `also_called`: up to four other words this
-relation is said with, so the next person who says it another way lands here instead of making
-a second word for it.
-
-**what may stand there** — `subject_class` and `object_class`: what sort of thing may fill each
-role, chosen from the classes this record has:
+The classes this record has, so a line does not name one it has not got:
 
 {classes}
 
-Widely, not narrowly. A role written tight turns every honest fact into an alarm: a religion's
-followers are people as well as bodies, so an affiliation takes both and not just one. Give
-"any" when anything may stand there, and say nothing a first example taught you that a second
-would contradict. These are watched, not enforced — a fact whose ends do not fit is reported
-and kept, because a fact refused goes somewhere nothing can find it.
+Answer with the lines and nothing else."""
 
-**how many** — `one_object` is true when the first end may have only one of the second AT ONE
-MOMENT; `one_subject` is the same the other way. About one moment, never about a lifetime:
-somebody has one employer now and many over a life, so that is true. A parent has several
-children at once, so for a parent that is false.
 
-**what follows** — `implies`, a list of what becomes true *in addition* when a link of this kind
-is written. Only these words, and empty is a common and honest answer:
+# **An example is copied, not read.** The definition's example used to be `capital_of` with
+# `starts="1792"`, and for "Rome is the capital of Italy" that is the right line whole — so the
+# engineer wrote it whole, date and all, three goes running, while the check refused it three times.
+# Examples here name a word no fact in sight is likely to need, and every date is a placeholder the
+# record refuses if it arrives unfilled: copied, it fails loudly instead of landing quietly.
+#
+# The last block of A_LINK_SAID reads one of two ways, and the difference is one word: define, or do
+# not. Every field of a definition is said to be required or not; told neither, the engineer fills
+# what it happens to think of.
+THE_WORD_IS_HERE = """## The word is already here: `{word}` — {reads}
 
-    "transitive"   A to B and B to C makes A to C. A part of a part is part of the whole.
-                   A mother of a mother is not a mother.
-    "inherits"     what holds of the second end holds of the first by virtue of this link.
-                   A dog is a kind of mammal, so what is true of mammals is true of dogs.
-                   A wheel is part of a car and is not a car.
-    "identity"     the two are one and the same thing under two names — "Bombay is Mumbai".
-                   A part is not the whole and a member is not the group.
+Use it and define nothing. A second word for one idea answers for neither, and the links written
+under one do not meet the links written under the other."""
 
-**what it is** — `description`: one sentence saying what this kind of relation is, for somebody
-who has never seen it. About the kind of link, not about these two things.
+NO_WORD_YET = """## This record has no word for this kind of link, so declare one first
 
-Then, about this one fact rather than about the relation:
+On its own line, and then write the link:
 
-**which end is which** — `subject` and `object`, by the names given at the top. This is the
-whole of the direction; nothing else decides it. Do not name anything that is not one of those
-two things.
+    world.define_relation("mayor_of", "a person who leads the government of a city",
+                          cardinality="many-to-one",
+                          subject_is="a person who leads a city's government",
+                          object_is="the city they lead")
+    a.set_mayor_of(b)
 
-**when** — `starts`, if what was said says so, in the words it said it ("2019", "June 2019",
-"since she moved"). Null when nothing was said about when. Do not work one out: a date nobody
-said cannot be told apart, later, from one somebody knew.
+**Required — every one of these, on every definition.** The call is refused without them, and a
+type that went in without one is wrong for every link ever written under it:
 
-**Whether the fact is true is not part of this task and must not affect any answer.** This
-record holds what somebody said, including what contradicts common knowledge: "London is the
-capital of France" is described exactly as "Paris is the capital of France" would be — same
-relation, same roles, London in the capital's role.
+    the word          lower case, underscores, and **a name with exactly one preposition** —
+                      `capital_of`, `born_in`, `married_to`, `works_at`, `part_of`. It comes from
+                      the fact and never from what the two things are: "Thomas Kyd was born in
+                      London" is `born_in`, not `person_of` and not `city_of`. A bare noun
+                      (`chairperson`) or a bare verb (`plays`) reads as nothing between two names;
+                      two prepositions (`born_in_of`) is a word with two endings.
+    the description   one sentence saying what this **kind** of link is, for somebody who has never
+                      seen one. About the kind, not about these two things. A few words is refused.
+    cardinality       how many may hold **at one moment**, and it is the whole of what decides
+                      behaviour. "many-to-one": this thing has one of those at a time — one
+                      employer, one spouse, one capital — and a new one ends the standing one where
+                      it begins, both staying in the record. "one-to-many": the other end is the
+                      limited one — an organisation has one chair at a time, and many people chair
+                      many things. "many-to-many": neither is limited and they accumulate — a
+                      sibling, a part of a whole, a kind of thing. "one-to-one": both ends.
 
-JSON only, these keys and no others:
-{{"ill_typed": null,
-  "use": null,
-  "word": "...",
-  "subject_is": "...", "object_is": "...", "also_called": ["..."],
-  "subject_class": "...", "object_class": "...",
-  "one_object": true, "one_subject": true,
-  "implies": [],
-  "description": "...",
-  "subject": "...", "object": "...", "starts": null}}"""
+                      Say it per end and say it about a moment. How many there were **ever** is not
+                      a question about a type: a record only ever accumulates, and nothing in it is
+                      one forever. Limit an end that is not limited and a fact about somebody else
+                      is rewritten — declare one employee per employer and the next person hired
+                      ends the last one's job.
+    subject_is        what each END IS in a link of this kind, as a short noun phrase a thing could
+    object_is         be checked against: "a city that serves as a capital", not "Rome", and not
+                      "a place". **Never the class** — `a person`, `a place`, `a thing` are the
+                      classes, which are listed below and which the record already knows; a role
+                      that repeats one says nothing about the link and makes the type uncheckable.
+                      Where both ends hold the same role, say the same word: two siblings are both
+                      siblings, and that is the whole of what symmetry is here. Wide rather than
+                      tight: a role written tight turns every honest fact into an alarm.
+
+**Fill in if the words support it, leave out otherwise:**
+
+    subject=          which classes may stand at each end, from the classes listed below, as a
+    object=           class or a list of them — `subject=Person`, `object=[Person, Thing]`. Leave
+                      both out when anything may stand there, and leave them out rather than name a
+                      side from this one example: a side named after the first fact refuses the
+                      second, and the answer to that refusal is a second type for one idea."""
+
+# What goes back to the engineer when the lines did not do what they were for.
+WRITE_AGAIN = """{asked}
+
+You wrote this, and the record answered:
+
+{code}
+
+{answer}
+
+Write the lines that still have to run — the ones that finished are done and must not be sent
+again. Nothing new is invented: only what the words above say."""
+
+JOINED_NOTHING = """{asked}
+
+You wrote this, and it ran without an error and joined nothing:
+
+{code}
+
+{answer}
+
+The two things are still unjoined. Write the lines that record the link between `a` and `b`."""
+
+# The picker again, before the lines run: does the sentence say what the lines claim? Every
+# attribute that came from the text is asked about, and only those — the rest of a line is the
+# world's own structure, which is not read out of a sentence and cannot be wrong about one.
+IS_IT_SAID = """Somebody said this, and it is the only account of this fact there is:
+
+    {words}
+
+Whether it is true of the world is not asked. What is asked is only whether that sentence says the
+thing below."""
+
+NOT_BORNE_OUT = """Not written, because the sentence does not bear it out:
+
+    {what}
+
+Write the lines again with only what the sentence says. Everything a link says about the fact comes
+from the sentence and from nowhere else: not from what you know about these two things, not from
+what is usually true of them. A fact with no date in it is recorded without one, which is what the
+record means by no date."""
 
 
 # --- the portrait door: a thing that came in as a bare name gets a class ---

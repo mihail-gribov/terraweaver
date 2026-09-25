@@ -821,26 +821,16 @@ class WorldRuntime:
         # Asked at the end, and the task closes either way. A type whose ends are not named
         # works; what it cannot do is be checked, and that is worth one line rather than a wall.
         asked = ""
-        if typed:
-            poor = typed.get("ill_typed") or []
-            if poor:
-                shown = "\n".join(
-                    f"    «{words}» — that is {what} of {who}, not what joins two things"
-                    for words, what, who in poor[:5])
-                asked += (
-                    f"\n\n{len(poor)} of them could not be typed as links, and stay as links "
-                    f"with no type — joined, findable, and unable to supersede anything:\n"
-                    f"{shown}\n"
-                    f"A value belongs on the thing (thing.attribute = ...), what a thing IS "
-                    f"belongs in its nature or its class. Said that way they land where they "
-                    f"can be used; said this way they are kept and little else.")
+        if typed.get("failed"):
+            asked += (f"\n\nThe facts you said in words were not read — the reading failed: "
+                      f"{typed['failed']}. They are in the world as untyped links, with your words "
+                      f"on them, and the next close reads them again.")
+        elif typed:
             asked += (f"\n\nRead the {typed['read']} fact(s) you said in words: "
-                      f"{typed['joined']} joined a relation already here, {typed['defined']} "
-                      f"needed a new one"
-                      + (f", {typed['astray']} had their ends given to somebody not in the fact "
-                         f"and were taken in the order you wrote them" if typed["astray"] else "")
-                      + (f", {typed['failed']} could not be read and are still waiting"
-                         if typed["failed"] else "") + ".")
+                      f"{typed['typed']} typed — {typed['joined']} under a word already here, "
+                      f"{typed['defined']} under a new one"
+                      + (f"; {typed['left']} could not be placed and stay as you said them, "
+                         f"read again at the next close" if typed["left"] else "") + ".")
         if placed and placed.get("read"):
             asked += (f"\n\nRead what you said about {placed['read']} thing(s) that came in as "
                       f"bare names: {placed['placed']} were placed under a class"
@@ -1055,15 +1045,19 @@ class WorldRuntime:
         engineer = getattr(self.world, "engineer", None)
         if engineer is None:
             return {}
-        try:
-            from terraweaver import sentences
+        from terraweaver import formalise, sentences
 
-            said, waiting = sentences.count(self.world)
-            if not waiting:
-                return {}
-            return sentences.formalise(self.world, engineer)
-        except Exception:  # noqa: BLE001 - reading is never what stops a task closing
+        said, waiting = sentences.count(self.world)
+        if not waiting:
             return {}
+        try:
+            got = formalise.formalise(self, engineer)
+        except Exception as wrong:  # noqa: BLE001 - reading is never what stops a task closing
+            # Said, not swallowed. This returned an empty dict on any failure, and a reading that
+            # raised a NameError on its first link — the prompts it named had been moved away —
+            # closed every task for a day with nothing typed and nothing to show why.
+            return {"failed": f"{type(wrong).__name__}: {str(wrong)[:300]}"}
+        return {**{k: v for k, v in got.items() if k != "read"}, "read": len(got["read"])}
 
     def _turn_the_odd_ones(self) -> list[str]:
         """The one correction the world makes by itself: see inspector.turn_the_odd_ones."""
