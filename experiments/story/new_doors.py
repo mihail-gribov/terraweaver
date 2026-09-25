@@ -130,6 +130,24 @@ def main() -> int:
     # A step's gain may be gone by the end — step 1 puts Kyd in London and step 5 corrects it —
     # so what each step is checked for is what the table says should be true *after all six*:
     # the link it gained, unless a later step ended it, and the link it ended.
+    # Two numbers, because they are two questions. **The fact** is whether these two things are
+    # joined and whether a later telling put the earlier one out — that is what anybody asking
+    # this world would get back, and it does not depend on the spelling of the type. **The
+    # word** is whether the world called it what the table's host called it, and a world that
+    # grows its own vocabulary will differ there by design: `plays_position_of` beside the
+    # table's `plays_position` is not a wrong fact, it is another name for the right one. Kept
+    # apart so that neither is read as the other.
+    joined = {(a, b) for kind, a, b, holds in after if holds}
+    finished = {(a, b) for kind, a, b, holds in after if not holds}
+    by_fact = 0
+    for step in STEPS:
+        gained = {(a, b) for _, a, b in step.get("gained", [])}
+        ended = {(a, b) for _, a, b in step.get("ended", [])}
+        want_over_pairs = {(a, b) for _, a, b in want_over}
+        must_hold = gained - want_over_pairs
+        if not ((must_hold - joined) | ((ended | (gained & want_over_pairs)) - finished)):
+            by_fact += 1
+
     wrong = 0
     for number, step in enumerate(STEPS, 1):
         gained = {tuple(one) for one in step.get("gained", [])}
@@ -150,21 +168,26 @@ def main() -> int:
     for kind, a, b, holds in sorted(after):
         print(f"    {'holds' if holds else 'over '}  {kind}: {a} → {b}")
     print("--- the sentences, and what was made of them")
-    from terraweaver import sentences as _s
-    for row in runtime.world.store.conn.execute(
-            "SELECT words, read_as FROM sentences ORDER BY id").fetchall():
+    if args.old:
+        print("    (none: the type-first door says the word itself)")
+        rows = []
+    else:
+        rows = runtime.world.store.conn.execute(
+            "SELECT words, read_as FROM sentences ORDER BY id").fetchall()
+    for row in rows:
         import json as _j
         said = _j.loads(row[1]) if row[1] else {}
-        print(f"    {row[0][:56]:58} use={said.get('use')} "
+        print(f"    {row[0][:50]:52} word={said.get('word')} use={said.get('use')} "
               f"subj={said.get('subject_is')} obj={said.get('object_is')} "
-              f"ill={said.get('ill_typed')} refused={str(said.get('refused'))[:40]}")
+              f"ill={said.get('ill_typed')}{' refused='+str(said.get('refused'))[:40] if said.get('refused') else ''}")
 
     stray = hold - want_hold
     if stray:
         print(f"\n{len(stray)} link(s) nothing asked for:")
         for link in sorted(stray)[:12]:
             print(f"        {link[0]}: {link[1]} → {link[2]}")
-    print(f"\n{len(STEPS) - wrong}/{len(STEPS)} statements landed as the table says"
+    print(f"\n{by_fact}/{len(STEPS)} facts landed — these two joined, that one put out — and "
+          f"{len(STEPS) - wrong}/{len(STEPS)} under the word the table names"
           f" ({'type-first door' if args.old else 'said in words'}).")
     return 1 if wrong else 0
 

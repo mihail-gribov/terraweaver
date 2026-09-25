@@ -168,6 +168,11 @@ about two things at all:
     a kind         one thing said to be OF a class — "Paris is a city", "Anna is a person".
                    "city" is a class, not another thing: this says what Paris IS.
 
+Both ends were handed to you as things this record holds, not as words in a sentence, so "kind"
+is right only when the second of them is one of the classes listed above. "wide receiver" and
+"cornerback" are things; "plays the position of" joins two of them and is a link. The word "of"
+in a sentence is not the test — `part_of`, `capital_of` and `mother_of` all have it.
+
 Say `ill_typed` as "value" or "kind" when it is one of those, with `description` and nothing
 else, and stop. The link stays; it stays untyped, which is a poor link and a real one, and the
 writer is told which door would have served it better. Guessing a type for what has none is

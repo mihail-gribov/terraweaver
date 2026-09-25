@@ -2155,3 +2155,32 @@ roles describe it.
 
 One of six still misses: a reading that came back empty, so the link was never made and the one
 it should have superseded still stands.
+
+### The controlled six: level on the facts, one word apart
+
+    type-first door (the host writes the word)   6/6 facts   6/6 words
+    said in words (the world reads it)           6/6 facts   4/6 words
+
+**Two numbers, because they are two questions.** The fact is whether these two things are joined
+and whether a later telling put the earlier one out — what anybody asking this world gets back,
+and it does not depend on the spelling of the type. The word is whether the world called it what
+the table's host called it. A world that grows its own vocabulary will differ there by design:
+`plays_position_of` beside the table's `plays_position` is another name for the right fact, not
+a wrong one, and the engineer gave it twice the same way, from the examples it is shown —
+`capital_of`, `mother_of`, `part_of` all carry that tail. So the measure was changed, not the
+engineer.
+
+Both supersessions fire through the new door: the correction (born in London, then Leeds) and
+the handover (plays wide receiver, then cornerback).
+
+**The last fix was the `kind` escape.** "Hines Ward plays the position of wide receiver" was
+called a statement about a class rather than a link, so no link was made and the next statement
+had nothing to join or supersede. The escape had been written around the word "of" — and `part_of`,
+`capital_of` and `mother_of` all have it. Both ends are handed over as things, so the test is
+checkable: "kind" is right only when the second of them is one of the record's classes. "wide
+receiver" is a thing.
+
+**What this does not say.** Six facts, one run, and the spread is real — three different outcomes
+were seen on the same input across the day. And each fact here has a task to itself, so the
+engineer reads one sentence at a time; in the full slice it is ten facts to a task, where the
+list of words already held is longer and so is the chance of collapsing two ideas into one.
