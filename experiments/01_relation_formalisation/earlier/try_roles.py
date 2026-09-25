@@ -1,7 +1,8 @@
 """Every claim the long argument arrived at, tried on examples. No world, no models."""
 import sys
+from pathlib import Path
 from datetime import datetime
-sys.path.insert(0, "/home/mike/Projects/terraweaver/sketch")
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from roles import World, Thing, Pair
 
 failures = []

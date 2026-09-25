@@ -2454,6 +2454,39 @@ fact — never a category that changes how it is treated. This sharpens the rule
 that the inspector must look at every class and not only the ones a world grew: that said don't
 *judge* by source, this says don't *mark* by it either.
 
+## 2026-09-25 — experiments are numbered, and the first one types a relation from words
+
+**`sketch/` is gone; experiments are numbered directories the user starts.** The sketches were
+fifteen files at the top level, all about one question, and the last four of them were written
+against stand-in classes — which is what a sketch is for and also what stopped them settling
+anything: a vocabulary converging over eight facts in a dictionary of fake types says nothing about
+a world with a store, refusals and periods. They are now
+`experiments/01_relation_formalisation/earlier/`, kept whole rather than summarised, and the
+convention is written down in `experiments/README.md`: one question per numbered directory, the
+README before the first run, the real world driven through the host's own doors, the base as the
+starting world, and the trace of every run kept beside it.
+
+### The mechanism: two entities, a description, and the code that records the link
+
+    look    is there already a word for this kind of link? A closed question over what the record
+            holds, narrowed by the classes at the ends, "none of these" among the options — the
+            picker. Nothing is defined and nothing is named twice.
+    make    only on "none of these": one open call to the engineer for **the lines**, not for a
+            description the world renders.
+    run     through `runtime.run`, with the two things bound before the code starts. It fails, the
+            world says what it would say to a host, and that goes back to the writer. Three goes.
+    end     the bare link stops where the typed one begins, and is not erased.
+
+**Nine facts, three runs, and the third typed all nine** — seven words for nine facts, `capital_of`
+made once and joined twice, nothing left bare, and the employment handover dated from the words:
+Acme from 2019 ending 2023-03-01, Brightwork from 2023-03-01. Asked who she works for now the record
+says Brightwork; asked about 2020 it says Acme.
+
+That answers the question the entity door raised and the relation door never settled: **asked for
+code, a reader records a relation as well as it records a thing.** The argument for asking for data
+— the shape of what is written is ours — is real and is not worth what it costs here, because every
+refusal the world makes of a host is then a refusal it cannot make of the reading.
+
 ### A date degraded is worse than a date refused
 
 `starts="March 2023"` was refused: the record read `'in 2006'`, `'3 years ago'`, `'2006-01-01'` and
@@ -2471,6 +2504,26 @@ that one where this one begins*, is written for a fact that starts later than wh
 reading was going newest-first, because `sentences.unread` returns whatever order the tables give,
 and against a 2023 employment the 2019 one had no honest line at all. One fact in nine was lost to
 that, and it is sorted by the moment the host said it now.
+
+### Measured against the working code
+
+**The reader answers `over_time` correctly** when asked in the words that say what it does: True for
+an employer and a spouse, False for a birthplace, a part, a sibling, a kind. `sentences.formalise`
+does not ask — it passes `over_time=False` on every type it declares — so that defect is the
+world's, not the reader's, and it is worth exactly one argument to fix.
+
+**`over_time=True` overrides the cardinality on both sides, and it fires people.** The engineer said
+`works_at` is many-to-one; the world stored one-subject-at-a-time too, because
+`one_subject_ever = over_time or one_subject`. In the world this run left behind, hiring Boris at
+Brightwork ended Anna's employment there — a correct answer destroyed by the mapping, rewriting a
+fact about a third party with nothing but a hint to say so. The two axes have to be per side:
+`functional` from `one_object`, `inverse_functional` from `one_subject`, `over_time` deciding only
+whether the second one ends the first or corrects it.
+
+**And `_correct`, the branch a one-ever type takes, only prints.** Its docstring says the earlier
+link is "marked as no longer held" and nothing marks it, so two links stand and "which now" has two
+answers. Found by reading, not by the run — the run never reached it, because the reader answered
+`over_time` well enough to stay out of that branch.
 
 ## 2026-09-25 — `over_time` is gone: cardinality says how many, and it says it about a moment
 

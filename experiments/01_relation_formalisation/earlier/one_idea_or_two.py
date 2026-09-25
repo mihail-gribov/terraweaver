@@ -13,7 +13,7 @@ import os
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from terraweaver import outside  # noqa: E402
 
 SAME = ("one idea under two words — a record holding both would answer for neither, and the "
@@ -42,7 +42,7 @@ def one_idea(reader, asking: str, asking_of: str, holding: str, holding_of: str,
 
 
 def main() -> int:
-    for where in (Path(__file__).resolve().parent.parent / ".env",
+    for where in (Path(__file__).resolve().parents[3] / ".env",
                   Path.home() / "Projects" / "ai-safity" / ".env"):
         if where.exists():
             for line in where.read_text().splitlines():

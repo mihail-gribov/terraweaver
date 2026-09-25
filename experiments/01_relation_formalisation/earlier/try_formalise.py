@@ -10,9 +10,9 @@ import os
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
-sys.path.insert(0, str(ROOT / "sketch"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import formalise as F  # noqa: E402
 import relation as R   # noqa: E402

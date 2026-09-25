@@ -1,0 +1,447 @@
+{
+  "config": "(no output)\n[created] WorksAt \u00abAnna Weber works at Brightwork (works_at)\u00bb\n[updated] WorksAt \u00abAnna Weber works at Acme (works_at)\u00bb: valid_until\n[hints] Anna Weber had Anna Weber works at Acme (works_at), and WorksAt holds one at a time, so that one ends 2023-03-01 \u2014 the date this one starts.\n[to fill in] the block ran. Run these next, with real words in place of the dots \u2014 each answers a question the world would otherwise have to guess:\n    Person.identify(full_name=\"Anna Weber\")[0].describe(\"...\")   # their full name as the user says it, who they are to the user, where they live, when they were born if it came up \u2014 enough to know them again when the name is said differently next time\n    Thing.identify(name=\"Brightwork\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Thing.identify(name=\"Rome\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Thing.identify(name=\"dog\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Thing.identify(name=\"Kreuzberg\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Person.identify(full_name=\"Masha\")[0].describe(\"...\")   # their full name as the user says it, who they are to the user, where they live, when they were born if it came up \u2014 enough to know them again when the name is said differently next time\n    Thing.identify(name=\"Berlin\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Person.identify(full_name=\"Boris\")[0].describe(\"...\")   # their full name as the user says it, who they are to the user, where they live, when ",
+  "took_seconds": 105.7,
+  "tally": {
+    "typed": 8,
+    "joined": 2,
+    "defined": 6,
+    "left": 1
+  },
+  "read": [
+    {
+      "words": "Rome is the capital of Italy.",
+      "a": "Rome",
+      "b": "Italy",
+      "a_is": "Thing",
+      "b_is": "Thing",
+      "wrote": [
+        "world.define_relation(\"capital_of\", \"a city that is the seat of a country's government\", nature=\"related_to\", cardinality=\"many-to-one\", over_time=False, subject_is=\"a city that serves as a capital\", object_is=\"the country whose capital it is\")\na.set_capital_of(b)"
+      ],
+      "answered": [
+        "(no output)\n[created] CapitalOf \u00abRome capital of Italy (capital_of)\u00bb\n[hints] you began recording without start_task, so I opened a task without a name for it. Say what this work is with start_task(stated, mode) \u2014 what it is is what the world holds it against when you finish.\n[to fill in] the block ran. Run these next, with real words in place of the dots \u2014 each answers a question the world would otherwise have to guess:\n    Thing.identify(name=\"Rome\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Thing.identify(name=\"Italy\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Thing.identify(name=\"dog\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Thing.identify(name=\"Kreuzberg\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Person.identify(full_name=\"Masha\")[0].describe(\"...\")   # their full name as the user says it, who they are to the user, where they live, when they were born if it came up \u2014 enough to know them again when the name is said differently next time\n    Thing.identify(name=\"Berlin\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Person.identify(full_name=\"Boris\")[0].describe(\"...\")   # their full name as the user says it, who they are to the user, where they live, when they were born if it came up \u2014 enough to know them again when the name is said differently next time\n    Thing.identify(name=\"Paris\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry a"
+      ],
+      "went": "done",
+      "typed": [
+        "Rome capital of Italy (capital_of)"
+      ],
+      "look": {
+        "asked": false,
+        "why": "the record holds no relation types yet"
+      },
+      "found": null,
+      "kind": "capital_of",
+      "defined": [
+        "CapitalOf"
+      ]
+    },
+    {
+      "words": "Paris has been the capital of France since 1792.",
+      "a": "Paris",
+      "b": "France",
+      "a_is": "Thing",
+      "b_is": "Thing",
+      "wrote": [
+        "a.set_capital_of(b, starts=\"1792\")"
+      ],
+      "answered": [
+        "(no output)\n[created] CapitalOf \u00abParis capital of France (capital_of)\u00bb\n[to fill in] the block ran. Run these next, with real words in place of the dots \u2014 each answers a question the world would otherwise have to guess:\n    Thing.identify(name=\"Paris\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Thing.identify(name=\"France\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Thing.identify(name=\"Rome\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Thing.identify(name=\"dog\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Thing.identify(name=\"Kreuzberg\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Person.identify(full_name=\"Masha\")[0].describe(\"...\")   # their full name as the user says it, who they are to the user, where they live, when they were born if it came up \u2014 enough to know them again when the name is said differently next time\n    Thing.identify(name=\"Berlin\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Person.identify(full_name=\"Boris\")[0].describe(\"...\")   # their full name as the user says it, who they are to the user, where they live, when they were born if it came up \u2014 enough to know them again when the name is said differently next time\n    Thing.identify(name=\"Acme\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Person.ident"
+      ],
+      "went": "done",
+      "typed": [
+        "Paris capital of France (capital_of)"
+      ],
+      "look": {
+        "asked": true,
+        "options": [
+          "capital_of",
+          "none of these"
+        ],
+        "said": "capital_of",
+        "sure": 0.99
+      },
+      "found": "capital_of",
+      "kind": "capital_of",
+      "defined": null
+    },
+    {
+      "words": "Masha has been married to Sasha since June 2015.",
+      "a": "Masha",
+      "b": "Sasha",
+      "a_is": "Person",
+      "b_is": "Person",
+      "wrote": [
+        "world.define_relation(\"married_to\", \"a legal union between two people.\", nature=\"related_to\", cardinality=\"one-to-one\", over_time=True, subject_is=\"a spouse\", object_is=\"a spouse\")\na.set_married_to(b, starts=\"June 2015\")"
+      ],
+      "answered": [
+        "(no output)\n[created] MarriedTo \u00abMasha married to Sasha (married_to)\u00bb\n[to fill in] the block ran. Run these next, with real words in place of the dots \u2014 each answers a question the world would otherwise have to guess:\n    Person.identify(full_name=\"Masha\")[0].describe(\"...\")   # their full name as the user says it, who they are to the user, where they live, when they were born if it came up \u2014 enough to know them again when the name is said differently next time\n    Person.identify(full_name=\"Sasha\")[0].describe(\"...\")   # their full name as the user says it, who they are to the user, where they live, when they were born if it came up \u2014 enough to know them again when the name is said differently next time\n    Thing.identify(name=\"Rome\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Thing.identify(name=\"dog\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Thing.identify(name=\"Kreuzberg\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Thing.identify(name=\"Berlin\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Person.identify(full_name=\"Boris\")[0].describe(\"...\")   # their full name as the user says it, who they are to the user, where they live, when they were born if it came up \u2014 enough to know them again when the name is said differently next time\n    Thing.identify(name=\"Paris\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Thing.identify(name=\"Acme\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user m"
+      ],
+      "went": "done",
+      "typed": [
+        "Masha married to Sasha (married_to)"
+      ],
+      "look": {
+        "asked": true,
+        "options": [
+          "capital_of",
+          "none of these"
+        ],
+        "said": "none of these",
+        "sure": 1.0
+      },
+      "found": null,
+      "kind": "married_to",
+      "defined": [
+        "MarriedTo"
+      ]
+    },
+    {
+      "words": "Anna Weber has worked at Acme since 2019.",
+      "a": "Anna Weber",
+      "b": "Acme",
+      "a_is": "Person",
+      "b_is": "Thing",
+      "wrote": [
+        "world.define_relation(\"works_at\", \"a person works for an organization.\", nature=\"related_to\", cardinality=\"many-to-one\", over_time=True, subject_is=\"a person that works for\", object_is=\"an organization that employs\")\na.set_works_at(b, starts=\"2019\")"
+      ],
+      "answered": [
+        "(no output)\n[created] WorksAt \u00abAnna Weber works at Acme (works_at)\u00bb\n[to fill in] the block ran. Run these next, with real words in place of the dots \u2014 each answers a question the world would otherwise have to guess:\n    Person.identify(full_name=\"Anna Weber\")[0].describe(\"...\")   # their full name as the user says it, who they are to the user, where they live, when they were born if it came up \u2014 enough to know them again when the name is said differently next time\n    Thing.identify(name=\"Acme\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Thing.identify(name=\"Rome\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Thing.identify(name=\"dog\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Thing.identify(name=\"Kreuzberg\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Person.identify(full_name=\"Masha\")[0].describe(\"...\")   # their full name as the user says it, who they are to the user, where they live, when they were born if it came up \u2014 enough to know them again when the name is said differently next time\n    Thing.identify(name=\"Berlin\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Person.identify(full_name=\"Boris\")[0].describe(\"...\")   # their full name as the user says it, who they are to the user, where they live, when they were born if it came up \u2014 enough to know them again when the name is said differently next time\n    Thing.identify(name=\"Paris\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the use"
+      ],
+      "went": "done",
+      "typed": [
+        "Anna Weber works at Acme (works_at)"
+      ],
+      "look": {
+        "asked": true,
+        "options": [
+          "capital_of",
+          "married_to",
+          "none of these"
+        ],
+        "said": "none of these",
+        "sure": 1.0
+      },
+      "found": null,
+      "kind": "works_at",
+      "defined": [
+        "WorksAt"
+      ]
+    },
+    {
+      "words": "Kreuzberg is part of Berlin.",
+      "a": "Kreuzberg",
+      "b": "Berlin",
+      "a_is": "Thing",
+      "b_is": "Thing",
+      "wrote": [
+        "world.define_relation(\"part_of\", \"It links a part to the whole it belongs to.\", nature=\"part_of\", cardinality=\"many-to-one\", over_time=False, subject_is=\"a part\", object_is=\"the whole\")\na.set_part_of(b)"
+      ],
+      "answered": [
+        "(no output)\n[created] PartOf \u00abKreuzberg part of Berlin (part_of)\u00bb\n[to fill in] the block ran. Run these next, with real words in place of the dots \u2014 each answers a question the world would otherwise have to guess:\n    Thing.identify(name=\"Kreuzberg\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Thing.identify(name=\"Berlin\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Thing.identify(name=\"Rome\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Thing.identify(name=\"dog\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Person.identify(full_name=\"Masha\")[0].describe(\"...\")   # their full name as the user says it, who they are to the user, where they live, when they were born if it came up \u2014 enough to know them again when the name is said differently next time\n    Person.identify(full_name=\"Boris\")[0].describe(\"...\")   # their full name as the user says it, who they are to the user, where they live, when they were born if it came up \u2014 enough to know them again when the name is said differently next time\n    Thing.identify(name=\"Paris\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Thing.identify(name=\"Acme\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Person.identify(full_name=\"Vera\")[0].describe(\"...\")   # their full name as the user says it, who they are to the user, where they live, when they were born if it came up \u2014 enough to know them again "
+      ],
+      "went": "done",
+      "typed": [
+        "Kreuzberg part of Berlin (part_of)"
+      ],
+      "look": {
+        "asked": true,
+        "options": [
+          "capital_of",
+          "married_to",
+          "works_at",
+          "none of these"
+        ],
+        "said": "none of these",
+        "sure": 0.97
+      },
+      "found": null,
+      "kind": "part_of",
+      "defined": [
+        "PartOf"
+      ]
+    },
+    {
+      "words": "Boris and Vera are siblings.",
+      "a": "Boris",
+      "b": "Vera",
+      "a_is": "Person",
+      "b_is": "Person",
+      "wrote": [
+        "world.define_relation(\"sibling_of\", \"two people who share at least one parent\", nature=\"related_to\", cardinality=\"many-to-many\", over_time=False, subject_is=\"a sibling\", object_is=\"a sibling\")\na.set_sibling_of(b)"
+      ],
+      "answered": [
+        "(no output)\n[created] SiblingOf \u00abBoris sibling of Vera (sibling_of)\u00bb\n[to fill in] the block ran. Run these next, with real words in place of the dots \u2014 each answers a question the world would otherwise have to guess:\n    Person.identify(full_name=\"Boris\")[0].describe(\"...\")   # their full name as the user says it, who they are to the user, where they live, when they were born if it came up \u2014 enough to know them again when the name is said differently next time\n    Person.identify(full_name=\"Vera\")[0].describe(\"...\")   # their full name as the user says it, who they are to the user, where they live, when they were born if it came up \u2014 enough to know them again when the name is said differently next time\n    Thing.identify(name=\"Rome\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Thing.identify(name=\"dog\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Thing.identify(name=\"Kreuzberg\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Person.identify(full_name=\"Masha\")[0].describe(\"...\")   # their full name as the user says it, who they are to the user, where they live, when they were born if it came up \u2014 enough to know them again when the name is said differently next time\n    Thing.identify(name=\"Berlin\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Thing.identify(name=\"Paris\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Thing.identify(name=\"Acme\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user men"
+      ],
+      "went": "done",
+      "typed": [
+        "Boris sibling of Vera (sibling_of)"
+      ],
+      "look": {
+        "asked": true,
+        "options": [
+          "capital_of",
+          "married_to",
+          "part_of",
+          "works_at",
+          "none of these"
+        ],
+        "said": "none of these",
+        "sure": 1.0
+      },
+      "found": null,
+      "kind": "sibling_of",
+      "defined": [
+        "SiblingOf"
+      ]
+    },
+    {
+      "words": "Thomas Kyd was born in London in 1558.",
+      "a": "Thomas Kyd",
+      "b": "London",
+      "a_is": "Person",
+      "b_is": "Thing",
+      "wrote": [
+        "world.define_relation(\"born_in\", \"a person who was born in a place\", nature=\"related_to\", cardinality=\"many-to-one\", over_time=False, subject_is=\"a person\", object_is=\"a place\")\na.set_born_in(b, starts=\"1558\")"
+      ],
+      "answered": [
+        "(no output)\n[created] BornIn \u00abThomas Kyd born in London (born_in)\u00bb\n[to fill in] the block ran. Run these next, with real words in place of the dots \u2014 each answers a question the world would otherwise have to guess:\n    Person.identify(full_name=\"Thomas Kyd\")[0].describe(\"...\")   # their full name as the user says it, who they are to the user, where they live, when they were born if it came up \u2014 enough to know them again when the name is said differently next time\n    Thing.identify(name=\"London\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Thing.identify(name=\"Rome\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Thing.identify(name=\"dog\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Thing.identify(name=\"Kreuzberg\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Person.identify(full_name=\"Masha\")[0].describe(\"...\")   # their full name as the user says it, who they are to the user, where they live, when they were born if it came up \u2014 enough to know them again when the name is said differently next time\n    Thing.identify(name=\"Berlin\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Person.identify(full_name=\"Boris\")[0].describe(\"...\")   # their full name as the user says it, who they are to the user, where they live, when they were born if it came up \u2014 enough to know them again when the name is said differently next time\n    Thing.identify(name=\"Paris\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the us"
+      ],
+      "went": "done",
+      "typed": [
+        "Thomas Kyd born in London (born_in)"
+      ],
+      "look": {
+        "asked": true,
+        "options": [
+          "capital_of",
+          "married_to",
+          "part_of",
+          "sibling_of",
+          "works_at",
+          "none of these"
+        ],
+        "said": "none of these",
+        "sure": 0.99
+      },
+      "found": null,
+      "kind": "born_in",
+      "defined": [
+        "BornIn"
+      ]
+    },
+    {
+      "words": "A dog is a kind of mammal.",
+      "a": "dog",
+      "b": "mammal",
+      "a_is": "Thing",
+      "b_is": "Thing",
+      "wrote": [],
+      "answered": [],
+      "went": "nothing came back",
+      "typed": [],
+      "look": {
+        "asked": true,
+        "options": [
+          "born_in",
+          "capital_of",
+          "married_to",
+          "part_of",
+          "sibling_of",
+          "works_at",
+          "none of these"
+        ],
+        "said": "none of these",
+        "sure": 1.0
+      },
+      "found": null
+    },
+    {
+      "words": "Anna Weber left Acme and has worked at Brightwork since March 2023.",
+      "a": "Anna Weber",
+      "b": "Brightwork",
+      "a_is": "Person",
+      "b_is": "Thing",
+      "wrote": [
+        "a.set_works_at(b, starts=\"March 2023\")"
+      ],
+      "answered": [
+        "(no output)\n[created] WorksAt \u00abAnna Weber works at Brightwork (works_at)\u00bb\n[updated] WorksAt \u00abAnna Weber works at Acme (works_at)\u00bb: valid_until\n[hints] Anna Weber had Anna Weber works at Acme (works_at), and WorksAt holds one at a time, so that one ends 2023-03-01 \u2014 the date this one starts.\n[to fill in] the block ran. Run these next, with real words in place of the dots \u2014 each answers a question the world would otherwise have to guess:\n    Person.identify(full_name=\"Anna Weber\")[0].describe(\"...\")   # their full name as the user says it, who they are to the user, where they live, when they were born if it came up \u2014 enough to know them again when the name is said differently next time\n    Thing.identify(name=\"Brightwork\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Thing.identify(name=\"Rome\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Thing.identify(name=\"dog\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Thing.identify(name=\"Kreuzberg\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Person.identify(full_name=\"Masha\")[0].describe(\"...\")   # their full name as the user says it, who they are to the user, where they live, when they were born if it came up \u2014 enough to know them again when the name is said differently next time\n    Thing.identify(name=\"Berlin\")[0].describe(\"...\")   # what sort of thing it is and why it is in this world \u2014 the reason the user mentioned it, not an encyclopaedia entry about it\n    Person.identify(full_name=\"Boris\")[0].describe(\"...\")   # their full name as the user says it, who they are to the user, where they live, when "
+      ],
+      "went": "done",
+      "typed": [
+        "Anna Weber works at Brightwork (works_at)"
+      ],
+      "look": {
+        "asked": true,
+        "options": [
+          "born_in",
+          "capital_of",
+          "married_to",
+          "part_of",
+          "sibling_of",
+          "works_at",
+          "none of these"
+        ],
+        "said": "works_at",
+        "sure": 1.0
+      },
+      "found": "works_at",
+      "kind": "works_at",
+      "defined": null
+    }
+  ],
+  "world": {
+    "words": {
+      "born_in": {
+        "class": "BornIn",
+        "description": "a person who was born in a place",
+        "subject_is": "a_person",
+        "object_is": "a_place",
+        "functional": true,
+        "inverse_functional": false,
+        "nature": "related_to",
+        "from": [
+          "any"
+        ],
+        "to": [
+          "any"
+        ],
+        "transitive": null,
+        "links": [
+          {
+            "reads": "Thomas Kyd born in London (born_in)",
+            "from": "1558-01-01 00:00:00",
+            "until": ""
+          }
+        ]
+      },
+      "capital_of": {
+        "class": "CapitalOf",
+        "description": "a city that is the seat of a country's government",
+        "subject_is": "a_city_that_serves_as_a_capital",
+        "object_is": "the_country_whose_capital_it_is",
+        "functional": true,
+        "inverse_functional": false,
+        "nature": "related_to",
+        "from": [
+          "any"
+        ],
+        "to": [
+          "any"
+        ],
+        "transitive": null,
+        "links": [
+          {
+            "reads": "Paris capital of France (capital_of)",
+            "from": "1792-01-01 00:00:00",
+            "until": ""
+          },
+          {
+            "reads": "Rome capital of Italy (capital_of)",
+            "from": "",
+            "until": ""
+          }
+        ]
+      },
+      "married_to": {
+        "class": "MarriedTo",
+        "description": "a legal union between two people.",
+        "subject_is": "a_spouse",
+        "object_is": "a_spouse",
+        "functional": "at_any_time",
+        "inverse_functional": "at_any_time",
+        "nature": "related_to",
+        "from": [
+          "any"
+        ],
+        "to": [
+          "any"
+        ],
+        "transitive": null,
+        "links": [
+          {
+            "reads": "Masha married to Sasha (married_to)",
+            "from": "2015-06-01 00:00:00",
+            "until": ""
+          }
+        ]
+      },
+      "part_of": {
+        "class": "PartOf",
+        "description": "It links a part to the whole it belongs to.",
+        "subject_is": "a_part",
+        "object_is": "the_whole",
+        "functional": true,
+        "inverse_functional": false,
+        "nature": "part_of",
+        "from": [
+          "any"
+        ],
+        "to": [
+          "any"
+        ],
+        "transitive": null,
+        "links": [
+          {
+            "reads": "Kreuzberg part of Berlin (part_of)",
+            "from": "",
+            "until": ""
+          }
+        ]
+      },
+      "sibling_of": {
+        "class": "SiblingOf",
+        "description": "two people who share at least one parent",
+        "subject_is": "a_sibling",
+        "object_is": "a_sibling",
+        "functional": false,
+        "inverse_functional": false,
+        "nature": "related_to",
+        "from": [
+          "any"
+        ],
+        "to": [
+          "any"
+        ],
+        "transitive": null,
+        "links": [
+          {
+            "reads": "Boris sibling of Vera (sibling_of)",
+            "from": "",
+            "until": ""
+          }
+        ]
+      },
+      "works_at": {
+        "class": "WorksAt",
+        "description": "a person works for an organization.",
+        "subject_is": "a_person_that_works_for",
+        "object_is": "an_organization_that_employs",
+        "functional": "at_any_time",
+        "inverse_functional": "at_any_time",
+        "nature": "related_to",
+        "from": [
+          "any"
+        ],
+        "to": [
+          "any"
+        ],
+        "transitive": null,
+        "links": [
+          {
+            "reads": "Anna Weber works at Brightwork (works_at)",
+            "from": "2023-03-01 00:00:00",
+            "until": ""
+          },
+          {
+            "reads": "Anna Weber works at Acme (works_at)",
+            "from": "2019-01-01 00:00:00",
+            "until": "2023-03-01 00:00:00"
+          }
+        ]
+      }
+    },
+    "bare": [
+      "A dog is a kind of mammal."
+    ]
+  }
+}
