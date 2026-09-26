@@ -126,19 +126,17 @@
 - Tavily API для grounding
 - CLI + markdown Skill для интеграции с Claude Code
 
-## Интерфейс
+## Interface
 
-Собственный CLI/консоль как основной способ демонстрации — без омниканальности, чтобы не размывать фокус с ключевой способности на второстепенную задачу доставки сообщений.
+Superseded on 2026-09-25. The product is a package served over an API: the world is an MCP server any
+host agent connects to, and the host writes code against the person's world. Both outside parties run
+on Nebius — the engineer is Nemotron through Token Factory, and the picker is a model of our own on a
+Nemotron trunk (`docs/decisions.md`, 2026-09-25).
 
-## План по неделям
+## Plan
 
-| Недели | Фокус |
-|---|---|
-| 1–3 | Объектная модель; agentic loop с persistent namespace; библиотека онтологий (retrieval-before-create); методы-инструменты на сущностях |
-| 4–5 | Nemotron/Token Factory (конфигурируемый endpoint); персистентность; Tavily grounding; при необходимости — Machine в Sandbox |
-| 6–7 | Ключевой демо-сценарий на 1-2 skills (выбор товара / поиск работы) — агент ищет, создаёт реальные инстансы, сравнивает |
-| 8 | Публичный репозиторий (лицензия Apache 2.0/MIT), README; при наличии времени — CLI+Skill для CC-интеграции |
-| 9 | Демо-видео (≤3 мин, YouTube, публичное, с голосовым объяснением использования Nemotron/Token Factory), write-up, буфер |
+Superseded on 2026-09-25. The plan to submission, with the feature freeze and the testing window,
+lives in `docs/TODO.md`, "Road to submission"; the reasons are in `docs/decisions.md`.
 
 ## Требования к проекту (Project Requirements)
 

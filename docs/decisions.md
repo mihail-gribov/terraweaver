@@ -2746,3 +2746,64 @@ design it replaced, and the refusal pulled the dropped field back into the conve
 After the word and the description every argument is now said by name, and a call that gives more in
 order is refused with the form written out. Nothing in the code called it positionally, so nothing
 else moved.
+
+## 2026-09-25 — the road to submission: a picker of our own on Nemotron, research as "pick it for me", and a world for each search
+
+Five weeks to the deadline, and four decisions that shape them. The plan itself is in `docs/TODO.md`,
+"Road to submission".
+
+### The picker becomes ours, on Nemotron, hosted on Nebius
+
+Jev is TypeSafe's closed model. Keeping it means a judge needs a TypeSafe account to run the world,
+and it is not an NVIDIA model, which is what the hackathon asks for. The replacement is the recipe
+already built for it: `typecastlm` is a Jev-class decision model — a Qwen3.5-4B trunk fine-tuned for
+sequence classification, a verdict head over the last hidden state (`true`, `false`, `unsure`), mark
+rows taken from the vocabulary for `choice` and `scale`, and a calibration temperature per mode. One
+forward pass, nothing generated.
+
+Moving it onto Nemotron takes two steps, because Token Factory serves only the large Nemotrons
+(`Nano-30B-A3B`, `Super-120B-A12B`, `Ultra-550B`, `3.5-Lightning`) and cannot serve a custom head:
+
+- **Day one:** a picker on `Nano-30B-A3B` through Token Factory, reading the probability of each
+  option from the logprob of its letter. Token Factory returns `logprobs` — checked. Weaker
+  calibration, no infrastructure, and Jev leaves the world at once.
+- **Then:** the `typecastlm` recipe on a small dense Nemotron trunk from Hugging Face (the Nano 4B
+  class, which fits a 16 GB card as Qwen3.5-4B does), served from a Nebius AI Cloud GPU machine in the
+  container `typecastlm` already ships. The world does not change: `outside.TypecastLM(endpoint=...)`
+  already speaks that protocol.
+
+### Research is one mechanism: "pick it for me"
+
+Tickets, housing, products, things to do — the same loop on different data. Any assistant with web
+search can find a flat in Berlin; what it cannot do is what this world is for:
+
+1. **Build the query from the person's world, not from one sentence.** "Moving in March", "up to
+   1400", "we have a cat", "never the ground floor again" were said on different days to different
+   assistants, and the world already holds them as structure. The query carries the requirements and
+   not the person.
+2. **Record the findings as checked facts, not as prose in an answer.** A page is text like anything
+   a host says, so it goes through the same `formalise` pipeline with the page as its source — and
+   `check.py`, which refused an invented date today, refuses a price the page does not bear out.
+3. **Outlive the conversation.** "That flat is gone" and "the price dropped" are handovers by period,
+   with dates and an as-of; tomorrow another assistant opens the same world and knows what was looked
+   at, what was dropped and why.
+
+Preferences need no class of their own for this: "Anna likes jazz" becomes a typed link through the
+same door as any other fact.
+
+### A world for each search
+
+The author's idea, and the shape the spec already allowed for — several worlds loaded into one
+namespace. Candidates do not go into the person's world: forty events or listings would bury it. They
+go into a research world of their own, and there the host picks, ranks and filters them with code, as
+it does everything else; the person's world is loaded beside it for the criteria. What moves into the
+person's world is the choice, and why. Still open: whether a research world is kept, dated — so "why
+not that one" can be answered later — or discarded once the choice is made.
+
+### The demo: "where to go on Saturday"
+
+Of the three cases it shows most of what this world is made of — people, the links between them, and
+time: who is going, what she likes, when both are free, what went wrong last time. Event pages are
+also what search finds well; listing sites mostly do not open to it, which in a three-minute video is
+a risk worth not taking. Housing and products are the same code and get a line at the end and a
+paragraph in the write-up.

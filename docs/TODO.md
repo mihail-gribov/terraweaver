@@ -1,5 +1,24 @@
 # TODO
 
+## Road to submission (set 2026-09-25)
+
+Deadline 2026-10-30 10:00 PT. **Submit on 2026-10-28**, two days of margin. **Feature freeze on
+2026-10-16**; after it, testing and fixes only. The testing window is two weeks because one run
+measures nothing here — the spread between runs is as large as the differences we want to see, and
+repeats cost time. Reasons for every decision below: `docs/decisions.md`, 2026-09-25, "the road to
+submission".
+
+| When | What | Done when |
+|---|---|---|
+| Sep 26 – Oct 2 | The loop end to end on the base world with a real host over MCP: the host says it in words, `formalise` reads it at the close, the host answers from what was recorded. A run on the FactConsolidation slice for a first number. `inspector.twins` moved out of the host's run (it can kill `define_relation` when the GPU is busy). A picker on Nemotron through Token Factory `logprobs` replaces Jev. Training of typecastlm on a Nemotron trunk starts in parallel. | the loop passes on the slice and the number is written down |
+| Oct 3 – 9 | Research through Tavily: candidates go into a research world of their own through `formalise`, with the web page as the source and `check.py` verifying every attribute against it. The trained picker served from a Nebius AI Cloud GPU machine. | "pick it for me" runs from the request to sourced candidates |
+| Oct 10 – 16 | The demo scenario, "where to go on Saturday". English README with a section on Nemotron, Token Factory and Nebius; licence; public repository; `facts` merged into `main`; first draft of the write-up. **Freeze.** | the repository can be handed to a stranger |
+| Oct 17 – 30 | Testing only: pass^k on the scenarios and the slice, a "judge on a clean machine" run strictly by the README, fixes only. Video Oct 24–27. **Submit Oct 28.** | submitted |
+
+**Waiting on the author:** a Tavily key (by week 2); access to Nebius AI Cloud for a GPU machine;
+where the typecastlm training recipe lives (`typecastlm/package/scripts` has `export_head.py` and
+conversion, not the training).
+
 Ordered by what currently blocks progress. The focus is reading the world; write tasks are
 deliberately parked (see below).
 
@@ -275,6 +294,20 @@ The shape it should take, from what is already decided elsewhere:
 
 Open: whether a researched thing is an ordinary entity of an ordinary class (a `Product` we do
 not have yet) or something looser, and how much of a page is worth keeping versus fetching again.
+
+**Decided 2026-09-25** (`docs/decisions.md`, "the road to submission"):
+
+- **One mechanism, "pick it for me"**, for tickets, housing, products and things to do. The query is
+  built from the person's world — requirements without identity — and the findings are text like any
+  other, so they go through the same `formalise` pipeline with the web page as the source, and
+  `check.py` refuses any attribute the page does not bear out.
+- **A world for each search.** Candidates go into a research world of their own, not into the
+  person's. There the host picks, ranks and filters them with code, the person's world loaded beside
+  it in the same namespace for the criteria. What moves into the person's world is the choice and why.
+  Open: whether a research world is kept, dated, or discarded after the choice.
+- **Preferences need no class of their own.** "Anna likes jazz" becomes a typed link through the same
+  door as any other fact.
+- **The demo is "where to go on Saturday".** Housing and products are the same code, shown in a line.
 
 ## Giving a new link its rules: the parts not built
 
