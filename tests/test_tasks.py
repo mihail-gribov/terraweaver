@@ -2,6 +2,7 @@
 
 Run: .venv/bin/python tests/test_tasks.py
 """
+import re
 import sys
 from pathlib import Path
 
@@ -144,6 +145,32 @@ def main() -> int:
           closed is None or "facts about two things" not in closed, str(closed)[:110])
 
     initiative.MAKES_TYPES = False
+
+    # What the close asks for, it has to name in something the host can run. A link's own word
+    # for itself is its two ids, and a host given those swept the whole world describing what it
+    # found — the account of a link landed on the user's own record.
+    rt = open_world()
+    rt.start_task("k", "record one link and describe nothing", "recording")
+    rt.run('tang = Thing.new(name="Tang Empire")\n'
+           'changan = Thing.new(name="Chang\'an")\n'
+           'world.define_relation("capital_of", "the place that is a state\'s seat of government",'
+           ' nature="related_to", cardinality="many-to-one",'
+           ' subject_is="the place that is the capital", object_is="the state whose capital it is")\n'
+           'changan.set_capital_of(tang)', "k")
+    rt.finish_task("k")                              # the direction check comes first
+    asked = rt.finish_task("k") or ""
+    lines = [line.strip() for line in asked.splitlines() if line.strip().endswith('.describe("...")')]
+    ids = re.compile(r"\b[0-9a-f]{32}\b")
+    check("the close names the link by a line the host can run, not by its ids",
+          any(".relations(" in line for line in lines) and not ids.search(asked), str(lines))
+    check("and the things it holds by the host's own variables",
+          'tang.describe("...")' in lines and 'changan.describe("...")' in lines, str(lines))
+    ran = rt.run("\n".join(line.replace('"..."', '"what the user said it is here"')
+                           for line in lines), "k")
+    check("every line it named runs", ran.get("error") is None, str(ran.get("error"))[:140])
+    check("and then the task closes",
+          "nothing else said about them" not in (rt.finish_task("k") or ""))
+
     print("\n" + (f"{len(failures)} failed: " + ", ".join(failures) if failures else "all task tests passed"))
     return 1 if failures else 0
 

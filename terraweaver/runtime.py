@@ -549,6 +549,38 @@ class WorldRuntime:
                     break
         return named
 
+    def _reach(self, entity, session) -> str:
+        """A line the host can run to reach this thing, for a message that asks it to.
+
+        The close listed `entity.display_name()`, and an undescribed link's own word for itself
+        is its two ids: `a442f9c7be… capital eeb0ec…`. Measured on six facts: the host cannot
+        turn that into a handle, so it swept `world.all()` and described whatever came back —
+        the account of a link landed on the user's own record — and one fact cost thirty-three
+        turns while five others never got their links at all. The sibling ask,
+        `_ask_about_bare_things`, had it right from the start: name the host's own variable.
+
+        Three ways down, in order of how little the host has to work out: its own variable, the
+        reading that reaches a link from an end it holds, and a lookup by name that anybody can
+        run.
+        """
+        from terraweaver.relations import Relation
+
+        for name, value in session.namespace.items():
+            if name.startswith("_") or name in session.preset:
+                continue
+            if getattr(value, "id", None) == entity.id:
+                return name
+        if isinstance(entity, Relation):
+            kind = (type(entity)._spec.get("relation") or {}).get("kind")
+            word = f'"{kind}"' if kind else ""
+            for end in (entity.subject, entity.object):
+                if end is None:
+                    continue
+                return f"{self._reach(end, session)}.relations({word})[0]"
+        cls = type(entity)
+        key = cls._spec.get("identified_by") or matching.NAME_KEYS.get(cls.__name__) or "name"
+        return f'{cls.__name__}.identify({key}="{_name_of(entity)}")[0]'
+
     def _undescribed(self, session) -> list[str]:
         """What this task put in the world and never said a word about.
 
@@ -578,7 +610,7 @@ class WorldRuntime:
                 continue
             if entity is None or not self._needs_describing(entity):
                 continue
-            without.append(entity.display_name())
+            without.append(f'{self._reach(entity, session)}.describe("...")')
         return without
 
     @staticmethod

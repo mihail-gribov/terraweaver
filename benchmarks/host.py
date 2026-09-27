@@ -11,12 +11,17 @@ The host is Claude Code either way. In `world` mode its only tools are the world
 likes. Same model, same prompts, same questions: the comparison is the point.
 """
 import json
+import os
 import subprocess
 import sys
 import tempfile
 import time
 import urllib.request
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from terraweaver import outside  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -125,6 +130,34 @@ def plain(prompt: str, model: str = "haiku", timeout: int = 300) -> str:
     return (run.stdout or "").strip()
 
 
+def keys() -> dict:
+    """The repository's own `.env`, for the world server this starts.
+
+    Nothing in `terraweaver` reads `.env` — a key reaches it from the shell that started it. Run
+    from a shell that never exported one, the server finds no `NEBIUS_API_KEY`, gets no engineer,
+    and `_read_what_was_said` returns at once: every link the host said in words stays untyped
+    for good. That run still finishes and still prints a number, and the number is of a world
+    that cannot type — which is why it is read here and reported by `engineer()` rather than
+    left to whoever remembered to export it.
+    """
+    found = dict(os.environ)
+    env = ROOT / ".env"
+    if env.exists():
+        for line in env.read_text().splitlines():
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            name, value = line.split("=", 1)
+            if value.strip() and not found.get(name.strip()):
+                found[name.strip()] = value.strip()
+    return found
+
+
+def engineer() -> str | None:
+    """Which engineer a world started here will have, or None — for a run to record."""
+    return outside.NEMOTRON if keys().get("NEBIUS_API_KEY") else None
+
+
 def start_server(db: Path, port: int, blank: bool = False) -> subprocess.Popen:
     """An empty world of its own: the base, so nothing is in it but `user` and `agent`.
 
@@ -133,7 +166,7 @@ def start_server(db: Path, port: int, blank: bool = False) -> subprocess.Popen:
     server = subprocess.Popen(
         [sys.executable, "-m", "terraweaver.server", "--db", str(db), "--port", str(port),
          *(["--blank"] if blank else [])],
-        cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        cwd=ROOT, env=keys(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     for _ in range(120):
         if server.poll() is not None:
             raise RuntimeError(f"world server on {port} died on startup (exit {server.returncode})")

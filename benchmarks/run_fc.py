@@ -60,6 +60,13 @@ def main() -> int:
     parser.add_argument("--facts", type=int, default=0,
                         help="write only the first N facts — a part-wise check of the writing, "
                              "before an hour is spent on all 455")
+    parser.add_argument("--from", dest="begin", type=int, default=1,
+                        help="start at this fact, adding to the world --keep already holds "
+                             "instead of writing it again from the first")
+    parser.add_argument("--only", default=None,
+                        help="write just these facts (22,28,33) — the aimed re-run of the ones "
+                             "that went wrong, at a few cents each. Each keeps the day its own "
+                             "batch was said on, so what is later stays later")
     parser.add_argument("--keep", default=None,
                         help="where the world is built, kept afterwards for reask.py "
                              "(a temporary folder by default, also kept but harder to find)")
@@ -69,13 +76,20 @@ def main() -> int:
     variant = fc.load(args.hops, args.context)
     if args.facts:
         variant.facts = variant.facts[:args.facts]
+    only = {int(n) for n in args.only.replace(" ", "").split(",") if n} if args.only else None
     questions = variant.questions[:args.questions]
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     out_dir = RESULTS / f"{stamp}-{variant.name}-{args.mode}-{args.model}"
     out_dir.mkdir(parents=True, exist_ok=True)
     config = {"benchmark": variant.name, "hops": variant.hops, "facts": len(variant.facts),
               "questions": len(questions), "chunk": args.chunk, "mode": args.mode,
+              "wrote": sorted(only) if only else f"{args.begin}..{len(variant.facts)}",
+              "added_to": str(args.keep) if args.keep and (only or args.begin > 1) else None,
               "host_model": args.model, "judge": "string match, no model",
+              # Whether this world can turn what was said in words into types at the close. A run
+              # without one records links and never types them, and the number means something
+              # else; it is written down here so no number is ever read without it.
+              "engineer": hosting.engineer(),
               "commit": subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT,
                                        capture_output=True, text=True).stdout.strip(),
               "self_reported": True, "started": stamp}
@@ -83,7 +97,9 @@ def main() -> int:
     print(json.dumps(config, indent=2))
 
     if args.keep:
-        work = Path(args.keep)
+        # Resolved, because the host's MCP config path is built from this and a relative one
+        # lands inside the agent's own folder: "MCP config file not found: …/var/x/var/x/mcp…".
+        work = Path(args.keep).resolve()
         work.mkdir(parents=True, exist_ok=True)
     else:
         work = Path(tempfile.mkdtemp(prefix=f"tw-fc-{args.hops}-"))
@@ -99,14 +115,19 @@ def main() -> int:
             work, variant.name, args.port)
 
         last_day = None
-        for day, facts in variant.batches(args.chunk):
+        for batch, (day, facts) in enumerate(variant.batches(args.chunk)):
+            first = batch * args.chunk + 1              # the number of this batch's first fact
+            due = [fact for number, fact in enumerate(facts, first)
+                   if number >= args.begin and (only is None or number in only)]
+            if not due:
+                continue
             last_day = day
-            listed = "\n".join(f"- {fact}" for fact in facts)
+            listed = "\n".join(f"- {fact}" for fact in due)
             got = hosting.ask(agent, RECORD.format(when=day.isoformat(), facts=listed),
                               agent.conversation(), None, log, args.model)
             spent["turns"] += got["turns"]
             spent["cost"] += got["cost"]
-            print(f"  recorded {day} ({len(facts)} facts)  {got['turns']} turns  "
+            print(f"  recorded {day} ({len(due)} facts)  {got['turns']} turns  "
                   f"${spent['cost']:.2f} so far")
 
         asked_on = (last_day + timedelta(days=1)).isoformat()

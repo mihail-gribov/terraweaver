@@ -2919,3 +2919,95 @@ defines *does* take part in `_named_elsewhere` — `register_identity` is called
 `_named_elsewhere("Thing", {"name": "Osteria Rossa"})` finds the `Restaurant`. And grown types
 *do* come back when a world is reopened: `open_world` applies the growth pass, which reading the
 store directly through `WorldRuntime` skips.
+
+## 2026-09-27 — what the close asks for, it names in something the host can run
+
+Six facts, aimed: the ones the fifty-fact check had marked wrong (22, 28, 32, 33, 36, 47), re-run
+into a world of their own for a few cents. What came back was one link of a type called `Capital`
+between two nameless `Thing`s, the account of that link written onto the **user's own record**, and
+five facts with no links at all. Traced in the transcript, turn by turn, because the first
+explanation that occurred to us — the engineer mangled it — was wrong: the engineer never ran.
+
+**What actually happened.** The host fumbled `world.relate(a, "capital", b, at=...)` (the kind in
+the middle, an argument that does not exist), then missed the `define_relation` signature four
+times over — the fumble already on the list at 38.6 per 1000 — then wrote the link backwards. Here
+the world worked: the close asked it to read the link back, it reasoned about direction correctly
+and fixed it itself. Then the close refused again, for a description, and listed what it wanted:
+
+    Not closed: 1 thing(s) … :
+        a442f9c7be034f10b3e74a75c946bfb1 capital eeb0ec6abbab40af9fa75cf4ca0e6127 (capital)
+
+**A link's own word for itself is its two ids.** There is nothing the host can do with that line.
+It swept `world.all()`, found the objects with no name — the links — and described whatever came
+back, which is how a sentence about Chang'an landed on `you`. Thirty-three turns on one fact; the
+other five got what was left.
+
+Asking a link for a description is deliberate and stays (`_needs_describing`: only that line tells
+one `Kin` from another). Naming it by ids was the defect, and the fix was already written next
+door — `_ask_about_bare_things` names the host's own variable, because that is the whole reason
+it asks after the run rather than during it. `_reach` now does the same for the close, three ways
+down: the host's own variable, the reading that reaches a link from an end it holds, then a lookup
+by name anybody can run.
+
+    tang.describe("...")
+    changan.relations("capital_of")[0].describe("...")
+    changan.describe("...")
+
+Tested by running the lines the world named and closing the task (`tests/test_tasks.py`), which is
+the only check that means anything here: a line the host cannot run is the bug.
+
+**`you` was never asked for.** `person:user` is not in `bare_names` — the predefined records, the
+user and the agent, stayed out of the queue as they should. The host reached the user's record on
+its own, and only because ids were all it had to match against. Whether `describe` on those two
+records should be refused outright is a separate decision and is not taken here.
+
+## 2026-09-27 — a run without an engineer measures a world that cannot type, and said so nowhere
+
+`.env` holds a real `NEBIUS_API_KEY`. Nothing in `terraweaver` reads `.env`: the key reaches a
+world from the shell that started it. Both of this morning's runs were started from a shell that
+never exported one, so the server got no engineer, `_read_what_was_said` returned at once, and
+every link said in words stayed untyped. The run finished and printed a number.
+
+The experiments side already had this right — `base_run._the_key()` reads `.env` and prints a loud
+line when there is none. The benchmarks side had nothing. `host.keys()` now reads it and hands it
+to the server, and `run_fc.py` writes `engineer` into `config.json`, so no number is ever read
+again without knowing whether a reading was possible. The two readers are duplicates and should
+become one; not today.
+
+**A correction to what was said earlier today.** "Typing barely happened, so the defect is
+untouched" was wrong twice. A world without an engineer keeping its links untyped is documented
+behaviour, not a defect — `server.py`: "the link is made at once and stays untyped, which is a
+poor link and a real one". And the reading can be run later on purpose: `experiments/catch_up.py`
+opens a world as it stands, gives it an engineer and goes over everything unread. The fifty-fact
+world holds 47 said and 47 waiting — the queue is intact, so nothing is lost by having written it
+without a key.
+
+**What the 47 untyped links showed, and it is the thing worth keeping.** Their descriptions are
+exactly what an engineer needs: `capital of`, `authored by`, `founded by`, `associated with sport`,
+`plays position`, `died in`. Short, faithful, one per link, and the direction is stated in the
+words — `Tang Empire → Chang'an | capital is` and `London → Great Britain | capital of` are both
+right and point opposite ways, because the words say which way. A host that says it in words gives
+the reading everything it needs; this is the storyteller and the engineer working as intended.
+
+**Two of the six "failures" were never the world's.** `Steve Sax → Baseball | associated with sport`
+is in the world and `check_expected` called it missing: it compares names case-sensitively, and the
+expectation says `baseball`. And a bare link's direction is a verdict that check cannot honestly
+make — it deliberately reads no words, so for a link whose kind is still `related` it calls
+`Starship Troopers → Heinlein | authored by` backwards. A third verdict is owed there —
+**untyped** — rather than a judgement made without the evidence. Not done here.
+
+**One of the six is a real error, and not in the typing.** Facts 32 and 47 say *American football*.
+There is no such thing anywhere in that world: both links point at `association football`. Two
+different sports were identified as one, which is the kind of error that answers a question wrongly
+with complete confidence.
+
+**Cheap aimed runs, so this can be done again.** `run_fc.py` takes `--from N` (add to the world
+`--keep` already holds instead of writing it again from the first) and `--only 22,28,33` (just
+those facts, each keeping the day its own batch was said on). `--keep` is resolved now: a relative
+path was joined against the host's own folder and the run died on a missing MCP config.
+
+**Next, and argued rather than assumed:** `relate(b, "founded")` is refused while
+`relate(b, "died in")` is taken, because `_is_a_sentence` falls back to counting words when the
+world has no type by that name. The engineer makes the type from the description, so one word is
+as good a description as three, and refusing it throws away the only account of the link there
+will ever be. A word this world has no type for is words the user said.
