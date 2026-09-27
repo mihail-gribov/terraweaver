@@ -3123,3 +3123,53 @@ to do"). The objection `check.py` raises against judging afterwards — deleting
 direction — is about committed writes by somebody else; these are the world's own, made under
 `stating("world")`, and `Relation.retract` exists for exactly what the world concluded and no longer
 believes.
+
+## 2026-09-27 — the check is asked about what the record holds, as the phrase it amounts to
+
+The author's two objections, and both were right.
+
+**Why read the code at all — read the result.** `claims_in` parsed the engineer's source for
+`a.set_word(b, ...)` with both ends bound to those names. One fact with one invented date, written
+four ways: `a.set_founded(b, starts="1910")` gave two claims; `world.relate(a, b, "founded",
+starts="1910")`, a renamed variable and a one-element loop gave **none**, so the date went in
+unchecked three times out of four. The lines are one phrasing of many; the record holds one thing.
+`check.claims_of` now reads the claims off the written links — the word, the two ends, and every
+attribute on them — and `write.typed_between` was already doing exactly this for success: "read from
+the record rather than from what the code appeared to do".
+
+**And say it as a phrase.** The question was "Does that sentence say that Chang'an capital of Tang
+Empire?" over the account `capital_of`, and the answer came back "the sentence does not say this at
+all" at 1.0 — about a claim whose words are right there in the account. Read literally the picker was
+not wrong: a fragment naming nobody says nothing about anybody. The question was wrong. So the claim
+is rendered as what the record is about to hold — «Chang'an capital of Tang Empire» — and put beside
+the account: *is that the same thing it says?* With the options saying what each means, including
+that an account which does not say which way round is not against this one.
+
+That also settles a thing the old question confused: **the ends are not the text's to confirm.**
+Which two things a fact is about is handed into the reading and never read out of words. The check
+exists against an attribute nobody said — the measured `starts="1792"` — and it still is: that case
+is refused on the record now, and the link that carried it is taken back.
+
+**Taking it back is safe here**, which is what the old argument for checking first denied. These
+writes are the world's own, a moment old, marked `source="world"` by `stating("world")`, and nothing
+outside has seen them. `Relation.retract` refuses them on a technicality — it guards on
+`is_conclusion`, which means "has a basis", and the reading's writes go through the ordinary door
+with none — so `write.take_back` takes back only a link whose every statement says `source="world"`
+and leaves anything with a word from anybody else exactly as it stands.
+
+**Measured, the same link, the same world:**
+
+| | before | after |
+|---|---|---|
+| goes | 3 | **1** |
+| verdicts | `not_in_it` ×3 at 1.0 | **`says_so`** |
+| seconds | 42.4 | **16.6** |
+| typed | 0 | **1** |
+
+`Chang'an capital of Tang Empire (capital_of)`, with the bare link ended rather than erased — what
+the host said is still there to read.
+
+**One thing this changes and only a measurement will judge:** the date claim used to be asked about
+the engineer's literal (`"since 2019"`) and is now asked about what the world holds (`2019-01-01`).
+The option says "in those words or plainly the same time in other words", which is what it is for,
+and the refusal rate and the confidences now land in `readings` where a false alarm will show.

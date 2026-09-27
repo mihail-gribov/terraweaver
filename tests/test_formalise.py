@@ -51,7 +51,9 @@ class Picker:
     def ask(self, state, questions):
         out = {}
         for key, asked in questions.items():
-            bad = any(f"'{date}'" in asked["instructions"] for date in self.invented)
+            # The date as the world holds it, because the claim is now read from the record and
+            # not from the literal the engineer typed: "1792" was written, 1792-01-01 is held.
+            bad = any(date in asked["instructions"] for date in self.invented)
             out[key] = {"probabilities": {"not_in_it": 1.0} if bad else {"says_so": 1.0}}
         return out
 
@@ -119,9 +121,14 @@ def main() -> int:
     engineer = Engineer([DEFINE + 'a.set_capital_of(b, starts="1792")', DEFINE + "a.set_capital_of(b)"])
     got = formalise.formalise(rt, engineer, Picker(invented=["1792"]))
     trace = got["read"][0]
-    check("the invented date is refused before anything runs",
+    check("the invented date is refused on what the record now holds",
           "1792" in trace["answered"][0] and "not bear it out" in trace["answered"][0],
           trace["answered"][0][:120])
+    check("and the link that carried it is taken back, not left standing",
+          len([l for l in rt.world.all("CapitalOf", limit=None, history=True)
+               if l.valid_from is not None]) == 0,
+          str([(l.display_name(), l.valid_from) for l in
+               rt.world.all("CapitalOf", limit=None, history=True)]))
     check("and the engineer's second block is what lands", trace["went"] == "done", trace["went"])
     rome = rt.world.all("CapitalOf", limit=None)
     check("the link holds no start, which is what the sentence gave",

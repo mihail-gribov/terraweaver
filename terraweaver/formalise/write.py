@@ -49,3 +49,31 @@ def end_the_bare_one(world, link) -> None:
     with ontology.trusted_writes(), ontology.stating("world"):
         link.valid_until = timeutil.now()
         world.save(link)
+
+
+def take_back(world, links: list) -> None:
+    """Unmake what the check would not have: the world's own links, before anybody has read them.
+
+    `check.py` argued the other way — judge before the lines run, because deleting is the expensive
+    direction — and the argument holds for a write somebody else made and is holding an instance of.
+    These are not that. They were written a moment ago under `stating("world")`, by the reading, for
+    the reading, and `Relation.retract` exists for exactly this: what the world concluded and no
+    longer believes. What the host said is not touched — the bare link and its words stand, and the
+    next go reads them again.
+    """
+    why = "the words do not bear it out"
+    for link in links:
+        try:
+            statements = world.facts.about(link.id)
+            # `Relation.retract` guards on `is_conclusion`, which is about a basis and not about
+            # who wrote it, so it refuses these: the reading's writes go through the ordinary door
+            # and carry no basis. What marks them is `source`, set by `stating("world")`. A link
+            # with a statement from anybody else is left exactly as it is.
+            if not statements or any(one.source != "world" for one in statements):
+                continue
+            with ontology.stating("world"):
+                for one in statements:
+                    world.facts.retract(one.id, by=why)
+                world.store.forget(link.id)
+        except Exception:  # noqa: BLE001 - a reading is not lost because the unmaking failed
+            continue

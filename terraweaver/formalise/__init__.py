@@ -92,21 +92,28 @@ def formalise_one(runtime, link, engineer, picker) -> dict:
             trace["went"] = f"nothing came back — {trouble}" if trouble else "nothing came back"
             break
         trace["wrote"].append(code)
-        # Before it runs: a claim the sentence does not bear out is never written, so there is
-        # nothing to take back. The lines go back to the engineer through the loop a refusal uses.
-        unsupported, about = check.what_is_wrong(picker, words, code, {"a": subject, "b": obj})
+        got = write.run(runtime, code, a=subject, b=obj)
+        answer = format_result(got)
+        made = write.typed_between(world, subject, obj)
+        # Judged on what the record now holds, not on the shape of the lines that wrote it. A claim
+        # can be written four ways and a parser of the source saw it in one of them, so an invented
+        # date went in whenever the engineer phrased the write differently. What the world holds is
+        # the one thing that cannot be phrased three ways — and it is rendered as the phrase it
+        # amounts to, which is what makes the question answerable at all.
+        unsupported, about = check.not_borne_out(picker, words, made)
         trace["checked"].append(about)
         if unsupported:
+            # The world's own conclusion, taken back before anybody reads it: these were written
+            # under `stating("world")`, so `retract` will have them, and what the host said is
+            # untouched — the bare link and its words are still there to be read again.
+            write.take_back(world, made)
             trace["answered"].append(unsupported)
             if go == GOES - 1:
                 trace["went"] = "not borne out by the words"
                 break
             code, trouble = make.lines(engineer, make.again(asked, code, unsupported))
             continue
-        got = write.run(runtime, code, a=subject, b=obj)
-        answer = format_result(got)
         trace["answered"].append(answer[:2000])
-        made = write.typed_between(world, subject, obj)
         if made:
             trace["went"] = "done" if got.get("ok") else "written, with a refusal on the way"
             trace["typed"] = [one.display_name() for one in made]
