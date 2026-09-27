@@ -10,7 +10,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from terraweaver import open_world  # noqa: E402
 
-from terraweaver import initiative
 from terraweaver.runtime import WorldRuntime
 
 failures: list[str] = []
@@ -33,9 +32,6 @@ def refused(action) -> str | None:
 def main() -> int:
     rt = open_world()
     key = "host"
-    # The doubts this checks are the ones the world raises when it invents a type from a word
-    # it did not have, which it only does when told it may.
-    initiative.MAKES_TYPES = True
 
     opened = rt.start_task(key, "record what the user said about Anna's job history", "recording")
     check("a task opens and says what it is", "record what the user said" in opened, opened[:80])
@@ -45,9 +41,13 @@ def main() -> int:
           refused(lambda: rt.start_task(key, "record the job history in full", "guessing")) is not None)
 
     # The world answers a recording; leaving the answer unwritten is what the boundary catches.
+    # The doubt here is the one it raises over a link recorded as `related` — a nature, not a
+    # word for the fact — which is a live doubt with no switch turned on. It used to come from
+    # the world inventing a type out of an unknown word, and a word the world has no type for is
+    # words now, so nothing reaches that path from a host call.
     result = rt.run('anna = Person.new(full_name="Anna Reid")\n'
                     'acme = Thing.new(name="Acme")\n'
-                    'anna.relate(acme, "employed_by")', key)
+                    'world.relate(anna, acme, "related", description="Anna works at Acme")', key)
     check("the world says what it assumed", bool(result.get("hints")), str(result.get("hints"))[:120])
     check("and raises it as a question that outlives the run", bool(result.get("questions")))
 
@@ -143,8 +143,6 @@ def main() -> int:
     closed = rt.finish_task(key)
     check("and once the link is there it closes",
           closed is None or "facts about two things" not in closed, str(closed)[:110])
-
-    initiative.MAKES_TYPES = False
 
     # What the close asks for, it has to name in something the host can run. A link's own word
     # for itself is its two ids, and a host given those swept the whole world describing what it

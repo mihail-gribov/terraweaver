@@ -181,9 +181,16 @@ def _name_of_me(entity) -> str:
 def _is_a_sentence(how: str) -> bool:
     """Words about a fact, or the name of a type this world holds.
 
-    A type is one word this world knows; a fact is a sentence. Told apart by asking the world
-    rather than by the shape of the string: `born_in` is a sentence nowhere and a type here, and
-    which it is depends on what has been defined, not on whether it has an underscore in it.
+    A type is a word this world knows; everything else is words the user said. Decided by asking
+    the world and by nothing else: `born_in` is a sentence nowhere and a type here, and which it
+    is depends on what has been defined, not on the shape of the string.
+
+    It used to fall back to counting words, and the shape decided: `relate(b, "died in")` went in
+    as a link with its words, `relate(b, "founded")` was refused for naming a type that does not
+    exist. One word or five, the host cannot know which side of that line it is on — measured, it
+    cost five lines of a block at a time and left the fact recorded nowhere, neither typed nor as
+    it was said. The word is the description, the engineer makes the type from the description,
+    and refusing it throws away the only account of that link there will ever be.
     """
     if not isinstance(how, str):
         return False
@@ -194,7 +201,7 @@ def _is_a_sentence(how: str) -> bool:
             rel = (getattr(cls, "_spec", {}) or {}).get("relation") or {}
             if said in (rel.get("kind"), rel.get("reverse"), name):
                 return False
-    return " " in said or len(said.split()) > 1
+    return bool(said)
 
 
 def note_looked_up(entities) -> None:

@@ -35,9 +35,21 @@ def world_with_authoring():
 
 
 def landed_in(rt, word: str) -> str:
-    result = rt.run(f'p = Person.new(full_name="P {word}")\nx = Thing.ensure(name="X {word}")\n'
-                    f'print(type(p.relate(x, "{word}")).__name__)', "k")
-    return (result["output"] or "").strip() or "refused"
+    """Where a word with no type of its own lands, at the layer that decides it.
+
+    Not through `p.relate(x, word)` any more: a word this world has no type for is words the user
+    said, whatever its shape, and it goes in as a link carrying them for the reading to type at
+    the close. So the host never sends a bare word here, and what these switches govern is the
+    layer underneath — the one the reading itself calls when it has a word and needs a type.
+    """
+    from terraweaver import relations
+
+    p = rt.world.classes["Person"].new(full_name=f"P {word}")
+    x = rt.world.classes["Thing"].new(name=f"X {word}")
+    try:
+        return type(relations.relate(rt.world, p, x, word, {}, {})).__name__
+    except ValueError:
+        return "refused"
 
 
 def main() -> int:
@@ -63,11 +75,17 @@ def main() -> int:
     rt = world_with_authoring()
     refusal = landed_in(rt, "collects_stamps_for")
     check("MAKES_TYPES off: an unknown word is refused", refusal == "refused", refusal)
-    said = rt.run('p = Person.new(full_name="Q")\nx = Thing.ensure(name="Y")\n'
-                  'p.relate(x, "collects_stamps_for")', "k")
+    from terraweaver import relations as _relations
+
+    p = rt.world.classes["Person"].new(full_name="Q")
+    y = rt.world.classes["Thing"].new(name="Y")
+    said = ""
+    try:
+        _relations.relate(rt.world, p, y, "collects_stamps_for", {}, {})
+    except ValueError as refused_with:
+        said = str(refused_with)
     check("and the refusal dictates the define_relation to write",
-          "world.define_relation(\"collects_stamps_for\"" in str(said.get("error")),
-          str(said.get("error"))[:160])
+          'world.define_relation("collects_stamps_for"' in said, said[:160])
 
     initiative.MAKES_TYPES = True
     rt = world_with_authoring()

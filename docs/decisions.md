@@ -3011,3 +3011,47 @@ path was joined against the host's own folder and the run died on a missing MCP 
 world has no type by that name. The engineer makes the type from the description, so one word is
 as good a description as three, and refusing it throws away the only account of the link there
 will ever be. A word this world has no type for is words the user said.
+
+## 2026-09-27 — a word this world has no type for is words, whatever its shape
+
+`relate(b, "died in")` was recorded as a link carrying those words; `relate(b, "founded")` was
+refused for naming a type that does not exist. The difference was `_is_a_sentence` falling back to
+counting words once the world had been asked and had no type by that name. Nothing distinguishes
+the two for anybody downstream: the words land as the link's description, the engineer makes the
+type from the description, and `employed_by` and `employed by` are the same account of the same
+fact. The host, meanwhile, cannot know which side of a line drawn at one space it is on — measured,
+it lost five lines of a block at a time and left the fact recorded neither typed nor as it was
+said. The fallback is gone: a word the world has no type for is words the user said.
+
+**What that change reaches.** Twelve checks in three files went red, all for one reason: a single
+unknown word no longer arrives at the layer that turns a word into a type, so `MAKES_TYPES` and
+`TAKES_NEAR_WORD` are unreachable from a host call. They stay live where a type is actually made —
+the reading (`portraits.py`) — and on a read of a word that was mistyped. So the checks moved to
+that layer rather than being deleted: `relations.relate(world, a, b, word, {}, {})` is where the
+switch decides, and the lesson each of them records — a near word is not the word that was said —
+is unchanged. `test_tasks.py` had built its doubt out of type invention and now builds it out of a
+link recorded as `related` with a description, which is a live doubt with no switch turned on and
+a better test for it.
+
+**Aimed re-run, the same six facts, third time.** Fact 22 cost 11 turns against 33, and the link
+is right in both its ends and its words: `Chang'an — "capital_of" → Tang Empire`. The close's
+naming fix is what bought that.
+
+## 2026-09-27 — the reading runs in the server's request path, and it costs two minutes
+
+The five facts of the second batch of that run were never recorded, and not for any reason in this
+world's code: the host's session reported `terraweaver` MCP server `status: failed`, a connection
+timeout at 30 seconds, so it had no tools at all and said so. Each batch is a new session, and the
+session before it had just closed a task.
+
+**Measured on the same world:** `experiments/catch_up.py` over one untyped link and one bare name
+took **2m07s**, of which one second was local — all the rest waiting on Nemotron. The close runs
+that same pass inside the server, so the server is unavailable for minutes at exactly the moment
+the next batch tries to connect. This is the same shape as `inspector.twins` on the TODO, and the
+same answer is owed: a reading that takes minutes does not belong in the path a host's next call
+has to get through.
+
+**And it typed nothing.** `facts said in words: {'typed': 0, 'joined': 0, 'defined': 0, 'left': 1}`,
+`things that came in as names: {'read': 1, 'placed': 0, 'gave_up': 1}`. One link, one name, two
+minutes, nothing decided. Whether that is the model, the prompt or `formalise` is the next thing to
+find out — the tally says what happened and not why, which is itself worth fixing.

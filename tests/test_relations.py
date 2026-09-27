@@ -12,7 +12,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from terraweaver import initiative, ontology  # noqa: E402
+from terraweaver import initiative, ontology, relations  # noqa: E402
 
 import base  # noqa: E402
 
@@ -123,10 +123,12 @@ def main() -> int:
     kept = b04.relate(chen, "B04 has had Kevin Chen in the family business for years")
     check("and a fact said in words is recorded all the same",
           kept is not None and kept.subject is b04, repr(kept)[:110])
-    # Something the world does on its own, so the test says so: initiative.MAKES_TYPES is off
-    # by default and the switch is turned on here and put back after.
+    # Something the world does on its own, so the test says so: initiative.MAKES_TYPES is off by
+    # default and the switch is turned on here and put back after. Called at the layer it governs:
+    # through `relate` a word this world has no type for is words the user said, and typing them
+    # is the reading's work at the close.
     initiative.MAKES_TYPES = True
-    grown = type(b04.relate(chen, "keeps_bees_for"))
+    grown = type(relations.relate(world, b04, chen, "keeps_bees_for", {}, {}))
     check("and an unknown word makes the type it needs",
           grown.__name__ == "KeepsBeesFor" and grown._spec["relation"]["kind"] == "keeps_bees_for",
           f"{grown.__name__} / {grown._spec['relation']['kind']}")
