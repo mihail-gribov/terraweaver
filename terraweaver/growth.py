@@ -1,23 +1,28 @@
-"""What the world added to itself, kept apart from what we gave it.
+"""How a world's classes come together: the preset it started with, and what it has made since.
 
-Two layers of classes, and the line between them is not negotiable:
+A class a world started with and a class it made last night are the same kind of thing. The
+preset in `ontology/core` is the content a world opens with — any content could be — and it is
+read, built and extended exactly as a class the world defined for itself is. What distinguishes
+them is recorded, not enforced: a class carries `source`, "preset" for one it started with, and
+that is a fact about it like any other, never a rule about what may be done with it.
 
-    ontology/core/    ours. Fixed, versioned by us, and the world may not touch a line of it.
-    ontology/grown/   the world's. Each file extends one core class and adds to it.
+    ontology/core/    a preset: what a new world starts with. Read, never written to — a world
+                      that changes one of these writes its own version beside its database.
+    <world>/grown/    the world's own: classes it defined, its own version of any class it
+                      changed, and additions to any class it has.
 
-A grown class inherits its core class and may only *add*: another attribute, another method,
-another label a relation goes by. It may not redefine what the core already declares, narrow it,
-or take it away — so anything a host learned to rely on keeps working, and reading the core file
-still tells you what the class is.
+The one rule that holds for every class alike: growth adds, it does not rewrite. An addition may
+not redefine an attribute or a method the class already declares — so what a host learned to rely
+on keeps working, whoever wrote the class it is on.
 
-Why a separate layer at all, rather than editing the class in place: a world that improves itself
-is a world that will sometimes be wrong. Growth kept apart is growth that can be read on its own,
-diffed, and dropped — and because the facts layer holds what was said rather than what a class
-shaped it into (`facts.py`), dropping a grown attribute loses no data. The statements stay; only
-the image stops showing them.
+Why a separate place at all, rather than editing the preset in place: a world that improves itself
+is a world that will sometimes be wrong. What it grew, kept apart, can be read on its own, diffed and
+dropped — and because the facts layer holds what was said rather than what a class shaped it into
+(`facts.py`), dropping a grown attribute loses no data. The statements stay; only the image stops
+showing them.
 
-Every grown file carries why it exists — what evidence, from when. A proposal nobody can explain
-is a proposal nobody can review.
+Every addition carries why it exists — what evidence, from when. A proposal nobody can explain is a
+proposal nobody can review.
 """
 import json
 from pathlib import Path
@@ -29,7 +34,7 @@ ALLOWED = {"name", "extends", "description", "because", "added_at", "attributes"
 
 
 class GrowthRefused(Exception):
-    """A proposed change would overwrite what the core declares, or isn't well formed."""
+    """A proposed change would overwrite what a class already declares, or isn't well formed."""
 
 
 def load_grown(directory: Path) -> list[dict[str, Any]]:
@@ -38,31 +43,38 @@ def load_grown(directory: Path) -> list[dict[str, Any]]:
     return [json.loads(path.read_text()) for path in sorted(directory.glob("*.json"))]
 
 
-def apply_growth(core: dict[str, dict], grown: list[dict]) -> dict[str, dict]:
-    """Core specs plus what the world added, as one set of specs to build classes from.
+def apply_growth(preset: dict[str, dict], grown: list[dict]) -> dict[str, dict]:
+    """The classes a world started with plus what it has made since, as one set to build from.
 
-    The returned spec for an extended class is the core one with additions merged in, and it
-    remembers what came from where (`grown_from`, `grown_attributes`) so a description can show
-    the difference and a rollback can take exactly the additions away.
+    Two passes, and the order is the whole of the fairness. First every class the world holds a
+    version of: one it defined, or its own version of one it started with, which replaces the
+    starting one — it began as a copy and was changed. Then every addition, to any class the world
+    now has. In one pass, an addition could only land on a class read before it: an extension of a
+    class the world made itself was refused as "not a core class" whenever its file sorted first,
+    which made the preset the only thing that could be built on.
+
+    An extended class remembers what came from where (`grown_from`) so a description can show the
+    difference and a rollback can take exactly the additions away.
     """
-    specs = {name: json.loads(json.dumps(spec)) for name, spec in core.items()}  # never mutate the core
+    specs = {}
+    for name, spec in preset.items():                     # never mutate what was passed in
+        specs[name] = json.loads(json.dumps(spec))
+        specs[name].setdefault("source", "preset")
+    for whole in grown:
+        if whole.get("extends") is None and whole.get("name"):
+            # What `define` and `define_relation` write, and what a world writes when it changes a
+            # class it started with. Both are the class as this world has it now.
+            specs[whole["name"]] = json.loads(json.dumps(whole))
     for addition in grown:
         base = addition.get("extends")
-        if base is None and addition.get("name"):
-            # A whole class of its own, not an addition to one — what `define` and
-            # `define_relation` write. Only extensions were handled here, so a world's own
-            # types were saved on definition and never read back: reopened, it had the tables
-            # and the files and none of the classes, showed a host a vocabulary without them,
-            # and watched it build the same ideas again under new names. Twenty facts came to
-            # sixteen types, twelve holding one link each.
-            if addition["name"] not in specs:
-                specs[addition["name"]] = json.loads(json.dumps(addition))
+        if base is None:
             continue
         if base not in specs:
-            raise GrowthRefused(f"{addition.get('name', '<unnamed>')} extends {base!r}, which isn't a core class")
+            raise GrowthRefused(f"{addition.get('name', '<unnamed>')} extends {base!r}, which is not a "
+                                f"class in this world")
         unknown = set(addition) - ALLOWED
         if unknown:
-            raise GrowthRefused(f"{addition['name']}: a grown class can't say {', '.join(sorted(unknown))}")
+            raise GrowthRefused(f"{addition['name']}: an addition can't say {', '.join(sorted(unknown))}")
         if not str(addition.get("because", "")).strip():
             raise GrowthRefused(f"{addition['name']}: say why it was added — a change nobody can explain "
                                 f"is one nobody can review")
@@ -72,8 +84,8 @@ def apply_growth(core: dict[str, dict], grown: list[dict]) -> dict[str, dict]:
         for attr in addition.get("attributes", []):
             if attr["name"] in declared:
                 raise GrowthRefused(
-                    f"{base}.{attr['name']} is already declared in the core class and can't be redefined; "
-                    f"growth adds, it doesn't rewrite"
+                    f"{base}.{attr['name']} is already declared and can't be redefined; growth adds, "
+                    f"it doesn't rewrite"
                 )
             spec["attributes"].append(attr)
             added.append(attr["name"])

@@ -52,7 +52,7 @@ def main() -> int:
     args = parser.parse_args()
 
     work = Path(tempfile.mkdtemp(prefix="tw-story-"))
-    runtime = WorldRuntime(str(work / "world.db"), fixture=None, selves=True,
+    runtime = WorldRuntime(str(work / "world.db"), selves=True,
                            specs=ontology.base_specs(CORE))
     authoring.install(runtime.world, work / "grown")
 

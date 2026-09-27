@@ -8,7 +8,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from terraweaver import open_world
+from terraweaver import open_world  # noqa: F401
+
+import base  # noqa: E402
 
 failures: list[str] = []
 
@@ -28,26 +30,32 @@ def kinds(found) -> set:
 
 
 def main() -> int:
-    w = open_world()
+    # Several kinds of thing, as a base world has them: people, things and an event, with an
+    # attribute the world grew for itself and a word for a link it was given.
+    w = base.world(None)
+    base.attribute(w, "Thing", "industry", "What line of work an organisation is in.")
+    base.word(w, "works_at", "a person working for an employer", "many-to-one",
+              "a person who works", "their employer")
     out = w.run('''
-acme = Organization.new(name="Acme Cells", industry="Energy", tags=["move"])
-school = Organization.new(name="Escola Beatriz", industry="Education", tags=["move"])
-flat = Place.new(name="Rua Anjos 12", city="Lisbon", category="other", tags=["move"])
+acme = Thing.new(name="Acme Cells", industry="Energy", tags=["move"])
+school = Thing.new(name="Escola Beatriz", industry="Education", tags=["move"])
+flat = Thing.new(name="Rua Anjos 12", nature="place", tags=["move"])
+day = Event.new(title="Moving day", start_time=datetime(2026, 5, 2, 9, 0), tags=["move"])
 rita = Person.new(full_name="Rita Chen", descriptions=["does battery cell chemistry"],
                   tags=["move", "berlin"])
 lars = Person.new(full_name="Lars Ek", descriptions=["writes payroll software"], tags=["berlin"])
-rita.set_membership(acme,  title="engineer", primary=True)
-lars.set_membership(acme,  title="engineer", primary=True)
-acme.set_service(rita,  label="employer")
+rita.set_works_at(acme)
+lars.set_works_at(acme)
 rita.tag("apartment-hunt", starts=date(2026, 3, 1), until=date(2026, 6, 1))
 ''', "host")
     assert not out["error"], out["error"]
     world = w.world
-    Person, Organization = w.classes["Person"], w.classes["Organization"]
+    Person, Thing, Event = w.classes["Person"], w.classes["Thing"], w.classes["Event"]
+    reverse = w.classes["WorksAt"]._spec["relation"]["reverse"]
 
     # --- a question about a thing, not about a kind of thing ---
     check("without a class the answer is of any kind",
-          kinds(world.where(tagged="move")) == {"Person", "Organization", "Place"},
+          kinds(world.where(tagged="move")) == {"Person", "Thing", "Event"},
           str(kinds(world.where(tagged="move"))))
     check("naming a class narrows to it",
           names(world.where(Person, tagged="move")) == {"Rita Chen"},
@@ -69,20 +77,20 @@ rita.tag("apartment-hunt", starts=date(2026, 3, 1), until=date(2026, 6, 1))
     check("two tags narrow further than one",
           len(world.where(tagged_all=["move", "berlin"])) < len(world.where(tagged="move")))
     check("attributes and a tag together",
-          names(world.where(Organization, industry="Education", tagged="move")) ==
-          {"Escola Beatriz"}, str(names(world.where(Organization, industry="Education", tagged="move"))))
+          names(world.where(Thing, industry="Education", tagged="move")) ==
+          {"Escola Beatriz"}, str(names(world.where(Thing, industry="Education", tagged="move"))))
     check("a relation, read in its own direction",
-          names(world.where(related="membership")) == {"Rita Chen", "Lars Ek"},
-          str(names(world.where(related="membership"))))
+          names(world.where(related="works_at")) == {"Rita Chen", "Lars Ek"},
+          str(names(world.where(related="works_at"))))
     check("and the other end of the same link is the reverse name",
-          names(world.where(related="served_by")) == {"Rita Chen"},
-          str(names(world.where(related="served_by"))))
+          names(world.where(related=reverse)) == {"Acme Cells"},
+          str(names(world.where(related=reverse))))
     check("a relation to a particular other one",
-          names(world.where(Person, related=("membership", w.classes["Organization"].get(
-              name="Acme Cells")))) == {"Rita Chen", "Lars Ek"})
+          names(world.where(Person, related=("works_at", Thing.get(name="Acme Cells")))) ==
+          {"Rita Chen", "Lars Ek"})
     check("a link and a tag hold at once",
-          names(world.where(related="membership", tagged="move")) == {"Rita Chen"},
-          str(names(world.where(related="membership", tagged="move"))))
+          names(world.where(related="works_at", tagged="move")) == {"Rita Chen"},
+          str(names(world.where(related="works_at", tagged="move"))))
 
     # --- tags are read as of a moment, like everything else that holds for a time ---
     check("a tag that has run out does not answer now",
@@ -100,18 +108,18 @@ rita.tag("apartment-hunt", starts=date(2026, 3, 1), until=date(2026, 6, 1))
           by_sense and by_sense[0].display_name() == "Rita Chen",
           str([e.display_name() for e in by_sense]))
     check("meaning inside a narrowed set stays inside it",
-          all(type(e).__name__ == "Organization"
-              for e in world.where(Organization, like="battery chemistry", closeness=0.1)))
+          all(type(e).__name__ == "Event"
+              for e in world.where(Event, like="battery chemistry", closeness=0.1)))
     check("nothing close enough is an empty answer, not an error",
           world.where(Person, like="volcanic geology", closeness=0.95) == [])
 
     # --- a condition nothing answers empties the whole thing ---
     check("one unanswerable condition empties the answer",
-          world.where(Person, tagged="move", related="membership", like="volcanic geology",
+          world.where(Person, tagged="move", related="works_at", like="volcanic geology",
                       closeness=0.95) == [])
     check("limit cuts the answer, None keeps it whole",
           len(world.where(tagged="move", limit=2)) == 2 and
-          len(world.where(tagged="move", limit=None)) == 4,
+          len(world.where(tagged="move", limit=None)) == 5,
           str(len(world.where(tagged="move", limit=None))))
 
     # --- and the host sees the same door ---

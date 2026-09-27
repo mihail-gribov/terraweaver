@@ -24,11 +24,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from terraweaver import (authoring, ontology as ont, periods as periods_mod,
-                         selves, texts as texts_mod)
+import terraweaver
+from terraweaver import periods as periods_mod, selves, texts as texts_mod
 from terraweaver.runtime import WorldRuntime
 
-ROOT = Path(__file__).resolve().parent.parent
 KEY = "host"
 failures: list[str] = []
 
@@ -41,15 +40,12 @@ def check(name: str, condition: bool, detail: str = "") -> None:
 
 def open_world(work: Path) -> WorldRuntime:
     """A world at this place, with whatever types have been grown there."""
-    specs = ont.load_specs(ROOT / "ontology" / "core", grown_dir=work / "grown")
-    rt = WorldRuntime(str(work / "world.db"), fixture=None, specs=specs, selves=True)
-    authoring.install(rt.world, work / "grown")
-    return rt
+    return terraweaver.open_world(str(work / "world.db"))
 
 
 # --- one of every kind of value the ontology can declare ---
-# Written as a grown spec rather than through `define`, because several of these shapes only
-# the core files use and a test that went through the host surface would quietly skip them.
+# Written as a grown spec rather than through `define`, because several of these shapes the
+# host surface doesn't offer and a test that went through it would quietly skip them.
 SPECIMEN = {
     "name": "Specimen",
     "description": "A thing made to carry one of every kind of value the world can hold.",
@@ -84,30 +80,17 @@ SPECIMEN = {
 
 FIRST = """
 t = now()
+world.attribute(Person, "email", "The address this person reads their mail at.", type="email")
+world.attribute(Person, "phone", "The number this person answers.", type="phone")
+world.attribute(Thing, "website", "Where this thing is on the web.", type="domain")
 anna = Person.new(full_name="Anna Weber", aliases=["Anna W."], email="anna@example.org",
                   phone="+49 30 000001")
 mila = Person.new(full_name="Mila Toft", email="mila@example.org")
-town = Place.new(name="Bremen", address="Domshof 1", city="Bremen", country="Germany",
-                 coordinates={"lat": 53.07, "lon": 8.8}, category="work")
-anna.location = town
-mila.location = town
-firm = Organization.new(name="Brightwork", aliases=["BW"], website="https://brightwork.example",
-                        industry="software", location=town)
-job = Vacancy.new(title="Backend engineer", organization=firm, contact=mila, location=town,
-                  remote=True, salary_min=60000.0, salary_max=80000.0, currency="EUR",
-                  stack=["python", "sqlite"], requirements="Five years of it.",
-                  status="applied", applied_at=datetime(2026, 2, 1, 10, 0),
-                  url="https://brightwork.example/jobs/1", posted_at=datetime(2026, 1, 15, 8, 0))
-meeting = Event.new(title="First interview", kind="interview", about=job,
-                    start_time=datetime(2026, 2, 10, 14, 0), end_time=datetime(2026, 2, 10, 15, 0),
-                    location=town, participants=[anna, mila], status="confirmed")
-plan = Project.new(name="Move to Bremen", status="active", owner=anna, participants=[anna, mila],
-                   start_date=datetime(2026, 1, 1), deadline=datetime(2026, 6, 1),
-                   related_to=[firm, town])
-thought = Idea.new(title="Ask about the team", content="Whether the team is four or forty.",
-                   related_to=[job, meeting])
-taste = Preference.new(subject=anna, predicate="prefers", value="morning meetings",
-                       confidence=0.8, source="she said so")
+town = Thing.new(name="Bremen", nature="place")
+firm = Thing.new(name="Brightwork", aliases=["BW"], website="https://brightwork.example",
+                 nature="agent")
+meeting = Event.new(title="First interview", about=firm,
+                    start_time=datetime(2026, 2, 10, 14, 0), end_time=datetime(2026, 2, 10, 15, 0))
 thing = Thing.new(name="The corner desk", nature="object", aliases=["the desk"])
 one = Specimen.new(name="One", count=3, weight=1.5, settled=True,
                    when=datetime(2020, 5, 4, 9, 30), site="https://example.org/one",
@@ -124,12 +107,9 @@ SECOND = """
 t = now()
 anna = Person.get(full_name="Anna Weber")
 mila = Person.get(full_name="Mila Toft")
-firm = Organization.get(name="Brightwork")
-town = Place.get(name="Bremen")
-job = Vacancy.get(title="Backend engineer")
+firm = Thing.get(name="Brightwork")
+town = Thing.get(name="Bremen")
 meeting = Event.get(title="First interview")
-plan = Project.get(name="Move to Bremen")
-thought = Idea.get(title="Ask about the team")
 thing = Thing.get(name="The corner desk")
 one, two, three = (Specimen.get(name=n) for n in ("One", "Two", "Three"))
 
@@ -137,10 +117,7 @@ for it, said in ((anna, "the person the user talks about most"),
                  (mila, "someone Anna works with"),
                  (firm, "where Anna hopes to work"),
                  (town, "the city the office is in"),
-                 (job, "the post she applied for"),
                  (meeting, "the first of the interviews"),
-                 (plan, "what the whole move is for"),
-                 (thought, "something to raise on the call"),
                  (thing, "a thing with no class of its own"),
                  (two, "the second specimen, plainer than the first"),
                  (three, "the third, made to take the link over")):
@@ -153,38 +130,36 @@ anna.tag("colleague", "berlin")
 firm.tag("employer")
 one.tag("kept", "looked at", starts=t)
 
-held = anna.set_membership(firm,  starts=date(2018, 4, 1))
-held.role, held.title, held.kind, held.primary, held.team = ("engineer", "Backend engineer",
-                                                             "employment", True, "platform")
-held.describe("as the user put it: she has been there since spring")
-lives = anna.set_located(town,  starts=t)
-lives.kind, lives.detail = "home", "near the river"
-knows = anna.set_social(mila,  starts=t)
-knows.role, knows.how_met, knows.closeness = "colleague", "at the old firm", 4
-kin = anna.set_kin(mila,  starts=t)
-kin.role, kin.label_reverse = "cousin", "cousin"
-runs = mila.set_authority(firm,  starts=t)
-runs.role = "head of engineering"
-owns = anna.set_ownership(thing,  starts=t)
-owns.price = 240.0
-joins = anna.set_participation(meeting,  starts=t)
-joins.role = "candidate"
-serves = mila.set_service(anna,  starts=t)
-serves.role, serves.fee, serves.schedule = "recruiter", 0.0, "when there is a post"
-pairs = anna.set_partner(mila,  starts=t)
-pairs.role = "co-author"
-district = Place.new(name="Neustadt", city="Bremen", country="Germany", category="other")
-district.describe("the part of the city she is looking in")
-part = district.set_part_of(town,  starts=t)
-other = Thing.new(name="A desk", nature="object")
-other.describe("what any desk is, not this one")
-kind_of = thing.set_kind_of(other,  starts=t)
-loose = thought.relate(plan, "related", label="raised_for", starts=t)
-loose.nature = "related_to"
+# One word of each shape a link can take: one-to-many from either end, many-to-many with the
+# same role at both ends, one-to-one, and a word with attributes of its own.
+world.define_relation("works_at", "a person working for an employer", cardinality="many-to-one",
+                      subject_is="a person who works", object_is="their employer",
+                      attributes=[{"name": "role", "type": "str", "description": "What they do there."}])
+world.define_relation("lives_in", "a person living in a place", cardinality="many-to-one",
+                      subject_is="a resident", object_is="the place they live")
+world.define_relation("knows", "two people who know each other", cardinality="many-to-many",
+                      subject_is="an acquaintance", object_is="an acquaintance")
+world.define_relation("owns", "a person owning a thing", cardinality="one-to-many",
+                      subject_is="the owner", object_is="what they own")
+world.define_relation("attends", "a person taking part in an event", cardinality="many-to-many",
+                      subject_is="a participant", object_is="the event")
+world.define_relation("part_of", "a place inside a larger one", cardinality="many-to-one",
+                      subject_is="the part", object_is="the whole")
 world.define_relation("stands_beside", "one specimen standing next to another, one at a time",
-                      nature="related_to", cardinality="one-to-one",
-                      subject_is="the near one", object_is="the far one")
-one.set_stands_beside(two,  starts=t)
+                      cardinality="one-to-one", subject_is="the near one", object_is="the far one")
+
+held = anna.set_works_at(firm, starts=date(2018, 4, 1))
+held.role = "engineer"
+held.describe("as the user put it: she has been there since spring")
+anna.set_lives_in(town, starts=t)
+anna.set_knows(mila, starts=t)
+anna.set_owns(thing, starts=t)
+anna.set_attends(meeting, starts=t)
+district = Thing.new(name="Neustadt", nature="place")
+district.describe("the part of the city she is looking in")
+district.set_part_of(town, starts=t)
+loose = thing.relate(firm, "related", label="bought_from", starts=t)
+one.set_stands_beside(two, starts=t)
 print("links in")
 """
 
@@ -353,7 +328,7 @@ def check_the_user_is_not_merged_away() -> None:
     work = Path(tempfile.mkdtemp(prefix="tw-parties-"))
     rt = open_world(work)
     rt.start_task(KEY, "record what the user said about her own week", "recording")
-    rt.run('anna = Person.new(full_name="Anna Weber", email="anna@example.org")\n'
+    rt.run('anna = Person.new(full_name="Anna Weber")\n'
            'anna.describe("the person this is all about")\n'
            'print("in")', KEY)
     # The file comes second on purpose. The other way round the world sees the duplicate as it

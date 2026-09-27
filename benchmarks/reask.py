@@ -55,7 +55,7 @@ def main() -> int:
     log = out_dir / "host.jsonl"
     server = subprocess.Popen(
         [sys.executable, "-m", "terraweaver.server", "--db", args.db, "--port", str(args.port),
-         *(["--specs", args.specs] if args.specs else ["--fixture", ""])],
+         *(["--specs", args.specs] if args.specs else [])],
         cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     import urllib.request
     for _ in range(120):

@@ -1,6 +1,6 @@
 {
   "name": "Person",
-  "description": "A human being known to the user \u2014 themself, family, friends, colleagues, contacts.",
+  "description": "A human being known to the user — themself, family, friends, colleagues, contacts.",
   "attributes": [
     {
       "name": "full_name",
@@ -15,65 +15,9 @@
       "description": "Alternative names/nicknames used to refer to this person."
     },
     {
-      "name": "email",
-      "type": "email",
-      "required": false,
-      "description": "Primary email address."
-    },
-    {
-      "name": "phone",
-      "type": "phone",
-      "required": false,
-      "description": "Primary phone number."
-    },
-    {
-      "name": "organization",
-      "type": "ref:Organization",
-      "required": false,
-      "description": "Where they mainly work or study now \u2014 their primary Membership. Assigning closes the old one and opens a new one; history('organization') lists past ones.",
-      "derived": "relation",
-      "settable": true
-    },
-    {
-      "name": "relationship",
-      "type": "str",
-      "required": false,
-      "description": "What they are to the owner, read from the relations between the owner and them. Assigning a label (\"friend\", \"recruiter\", \"former manager\") records such a relation.",
-      "derived": "relation",
-      "settable": true
-    },
-    {
-      "name": "job_title",
-      "type": "str",
-      "required": false,
-      "description": "Their role in their primary Membership. Set organization first.",
-      "derived": "relation",
-      "settable": true
-    },
-    {
-      "name": "location",
-      "type": "ref:Place",
-      "required": false,
-      "description": "Where this person is based."
-    },
-    {
-      "name": "assistant",
-      "type": "ref:Agent",
-      "required": false,
-      "description": "The assistant whose owner this person is. Derived \u2014 set Agent.owner to change it.",
-      "derived": "Agent.owner"
-    },
-    {
-      "name": "facts",
-      "type": "list[ref:Preference]",
-      "required": false,
-      "description": "Facts recorded about this person. Derived \u2014 record one with add_fact.",
-      "derived": "Preference.subject"
-    },
-    {
       "name": "descriptions",
       "type": "list[text]",
-      "description": "How this one has been described, in whoever's words \u2014 several are normal, because people describe the same thing differently and each telling is worth keeping."
+      "description": "How this one has been described, in whoever's words — several are normal, because people describe the same thing differently and each telling is worth keeping."
     },
     {
       "name": "tags",
@@ -90,32 +34,16 @@
       "settable": true
     }
   ],
-  "methods": [
-    {
-      "name": "send_email",
-      "signature": "send_email(subject: str, body: str) -> bool",
-      "description": "Send an email to this person's `email`. Requires `email` to be set."
-    },
-    {
-      "name": "add_fact",
-      "signature": "add_fact(predicate: str, value: str, confidence: float = 1.0) -> Preference",
-      "description": "Record a Preference/Fact instance about this person and link it via `subject`."
-    },
-    {
-      "name": "research",
-      "signature": "research() -> None",
-      "description": "Ground/enrich this person's attributes via live search (Tavily) when little is known about them."
-    }
-  ],
+  "methods": [],
   "relations": {
     "kin": "family: brother, mother, cousin, in-laws",
-    "partner": "their spouse or partner \u2014 one at a time",
+    "partner": "their spouse or partner — one at a time",
     "social": "friends, acquaintances, neighbours",
     "membership": "their job, studies, clubs",
-    "authority": "whom they manage; managed_by \u2014 their manager",
-    "service": "services they provide; served_by \u2014 their doctor, landlord, recruiter"
+    "authority": "whom they manage; managed_by — their manager",
+    "service": "services they provide; served_by — their doctor, landlord, recruiter"
   },
-  "what_to_say": "their full name as the user says it, who they are to the user, where they live, when they were born if it came up \u2014 enough to know them again when the name is said differently next time",
+  "what_to_say": "their full name as the user says it, who they are to the user, where they live, when they were born if it came up — enough to know them again when the name is said differently next time",
   "parent": "Thing",
   "brief": "a human being known to the user"
 }

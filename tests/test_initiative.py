@@ -12,6 +12,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from terraweaver import open_world  # noqa: E402
+
 from terraweaver import authoring, initiative
 from terraweaver.runtime import WorldRuntime
 
@@ -26,7 +28,7 @@ def check(name: str, condition: bool, detail: str = "") -> None:
 
 def world_with_authoring():
     work = Path(tempfile.mkdtemp(prefix="tw-init-"))
-    rt = WorldRuntime(str(work / "w.db"), fixture="job_search", rebuild=True)
+    rt = open_world(str(work / "w.db"))
     authoring.install(rt.world, work / "grown")
     rt.start_task("k", "record where people were born and where they worked", "recording")
     return rt

@@ -58,7 +58,7 @@ class Picker:
 def base_world():
     where = Path(tempfile.mkdtemp(prefix="tw-formalise-"))
     specs = growth.apply_growth(ontology.base_specs(CORE), {})
-    rt = WorldRuntime(str(where / "world.db"), fixture=None, specs=specs, selves=True, home=where)
+    rt = WorldRuntime(str(where / "world.db"), specs=specs, selves=True, home=where)
     authoring.install(rt.world, where / "grown")
     rt.start_task("the host", "record facts said in words, for the reading to type", "recording")
     return rt

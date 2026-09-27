@@ -1,9 +1,9 @@
 """Loads class specs from ontology/core/*.json and builds real Python classes from them.
 
-Attributes come purely from the JSON spec (generic). Method bodies are not derivable
-from a signature + description alone, so they are looked up in `terraweaver.impls`
-by (class_name, method_name); a method with no registered implementation gets a stub
-that raises NotImplementedError, so gaps fail loudly instead of silently no-op-ing.
+Attributes come purely from the JSON spec (generic). A class a world starts with declares no
+methods: what a class can do is written by the world itself (`procedures.py`) and bound onto it
+there. A method a spec declares with nothing bound to it gets a stub that raises
+NotImplementedError, so a gap fails loudly instead of silently doing nothing.
 """
 import json
 from contextlib import contextmanager
@@ -328,7 +328,9 @@ def trusted_writes():
         _TRUSTED = previous
 
 
-# The least a world can be. A Thing is somewhere to put anything at all, so nothing waits for a
+
+
+# The preset: what a new world starts with, and the least a world can be. A Thing is somewhere to put anything at all, so nothing waits for a
 # class to exist; a Related is a link with no type yet, so no fact waits for a relation type. And
 # every world is between two parties who are in it as entities — without a Person and an Agent
 # there is no "me" and no "you", and "my dentist" has no "my".
@@ -349,47 +351,18 @@ def trusted_writes():
 # for instead of the one the fact used — "the capital of France" went in as `part_of`, true and
 # unanswerable, because `part_of` was there and `capital_of` was not.
 #
-# A starting set, not a rank. Being named here buys a class nothing: once the world is open it
-# stands on the same terms as one the world grew last night, and nothing downstream may ask
-# which of the two it is looking at.
-BASE_CLASSES = ("Thing", "Related", "Person", "AIAgent", "Event")
-
-# Not the world's picture of anything — the world's own record of the work done on it. It stood
-# in the list above and read as one more kind of thing a person's life is made of, which it is
-# not: nobody tells the world about a Task, the world writes them about itself.
-OWN_CLASSES = ("Task",)
-
-
-# What each base class keeps. A Person in the base is a name, not a name with an employer and a
-# job title: those read from relation types and other classes the base hasn't got, and an
-# attribute that presumes a type is filling however useful it is. What every class gets anyway —
-# descriptions, tags, and the one-word reading of them — is kept, because that is how anything
-# says what it has no attribute for.
-BASE_KEEPS = {
-    "Person": ("full_name", "aliases"),
-    "AIAgent": ("name", "owner", "character"),      # the soul file's body goes into character
-    "Thing": ("name", "aliases", "nature"),
-    "Related": ("label", "nature"),
-    # `kind` and `status` are left out: their words (interview, call, offer, cancelled) are
-    # one world's vocabulary, and a base world is the one that has none yet. What stays is what
-    # makes an event an event — what it was, when it began, when it ended, what it was about.
-    "Event": ("title", "start_time", "end_time", "about"),
-    "Task": ("stated", "mode", "touched", "runs", "closed_as"),
-}
-_ALWAYS = ("descriptions", "tags", "notes", "description")
-
-
+# A starting set, not a rank. Nothing downstream asks whether a class came from here: it is built,
+# read, extended and changed exactly as a class the world defines for itself (`growth.py`), and
+# carries `source: "preset"` so the difference can be seen when it matters — never so it can be
+# acted on. Task is here too, and is not the person's picture of anything: it is the world's own
+# record of the work done on it, which its spec says with `own`.
 def base_specs(ontology_dir: Path) -> dict[str, dict[str, Any]]:
-    """The least a world can be: the base classes, each cut back to what a world needs of it."""
-    specs = load_specs(ontology_dir, grown_dir=Path("/nonexistent"))
-    out = {}
-    for name in BASE_CLASSES + OWN_CLASSES:
-        spec = dict(specs[name])
-        keep = BASE_KEEPS.get(name, ()) + _ALWAYS
-        spec["attributes"] = [dict(a) for a in spec["attributes"] if a["name"] in keep]
-        spec["methods"] = []
-        out[name] = spec
-    return out
+    """The preset a new world starts with — whatever `ontology/core` holds.
+
+    It used to cut five classes out of a larger core of twenty-three, and the rest kept surfacing as
+    though it were part of the world. The files are the classes as a world starts with them now.
+    """
+    return load_specs(ontology_dir, grown_dir=Path("/nonexistent"))
 
 
 def load_specs(ontology_dir: Path, grown_dir: Path | None = None) -> dict[str, dict[str, Any]]:
@@ -648,12 +621,6 @@ class Entity:
     def history(self, attr: str) -> list:
         """The values this attribute has held, oldest first, each with when it stopped; the
         current one last."""
-        declared = next((a for a in type(self)._spec["attributes"] if a["name"] == attr), None)
-        if declared is not None and declared.get("derived") == "relation":
-            from terraweaver import relations
-
-            history = relations.DERIVED[(type(self).__name__, attr)][2]
-            return history(self) if history else []
         return current_world().history.of(self, attr)
 
     def relate(self, other, how: str, /, *, starts=None, until=None, ttl=None,
@@ -1053,7 +1020,7 @@ class Entity:
     def question(self, text: str, options=(), about: str | None = None) -> Any:
         """Record something about this entity that doesn't add up and isn't yours to decide —
         "two phone numbers, which is current?". It stays open until the user answers it.
-        `about` is the attribute or relation it hangs over ("phone", "service"): a later read of
+        `about` is the attribute or relation it hangs over ("aliases", "born_in"): a later read of
         that one is told it can't be answered cleanly, instead of quietly returning one side."""
         touches = []
         if about:
@@ -1698,14 +1665,20 @@ def _reopen_what_the_world_ended(cls, side: str) -> None:
 
 
 def _keep_spec(spec: dict) -> None:
-    """Write a grown type's spec back where it was read from, if it was grown at all."""
+    """Write a changed class to the world's own place, whoever wrote it first.
+
+    A class the world started with is changed exactly as one it made is — and kept the same way:
+    its version goes beside the world's database and is what the world opens with next time. This
+    used to write only classes the world had grown, on the grounds that the preset was not the
+    world's to change, so an amendment to a class it started with held for the session and was
+    gone on reopening. The preset file itself is never touched; it is what a new world starts from.
+    """
     world = current_world()
     where = getattr(world, "grown_dir", None) if world is not None else None
     if not where:
         return
-    path = Path(where) / f"{spec['name']}.json"
-    if path.exists():           # only types this world grew; the core ontology is not ours
-        path.write_text(json.dumps(spec, indent=2))
+    Path(where).mkdir(parents=True, exist_ok=True)
+    (Path(where) / f"{spec['name']}.json").write_text(json.dumps(spec, indent=2))
 
 
 class _RelationClass(type):
@@ -1904,30 +1877,6 @@ def _sets_the_role(type_name: str, rel: dict, backwards: bool):
     return state
 
 
-def _relation_property(class_name: str, attr: dict):
-    """An attribute read from relations (Person.organization from the primary Membership)."""
-    from terraweaver import relations
-
-    getter, setter, _ = relations.DERIVED[(class_name, attr["name"])]
-
-    def refuse(self, value):
-        raise TypeError(f"{class_name}.{attr['name']} is derived from relations and can't be set directly")
-
-    def read(self):
-        try:
-            return getter(self)
-        except ValueError as unknown:
-            # A world may not have the type this attribute is read from — a minimal one has
-            # Person before it has Membership. There being no links of a type that does not
-            # exist is simply true, and an attribute that raises instead of saying so makes
-            # the entity unusable for everything else it does hold.
-            if "no relation type" not in str(unknown):
-                raise
-            return [] if attr["type"].startswith("list[") else None
-
-    return property(read, setter or refuse, doc=attr.get("description", ""))
-
-
 def _same_entity_property(class_name: str, attr: dict):
     """A second word for something this entity already holds — read as the latest, written as one more.
 
@@ -2007,7 +1956,7 @@ def _intentional(impl):
 def _make_stub(class_name: str, method_name: str):
     def stub(self, *args, **kwargs):
         raise NotImplementedError(
-            f"{class_name}.{method_name} has no implementation registered in terraweaver.impls"
+            f"{class_name}.{method_name} is declared and has no implementation bound to it"
         )
 
     return stub
@@ -2102,7 +2051,7 @@ def what_to_say(cls, classes: dict | None = None) -> str:
 
 # The three base relations are natures wearing a type's clothes (relations.py), so a type that
 # carries one of those natures is a kind of it, and that is the whole of the inheritance here.
-_BASE_FOR = {"part_of": "PartOf", "kind_of": "Kind", "related_to": "Related", "related": "Related"}
+_BASE_FOR = {"related_to": "Related", "related": "Related"}
 
 
 def define_class(classes: dict[str, type], spec: dict[str, Any], name: str | None = None,
@@ -2131,8 +2080,7 @@ def define_class(classes: dict[str, type], spec: dict[str, Any], name: str | Non
         namespace = {
             "__doc__": spec.get("description", ""),
             "_spec": spec,
-            # Shared, mutated-in-place: lets a method implementation reach sibling
-            # classes (e.g. Person.add_fact needs to construct a Preference).
+            # Shared, mutated-in-place: lets a method implementation reach sibling classes.
             "_classes": classes,
         }
         base = Entity
@@ -2166,9 +2114,7 @@ def define_class(classes: dict[str, type], spec: dict[str, Any], name: str | Non
                 if "any" in end["type"]:
                     end["type"] = "ref:any"
         for attr in spec.get("attributes", []):
-            if attr.get("derived") == "relation":
-                namespace[attr["name"]] = _relation_property(name, attr)
-            elif str(attr.get("derived", "")).startswith("self."):
+            if str(attr.get("derived", "")).startswith("self."):
                 namespace[attr["name"]] = _same_entity_property(name, attr)
             elif "derived" in attr:
                 namespace[attr["name"]] = _derived_property(name, attr)

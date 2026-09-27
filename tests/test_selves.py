@@ -29,15 +29,10 @@ def main() -> int:
           f"{w.world.owner.id} / {w.world.me.id}")
     check("and neither is the host's to replace", w.world.is_protected(w.world.owner))
 
-    # --- a fixture that made its own pair keeps them ---
-    fixture = open_world(fixture="job_search")
-    check("a world built from a fixture keeps the pair it made",
-          fixture.world.owner.full_name == "Michael", str(fixture.world.owner))
-
     with tempfile.TemporaryDirectory() as folder:
         home = Path(folder)
         (home / "USER.md").write_text(
-            "---\nfull_name: Michael Gribov\nemail: mike@example.com\n---\nBuilds TerraWeaver.")
+            "---\nfull_name: Michael Gribov\naliases: Misha\n---\nBuilds TerraWeaver.")
         (home / "soul.md").write_text("---\nname: Tera\n---\nKeeps the world. Never answers for the user.")
 
         # --- the files describe them, the way personal agents are configured ---
@@ -61,8 +56,8 @@ def main() -> int:
         again = open_world(str(home / "world.db"))
         check("an edited file is read again", again.world.owner.notes == "Moved to Belgrade.",
               str(again.world.owner.notes))
-        check("a line taken out takes its value", again.world.owner.email is None,
-              str(again.world.owner.email))
+        check("a line taken out takes its value", again.world.owner.aliases is None,
+              str(again.world.owner.aliases))
         live = again.world.facts.about("person:user")
         check("the statement it used to make is retracted", {s.slot for s in live} == {"full_name", "descriptions"},
               str(live))
@@ -78,16 +73,16 @@ def main() -> int:
               str(len(third.world.facts.about("person:user", include_retracted=True))))
 
     # --- both are in every namespace, under names that can't be taken ---
-    w = open_world(fixture="job_search")
+    w = open_world()
     seen = w.run('print(user.full_name, agent.name, owner is user, me is agent)', "host")
     check("both are in the namespace under permanent names",
-          seen["output"].strip() == "Michael Tera True True", seen["output"] or str(seen["error"]))
+          seen["output"].strip() == "you assistant True True", seen["output"] or str(seen["error"]))
     taken = w.run('user = 5', "host")
     check("and neither can be rebound", not taken["ok"] and "pick another name" in str(taken["error"]),
           str(taken["error"]))
     w.reset_session("host")
     after = w.run('print(user.full_name)', "host")
-    check("a new task still has them", after["output"].strip() == "Michael", after["output"])
+    check("a new task still has them", after["output"].strip() == "you", after["output"])
 
     print()
     if failures:

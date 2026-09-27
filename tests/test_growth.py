@@ -10,6 +10,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from terraweaver import open_world  # noqa: E402
+
 from terraweaver import growth
 from terraweaver.ontology import base_specs as ont_base, load_specs
 from terraweaver.runtime import WorldRuntime
@@ -51,7 +53,7 @@ def main() -> int:
 
     # --- growth adds; it never rewrites ---
     clash = dict(addition, name="PersonEmail",
-                 attributes=[{"name": "email", "type": "str", "description": "another email"}])
+                 attributes=[{"name": "full_name", "type": "str", "description": "another name"}])
     check("redefining a core attribute is refused",
           "can't be redefined" in (refused(lambda: growth.apply_growth(core, [clash])) or ""),
           str(refused(lambda: growth.apply_growth(core, [clash]))))
@@ -63,20 +65,21 @@ def main() -> int:
           refused(lambda: growth.apply_growth(core, [dict(addition, impls="rm -rf")])) is not None)
 
     # --- a procedure the world wrote for itself ---
-    rt = WorldRuntime(":memory:", fixture="job_search")
+    rt = open_world()
+    rt.run('Person.new(full_name="Ada Lovelace")\nPerson.new(full_name="Ada King")', "host")
     rt.world.procedures.define(
-        "colleagues", "colleagues(self)",
-        "org = self.organization\n"
-        "return [p for p in Person.find(organization=org).matches if p != self] if org else []",
-        because="asked three times this week: who else works where this person works",
+        "namesakes", "namesakes(self)",
+        "first = self.full_name.split()[0]\n"
+        "return [p for p in Person.find(full_name=first).matches if p != self]",
+        because="asked three times this week: who else here goes by the same first name",
         attaches_to="Person")
     rt.world.procedures.bind(rt.classes)
-    called = rt.run('ada = Person.get(full_name="Ada Lovelace")\nprint(ada.colleagues())', "host")
+    called = rt.run('ada = Person.get(full_name="Ada Lovelace")\nprint(ada.namesakes())', "host")
     check("host code calls it like any method", called["ok"], str(called["error"]))
-    check("and the call is counted", rt.world.procedures.get("colleagues").uses == 1,
-          str(rt.world.procedures.get("colleagues")))
+    check("and the call is counted", rt.world.procedures.get("namesakes").uses == 1,
+          str(rt.world.procedures.get("namesakes")))
     check("it says why it exists",
-          "three times this week" in rt.run('print(Person.colleagues.__doc__)', "host")["output"])
+          "three times this week" in rt.run('print(Person.namesakes.__doc__)', "host")["output"])
 
     # --- a procedure that can't run is never stored ---
     check("code the sandbox refuses is refused here",
@@ -126,7 +129,7 @@ def main() -> int:
     import tempfile as _tempfile
 
     room = _Path(_tempfile.mkdtemp(prefix="tw-base-"))
-    base = WorldRuntime(str(room / "base.db"), fixture=None, selves=False,
+    base = WorldRuntime(str(room / "base.db"), selves=False,
                         specs=_ont.base_specs(ONTOLOGY_DIR))
     authoring.install(base.world, room / "grown")
     wrote = base.run('for who, what in [("Ferdowsi", "Shahnameh"), ("Le Guin", "Earthsea"),\n'
@@ -159,7 +162,7 @@ def main() -> int:
     # of that type down with it.
     from terraweaver import authoring
 
-    rt = WorldRuntime(":memory:", fixture="job_search")
+    rt = open_world()
     made = authoring.install(rt.world, None)
     rt.start_task("k", "record where a city is the seat of government", "recording")
     rt.run('berlin = Thing.ensure(name="Berlin", nature="place")\n'
@@ -182,7 +185,7 @@ def main() -> int:
     # session: the host could read nothing about capitals, stopped writing them, and
     # twenty-two facts were lost to two bad rows. A reading that cannot be made leaves that
     # one thing out.
-    rt = WorldRuntime(":memory:", fixture="job_search")
+    rt = open_world()
     made = authoring.install(rt.world, None)
     made.define_relation("capital_of", "the city that is a country's seat of government",
                          nature="part_of", cardinality="one-to-one")
@@ -210,7 +213,7 @@ def main() -> int:
     # a class used to build a new class object, leaving the instance in hand and the name in the
     # run's namespace on the old spec — so a host that did exactly what it was told got the same
     # refusal again, with no way past it from inside the run. That is where prose comes from.
-    rt = WorldRuntime(":memory:", fixture="job_search")
+    rt = open_world()
     authoring.install(rt.world, None)
     rt.start_task("k3", "record what the user said about somebody's pay", "recording")
     taken = rt.run('p = Person.new(full_name="Ada Byron")\np.salary = 120000\n'
@@ -248,7 +251,7 @@ def main() -> int:
     # prose. So the word is taken, and the two things no value can tell you — what it means
     # and whether it supersedes — are asked for at the close.
     work = Path(tempfile.mkdtemp(prefix="tw-taken-"))
-    rt = WorldRuntime(str(work / "w.db"), fixture=None,
+    rt = WorldRuntime(str(work / "w.db"), 
                       specs=ont_base(ROOT / "ontology" / "core"), selves=True)
     authoring.install(rt.world, work / "grown")
     rt.start_task("k4", "record what the user said about Ada and her pay", "recording")
@@ -275,6 +278,45 @@ def main() -> int:
           "120000" in (kept["output"] or "") and "Ada Byron" in (kept["output"] or ""),
           str(kept.get("error") or kept.get("output"))[:140])
     check("and then it closes", "taken on your word" not in (rt.finish_task("k4") or ""))
+
+    # --- a class the world started with and one it made are the same kind of thing ---
+    # The preset is what a world opens with and nothing more. What distinguishes a class is
+    # recorded as its source; how it is built, extended and changed does not depend on it.
+    import tempfile as _tf
+    from pathlib import Path as _P
+    from terraweaver import ontology as _ontology
+    room = _P(_tf.mkdtemp(prefix="tw-preset-"))
+    one = open_world(str(room / "world.db"))
+    one.start_task("k", "make a class and change one the world started with", "recording")
+    one.world.extras["define"]("Sport", "A game people play and follow.", identified_by="name")
+    check("a class the world started with says so", one.world.classes["Person"]._spec.get("source") == "preset",
+          str(one.world.classes["Person"]._spec.get("source")))
+    check("and one it made says who made it", one.world.classes["Sport"]._spec.get("source") == "agent",
+          str(one.world.classes["Sport"]._spec.get("source")))
+    # An addition to a class the world made, filed so it sorts before the class it extends: in one
+    # pass it was refused as "not a core class", which made the preset the only thing to build on.
+    (room / "grown" / "AAA_sport_rules.json").write_text(json.dumps(
+        {"name": "AAA_sport_rules", "extends": "Sport", "because": "rules came up three times",
+         "attributes": [{"name": "rules", "type": "str", "description": "How the game is played."}]}))
+    # A change to a class the world started with — kept by the world, the way any change is. It
+    # was not: the preset won over the world's own version on reopening, and an attribute grown on
+    # Person was there for the session and gone the next time the world was opened.
+    one.world.extras["attribute"](one.world.classes["Person"], "email",
+                                  "The address this person reads their mail at.", type="email")
+    check("changing a class the world started with is kept beside the world",
+          (room / "grown" / "Person.json").exists(),
+          str(sorted(p.name for p in (room / "grown").glob("*.json"))))
+    two = open_world(str(room / "world.db"))
+    check("an addition lands on a class the world made, whatever the order of the files",
+          "rules" in [a["name"] for a in two.world.classes["Sport"]._spec["attributes"]],
+          str([a["name"] for a in two.world.classes["Sport"]._spec["attributes"]]))
+    check("and the world opens with its own version of a class it started with",
+          "email" in [a["name"] for a in two.world.classes["Person"]._spec["attributes"]],
+          str([a["name"] for a in two.world.classes["Person"]._spec["attributes"]]))
+    check("while the preset itself is untouched",
+          '"email"' not in (_P(__file__).resolve().parent.parent / "ontology" / "core"
+                            / "Person.json").read_text())
+    _ontology.set_world(two.world)
 
     print()
     if failures:

@@ -3,7 +3,8 @@
 One long-lived process owns the world: every connected host shares the same store and the
 same identity map, so two hosts can't overwrite each other with stale copies.
 
-    python -m terraweaver.server --db worlds/job_search.db --fixture job_search
+    python -m terraweaver.server                  # the world kept as var/worlds/main/
+    python -m terraweaver.server --db mike        # another one, by name or by path
 
 Then connect a host to http://127.0.0.1:7000/mcp. Debug endpoints:
 
@@ -11,7 +12,6 @@ Then connect a host to http://127.0.0.1:7000/mcp. Debug endpoints:
     GET  /debug/runs?limit=20&session=...   what hosts ran, saw and changed
     GET  /debug/sessions                    namespaces per session, with their variables
     GET  /debug/export                      the whole world as plain JSON
-    POST /debug/reset                       rebuild the world from its fixture
 
 Bound to anything but localhost, every request except /health needs the token:
 `Authorization: Bearer <token>` (or `?token=<token>` for a browser). The token comes from
@@ -107,7 +107,7 @@ async def describe_methods(names: list[str] | str | None = None, ctx: Context = 
 def _names(*given) -> list[str]:
     """Take the names however they arrive.
 
-    A host writing `class_names='["Person", "Organization"]'` gets a validation error and loses
+    A host writing `class_names='["Person", "Event"]'` gets a validation error and loses
     a turn to it — seen in a scenario. The tool is called by a language model, so the edge is
     the right place to be forgiving: either keyword, a list or a string, JSON or commas.
     """
@@ -155,7 +155,7 @@ async def variables(ctx: Context) -> str:
 @server.tool()
 async def set_variable(name: str, expression: str, description: str, ctx: Context) -> str:
     """Set a world variable, shared by every session, to the value of a Python expression over
-    the world — e.g. `Person.find(email="ann@x.org").matches[0]`, `Vacancy.find(status="applied").matches`
+    the world — e.g. `Person.find(full_name="Ann Lee").matches[0]`, `Event.find(title="Dentist").matches`
     or `42`. An entity is kept by id, so it always reads as it is now; other values are snapshots.
     The description must say what it is and why it is kept."""
     key = _session_key(ctx)
@@ -229,7 +229,7 @@ async def reset_session(ctx: Context) -> str:
 
 @server.custom_route("/health", ["GET"])
 async def health(request: Request) -> JSONResponse:
-    return JSONResponse({"ok": True, "db": runtime.db_path, "fixture": runtime.fixture})
+    return JSONResponse({"ok": True, "db": runtime.db_path})
 
 
 @server.custom_route("/debug/runs", ["GET"])
@@ -247,13 +247,6 @@ async def debug_sessions(request: Request) -> JSONResponse:
 @server.custom_route("/debug/export", ["GET"])
 async def debug_export(request: Request) -> JSONResponse:
     return JSONResponse(runtime.export())
-
-
-@server.custom_route("/debug/reset", ["POST"])
-async def debug_reset(request: Request) -> JSONResponse:
-    runtime.reset()
-    log.info("world reset from fixture %s", runtime.fixture)
-    return JSONResponse({"ok": True})
 
 
 TOKEN_FILE = Path(__file__).resolve().parent.parent / ".terraweaver-token"
@@ -326,17 +319,13 @@ class TokenAuth:
 def main() -> None:
     global runtime
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--db", default="worlds/job_search.db")
-    parser.add_argument("--fixture", default="job_search", help="world to build when the db is empty")
-    parser.add_argument("--rebuild", action="store_true", help="rebuild from the fixture on start")
+    parser.add_argument("--db", default="main",
+                        help="a world by name (var/worlds/<name>/) or a path to its database")
     parser.add_argument("--one-door", action="store_true",
                         help="hide define_relation: the host says facts in words and the world "
                              "works out the types (an experiment; see authoring.install)")
     parser.add_argument("--blank", action="store_true",
                         help="no classes at all: the host defines the ontology (docs/open-ontology.md)")
-    parser.add_argument("--base", action="store_true",
-                        help="start with the base classes only (Thing, Related) and the "
-                             "definition calls — what the fixed classes are measured against")
     parser.add_argument("--specs", default=None,
                         help="a directory of class specs to open a host-built world with")
     parser.add_argument("--host", default="127.0.0.1", help="0.0.0.0 to serve the local network (token required)")
@@ -352,38 +341,22 @@ def main() -> None:
 
         specs = {json.loads(path.read_text())["name"]: json.loads(path.read_text())
                  for path in sorted(Path(args.specs).glob("*.json"))}
-        runtime = WorldRuntime(args.db, fixture=None, specs=specs, selves=False)
+        runtime = WorldRuntime(args.db, specs=specs, selves=False)
         authoring.install(runtime.world, Path(args.specs))
-    elif args.base:
-        # The least a world can be: somewhere to put a thing, a link with no type yet, the two
-        # parties the world is between, and the calls to name what turns out to have a name.
-        # What our other classes are worth is the difference between this run and one with them.
-        from terraweaver import authoring, growth, ontology as ont
-
-        here = Path(__file__).resolve().parent.parent / "ontology" / "core"
-        grown_dir = Path(args.db).with_suffix("").parent / "grown"
-        # Both parties are in it, because a world is between two parties and a base without them
-        # is not a smaller world but a different kind of thing.
-        #
-        # Plus whatever this world was taught. "Base" means what the world ships with, not
-        # "forget what you learned": starting from the bare base against a database that already
-        # holds grown types left them in the file and in the tables but out of `world.classes`,
-        # so the next batch was shown a vocabulary without them and built its own again. Twenty
-        # facts came to sixteen types, twelve of them holding one link each, with `Plays`
-        # alongside `PlaysPosition` and a marriage recorded as kin next to an unused MarriedTo.
-        specs = growth.apply_growth(ont.base_specs(here), growth.load_grown(grown_dir))
-        runtime = WorldRuntime(args.db, fixture=None, specs=specs, selves=True)
-        authoring.install(runtime.world, grown_dir, one_door=args.one_door)
-        _give_it_an_engineer(runtime.world)
     elif args.blank:
         # A world with the mechanism and no vocabulary. The host defines the classes; the world
         # keeps them uniform and answers "is there already something for this?".
         from terraweaver import authoring
 
-        runtime = WorldRuntime(args.db, fixture=None, specs={}, selves=False)
+        runtime = WorldRuntime(args.db, specs={}, selves=False)
         authoring.install(runtime.world, Path(args.db).with_suffix("").parent / "grown")
     else:
-        runtime = WorldRuntime(args.db, fixture=args.fixture, rebuild=args.rebuild)
+        # The world as every world opens: the base, what it has grown, the calls that define more
+        # — one recipe, `open_world` — and the engineer, if this machine has a key for one.
+        from terraweaver import open_world
+
+        runtime = open_world(args.db, one_door=args.one_door)
+        _give_it_an_engineer(runtime.world)
 
     names = ["127.0.0.1", "localhost"]
     lan = _lan_address()
@@ -405,7 +378,7 @@ def main() -> None:
     )
 
     for name in names:
-        log.info("world %s (fixture %s) on http://%s:%d/mcp", args.db, args.fixture, name, args.port)
+        log.info("world %s on http://%s:%d/mcp", runtime.db_path, name, args.port)
     if not _is_loopback(args.host):
         log.info("token required (see %s)", TOKEN_FILE.name if not os.environ.get("TERRAWEAVER_TOKEN") else "TERRAWEAVER_TOKEN")
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")

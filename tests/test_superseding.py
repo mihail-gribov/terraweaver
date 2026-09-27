@@ -15,6 +15,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from terraweaver import open_world  # noqa: E402
+
 from terraweaver import authoring
 from terraweaver.runtime import WorldRuntime
 
@@ -36,11 +38,10 @@ def world(**types):
     is why every type here limited an end nobody meant to limit.
     """
     work = Path(tempfile.mkdtemp(prefix="tw-sup-"))
-    rt = WorldRuntime(str(work / "w.db"), fixture="job_search", rebuild=True)
-    made = authoring.install(rt.world, work / "grown")
+    rt = open_world(str(work / "w.db"))
     for kind, cardinality in types.items():
-        made.define_relation(kind, f"what {kind.replace('_', ' ')} means here, for the test",
-                             nature="related_to", cardinality=cardinality)
+        rt.world.extras["define_relation"](
+            kind, f"what {kind.replace('_', ' ')} means here, for the test", cardinality=cardinality)
     rt.start_task("k", "record what the user said, more than once about one thing", "recording")
     return rt
 
@@ -87,19 +88,19 @@ def main() -> int:
           "Yasser Arafat 1969-02-03 -> 2004-11-11" in out, out.replace("\n", " | "))
     check("and the second one is open", "Mahmoud Abbas 2004-11-11 -> None" in out, out.replace("\n", " | "))
 
-    # --- what the nature decides ---
-    rt = world()
-    _, got = ran(rt, 'a = Person.new(full_name="A One")\nb = Organization.new(name="B Two")\n'
-                     'a.set_authority(b,  label="manager")')
+    # --- a link that holds needs no start ---
+    rt = world(manages="one-to-many", part_of="many-to-one")
+    _, got = ran(rt, 'a = Person.new(full_name="A One")\nb = Thing.new(name="B Two")\n'
+                     'a.set_manages(b)')
     # Recorded, not refused, and that is the settled end of three attempts. Refusing turned away
     # sixty facts in a 455-fact run; taking now() by itself dated a fact nobody dated; refusing
     # while offering now() turned away the same facts again, because a raise stops the block and
     # takes the rest of the batch with it — one un-dated marriage cost twenty-eight lines.
     # A time belongs to an event, and Event.start_time is required. A link that merely holds
     # needs no beginning: supersession orders an undated pair by which was told last.
-    check("a related_to link that changes is made without a start", got["ok"],
+    check("a one-at-a-time link is made without a start", got["ok"],
           str(got.get("error"))[:120])
-    _, got = ran(rt, 'dept = Organization.new(name="Newsroom")\ndept.set_part_of(b)')
+    _, got = ran(rt, 'dept = Thing.new(name="Newsroom")\ndept.set_part_of(b)')
     check("a part_of link needs no start", got["ok"], str(got.get("error"))[:80])
 
     # Nothing is demanded on the way in, and on the way out nothing rests on the order things
@@ -108,8 +109,8 @@ def main() -> int:
     # type could say "one ever", which has no periods to decide with.
     rt = world(led_by="many-to-one")
     out, got = ran(rt, 'boss = Person.new(full_name="The Boss")\n'
-                       'boss.set_led_by(Organization.new(name="Told First"))\n'
-                       'boss.set_led_by(Organization.new(name="Told Second"))\n'
+                       'boss.set_led_by(Thing.new(name="Told First"))\n'
+                       'boss.set_led_by(Thing.new(name="Told Second"))\n'
                        'print([r.object.name for r in boss.relations("led_by")])')
     said = " ".join(got.get("hints", []))
     check("with no dates, the later telling holds", "Told Second" in out and "Told First" not in out,
@@ -122,9 +123,9 @@ def main() -> int:
           str(got.get("questions"))[:140])
     dated = world(led_by="many-to-one")
     _, got = ran(dated, 'boss = Person.new(full_name="The Boss")\n'
-                        'boss.set_led_by(Organization.new(name="Told First"),  '
+                        'boss.set_led_by(Thing.new(name="Told First"),  '
                         'starts=date(2019, 1, 1))\n'
-                        'boss.set_led_by(Organization.new(name="Told Second"),  '
+                        'boss.set_led_by(Thing.new(name="Told Second"),  '
                         'starts=date(2022, 1, 1))\n'
                         'print(len(boss.relations("led_by")))')
     check("and puts the boundary on the date when somebody gave one",

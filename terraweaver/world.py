@@ -12,7 +12,7 @@ is seen better later, over the record, with the whole world in view.
 import json
 from typing import Any
 
-from terraweaver import matching, ontology, resolution, timeutil
+from terraweaver import matching, ontology, resolution, timeutil, values
 from terraweaver.comments import Comments
 from terraweaver.history import ValueHistory
 from terraweaver.facts import Facts, THE_PARTIES
@@ -505,12 +505,19 @@ class World:
             except Exception:                  # noqa: BLE001 - unreadable is not a match
                 continue
         keep = []
+        spec = self.classes[class_name]._spec
+        # An address, a number, a website identifies as its kind compares it — "Ada@Example.com"
+        # is "ada@example.com". Compared as raw strings here, the one candidate that decides the
+        # question was thrown out before the comparison that would have found it ever ran, and a
+        # second person was made for one address.
+        wanted_keys = {k: values.canonical(spec, k, given) for k, given in strong.items()}
         for instance_id, row in held.items():
             names = [row.get(name_key)] + list(row.get(matching.ALIAS_KEY) or [])
             close = any(isinstance(n, str) and n
                         and matching.similarity(incoming, n, by_parts) >= matching.PLAUSIBLE
                         for n in names)
-            same_key = any(row.get(k) == given for k, given in strong.items())
+            same_key = any(k in row and values.canonical(spec, k, row[k]) == given
+                           for k, given in wanted_keys.items())
             if close or same_key:
                 keep.append(instance_id)
         return [self.store.load(instance_id, self.classes) for instance_id in keep]
@@ -734,7 +741,7 @@ class World:
     def _check_attrs(self, class_name: str, attrs: dict) -> None:
         """Looking something up by an attribute the class hasn't got is not a miss, it's a typo.
 
-        Answering "nothing matched" to `Organization.find(full_name="CloudNine")` is true and
+        Answering "nothing matched" to `Event.find(full_name="Dentist")` is true and
         useless: the host reads it as "CloudNine isn't in the world" and goes looking elsewhere,
         which is exactly what it did. Say what is wrong with the question instead, and name the
         word it probably wanted — the same answer `Class(...)` gives for the same mistake.
@@ -810,13 +817,10 @@ class World:
         return rebuilding.rebuild(self, rule, at)
 
     def _apply_deferred(self, instance) -> None:
-        """Attributes given at construction that live in relations (Person(organization=...)):
-        they need the entity stored first."""
-        from terraweaver import relations
-
+        """Attributes given at construction that need the entity stored first."""
         deferred = instance.__dict__.pop("_deferred", {})
-        for name in sorted(deferred, key=lambda n: relations.APPLY_ORDER.index(n) if n in relations.APPLY_ORDER else 99):
-            setattr(instance, name, deferred[name])
+        for name, value in deferred.items():
+            setattr(instance, name, value)
 
     def relate(self, a, b, kind: str, /, starts=None, until=None, ttl=None,
                permanent: bool = False, **attrs):
@@ -1087,45 +1091,3 @@ def _option_index(needs: NeedsResolution, choice, new: bool) -> int | None:
         f"nor the new one ({matching.label(needs.context['incoming'])})"
     )
 
-
-def describe_world_api() -> str:
-    """The part of the prompt that tells the agent how to touch the world."""
-    return """\
-Before you answer anything or change anything, be certain WHICH entities are involved.
-An answer built on the wrong Annie is worse than no answer, and it's not yours to guess:
-- If this conversation has already settled who is meant, use that entity — don't look it
-  up again and don't ask again.
-- Otherwise look it up. If what comes back is a NeedsResolution — several people match, or
-  one matches only loosely — stop and settle it with the user before doing anything else:
-
-      result = Person.find(full_name="Annie")
-      if isinstance(result, NeedsResolution):
-          anna = run_skill(result)          # asks the user, returns the settled entity
-
-- Only once every entity is unambiguous and nothing contradicts what's stored do you carry
-  out the task. Never do half the work and ask afterwards.
-
-World access (the object `world` is in your namespace; it hides all storage details):
-- Record anything the user tells you with Class.ensure(...) — never construct Person(...)
-  directly for it, or you'll create a second copy of someone who already exists.
-  Pass the user's own wording verbatim: do not transliterate, translate, correct or otherwise
-  normalize a name before passing it in ("Ada Lovelase" stays "Ada Lovelase"). Deciding that two
-  spellings mean the same person is not yours to make — matching is done for you, and anything
-  it can't settle goes to the user. Rewriting the name first hides the ambiguity and risks
-  silently merging two different people.
-- When the user says something changed ("now works at X"), pass the NEW value to
-  world.ensure(...) — that's what surfaces the contradiction with what's stored.
-- Assigning straight to an attribute of an entity the world already knows (person.organization
-  = other) raises ResolutionRequired whenever the new value contradicts what's stored. That is
-  not an error to work around — settle it and continue:
-
-      person = run_skill(world.pending)   # runs the named skill, asks the user, applies the answer
-- world.ensure(...) may return a NeedsResolution instead of an entity. That means the situation
-  is genuinely ambiguous or contradicts what's stored, and it is NOT yours to guess: it names
-  the skill that must run to settle it with the user. Handle it exactly like this:
-
-      result = world.ensure(Person, full_name="Ada")
-      if isinstance(result, NeedsResolution):
-          result = run_skill(result)   # asks the user, returns the settled entity
-      report(result)
-"""

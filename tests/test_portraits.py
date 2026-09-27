@@ -58,7 +58,7 @@ class Engineer:
 def a_world():
     work = Path(tempfile.mkdtemp(prefix="portraits-"))
     here = Path(__file__).resolve().parent.parent / "ontology" / "core"
-    runtime = WorldRuntime(str(work / "w.db"), fixture=None, specs=ont.base_specs(here), selves=True)
+    runtime = WorldRuntime(str(work / "w.db"), specs=ont.base_specs(here), selves=True)
     authoring.install(runtime.world, work / "grown")
     return runtime
 

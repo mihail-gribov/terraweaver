@@ -8,7 +8,7 @@ attribute later is a data operation (update/insert/delete rows), not an ALTER TA
 which is what makes the class-refactoring operations from the spec tractable on top
 of this store. References to other instances are encoded as {"$ref": id} /
 {"$refs": [id, ...]} and resolved on load with a memo dict so reference cycles
-(e.g. Person.organization <-> Organization.employees) don't recurse forever.
+(a link, its two ends, and the links those ends are in) don't recurse forever.
 """
 import json
 import sqlite3

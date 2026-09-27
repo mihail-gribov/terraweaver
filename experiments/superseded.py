@@ -42,7 +42,7 @@ def open_world(run: Path) -> WorldRuntime:
     shutil.copy(run / "world.db", work / "world.db")
     specs = growth.apply_growth(ont.base_specs(ROOT / "ontology" / "core"),
                                 growth.load_grown(work / "grown"))
-    runtime = WorldRuntime(str(work / "world.db"), fixture=None, specs=specs, selves=True)
+    runtime = WorldRuntime(str(work / "world.db"), specs=specs, selves=True)
     authoring.install(runtime.world, work / "grown")
     ont.set_world(runtime.world)
     return runtime

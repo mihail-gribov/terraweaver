@@ -18,7 +18,6 @@ from pathlib import Path
 from typing import Any
 
 from terraweaver import initiative, matching, onboarding, ontology, sandbox
-from terraweaver.impls import IMPLS
 from terraweaver.describe import (COMMON_MEMBERS, HOST_GUIDE, catalogue, describe_for_prompt, short,
                                   describe_methods)
 from terraweaver import timeutil
@@ -341,11 +340,9 @@ class WorldView:
 
 
 class WorldRuntime:
-    def __init__(self, db_path: str, fixture: str | None = None, rebuild: bool = False, *,
-                 specs: dict | None = None, selves: bool = True,
+    def __init__(self, db_path: str, *, specs: dict | None = None, selves: bool = True,
                  ontology_dir: Path | None = None, home: Path | None = None):
         self.db_path = db_path
-        self.fixture = fixture
         # Where the two parties are described (selves.py). Next to the world by default, so a
         # world carried on a stick carries its configuration with it.
         self.home = Path(home) if home is not None else (
@@ -354,12 +351,9 @@ class WorldRuntime:
         # it goes (ontology.define_class). Everything else — statements, periods, history,
         # identity, tags, rebuild — works the same, because none of it knows what a Person is.
         self.specs = load_specs(ontology_dir or ONTOLOGY_DIR) if specs is None else dict(specs)
-        self.classes = build_classes(self.specs, IMPLS)
+        self.classes = build_classes(self.specs)
         self.store = Store(db_path)
         self.store.conn.executescript(RUNS_SCHEMA)
-        # Asked before the world opens: opening it puts the two parties in, and a world that
-        # holds only those two is still an empty one waiting for its fixture.
-        empty = self.store.conn.execute("SELECT COUNT(*) FROM instances").fetchone()[0] == 0
         self.world = World(self.store, self.classes, self.specs, selves=selves)
         # Methods the world wrote for itself hang on the classes like any other (procedures.py).
         self.world.procedures.bind(self.classes)
@@ -367,9 +361,6 @@ class WorldRuntime:
         reserved = set(self.classes) | set(sandbox.MODULES) | {
             "world", "owner", "me", "NeedsResolution", "NotInWorld", "print", "report", "run_skill"}
         self.variables = WorldVariables(self.store, self.classes, reserved | set(sandbox.BUILTINS))
-        if fixture and (rebuild or empty):
-            self.reset()
-            onboarding.onboard(self.world, self.home)  # the fixture's pair reads its files too
         self.sessions: dict[str, Session] = {}
         # Keys whose session was dropped for idleness; the next result says so once.
         self.idle_reset: set[str] = set()
@@ -1114,23 +1105,6 @@ class WorldRuntime:
         lines = [f"    {q.line()}" for q in left]
         return ("Left open about what that task worked with — if the user is still there, this is "
                 "the moment to ask:\n" + "\n".join(lines))
-
-    def reset(self) -> None:
-        """Rebuild the world from its fixture and drop every session."""
-        if not self.fixture:
-            raise ValueError("this world has no fixture to rebuild from")
-        from worlds import load_world
-
-        self.store.clear_all()
-        self.store.conn.execute("DELETE FROM world_variables")
-        self.store.conn.commit()
-        # One transaction for the whole build. Saving each entity on its own meant 366 commits
-        # for 331 entities, and a commit is a write to the disk: a tenth of a second when there
-        # is room and seventeen milliseconds apiece when there is not, which is six seconds of
-        # fixture and, on a filesystem at ninety-nine per cent, a build that never finished.
-        with self.store.transaction():
-            load_world(self.fixture)(self.classes, self.store)
-        self.sessions = {}
 
     # --- what hosts call ---
 

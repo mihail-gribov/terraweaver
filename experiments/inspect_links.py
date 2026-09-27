@@ -33,7 +33,7 @@ def main() -> int:
     where = Path(sys.argv[1]).resolve()
     specs = growth.apply_growth(ont.base_specs(ROOT / "ontology" / "core"),
                                 growth.load_grown(where / "grown"))
-    rt = WorldRuntime(str(where / "world.db"), fixture=None, specs=specs, selves=True)
+    rt = WorldRuntime(str(where / "world.db"), specs=specs, selves=True)
     authoring.install(rt.world, where / "grown")
     world = rt.world
 

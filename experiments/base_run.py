@@ -53,9 +53,8 @@ anything about it:
     anna  = Person.identify(full_name="Anna Weber")[0]
 
 It hands back who in this world could be meant, best first, and you choose — you have the \
-conversation and it does not. Two or five, read them; twenty, say more about them \
-(`Person.identify(full_name="Anna", location="Berlin")`). Nobody here of that name and it \
-records them, so it is one call and never two. Then say everything else about the variable.
+conversation and it does not: read them against what the user said about who they mean. \
+Nobody here of that name and it records them, so it is one call and never two. Then say everything else about the variable.
 
 **Three things you can tell this world, and it does something different with each.** Most of \
 what has gone wrong here was a fact put into the wrong one:
@@ -330,7 +329,7 @@ def start_base_server(db: Path, port: int, one_door: bool = False) -> subprocess
 
     server = subprocess.Popen(
         [sys.executable, "-m", "terraweaver.server", "--db", str(db), "--port", str(port),
-         "--base"] + (["--one-door"] if one_door else []),
+         ] + (["--one-door"] if one_door else []),
         cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     for _ in range(120):
         if server.poll() is not None:

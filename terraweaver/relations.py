@@ -5,14 +5,14 @@ attributes, validity period, value history, comments. Each relation type is a cl
 ontology with a `relation` section that says how the link behaves; the world checks that in code:
 
     from / to              which classes may stand at each end ("any" for anything)
-    symmetric              seen the same from both ends (Kin, Partner, Social)
+    symmetric              seen the same from both ends — the two roles being one word
     irreflexive            nothing relates to itself
     functional             "at_any_time": a subject has one such relation at a time, and a new
                            one ends the standing one's period rather than replacing it
     inverse_functional     "at_any_time": the same of the object's end
-    acyclic                no cycle through the chain (Authority, PartOf)
-    transitive             the chain counts (PartOf: a department of a division of a company)
-    transitive_via         another type's chain extends this one (Membership via PartOf)
+    acyclic                no cycle through the chain
+    transitive             the chain counts (a part of a part is a part of the whole)
+    transitive_via         another type's chain extends this one
     reverse                the name read from the object's end ("members")
     labels                 what users typically call it; used to point a free Related link,
                            or a relationship label, to the type that fits
@@ -106,7 +106,7 @@ class Relation(Entity):
         question it can't answer, so say which end you mean."""
         raise TypeError(
             "a relation links two ends: rel.counterpart is the end that isn't the one you asked "
-            "from (michael.relations('served_by')[0].counterpart), or name it — rel.subject, "
+            "from (anna.relations('born_in')[0].counterpart), or name it — rel.subject, "
             "rel.object, rel.other(entity). rel.role_of(entity) says what an end is to the other."
         )
 
@@ -143,7 +143,7 @@ class Relation(Entity):
         if same(entity, self.subject):
             return role or self.__dict__.get("label")
         inverse = role_info(type(self), role).get("inverse") if role else None
-        return inverse or self.__dict__.get("label_reverse") or (self.__dict__.get("label") if spec(type(self)).get("symmetric") else None)
+        return inverse or self.__dict__.get("label_reverse") or (self.__dict__.get("label") if rule(spec(type(self)), "symmetric") else None)
 
 
 def same(a, b) -> bool:
@@ -195,7 +195,28 @@ def rule(rel: dict, name: str, default=None):
     """
     if name in rel:
         return rel[name]
-    return BY_NATURE.get(rel.get("nature") or "", {}).get(name, default)
+    by_nature = BY_NATURE.get(rel.get("nature") or "", {}).get(name)
+    if by_nature is not None:
+        return by_nature
+    if name == "symmetric":
+        return symmetric_by_roles(rel)
+    return default
+
+
+def symmetric_by_roles(rel: dict) -> bool:
+    """Whether both ends of this type hold the same role, so a link reads the same from either.
+
+    Never declared by a type a world makes — it is the two roles being one word. Two siblings are
+    both siblings; a wife and a husband are not the same word, so that link is not symmetric even
+    though it joins two people and reads from both ends. A type that said `symmetric` beside roles
+    that said otherwise would be two statements of one thing.
+    """
+    roles = rel.get("roles") or []
+    if len(roles) != 1:
+        return False
+    near = str(roles[0].get("name") or "").strip()
+    far = str(roles[0].get("inverse") or "").strip()
+    return bool(near) and near == far
 
 
 def spec(cls) -> dict:
@@ -613,10 +634,6 @@ def relate(world, a, b, kind: str, period: dict, attrs: dict):
         raise ValueError(f"{name} can't form a cycle: {obj.display_name()} already leads to {subject.display_name()}")
     _note_flipped(world, name, rel, subject, obj, attrs)
     created = world.create(name, {"subject": subject, "object": obj, **attrs}, period=period)
-    waiting = getattr(subject, "_waiting_title", None)
-    if waiting and name == "Membership" and attrs.get("primary") and not attrs.get("title"):
-        created.title = waiting          # the title that was set before there was a job
-        object.__setattr__(subject, "_waiting_title", None)
     if period:
         world.apply_period(created, period)
     _note_same_label(world, name, rel, subject, obj, attrs, start, end, created)
@@ -831,8 +848,8 @@ def _note_gap(world, name: str, obj, label: str, start, created) -> None:
 def _note_flipped(world, name: str, rel: dict, subject, obj, attrs: dict) -> None:
     """The one kind of reversed link no type check can catch: both ends the same kind of thing.
 
-    `user.relate(nina, "service", label="dentist")` records that the user is Nina's dentist. The
-    type is satisfied — Person to Person — and the sentence is wrong. The world can still see it,
+    `user.set_dentist_of(nina)` records that the user is Nina's dentist. The type is satisfied —
+    Person to Person — and the sentence is wrong. The world can still see it,
     not by knowing what a dentist is, but by reading what it already holds: every other 'dentist'
     link in this world has this person at the other end. That is consistency with its own data,
     which is its business; what a dentist is, is not.
@@ -1140,18 +1157,6 @@ def _check_functional(world, name, rel, subject, obj, start, end, attrs):
                 _hand_over(world, r, obj, start, name, at)
                 handed_over = True
                 _too_many_handovers(world, name, rel, obj, "object")
-    if name == "Membership" and attrs.get("primary"):
-        for r in candidates:
-            if same(r.subject, subject) and getattr(r, "primary", False):
-                later = start is not None and timeutil.as_datetime(start) > timeutil.now()
-                raise ValueError(
-                    f"{subject.display_name()} already has a primary membership for that time: "
-                    f"{r.display_name()}. "
-                    + (f"A move that begins later ends the old one there: "
-                       f"old.keep(until={timeutil.show(start)}), then record this one."
-                       if later else
-                       "Assign person.organization instead — it closes the old one and opens the new one.")
-                )
     return at if handed_over else None
 
 
@@ -1254,7 +1259,7 @@ def relations_of(world, entity, kind: str | None = None, history: bool = False,
     for name, _ in chosen:
         ontology.ask_if_questioned(entity, f"relation:{spec(world.classes[name])['kind']}")
     for name, reverse in chosen:
-        symmetric = spec(world.classes[name]).get("symmetric")
+        symmetric = rule(spec(world.classes[name]), "symmetric")
         for r in world.all(name, limit=None, history=True):
             try:
                 if symmetric or reverse is None:
@@ -1432,163 +1437,7 @@ def _describe_path(world, a, path) -> str:
         own = entity is r.subject and r.__dict__.get("label") or r.__dict__.get("label_reverse") if not same(entity, r.subject) else r.__dict__.get("label")
         parts.append(f"{own or _step_role(r, entity)} {entity.display_name()}")
     target = path[-1][1]
-    name = _family_name(world, [(r, e) for r, e in path])
-    lead = f"{target.display_name()} is {a.display_name()}'s {name.replace('_', ' ')}" if name else \
-        f"{target.display_name()} is connected to {a.display_name()}"
-    return f"{lead}: " + " → ".join(parts)
-
-
-def _family_name(world, path) -> str | None:
-    """The kinship term for a chain of family and partner steps, if the rules name it."""
-    kin = world.classes.get("Kin")
-    if kin is None:
-        return None
-    roles = []
-    for r, entity in path:
-        kind = spec(type(r))["kind"]
-        if kind == "partner":
-            roles.append("partner")
-        elif kind == "kin":
-            role = r.role_of(entity)
-            roles.append(role_info(kin, role).get("counts_as") or role)
-        else:
-            return None
-    if len(roles) == 1:
-        return roles[0]
-    for rule in spec(kin).get("compose", []):
-        if rule["path"] == roles:
-            return rule["gives"]
-    return None
-
-
-# --- attributes derived from relations ---
-
-def _primary(world, person, history: bool = False) -> list:
-    return [r for r in relations_of(world, person, "membership", history) if getattr(r, "primary", False)]
-
-
-def _get_organization(person):
-    world = ontology.current_world()
-    primary = _primary(world, person)
-    if primary:
-        return primary[0].object
-    jobs = relations_of(world, person, "membership")
-    return jobs[0].object if len(jobs) == 1 else None
-
-
-def _set_organization(person, org) -> None:
-    world = ontology.current_world()
-    if person.id is None:
-        world.save(person)
-    for r in _primary(world, person):
-        if org is not None and same(r.object, org):
-            return
-        r.expire()
-    if org is None:
-        return
-    current = [r for r in relations_of(world, person, "membership") if same(r.object, org)]
-    if current:
-        current[0].primary = True
-        return
-    relate(world, person, org, "membership", {}, {"primary": True, "kind": "employment"})
-
-
-def _history_organization(person) -> list:
-    from terraweaver.history import Past
-
-    world = ontology.current_world()
-    jobs = sorted(_primary(world, person, history=True),
-                  key=lambda r: timeutil.as_datetime(r.valid_from or r.created_at))
-    return [Past(r.object, r.valid_until) for r in jobs if r.valid_until is not None] + \
-           [Past(r.object, None) for r in jobs if r.valid_until is None]
-
-
-def _primary_membership(person):
-    world = ontology.current_world()
-    primary = _primary(world, person)
-    if primary:
-        return primary[0]
-    jobs = relations_of(world, person, "membership")
-    return jobs[0] if len(jobs) == 1 else None
-
-
-def _get_job_title(person):
-    job = _primary_membership(person)
-    return job.title if job is not None else None
-
-
-def _set_job_title(person, title) -> None:
-    job = _primary_membership(person)
-    if job is None:
-        # Held rather than refused: a title with nobody to hold it under is not wrong, it is
-        # early. The host usually writes the two lines in the other order, and refusing cost it
-        # the statement seven times in one pool. It lands the moment an employer does.
-        object.__setattr__(person, "_waiting_title", title)
-        ontology.note_hint(
-            f"{person.display_name()} has no employer recorded yet, so {title!r} is held as the "
-            f"title and set the moment one is: person.relate(org, 'membership', primary=True), "
-            f"or person.organization = org.")
-        return
-    job.title = title
-
-
-def _history_job_title(person) -> list:
-    job = _primary_membership(person)
-    return job.history("title") if job is not None else []
-
-
-def _get_relationship(person):
-    world = ontology.current_world()
-    owner = world.owner
-    if owner is None or same(owner, person):
-        return None
-    labels = []
-    for r in relations_of(world, person, history=True):
-        if not same(r.other(person), owner):
-            continue
-        label = getattr(r, "label", None) or spec(type(r))["kind"]
-        ended = r.valid_until is not None and timeutil.as_datetime(r.valid_until) <= timeutil.now()
-        labels.append(f"former {label}" if ended else label)
-    return ", ".join(labels) or None
-
-
-def _set_relationship(person, text) -> None:
-    """Record what `person` is to the owner, from how the user put it."""
-    world = ontology.current_world()
-    owner = world.owner
-    if owner is None or not text:
-        return
-    if person.id is None:
-        world.save(person)
-    label = str(text).strip()
-    former = label.lower().startswith("former ")
-    core = label[len("former "):] if former else label
-    name = type_for_label(world.classes, core) or "Social"
-    kind = spec(world.classes[name])["kind"]
-    period = {"valid_until": timeutil.now()} if former else {}
-    if name in ("Authority", "Service"):  # they manage / serve the owner
-        relate(world, person, owner, kind, period, {"label": core})
-    elif name in ("Kin", "Partner", "Social"):
-        relate(world, owner, person, kind, period, {"label": core})
-    else:
-        relate(world, owner, person, "social", period, {"label": label})
-
-
-def _get_employees(org):
-    world = ontology.current_world()
-    return _unique([r.subject for r in relations_of(world, org, "members")])
-
-
-# (class, attribute) -> (getter, setter or None, history or None)
-DERIVED = {
-    ("Person", "organization"): (_get_organization, _set_organization, _history_organization),
-    ("Person", "job_title"): (_get_job_title, _set_job_title, _history_job_title),
-    ("Person", "relationship"): (_get_relationship, _set_relationship, None),
-    ("Organization", "employees"): (_get_employees, None, None),
-}
-
-# The order derived attributes given at construction are applied in: a job title needs the job.
-APPLY_ORDER = ["organization", "job_title", "relationship"]
+    return f"{target.display_name()} is connected to {a.display_name()}: " + " → ".join(parts)
 
 
 def describe_relations(specs: dict[str, dict], class_name: str) -> list[str]:

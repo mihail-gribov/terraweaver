@@ -147,6 +147,10 @@ class Authoring:
         # canonical line — what the class is called in the list every host reads — and the
         # account in sentences is a prose-fact among however many accumulate.
         spec["descriptions"] = [{"text": spec["description"], "source": source}]
+        # Who made it, recorded like any other fact about the class — "preset" for one a world
+        # started with, and the maker for one made since. Never a rule: nothing reads it to decide
+        # what may be done with the class.
+        spec["source"] = source
         if not spec["identified_by"]:
             raise Refused("say what identifies one of these — the attribute that tells two "
                           "of them apart (a name, a title, a code)")
@@ -279,22 +283,6 @@ class Authoring:
         self._save(spec)
         return attr
 
-    def grown_names(self) -> set:
-        """The classes this world wrote for itself, as the files beside it record them.
-
-        Read from the directory rather than kept in memory, so a world reopened tomorrow still
-        knows which of its types are its own. What came with the world is not the host's to fix.
-        """
-        if not self.dir or not self.dir.exists():
-            return set()
-        out = set()
-        for path in self.dir.glob("*.json"):
-            try:
-                out.add(json.loads(path.read_text())["name"])
-            except Exception:  # noqa: BLE001 - an unreadable file is not a class we can name
-                continue
-        return out
-
     def unsaid(self) -> list[tuple]:
         """Every word taken this way that nobody has said the meaning of yet."""
         out = []
@@ -414,6 +402,7 @@ class Authoring:
                 f"to do.")
         spec = {
             "name": _type_name(name),
+            "source": ontology.stated_by()[0],          # who is speaking: the agent, or the world
             "description": _described(f"the relation {kind}", description),
             "relation": {
                 "kind": kind,
@@ -518,15 +507,18 @@ class Authoring:
     def classes_like(self, text: str, limit: int = 5) -> list[tuple[str, str]]:
         """(class name, its description) for what already exists and reads like this.
 
-        The base is left out of the answer. A Thing is by construction like everything — saying
-        so of every class anyone defines is not a warning, it is noise, and noise in a warning
-        is how warnings stop being read.
+        The widest classes are left out of the answer, by what they are rather than by where they
+        came from. A Thing is by construction like everything, and so is the free link — saying so
+        of every class anyone defines is not a warning, it is noise, and noise in a warning is how
+        warnings stop being read. A Person is not like everything, and a host about to define
+        `Human` should hear that it is there, whether it came with the world or not.
         """
-        from terraweaver import ontology
+        from terraweaver.portraits import ROOTS
 
         return self._like(text, {name: cls._spec.get("description", "")
                                  for name, cls in self.world.classes.items()
-                                 if name not in ontology.BASE_CLASSES}, limit)
+                                 if name not in ROOTS and not cls._spec.get("own")
+                                 and not (cls._spec.get("relation") or {}).get("free")}, limit)
 
     def attributes_like(self, text: str, limit: int = 8) -> list[tuple[str, str]]:
         """(Class.attribute, its description) for attributes that already mean roughly this."""

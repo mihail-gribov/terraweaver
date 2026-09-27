@@ -6,8 +6,8 @@
 #   scripts/dev.sh status
 #   scripts/dev.sh logs      follow both logs
 #
-# Logs and pid files live in var/. The world database is worlds/job_search.db; it is built from
-# the job_search fixture when empty (add REBUILD=1 to rebuild it on start).
+# Logs and pid files live in var/. The world is var/worlds/main/: it starts from the base and
+# holds what it has been told (WORLD=<name> for another one).
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$root"
@@ -19,9 +19,8 @@ running() { [ -f "$var/$1.pid" ] && kill -0 "$(cat "$var/$1.pid")" 2>/dev/null; 
 
 start_world() {
   if running world; then echo "world: already running (pid $(cat "$var/world.pid"))"; return; fi
-  rebuild=(); [ "${REBUILD:-0}" = 1 ] && rebuild=(--rebuild)
   nohup .venv/bin/python -m terraweaver.server --host 0.0.0.0 --port $world_port \
-    --allow-origin "http://$lan:$inspector_port" "${rebuild[@]}" > "$var/world.log" 2>&1 &
+    --db "${WORLD:-main}" --allow-origin "http://$lan:$inspector_port" > "$var/world.log" 2>&1 &
   echo $! > "$var/world.pid"
   for _ in $(seq 40); do curl -s "http://127.0.0.1:$world_port/health" >/dev/null && break; sleep 0.25; done
   echo "world: http://$lan:$world_port/mcp  (token in .terraweaver-token)"

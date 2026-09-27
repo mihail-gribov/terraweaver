@@ -13,8 +13,6 @@ from terraweaver.ontology import Entity
 # Exact match on one of these means it's the same entity — no need to ask anyone.
 STRONG_KEYS = {
     "Person": ["email", "phone"],
-    "Organization": ["website"],
-    "Vacancy": ["url"],
 }
 
 # Any class holding an `aliases` list has those treated as names too — a nickname the user
@@ -24,19 +22,15 @@ ALIAS_KEY = "aliases"
 # Compared fuzzily to spot "probably the same thing, written differently".
 NAME_KEYS = {
     "Person": "full_name",
-    "Organization": "name",
-    "Project": "name",
-    "Place": "name",
-    "Vacancy": "title",
     "Event": "title",
-    "Idea": "title",
     "Thing": "name",
 }
 
-# Names compared word by word as well as whole: people and places are called by one part of
-# their name ("Annie", "CloudNine"). Titles are not — "Call with Annie (CloudNine)" and
-# "CloudNine interview" share a word and are still different events.
-PART_MATCH_CLASSES = {"Person", "Organization", "Place"}
+# Names compared word by word as well as whole: a person is called by one part of their name
+# ("Annie"). Nothing else is — "Call with Annie" and "Annie's interview" share a word and are
+# different events, and "Berkeley" inside "University of California, Berkeley" once cost a
+# measured world twelve names, which is why a Thing is matched whole.
+PART_MATCH_CLASSES = {"Person"}
 
 # Attributes that tell two entities apart outright when both have them and they differ: two
 # events on different days are different events, however alike their titles.
@@ -191,8 +185,8 @@ def score_candidates(existing_instances: list, class_name: str, attrs: dict, fil
     """Return [(instance, score)] sorted best-first, keeping only plausible ones.
 
     `filter_others` distinguishes the two jobs this serves. A *query* means every attribute
-    given constrains the result, so `find(Person, organization=acme)` must actually filter by
-    employer. *Identifying* an entity is different: attributes beyond the identifying ones are
+    given constrains the result, so `find(Person, full_name="Ada")` must actually filter by
+    name. *Identifying* an entity is different: attributes beyond the identifying ones are
     new information, not conditions — filtering on them would make "Ada now works at DataWorks"
     fail to find the Ada who is still recorded at TechCorp, and quietly create a second one.
     """
@@ -379,7 +373,7 @@ def _holds(instance, attr: str, wanted) -> bool:
     """Whether an entity satisfies a query condition on one attribute.
 
     A list attribute is satisfied by containing the value, not by equalling it. Without
-    this, `Event.find(participants=owner)` and `Vacancy.find(stack="Python")` quietly return
+    this, `Event.find(participants=owner)` and `Person.find(aliases="Annie")` quietly return
     nothing — the worst kind of wrong answer, since an empty result reads as "there are none".
     """
     current = getattr(instance, attr, None)

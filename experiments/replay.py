@@ -44,7 +44,7 @@ def open_as_it_was(world: Path, work: Path) -> "WorldRuntime":
     theirs = {json.loads(path.read_text())["name"]: json.loads(path.read_text())
               for path in sorted(grown.glob("*.json"))}
     core = ontology.base_specs(Path(__file__).resolve().parent.parent / "ontology" / "core")
-    runtime = WorldRuntime(str(work), fixture=None, specs={**core, **theirs}, selves=True)
+    runtime = WorldRuntime(str(work), specs={**core, **theirs}, selves=True)
     authoring.install(runtime.world, work.parent / "grown")
     return runtime
 

@@ -68,7 +68,7 @@ def main() -> int:
     w = open_world()
     out = w.run('''
 from datetime import timedelta
-standup = Event.new(title="Standup", kind="meeting", status="confirmed",
+standup = Event.new(title="Standup",
                     start_time=datetime(2026, 9, 21, 9, 0))
 standup.repeat(every="day", lasting=timedelta(minutes=30))
 user.tag("on-call", every="3 weeks", lasting=timedelta(days=7), starts=date(2026, 9, 7))

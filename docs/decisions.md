@@ -2807,3 +2807,56 @@ time: who is going, what she likes, when both are free, what went wrong last tim
 also what search finds well; listing sites mostly do not open to it, which in a three-minute video is
 a risk worth not taking. Housing and products are the same code and get a line at the end and a
 paragraph in the write-up.
+
+## 2026-09-26 — the old core is gone, and a preset class is made like any other
+
+The core had grown to twenty-odd classes — Organization, Place, Membership, Kin with fourteen
+labels, Vacancy, Idea, Preference — each written by hand for a job-search fixture, each with its
+own branches in `relations.py` and `impls.py`. None of them is in the base any more. A world opens
+with `Thing`, `Related`, `Person`, `AIAgent`, `Event` and the world's own `Task`, and whatever
+else it holds it was told, through the same doors a host uses: `define`, `define_relation`,
+`attribute`.
+
+**Why delete rather than keep them as a preset.** A preset is only honest if it is built the way
+a grown class is. These were not: they carried natures (`part_of`, `kind_of`) that no word the
+host defines can have, derived fields (`organization`, `job_title`, `relationship`) read off
+relations by hand-written code, and label tables that decided roles. Every one of those was a
+second kind of class, and every bug of the week — hiring that fired others, a correction that did
+nothing, symmetric reads bypassing the rule — lived in the branches they needed.
+
+**A preset class is a grown class with a source.** `growth.apply_growth` treats the base specs
+exactly as it treats grown ones: a whole spec replaces or adds, then extensions apply to any class,
+in a second pass so their order carries no privilege. The only difference kept is `source`
+(`"preset"` or who stated it), which is a record, not a rule. `open_world` is the one recipe —
+base specs, then what was grown, then the doors — for the server, the tests and the experiments.
+
+**What went with them:** the job-search fixture and its database, `impls.py`, the derived-relation
+layer, `BY_NATURE` cases for `part_of`/`kind_of`, `_correct`, the "one ever" branches, the
+scenarios that were written against the fixture, and `describe_world_api`. The host guide was
+rewritten for the base world.
+
+**Tests declare what they need.** `tests/base.py` opens a base world and grows an attribute or
+declares a word the way a host would. A test that needs an employer defines `works_at`; one that
+needs an address grows `Person.email`. A test built this way tests the world a host meets.
+
+**Bugs the port turned up, fixed:** twin prefilter compared raw values instead of canonical ones;
+"noticed" questions deduplicated without their text; growth on a preset class was lost on reopen;
+symmetric reads skipped `rule()`.
+
+**What the port could not carry over, and why.** These tested machinery that is gone, not
+behaviour we lost by accident:
+
+- role labels (mother / stepmother, "a second mother is refused", chains named "sibling in law")
+  — words have no labels; roles are `subject_is` / `object_is`;
+- hints that read labels: a gap between two spells of one post, a link running against every
+  other of its label — the gap check could return keyed on the word;
+- a cycle of parts refused — `part_of` is a word like any other now;
+- a word refused between classes it was not declared for — classes on a word are watched, not
+  enforced;
+- `organization=` / `job_title=` / `relationship=` at creation.
+
+**Two things the port showed that are not settled.** `Person.new(email=...)` on a class without
+`email` is refused, while `ada.email = ...` grows the attribute — the same word, taken at one door
+and refused at the other. And `_named_elsewhere` compares names only for classes in
+`matching.NAME_KEYS` (Person, Event, Thing), so a class the world defines never takes part in it:
+a privilege the base classes still have.

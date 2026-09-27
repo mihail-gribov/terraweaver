@@ -46,8 +46,8 @@ def main() -> int:
     check("and the world is unchanged by that", len(w.world.facts.all()) == before)
 
     # --- and it takes no part in deciding who someone is ---
-    w.run('Person.new(full_name="Anna Petrova", email="ap@example.com")\n'
-          'Person.new(full_name="Anna Sokolova", email="as@example.com")', "host")
+    w.run('Person.new(full_name="Anna Petrova")\n'
+          'Person.new(full_name="Anna Sokolova")', "host")
     people = [p.full_name for p in w.classes["Person"].all(limit=None)]
     check("two people with close names stay two people",
           "Anna Petrova" in people and "Anna Sokolova" in people, str(people))

@@ -1,6 +1,6 @@
 {
   "name": "Event",
-  "description": "A scheduled happening \u2014 meeting, interview, trip leg, appointment.",
+  "description": "A scheduled happening — meeting, interview, trip leg, appointment.",
   "attributes": [
     {
       "name": "title",
@@ -9,17 +9,10 @@
       "description": "Short label for the event."
     },
     {
-      "name": "kind",
-      "type": "enum[interview, call, meeting, appointment, other]",
-      "required": false,
-      "description": "What kind of event this is. Recorded rather than inferred from the title \u2014 '\u0418\u043d\u0442\u0435\u0440\u0432\u044c\u044e \u0432 DataWorks' and '\u0421\u043e\u0431\u0435\u0441 \u0432 DW' are the same kind of thing.",
-      "default": "other"
-    },
-    {
       "name": "about",
       "type": "ref:any",
       "required": false,
-      "description": "What the event concerns \u2014 the vacancy being interviewed for, the company being talked to, the project being discussed."
+      "description": "What the event concerns — the vacancy being interviewed for, the company being talked to, the project being discussed."
     },
     {
       "name": "start_time",
@@ -34,28 +27,9 @@
       "description": "When the event ends."
     },
     {
-      "name": "location",
-      "type": "ref:Place",
-      "required": false,
-      "description": "Where the event happens."
-    },
-    {
-      "name": "participants",
-      "type": "list[ref:Person]",
-      "required": false,
-      "description": "People involved."
-    },
-    {
-      "name": "status",
-      "type": "enum[planned, confirmed, cancelled]",
-      "required": true,
-      "description": "Current state.",
-      "default": "planned"
-    },
-    {
       "name": "descriptions",
       "type": "list[text]",
-      "description": "How this one has been described, in whoever's words \u2014 several are normal, because people describe the same thing differently and each telling is worth keeping."
+      "description": "How this one has been described, in whoever's words — several are normal, because people describe the same thing differently and each telling is worth keeping."
     },
     {
       "name": "tags",
@@ -71,23 +45,7 @@
       "settable": true
     }
   ],
-  "methods": [
-    {
-      "name": "cancel",
-      "signature": "cancel() -> None",
-      "description": "Set status to 'cancelled'."
-    },
-    {
-      "name": "reschedule",
-      "signature": "reschedule(new_start: datetime, new_end: datetime = None) -> None",
-      "description": "Update start_time/end_time."
-    },
-    {
-      "name": "add_participant",
-      "signature": "add_participant(person: Person) -> None",
-      "description": "Add a person to `participants`."
-    }
-  ],
+  "methods": [],
   "what_to_say": "when it is or was, where, who was in it, and what it was for",
-  "brief": "something that happens at a time \u2014 a meeting, an interview, a trip leg"
+  "brief": "something that happens at a time — a meeting, an interview, a trip leg"
 }

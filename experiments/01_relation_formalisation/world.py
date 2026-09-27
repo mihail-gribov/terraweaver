@@ -19,10 +19,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from terraweaver import authoring, growth, ontology, outside  # noqa: E402
+from terraweaver import open_world, outside  # noqa: E402
 from terraweaver.runtime import WorldRuntime  # noqa: E402
 
-CORE = ROOT / "ontology" / "core"
 
 
 def keys() -> dict:
@@ -45,20 +44,14 @@ def keys() -> dict:
 
 
 def open_base(where: Path) -> WorldRuntime:
-    """A base world whose database is in `where`, with the definition calls installed.
+    """A base world whose database is in `where`, the one way every world is opened now.
 
     `one_door` is left off. It hides `define_relation` from the host's surface, and it hides it
     from `world.extras`, which is where the world's own reading reaches for it — so a world
-    started that way cannot define the type it just read. The host here is a script and has no
-    habit to measure, which is what that flag exists for.
+    started that way cannot define the type it just read.
     """
     where.mkdir(parents=True, exist_ok=True)
-    grown = where / "grown"
-    specs = growth.apply_growth(ontology.base_specs(CORE), growth.load_grown(grown))
-    runtime = WorldRuntime(str(where / "world.db"), fixture=None, specs=specs, selves=True,
-                           home=where)
-    authoring.install(runtime.world, grown)
-    return runtime
+    return open_world(str(where / "world.db"), home=where)
 
 
 def parties(world) -> tuple:

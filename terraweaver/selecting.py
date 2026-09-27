@@ -9,15 +9,14 @@ like battery work, as of June" is one question; asking it three ways and interse
 costs the host runs and reads worse than the question does.
 
 **A real question is often about things of different kinds.** Everything to do with the move is a
-flat, a landlord, a moving firm, a school and four dates — a Place, two Organizations, a Person
-and some Events. Nothing here could ask that, because every way of asking started by naming a
+flat, a landlord, a moving firm, a school and four dates — things, people and events. Nothing here could ask that, because every way of asking started by naming a
 class. So the class is optional, and leaving it out means "whatever kind of thing it is":
 
     world.where(tagged="move")                      — the move, all of it, whatever kind
     world.where(mentions="lisbon flat")             — those words, exactly, in anything said
-    world.where(related=("participation", project))  — everything hanging off one thing
-    world.where(Person, organization=acme,           — attributes, as in find()
-                related=("membership", acme),        — a link, in either direction
+    world.where(related=("born_in", london))         — everything linked to one thing
+    world.where(Person, full_name="Ada Lovelace",    — attributes, as in find()
+                related=("works_at", acme),          — a link, in either direction
                 tagged="berlin", like="cell chemistry",
                 at=date(2026, 6, 1), limit=20)
 

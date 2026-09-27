@@ -70,7 +70,7 @@ def main() -> int:
         f"from terraweaver.runtime import WorldRuntime\n"
         f"specs = growth.apply_growth(ont.base_specs(Path('ontology/core')),\n"
         f"                            growth.load_grown(Path('worlds/{name}/grown')))\n"
-        f"rt = WorldRuntime('worlds/{name}/world.db', fixture=None, specs=specs, selves=True)\n"
+        f"rt = WorldRuntime('worlds/{name}/world.db', specs=specs, selves=True)\n"
         f"```\n\n"
         f"What it holds is what the recorder put there, right and wrong: "
         f"`experiments/check_expected.py worlds/{name}` reads it against what the facts owe.\n")

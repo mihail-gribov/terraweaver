@@ -74,7 +74,7 @@ class Observed:
             out.append(f"inverse_functional — {self.objects_with_several} chances, never two at once")
         if self.chains >= self.ENOUGH and not self.cycles and not spec.get("acyclic"):
             out.append(f"acyclic — {self.chains} chains, none came back")
-        if self.both_directions >= self.ENOUGH and not spec.get("symmetric"):
+        if self.both_directions >= self.ENOUGH and not relations.rule(spec, "symmetric"):
             out.append(f"symmetric — {self.both_directions} pairs recorded both ways")
         for role, most in sorted(self.per_role.items()):
             declared = next((r.get("max") for r in spec.get("roles", []) if r["name"] == role), None)

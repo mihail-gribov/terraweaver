@@ -190,15 +190,22 @@ class Questions:
         if entity is None or entity.id is None:
             return None
         involved = [e.id for e in involves if getattr(e, "id", None)]
+        # What makes two doubts the same. For the ones the world raises it is the kind and who is
+        # involved — "two dentists at once" about these two is one doubt however it is worded. For
+        # one the host noticed, the kind says only that a host noticed something, and the text is
+        # the doubt: keyed without it, a second question about the same person — "which number is
+        # current", then "is DataWorks its registered name" — was silently never recorded.
+        same_text = " AND text = ?" if kind == "noticed" else ""
+        key = (entity.id, kind, json.dumps(involved)) + ((text.strip(),) if same_text else ())
         existing = self.store.conn.execute(
-            "SELECT id FROM questions WHERE entity_id = ? AND kind = ? AND involves = ? AND closed_at IS NULL",
-            (entity.id, kind, json.dumps(involved)),
+            "SELECT id FROM questions WHERE entity_id = ? AND kind = ? AND involves = ? "
+            "AND closed_at IS NULL" + same_text, key,
         ).fetchone()
         if existing:
             return None
         answered = self.store.conn.execute(
-            "SELECT id FROM questions WHERE entity_id = ? AND kind = ? AND involves = ? AND closed_as = 'answered'",
-            (entity.id, kind, json.dumps(involved)),
+            "SELECT id FROM questions WHERE entity_id = ? AND kind = ? AND involves = ? "
+            "AND closed_as = 'answered'" + same_text, key,
         ).fetchone()
         if answered:  # the user already settled this one; don't ask again
             return None

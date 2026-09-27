@@ -11,7 +11,7 @@ every statement ever made. So the periods are also kept here, as a derivation: o
 stretch, coalesced — the same relation to the statements that images have, and as disposable.
 
     subject   whom it is about
-    nature    what kind of thing held: "tags", "valid", "kin", "membership"
+    nature    what kind of thing held: "tags", "valid", "descriptions"
     value     which one — the tag, the other end of the relation, or nothing for plain validity
     starts    from                   (null: since it was said)
     until     to                     (null: still holding)

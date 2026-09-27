@@ -14,8 +14,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from terraweaver import authoring, describe, ontology
-from terraweaver.runtime import WorldRuntime
+from terraweaver import describe, open_world
 
 failures: list[str] = []
 
@@ -73,31 +72,34 @@ def main() -> int:
     except Exception:  # noqa: BLE001 - the experiment is not part of the world
         pass
 
+    # The base world a host meets, with the cast the examples talk about and the words they use,
+    # declared the way a host would declare them. The examples are written for a host that has
+    # already settled who it is talking about, so they are checked in that context.
     work = Path(tempfile.mkdtemp(prefix="tw-guide-"))
-    rt = WorldRuntime(str(work / "w.db"), fixture="job_search", rebuild=True)
-    authoring.install(rt.world, work / "grown")
+    rt = open_world(str(work / "w.db"))
     rt.start_task("k", "run the lines this world shows a host, as a host would", "recording")
-    # What the examples talk about, bound so a line about `anna` has an `anna`.
+    for word, what, cardinality, near, far in (
+            ("born_in", "the place a person was born", "many-to-one", "a person who was born",
+             "their birthplace"),
+            ("works_at", "a person working for an employer", "many-to-one", "a person who works",
+             "their employer"),
+            ("capital_of", "a city that is the seat of a country's government", "many-to-one",
+             "a city that serves as a capital", "the country whose capital it is")):
+        rt.world.extras["define_relation"](word, what, cardinality=cardinality,
+                                           subject_is=near, object_is=far)
     rt.run('anna = Person.new(full_name="Anna Reid")\n'
            'london = Thing.ensure(name="London", nature="place")\n'
            'b = Thing.ensure(name="B Two", nature="object")\n'
            'a = anna\nx = london\ny = b\nentity = anna\n'
            'kevin = Person.new(full_name="Kevin Chen")\n'
            'darren = Person.new(full_name="Darren Liu")\n'
-           'b04 = Organization.new(name="B04")\ncompany = Organization.new(name="Company")\n'
-           'michael = world.owner\nnina = Person.new(full_name="Nina Patel")\n'
+           'nina = Person.new(full_name="Nina Patel")\n'
            'greg = Person.new(full_name="Greg Hunt")\nmaria = Person.new(full_name="Maria Vos")\n'
-           'cloudnine = Organization.new(name="CloudNine")\n'
-           'dataworks = Organization.new(name="DataWorks Two")\n'
            'thing = Thing.ensure(name="pesapallo", nature="abstraction")\n'
-           'born = anna.set_kin(london, label="mother")\n'
            'linda = Person.new(full_name="Linda Zhao")\n'
-           # The primer's own cast, bound the way the primer's first lines bind it: its
-           # examples are written for a host that has already settled who it is talking about,
-           # so they are checked in that context and not in an empty one.
            'paris = Thing.identify(name="Paris")[0]\n'
            'france = Thing.identify(name="France")[0]\n'
-           'acme = Organization.identify(name="Acme")[0]\n'
+           'acme = Thing.identify(name="Acme")[0]\n'
            'kyd = Person.identify(full_name="Thomas Kyd")[0]\n'
            'boris = Person.identify(full_name="Boris Weber")[0]', "k")
 

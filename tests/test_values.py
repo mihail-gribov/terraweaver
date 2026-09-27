@@ -8,14 +8,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from terraweaver.impls import IMPLS
-from terraweaver.ontology import build_classes, load_specs
-from terraweaver.store import Store
 from terraweaver.values import Domain, Email, Phone, Url, Value
-from terraweaver.world import World
-from worlds.job_search import build
 
-ONTOLOGY_DIR = Path(__file__).resolve().parent.parent / "ontology" / "core"
+import base  # noqa: E402
 
 failures: list[str] = []
 
@@ -43,21 +38,27 @@ def main() -> int:
     check("url site is the registered domain, public suffixes respected",
           Url.normalize("https://careers.acme.co.uk/jobs/42", level="site") == "acme.co.uk")
 
-    # --- the world compares by them ---
-    classes = build_classes(load_specs(ONTOLOGY_DIR), IMPLS)
-    store = Store(":memory:")
-    build(classes, store)
-    World(store, classes)
-    Person, Organization = classes["Person"], classes["Organization"]
+    # --- the world compares by them, on attributes the world grew for itself ---
+    # A world starts with names only. An address, a number, a website are attributes it grows
+    # when it is told one, and the kind the attribute is given is what it is compared by.
+    rt = base.world()
+    base.attribute(rt, "Person", "email", "The address this person reads their mail at.", type="email")
+    base.attribute(rt, "Person", "phone", "The number this person answers.", type="phone")
+    base.attribute(rt, "Thing", "website", "Where this thing is on the web.", type="domain")
+    base.attribute(rt, "Event", "kind", "What kind of event this is — recorded, not read off the title.",
+                   type="enum[interview, call, meeting, appointment, other]")
+    classes = rt.world.classes
+    Person, Thing = classes["Person"], classes["Thing"]
+    Person.new(full_name="Ada Lovelace", email="ada@example.com")
     check("find by email ignores case and spaces", Person.get(email="  ADA@example.com ").full_name == "Ada Lovelace")
     ada = Person.get(email="ada@example.com")
     ada.phone = " +1 (555) 010-2030 "
     check("a stored value keeps its own format, only stripped", ada.phone == "+1 (555) 010-2030")
     check("find by phone ignores formatting", Person.get(phone="+15550102030") is ada)
-    techcorp = Organization.get(name="TechCorp")
+    techcorp = Thing.new(name="TechCorp")
     techcorp.website = "https://www.techcorp.com/"
-    check("a company website matches on its domain",
-          Organization.find(website="https://careers.techcorp.com/jobs").matches == [techcorp])
+    check("a website matches on its domain, however the address was written",
+          Thing.find(website="techcorp.com/jobs").matches == [techcorp])
     twin = Person.new(full_name="Ada L", email="Ada@Example.com")
     # An address nobody else has is not a resemblance. The same rule identification uses
     # everywhere here: one candidate, nothing that disagrees, no question — and what the host

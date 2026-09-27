@@ -10,6 +10,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from terraweaver import assembly, open_world
 
+import base  # noqa: E402
+
 failures: list[str] = []
 
 
@@ -54,19 +56,24 @@ def main() -> int:
     check("a rebuild keeps every name the world held", not gone, str(gone))
     check("and every link", links_after == links_before, f"{links_before} -> {links_after}")
 
-    w = open_world()
-    Person, Organization = w.classes["Person"], w.classes["Organization"]
+    # An address is an attribute the world grows when it is told one; an employer is a link,
+    # under a word the world has for it. Both have to come back from the statements alone.
+    w = base.world()
+    base.attribute(w, "Person", "email", "The address this person reads their mail at.", type="email")
+    base.word(w, "works_at", "a person working for an employer", "many-to-one",
+              "a person who works", "their employer")
+    Person = w.classes["Person"]
 
     w.run('ada = Person.new(full_name="Ada Lovelace", email="ada@example.com")\n'
-          'tc = Organization.new(name="TechCorp")\n'
-          'ada.organization = tc', "host")
+          'tc = Thing.new(name="TechCorp")\n'
+          'ada.set_works_at(tc)', "k")
 
     # --- everything the object model wrote is in the record ---
     said = [(s.slot, s.value) for s in w.world.facts.all()]
     check("what was written is what was said",
           ("full_name", "Ada Lovelace") in said and ("email", "ada@example.com") in said, str(said))
     check("and it is filed under the class it is about",
-          "facts_Person" in w.world.facts.tables() and "facts_Organization" in w.world.facts.tables(),
+          "facts_Person" in w.world.facts.tables() and "facts_Thing" in w.world.facts.tables(),
           str(w.world.facts.tables()))
 
     # --- the entities can be thrown away and built again ---
@@ -74,8 +81,8 @@ def main() -> int:
     built = w.world.rebuild()
     ada = Person.get(email="ada@example.com")
     check("a rebuilt entity holds what it held", ada.full_name == "Ada Lovelace", str(ada.full_name))
-    check("references survive the rebuild",
-          ada.organization is not None and ada.organization.name == "TechCorp", str(ada.organization))
+    check("links survive the rebuild",
+          ada.works_at is not None and ada.works_at.name == "TechCorp", str(ada.works_at))
     check("and the relation between them too", built and len(built) >= 3, str(len(built)))
 
     # --- the same statements build the same entities ---
@@ -87,7 +94,7 @@ def main() -> int:
     check("and rebuilding states nothing", len(w.world.facts.all()) == stated, str(stated))
 
     # --- when something holds is part of the record, so it comes back too ---
-    w.run('ada = Person.get(email="ada@example.com")\nada.keep(until=date(2030, 1, 1))', "host")
+    w.run('ada = Person.get(email="ada@example.com")\nada.keep(until=date(2030, 1, 1))', "k")
     w.world.rebuild()
     kept = [p for p in Person.all(limit=None, any_time=True) if p.email == "ada@example.com"]
     check("a period survives the rebuild",
@@ -109,6 +116,7 @@ def main() -> int:
 
     # --- an entity has two identities: the image, and the subject words attach to ---
     w3 = open_world()
+    base.attribute(w3, "Person", "phone", "The number this person answers.", type="phone")
     facts = w3.world.facts
     facts.state("u1", "full_name", "Anna Sullivan", source="agent", class_name="Person")
     facts.state("u2", "full_name", "Anna Sullivan", source="agent", class_name="Person")

@@ -10,7 +10,7 @@ against, so it is edited as carefully as code and belongs where it can be read i
 """
 from typing import Any
 
-from terraweaver import sandbox
+from terraweaver import relations, sandbox
 
 
 HOST_GUIDE = """\
@@ -89,37 +89,33 @@ Rules the world enforces:
 - Settle who the task is about before you record anything about them. For each one the user
   named: `Person.identify(full_name="Anna Weber")` hands back who in the world could be
   meant, best first. You have the conversation and the world does not, so you read them and
-  pick — hold the one you meant in a variable and say everything else about that variable. Too
-  many to read? Say more about them: `Person.identify(full_name="Anna", location="Berlin")`.
-  Nobody here of that name and it makes them, so the list is never empty on a plain lookup and
-  you never need a second call to record a city the world hasn't heard of; the run's [created]
-  line says it was made rather than found. Empty means only one thing: you narrowed a search
-  yourself and left nothing — the name is here, your extra attributes ruled it out.
+  pick — hold the one you meant in a variable and say everything else about that variable.
+  Nobody here of that name and it makes them, so the list is never empty and you never need a
+  second call to record a city the world hasn't heard of; the run's [created] line says it was
+  made rather than found.
   Writes do not identify: `Class.new(...)` and `Class.ensure(...)` take the name they are given,
   because a question in the middle of a block stops the run and settles nothing. Two records
   that turn out to be one thing are merged later, over the whole world at once.
   `Class.get(...)` reads an existing one (never creates; NotInWorld if absent).
   Three levels of detail, so a task carries only what it uses. The prompt lists class names.
   describe_classes(["Person", "Event"]) gives their attributes with types, their methods and
-  their relations, one line each. describe_methods(["tag", "repeat", "Event.reschedule"]) says
+  their relations, one line each. describe_methods(["tag", "repeat", "relate"]) says
   what a particular one does, in full and with examples. Guessing an attribute name costs a turn
   to undo; asking costs a few hundred tokens.
 
   Never construct `Class(...)` directly. Check the [created] / [updated] / [found] lines of
   each result against what you meant. What has no attribute to go into is attached as a dated
   remark: `anna.describe("allergic to nuts", when=date(...))`.
-- Which entity the user means is never yours to guess. Look it up with everything the user
-  already told you — `Person.find(full_name="Annie", organization=cloudnine)`, not just the name.
-  If it is still open, you get a NeedsResolution; printing it shows the question and the
+- Which entity the user means is never yours to guess. Look it up by the fullest name the user
+  gave — `Person.find(full_name="Annie Sullivan")` — and read what comes back against what the
+  user said about them. If it is still open, you get a NeedsResolution; printing it shows the question and the
   candidates (`needs.candidates`). Ask the user, then `entity = world.settle(needs, <the entity
   they meant>)`, or `world.settle(needs, new=True)` if it's someone new. Never answer it
   yourself — not even with new=True. If the user won't choose, leave it unresolved.
-- Assigning an attribute is your statement and goes through: `anna.email = "..."` when the user
-  says it changed, or when you concluded it. The old value is kept — `anna.history("email")`.
-  A disagreement shows up as a question only when identifying: `Person.ensure(full_name="Ada",
-  organization=dataworks)` with Ada recorded at TechCorp asks whether it changed, the record is
-  right, or it's a different person — `world.settle(needs, <the value that is right>)`, or
-  `new=True` for a different one.
+- Assigning an attribute is your statement and goes through: `anna.aliases = ["Annie"]` when
+  the user says so, or when you concluded it. The old value is kept — `anna.history("aliases")`.
+  A disagreement shows up as a question only when identifying, and it is answered with
+  `world.settle(needs, <the value that is right>)`, or `new=True` for a different one.
 - Your code can reach the world and plain computation only. """ + sandbox.AVAILABLE + "\n"
 
 
@@ -138,9 +134,9 @@ Every class below shares these, so they aren't repeated for each one:
         Entities matching every attribute you pass, best match first (ties go to whoever
         you dealt with most recently). Ordinary attributes match exactly, so this is how
         you ask real questions of the world:
-            Person.find(organization=acme)      — who works there
-            Vacancy.find(remote=True, status="not_applied")
-            Person.find(email="ada@example.com")
+            Person.find(full_name="Ada Lovelace")
+            Thing.find(name="Rome")
+            Event.find(title="Dentist")
         A date is asked for in one place only: Event.start_time, because an event without a
         when is not an event. A link that merely holds — a capital, a language, an employer —
         needs no beginning, and a later telling supersedes an earlier one without one. Give
@@ -152,10 +148,10 @@ Every class below shares these, so they aren't repeated for each one:
         and datetimes safely whatever their time zone (use now() and today() for "now"):
             Event.find(start_time=after(now()))                               — upcoming
             Event.find(start_time=between(date(2026, 9, 21), date(2026, 9, 27)))  — that week
-            Vacancy.find(salary_max=after(150000))
-        Emails, phones and URLs compare in their canonical form, whatever way they're written:
-        "+1 (555) 010-2030" finds "+15550102030", "Ada@Example.com" finds "ada@example.com",
-        a company website matches on its domain (https://careers.acme.com/jobs ~ acme.com).
+        An attribute holding an email, a phone or a web address compares in its canonical form,
+        whatever way it was written: "+1 (555) 010-2030" finds "+15550102030", "Ada@Example.com"
+        finds "ada@example.com", a web address matches on its domain (https://careers.acme.com/jobs
+        ~ acme.com).
 
         The result comes back in two parts, and the difference matters:
             result.main     — the one it found, when the search found exactly one
@@ -188,8 +184,8 @@ Every class below shares these, so they aren't repeated for each one:
     world.where(...) is the one way of asking, and the plain searches are it with a single
     condition — world.where(tagged="move") is the tag search, world.where(like="cell chemistry")
     is the meaning search. Everything given narrows; nothing widens:
-        world.where(Person, organization=acme,          — attributes, as in find()
-                    related=("membership", acme),        — a link, named from either end
+        world.where(Person, full_name="Ada Lovelace",   — attributes, as in find()
+                    related=("works_at", acme),          — a link, named from either end
                     tagged="berlin",                     — a tag, as it held at `at`
                     like="cell chemistry",               — what is said about them reads like this
                     at=date(2026, 6, 1), limit=20)
@@ -197,10 +193,8 @@ Every class below shares these, so they aren't repeated for each one:
     kind. Most real things in a life are not one kind of thing — everything to do with a move is
     a flat, a landlord, a moving firm and four dates — so ask for the thing, not for each kind:
         world.where(tagged="move")                       — the move, all of it
-        world.where(related=("participation", project))  — everything hanging off one thing
-    A relation name is read in its own direction: related="service" is who provides one,
-    related="served_by" is who receives one. `like` also sets the order, since closeness is the
-    only thing here with a degree.
+        world.where(related=("born_in", london))         — everything linked to one thing
+    `like` also sets the order, since closeness is the only thing here with a degree.
 
     Recording what the user tells you starts with a decision only you can make from the
     conversation: is it about someone/something already in the world, or new? Say so by the
@@ -208,7 +202,7 @@ Every class below shares these, so they aren't repeated for each one:
 
     Class.get(**attrs)
         "The one we already know." Use everything the user said to pick it out:
-        Person.get(full_name="Annie", organization=cloudnine). Returns that entity, or a
+        Person.get(full_name="Annie Sullivan"). Returns that entity, or a
         NeedsResolution if several fit. Never creates: if nothing matches, it raises NotInWorld
         — then either the user means someone new (use new) or you misidentified them.
     Class.identify(**attrs) -> list
@@ -217,7 +211,7 @@ Every class below shares these, so they aren't repeated for each one:
         candidate. Use it at the start of a task, once per thing the user named, and work with
         the one you picked. Give a Thing its nature ("place", "agent", ...) while you are there.
     Class.new(**attrs)
-        "Someone/something new." Creates it. A recognised twin (same email, same website) is
+        "Someone/something new." Creates it. A recognised twin (same email, same phone) is
         returned instead of a second copy; anything short of that is recorded as given.
     Class.ensure(**attrs)
         "I can't tell." Finds it or creates it; the attributes are new information, so a value
@@ -241,39 +235,32 @@ Every class below shares these, so they aren't repeated for each one:
         anna.mother_of    -> [Boris, Vera]   one can hold, a list where more can
 
     The second is read when the task closes and becomes a link of its own type, so nothing
-    waits on it and you never choose a word before you have anything to choose with. A word you
-    have is always better than a label,
-    because a type can be asked about, superseded and checked, and a label can do none of the
-    three. `label=` is for naming a role inside a type that has
-    roles ("mother" inside kin, "dentist" inside service), never a type of its own.
-    A nature is not a name. part_of, kind_of, same_as and related_to say how a link behaves;
-    what it is called is the fact's own word. "The capital of France is Paris" is a part_of link
-    and recorded as `part_of` the word "capital" is lost, so define capital_of and give it that
-    nature. Likewise do not reach for a type you made earlier because it is roughly the area:
-    "is a citizen of" is not "is associated with the sport of".
-    Direction is one rule: `a.set_<word>(b)` says a is the one the word is about. It reads back
-    two ways, and which one depends on the word, not on you:
+    waits on it and you never choose a word before you have anything to choose with. A word the
+    world already has is always better: a typed link can be asked about, superseded and checked.
+    To have a word now, define it yourself — the word and what it is, then every argument by name:
 
-        kyd.set_born_in(london)      -> "Thomas Kyd born in London"     a predicate
-        maria.set_kin(michael, label="mother") -> "Maria is Michael's mother"   a role
+        world.define_relation("works_at", "a person working for an employer",
+                              cardinality="many-to-one",
+                              subject_is="a person who works", object_is="their employer")
 
-    A role is possessed and reads with an apostrophe; a predicate is not. Do not translate a
-    predicate into the possessive to check it — "Thomas Kyd is London's born_in" is not English
-    and not what the world says, and a host that tested its work that way concluded its correct
-    links were backwards, expired them, and wrote them the other way round. Read the sentence
-    the world gives you back, which is the one above. "my dentist is Nina" puts Nina first, not
-    the owner. From the other end, use the reverse name:
-    michael.set_served_by(greg, label="landlord") says Greg is Michael's landlord. Results show each relation as that
-    sentence — check it reads the way you meant. A relation's period
-    reads back under the same names it's written with: rel.starts, rel.until. The label is matched to the type's roles ("mom" -> mother,
-    "older brother" -> sibling), and the world checks each role's limits — a second mother is
-    refused with the alternatives (stepmother). relation.role_of(entity) says what an end is to
-    the other ("child" for Michael). a.how_related(b) walks the relations and names the chain
-    ("sister's husband" -> sibling in law).
+    The word is a name and exactly one preposition — `born_in`, `capital_of`, `works_at` — and it
+    comes from the fact, not from what the two things are. `cardinality` says how many hold at
+    one moment, per end: "many-to-one", this thing has one of those at a time and a new one ends
+    the last (both stay in the record); "one-to-many", the other end has one; "many-to-many",
+    they simply accumulate; "one-to-one", both. `subject_is` and `object_is` say what each end
+    IS in a link of this kind — a role, never the class. Two ends holding the same role (two
+    siblings) is what makes a link read the same both ways.
+    Direction is one rule: `a.set_<word>(b)` says a is the one the word is about, and the world
+    reads it back as a sentence with the word between the two names:
+
+        kyd.set_born_in(london)      -> "Thomas Kyd born in London"
+
+    Read the sentence the world gives you back and check it reads the way you meant. A link's
+    period reads back under the names it is written with: rel.starts, rel.until. With no start
+    said, a link that takes over from one standing before it begins today, and the one before
+    ends there; neither date is claimed as a day anybody said.
         anna.relate(london, "Anna was born in London")       # no word for it here yet
-        kevin.set_membership(b04, title="vendor logistics lead", starts="3 years ago")
-        kevin.set_kin(darren, label="older brother")          # a role inside a type that has them
-        b04.set_part_of(company)
+        kyd.set_born_in(london, starts="1558")
     entity.relations(kind)[i].counterpart is the end that isn't the entity you asked from.
     descriptions — every class has them, relations included, and the type is list[text]: not one
     paragraph but many texts, each said on its own and each able to hold for a time. This is
@@ -335,13 +322,8 @@ Every class below shares these, so they aren't repeated for each one:
         a.near(hops=2)        everyone within a few links, nearest first, with the way there
         a.shared_with(b)      what both are connected to: people, companies, places in common
         a.reaches("part_of")  everything along one kind of link, as far as it goes
-    relate returns the relation — assign its attributes like any entity's (m.title = "team lead"),
-    describe it, end it (m.expire()). entity.relations(kind) gives the relations themselves;
-    entity.related(kind) the entities at the other end — also by the reverse name (b04.related(
-    "members")) and along chains (kevin.related("membership") includes the company B04 is part
-    of). What you have no word for at all, and only then: a.relate(b, "related",
-    label="godfather", description="…") — a last resort, not the general case.
-    Person.organization / job_title / relationship read from these relations and can be assigned.
+    set_<word> returns the link — describe it, end it (rel.expire()). entity.relations(kind)
+    gives the links themselves; entity.related(kind) the entities at the other end.
 
     What the world holds to. It doesn't mind how you write your code — import what you like of
     what's already here, name things as you please. What it does hold is the data: an attribute
@@ -418,7 +400,7 @@ Every class below shares these, so they aren't repeated for each one:
     Writing a period, the same four keywords for entities, relations and descriptions:
         Class.ensure(..., starts=date(2026, 10, 1))   — begins later
         Class.ensure(..., until=date(...) | ttl=timedelta(days=30))
-        kevin.relate(b04, "membership", title="lead", starts=date(2026, 1, 15))
+        anna.set_works_at(acme, starts=date(2026, 1, 15))
         entity.keep(starts=..., until=... | ttl=... | permanent=True); entity.expire() ends it
         now; entity.current() asks whether it holds. Nothing is deleted when a period ends — it
         becomes history.
@@ -678,14 +660,10 @@ def describe_for_prompt(specs: dict[str, dict[str, Any]], only: list[str] | None
         lines.append("Relation types — instances linking a subject and an object, with their own attributes and")
         lines.append("validity period (starts / until), history and descriptions.")
         lines.append("")
-        lines.append("Direction, one rule for every type: the subject is the one the link describes.")
-        lines.append("a.relate(b, \"kind\") reads as the sentence \"a is b's kind\" — so the dentist, the")
-        lines.append("manager, the mother, the capital, the author stands first. `label=` names a role")
-        lines.append("inside a type that has roles, not a type of its own.")
-        lines.append("Say it out loud before writing it; each type below")
-        lines.append("shows the sentence its example makes, and results print every relation as that sentence.")
-        lines.append("To say it from the other end, use the reverse name: michael.relate(nina, \"served_by\",")
-        lines.append("label=\"dentist\") records the same relation, read from the client's side.")
+        lines.append("Direction, one rule for every type: a.set_<word>(b) says a is the one the word is")
+        lines.append("about, and results print every link as the sentence it makes — \"Thomas Kyd born in")
+        lines.append("London\". Say it out loud before writing it. A fact with no word for it yet is said in")
+        lines.append("words, a.relate(b, \"…\"), and read into a word when the task closes.")
         lines.append("")
     if relation_types:
         for name, spec in relation_types.items():
@@ -699,7 +677,7 @@ def describe_for_prompt(specs: dict[str, dict[str, Any]], only: list[str] | None
                 traits.append(f"extends through {rel['transitive_via']}")
             if rel.get("reverse"):
                 traits.append(f"read from the object's end as '{rel['reverse']}'")
-            arrow = "↔" if rel.get("symmetric") else "→"
+            arrow = "↔" if relations.rule(rel, "symmetric") else "→"
             lines.append(f"relation {name} ('{rel['kind']}'): {' / '.join(rel['from'])} {arrow} "
                          f"{' / '.join(rel['to'])}  # {spec.get('description', '')}")
             if traits:

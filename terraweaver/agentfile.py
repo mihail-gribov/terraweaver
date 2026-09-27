@@ -15,10 +15,10 @@ the same requirement to say why. Two authors, one mechanism.
                      "description": "What they don't eat, and why it matters."}]}
     ```
 
-    ```procedure Person.colleagues(self)
-    because: asked three times this week — who else works where this person works
-    org = self.organization
-    return [p for p in Person.find(organization=org).matches if p != self] if org else []
+    ```procedure Person.namesakes(self)
+    because: asked three times this week — who else here goes by the same first name
+    first = self.full_name.split()[0]
+    return [p for p in Person.find(full_name=first).matches if p != self]
     ```
 
 What the file declares is re-read when the file changes, and what it declared before is taken

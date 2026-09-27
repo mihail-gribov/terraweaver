@@ -13,14 +13,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from terraweaver import matching
-from terraweaver.impls import IMPLS
-from terraweaver.ontology import build_classes, load_specs
 from terraweaver.resolution import NeedsResolution
-from terraweaver.store import Store
-from terraweaver.world import World
-from worlds.job_search import build
 
-ONTOLOGY_DIR = Path(__file__).resolve().parent.parent / "ontology" / "core"
+import base  # noqa: E402
 
 failures: list[str] = []
 
@@ -32,20 +27,45 @@ def check(name: str, condition: bool, detail: str = "") -> None:
 
 
 def fresh_world():
-    specs = load_specs(ONTOLOGY_DIR)
-    classes = build_classes(specs, IMPLS)
-    store = Store(":memory:")
-    build(classes, store)
-    return classes, store, World(store, classes)
+    """A base world and the cast the lookups talk about, said the way a host says them.
+
+    Addresses and cities are attributes the world grows when it is told one; a vacancy is a class
+    the world defines for itself — which is also the point: finding things in a class the world
+    made works exactly as it does in one it started with.
+    """
+    rt = base.world(None)
+    base.attribute(rt, "Person", "email", "The address this person reads their mail at.", type="email")
+    base.attribute(rt, "Person", "city", "The city this person lives in.")
+    rt.world.extras["define"](
+        "Vacancy", "A job opening the user might apply for.", identified_by="title",
+        attributes=[{"name": "title", "type": "str", "description": "What the job is called."},
+                    {"name": "remote", "type": "bool", "description": "Whether it can be done from home."},
+                    {"name": "status", "type": "enum[not_applied, applied, withdrawn]",
+                     "description": "Where the user is with it."}])
+    classes = rt.world.classes
+    P, T, V = classes["Person"], classes["Thing"], classes["Vacancy"]
+    P.new(full_name="Alan Turing")
+    P.new(full_name="Barbara Liskov", aliases=["Barb"])
+    P.new(full_name="Ada Lovelace", email="ada@example.com", city="London")
+    P.new(full_name="Anna Sullivan", aliases=["Annie", "Ann"])
+    P.new(full_name="Anna Peterson", aliases=["Annie"])
+    P.new(full_name="Robert Wolfe", email="robert@wolfe.example")
+    P.new(full_name="Wilma Chen")
+    T.new(name="TechCorp")
+    T.new(name="DataWorks", aliases=["Data Works", "DW"])
+    V.new(title="Backend engineer", remote=True, status="not_applied")
+    V.new(title="Data analyst", remote=True, status="applied")
+    V.new(title="Office manager", remote=False, status="not_applied")
+    return rt, classes, rt.world
 
 
 def names(result) -> list[str]:
-    return [getattr(e, "full_name", None) or e.name for e in result]
+    return [getattr(e, "full_name", None) or getattr(e, "title", None) or e.name for e in result]
 
 
 def main() -> int:
-    classes, store, world = fresh_world()
-    Person, Organization, Vacancy = classes["Person"], classes["Organization"], classes["Vacancy"]
+    rt, classes, world = fresh_world()
+    Person, Thing, Vacancy = classes["Person"], classes["Thing"], classes["Vacancy"]
 
     # --- a name that identifies exactly one person ---
     result = Person.find(full_name="Alan Turing")
@@ -100,36 +120,32 @@ def main() -> int:
           not isinstance(result, NeedsResolution) and not result.matched and len(result) == 0, f"got {result!r}")
 
     # --- ordinary attributes filter ---
-    techcorp = Organization.find(name="TechCorp").matches[0]
-    check("filters by an ordinary attribute", names(Person.find(organization=techcorp).matches) == ["Ada Lovelace"])
+    check("filters by an ordinary attribute", names(Person.find(city="London").matches) == ["Ada Lovelace"])
     check("filters by several attributes",
           all(v.remote and v.status == "not_applied" for v in Vacancy.find(remote=True, status="not_applied").matches))
     check("a filter that matches nothing yields nothing", len(Vacancy.find(status="withdrawn")) == 0)
 
     # A list attribute is satisfied by containing the value. Comparing the whole list to one
     # value matches nothing, and an empty result reads as "there are none" — confidently wrong.
-    Event = classes["Event"]
-    owner = world.owner
     check("filters by membership of a list attribute",
-          len(Event.find(participants=owner).matches) == len(Event.all(limit=None)),
-          f"got {len(Event.find(participants=owner).matches)}")
-    check("membership works for plain values too",
-          all("Python" in v.stack for v in Vacancy.find(stack="Python").matches))
-    check("and a value that's in no list matches nothing", len(Vacancy.find(stack="COBOL")) == 0)
+          sorted(names(Person.find(aliases="Annie").matches)) == ["Anna Peterson", "Anna Sullivan"],
+          str(names(Person.find(aliases="Annie").matches)))
+    check("and a value that's in no list matches nothing", len(Person.find(aliases="Zed")) == 0)
 
-    # --- companies get the same treatment as people ---
-    check("company alias matches", names(Organization.find(name="Data Works").matches) == ["DataWorks"])
-    check("company short form matches", names(Organization.find(name="DW").matches) == ["DataWorks"])
-    # "Data" is part of its recorded alias "Data Works", so it is a name this company answers
-    # to — and it is the only one. A company that merely resembled would still ask.
-    check("a company name it answers to, with no rival, is it",
-          names(Organization.find(name="Data").matches) == ["DataWorks"])
+    # --- things are found by the whole of a name they answer to ---
+    check("a thing's alias matches", names(Thing.find(name="Data Works").matches) == ["DataWorks"])
+    check("a thing's short form matches", names(Thing.find(name="DW").matches) == ["DataWorks"])
+    # Not by part of one. "Data" is inside "Data Works", and matched that way "Berkeley" inside
+    # "University of California, Berkeley" once cost a measured world twelve names. A person is
+    # called by part of their name; a thing is not.
+    check("a thing is not found by part of a name it answers to",
+          names(Thing.find(name="Data").matches) == [], str(names(Thing.find(name="Data").matches)))
 
     # --- searching is not working with anything ---
     ada = Person.find(email="ada@example.com").matches[0]
     before = ada.accessed_at
     Person.find(full_name="Alan Turing")
-    Person.find(organization=techcorp)
+    Person.find(city="London")
     check("a search leaves access times alone",
           Person.find(email="ada@example.com").matches[0].accessed_at == before)
 
@@ -153,14 +169,16 @@ def main() -> int:
     # Settling who the task is about is a search: it hands back who could be meant and the
     # host, who has the conversation, reads them. "William" is a name William Chen answers to.
     could_be = Person.identify(full_name="William")
-    check("settling who the task is about hands back the candidates to read",
-          [p.full_name for p in could_be] == ["William Chen"], str(could_be))
+    check("settling who the task is about hands back the candidates to read, the one it names first",
+          [p.full_name for p in could_be][:1] == ["William Chen"], str(could_be))
+    check("and what merely resembles is there too, for the host to rule out",
+          "Wilma Chen" in [p.full_name for p in could_be], str(could_be))
     made = Person.identify(full_name="Hokusai")
     check("and a name nobody here has is recorded rather than handed back empty",
           [p.full_name for p in made] == ["Hokusai"], str(made))
     check("while a search narrowed until nothing is left makes nothing — the name is here, "
           "the narrowing was too tight",
-          Person.identify(full_name="William", location="Reykjavik") == [])
+          Person.identify(full_name="William", city="Reykjavik") == [])
     # The same write outside that, mid-recording, takes what it is given: a run is not stopped
     # over a resemblance, and what turns out to be one thing is merged over the record later.
     written = Person.new(full_name="William", email="other.william@example.com")
@@ -172,20 +190,9 @@ def main() -> int:
     # on .matched the run was rolled back and the question came back from scratch, four times.
     asked = Person.find(full_name="Annie")
     check("a question answers .matched with False", asked.matched is False)
-    check("its candidates are there as .similar", names(asked.similar) == ["Anna Sullivan", "Anna Peterson"],
-          str(names(asked.similar)))
+    check("its candidates are there as .similar",
+          sorted(names(asked.similar)) == ["Anna Peterson", "Anna Sullivan"], str(names(asked.similar)))
     check("and it doesn't read as nothing at all", bool(asked) is True and list(asked) == [])
-
-    # --- a lookup by an attribute the class hasn't got is a typo, not a miss ---
-    typo = refused(lambda: Organization.find(full_name="TechCorp")) if "refused" in dir() else None
-    if typo is None:
-        try:
-            Organization.find(full_name="TechCorp")
-            typo = ""
-        except TypeError as exc:
-            typo = str(exc)
-    check("looking up by an attribute the class lacks answers the question it meant",
-          typo == "", "refused instead: " + typo)
 
     # --- when there is no answer, say what was probably meant (docs/architecture.md) ---
     def refusal(action):
@@ -201,7 +208,7 @@ def main() -> int:
     # One close word and no other: answer the question they meant, and say what was read as
     # what. A refusal here costs the host a turn to learn something the world already knew.
     with ontology.record_changes() as spoke:
-        found = Organization.find(full_name="TechCorp")
+        found = Thing.find(full_name="TechCorp")
     check("a near-miss attribute answers the question it meant",
           found.matches and found.matches[0].name == "TechCorp", str(found))
     check("and the caveat is said out loud",
@@ -218,15 +225,13 @@ def main() -> int:
           == ontology.did_you_mean("full_name", ["name", "aliases"]) == "name")
     check("and nothing close enough is refused rather than guessed at",
           ontology.did_you_mean("zzzz", ["name", "aliases"]) is None)
-    nothing_close = refusal(lambda: Organization.find(zzzz="x"))
+    nothing_close = refusal(lambda: Thing.find(zzzz="x"))
     check("a refusal still names what the class does have",
           "no attribute 'zzzz'" in nothing_close and "did you mean" not in nothing_close,
           nothing_close or "(no refusal)")
 
     # --- a result with exactly one match answers as that one, and says so ---
-    from terraweaver import ontology as _ont
-
-    with _ont.record_changes() as one_match:
+    with ontology.record_changes() as one_match:
         got = Person.find(full_name="Ada Lovelace")
         check("a search result with one match reads as that one", got.full_name == "Ada Lovelace",
               str(got))
@@ -264,29 +269,24 @@ def main() -> int:
           "needs changing" in empty and "Person.new(...)" in empty, empty)
 
     # --- two more near misses, both seen costing a live host a statement ---
-    dated = classes["Event"].new(title="Meetup", kind="meeting", status="planned",
-                                 start_time=date(2026, 9, 24)) if "Event" in classes else None
+    dated = classes["Event"].new(title="Meetup", start_time=date(2026, 9, 24))
     check("a date where a datetime is wanted is that day's midnight",
-          dated is not None and dated.start_time.hour == 0 and dated.start_time.day == 24,
-          str(getattr(dated, "start_time", None)))
-    idea = classes["Idea"].new(title="An idea", content="c")
+          dated.start_time.hour == 0 and dated.start_time.day == 24, str(dated.start_time))
+    job = Vacancy.find(title="Backend engineer").matches[0]
     misread = ""
     try:
-        idea.name
+        job.name
     except AttributeError as exc:
         misread = str(exc)
     check("reading an attribute that isn't there says which one was meant",
           "did you mean 'title'" in misread, misread or "(no refusal)")
 
     # --- the small accommodations, each one seen costing a live host a statement ---
+    base.word(rt, "works_at", "a person working for an employer", "many-to-one",
+              "a person who works", "their employer")
     ivo = Person.new(full_name="Ivo Sand", email="ivo@sand.example")
-    ivo.job_title = "analyst"                      # before there is an employer to hold it
-    ivo.set_membership(Organization.get(name="TechCorp"),  primary=True)
-    check("a title set before the job lands when the job does", ivo.job_title == "analyst",
-          str(ivo.job_title))
-    link = ivo.relations("membership")[0]
-    check("a relation says what kind of link it is", link.kind in ("membership", "employment"),
-          str(link.kind))
+    link = ivo.set_works_at(Thing.get(name="TechCorp"))
+    check("a relation says what kind of link it is", link.kind == "works_at", str(link.kind))
     check("and whether its period has run out", link.expired is False)
     listing = ""
     try:

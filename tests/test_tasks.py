@@ -7,6 +7,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from terraweaver import open_world  # noqa: E402
+
 from terraweaver import initiative
 from terraweaver.runtime import WorldRuntime
 
@@ -28,7 +30,7 @@ def refused(action) -> str | None:
 
 
 def main() -> int:
-    rt = WorldRuntime(":memory:", fixture="job_search")
+    rt = open_world()
     key = "host"
     # The doubts this checks are the ones the world raises when it invents a type from a word
     # it did not have, which it only does when told it may.
@@ -43,7 +45,7 @@ def main() -> int:
 
     # The world answers a recording; leaving the answer unwritten is what the boundary catches.
     result = rt.run('anna = Person.new(full_name="Anna Reid")\n'
-                    'acme = Organization.new(name="Acme")\n'
+                    'acme = Thing.new(name="Acme")\n'
                     'anna.relate(acme, "employed_by")', key)
     check("the world says what it assumed", bool(result.get("hints")), str(result.get("hints"))[:120])
     check("and raises it as a question that outlives the run", bool(result.get("questions")))
@@ -98,7 +100,7 @@ def main() -> int:
     # Giving up is allowed, and it is on the record — an agent with no way out of the check
     # would answer the doubts at random, which is worse than saying it could not do the task.
     rt.start_task(key, "record the user's address from the message", "recording")
-    rt.run('p = Person.new(full_name="Nobody Atall")\np.relate(Place.new(name="Somewhere"), "squats_at")\n'
+    rt.run('p = Person.new(full_name="Nobody Atall")\np.relate(Thing.new(name="Somewhere"), "squats_at")\n'
            'p.describe("somebody the message mentioned")', key)
     gave_up = rt.finish_task(key, abandon="the message never said whose address it was")
     check("a task can be abandoned, with the reason kept",
@@ -108,7 +110,7 @@ def main() -> int:
 
     # Nothing open about what it touched is what "done" means, and it is worked out, not said.
     rt.start_task(key, "look up which organizations are already known", "answering")
-    rt.run('print(len(Organization.all(limit=5)))', key)
+    rt.run('print(len(Thing.all(limit=5)))', key)
     clean = rt.finish_task(key)
     check("a task that leaves nothing open closes done",
           "nothing was left open" in clean.lower(), clean[:100])
@@ -118,7 +120,7 @@ def main() -> int:
     # them existed yet: `tokyo.describe("the capital of Japan")` passes every check the world
     # had — the thing is described, something was said, the task closes — and leaves the fact
     # where nothing can supersede it, count it or answer with it.
-    rt = WorldRuntime(":memory:", fixture="job_search")
+    rt = open_world()
     rt.start_task(key, "record what the user said about cities and countries", "recording")
     rt.run('tokyo = Thing.ensure(name="Tokyo", nature="place")\n'
            'japan = Thing.ensure(name="Japan", nature="place")\n'
@@ -135,7 +137,7 @@ def main() -> int:
            'government", nature="part_of", cardinality="one-to-one")\n'
            'print("defined")', key)
     rt._bind_classes(rt.session(key))
-    rt.run('Thing.get(name="Tokyo").relate(Thing.get(name="Japan"), "capital_of")\n'
+    rt.run('Thing.get(name="Tokyo").set_capital_of(Thing.get(name="Japan"))\n'
            'print("linked")', key)
     closed = rt.finish_task(key)
     check("and once the link is there it closes",

@@ -39,7 +39,7 @@ def main() -> int:
 
     grown = args.grown or args.db.parent / "grown"
     specs = ontology.load_specs(ROOT / "ontology" / "core", grown_dir=grown)
-    runtime = WorldRuntime(str(args.db), fixture=None, specs=specs, selves=False)
+    runtime = WorldRuntime(str(args.db), specs=specs, selves=False)
     authoring.install(runtime.world, grown)
     runtime.world.engineer = outside.Nemotron(ttl=120)
 
