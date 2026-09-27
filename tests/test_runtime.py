@@ -210,6 +210,21 @@ def main() -> int:
           "False" in (apart.run('print(Person.find(full_name="Annie").matched)', "two")["output"] or ""))
     initiative.LEARNS_NAMES = False
 
+    # A wrong first argument at a class door is answered by the world, not by Python. Measured
+    # on the FactConsolidation slice: `world.identify({"name": ...})` raised `'dict' object has
+    # no attribute '__name__'`, the recorder lost the turn and wrote untyped prose thereafter.
+    doors = base.world()
+    for door in ("identify", "new"):
+        said = str(doors.run(f'world.{door}({{"name": "Fatah"}})', "doors")["error"] or "")
+        check(f"a dict at the class door says what to write instead — world.{door}",
+              "__name__" not in said and "name='Fatah'" in said and "Thing" in said, said[:200])
+    held = doors.run('p = Person.new(full_name="Ada")\nworld.identify(p)', "doors")
+    check("and something already held is told to answer for itself",
+          "__name__" not in str(held["error"] or "") and "it.describe" in str(held["error"] or ""),
+          str(held["error"])[:200])
+    check("while the class itself still goes through",
+          "Ada" in (doors.run('print(world.identify(Person, full_name="Ada"))', "doors")["output"] or ""))
+
     print()
     if failures:
         print(f"{len(failures)} failed: {', '.join(failures)}")

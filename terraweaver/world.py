@@ -1026,11 +1026,33 @@ class World:
             return needs
         return self.apply_attrs(instance, attrs)
 
-    @staticmethod
-    def _name(cls) -> str:
-        if not isinstance(cls, str):
-            return cls.__name__
-        return cls
+    def _name(self, cls) -> str:
+        """The class name behind whatever was passed at a class door.
+
+        Every door that takes a class comes through here, so this is where a wrong first
+        argument is answered. `world.identify({"name": "Fatah"})` — attributes in a dict, the
+        shape most APIs take — used to raise `'dict' object has no attribute '__name__'`: a
+        Python internal that says nothing about what this world wanted. Measured on the
+        FactConsolidation slice it cost the recorder seventeen lines of work in one turn and
+        dropped it into untyped prose for the rest of the run. A door refuses in the world's
+        own words, naming what to write instead, or it is not a refusal at all.
+        """
+        if isinstance(cls, str):
+            return cls
+        name = getattr(cls, "__name__", None)
+        if name is not None:
+            return name
+        classes = ", ".join(sorted(self.classes))
+        if isinstance(cls, dict):
+            spread = ", ".join(f"{key}={value!r}" for key, value in list(cls.items())[:3])
+            raise TypeError(f"the class comes first and the attributes are named after it, not "
+                            f"gathered in a dict: Thing.identify({spread}) to look it up, "
+                            f"Thing.new({spread}) to make it. The classes here are: {classes}.")
+        raise TypeError(f"the class comes first, and this is a {type(cls).__name__}, not the "
+                        f"class {type(cls).__name__}. Something you already hold answers for "
+                        f"itself — it.describe(...), it.relate(...); a class is named as the "
+                        f"class — {type(cls).__name__}.identify(...). The classes here are: "
+                        f"{classes}.")
 
 
 def _period(starts, until, ttl, permanent: bool) -> dict:

@@ -57,10 +57,18 @@ def main() -> int:
     parser.add_argument("--model", default="haiku")
     parser.add_argument("--questions", type=int, default=20)
     parser.add_argument("--chunk", type=int, default=25, help="facts per recording turn")
+    parser.add_argument("--facts", type=int, default=0,
+                        help="write only the first N facts — a part-wise check of the writing, "
+                             "before an hour is spent on all 455")
+    parser.add_argument("--keep", default=None,
+                        help="where the world is built, kept afterwards for reask.py "
+                             "(a temporary folder by default, also kept but harder to find)")
     parser.add_argument("--port", type=int, default=7050)
     args = parser.parse_args()
 
     variant = fc.load(args.hops, args.context)
+    if args.facts:
+        variant.facts = variant.facts[:args.facts]
     questions = variant.questions[:args.questions]
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     out_dir = RESULTS / f"{stamp}-{variant.name}-{args.mode}-{args.model}"
@@ -74,7 +82,12 @@ def main() -> int:
     (out_dir / "config.json").write_text(json.dumps(config, indent=2))
     print(json.dumps(config, indent=2))
 
-    work = Path(tempfile.mkdtemp(prefix=f"tw-fc-{args.hops}-"))
+    if args.keep:
+        work = Path(args.keep)
+        work.mkdir(parents=True, exist_ok=True)
+    else:
+        work = Path(tempfile.mkdtemp(prefix=f"tw-fc-{args.hops}-"))
+    print(f"world: {work}/world.db   grown: {work}/grown")
     log = out_dir / "host.jsonl"
     server = agent = None
     spent = {"turns": 0, "cost": 0.0}
@@ -122,6 +135,7 @@ def main() -> int:
         {"config": config, "summary": summary, "runs": results}, indent=2))
     print(json.dumps(summary, indent=2))
     print(out_dir)
+    print(f"the world it wrote: {work}/world.db  (reask.py --db that --specs {work}/grown)")
     return 0
 
 

@@ -2860,3 +2860,62 @@ behaviour we lost by accident:
 and refused at the other. And `_named_elsewhere` compares names only for classes in
 `matching.NAME_KEYS` (Person, Event, Thing), so a class the world defines never takes part in it:
 a privilege the base classes still have.
+
+## 2026-09-27 — a dict at the class door, and 32% against 86% on the same fifty facts
+
+A run of the FactConsolidation slice on the new base was stopped after three minutes instead of
+being left to finish: the world it had written held eight relation types and not one typed link —
+220 rows of `Related` carrying prose (`descriptions: ["performed by"]`). The type of degradation
+the README already has a name and a price for.
+
+**The cause was one line of ours.** `World._name`, the resolver every door that takes a class
+passes through, was `cls.__name__` for anything that is not a string. The recorder wrote
+`world.identify({"name": name})` — attributes gathered in a dict, the shape most APIs take — and
+got back `AttributeError: 'dict' object has no attribute '__name__'`. A Python internal says
+nothing about what this world wanted, so the block was rewritten, seventeen finished lines went
+with it, and from there the recorder stayed in prose for the rest of the run.
+
+Two doors of ours answered the same turn well — `world.classes()` named `classes_here` and
+`classes_like`, `world.identify("Fatah")` said `Fatah.identify(<what the user called them>)`.
+The one that crashed is the one that decided the run. A door refuses in the world's own words,
+naming what to write instead, or it is not a refusal at all — and this is the cheapest possible
+place to hold that rule, since all nine class doors come through the one resolver.
+
+**Measured, one variable, the same fifty facts**, by `experiments/check_expected.py` against the
+expectations written down per fact — a lookup, no model, no question asked of a host:
+
+| | before | after |
+|---|---|---|
+| as owed | 15 (32%) | **40 (86%)** |
+| backwards | 2 | 3 |
+| no link | 5 | 0 |
+| missing | 24 | **3** |
+
+Batches 1–20 went from **0/18** to **18/18**: the loss sat exactly where the crash was, which is
+why this reads as structural rather than as one draw of a noisy number. What is left is the two
+faults already on the list and not addressed here — three links written backwards (`capital of`,
+`author of`: the `_of` direction, measured three ways and deliberately not wired to a picker) and
+three `is associated with the sport of` facts with nowhere to go.
+
+**Also done, so a check like this need not cost an hour again.** `run_fc.py` takes `--facts N`
+(write only the first N) and `--keep <dir>` (build the world where it can be read afterwards, and
+say where it is). The check above cost $0.68 and eleven minutes; the full slice costs $7 and
+three quarters of an hour, and finding this at the end of one would have been the whole point
+of the morning wasted.
+
+**A record for honesty**: the "before" world was written by the stopped run, whose `config.json`
+says commit `b0872f8`; the "after" world ran from the working tree with the fix in it, before the
+fix was committed. Same facts, same host model, same slice.
+
+**Found while tracing this, not fixed here**: `ontology.define_class` does `list(identified_by)`
+on what `define` stores as a string, so a class the host defines comes back from a reopened world
+with `'n'` as its name key — identity dead for that class, duplicates unchecked. It does not touch
+this measurement (registration inside the live process is correct, and this host defined relation
+types only, all with `identified_by: None`), and it did touch the blank-world runs, where the
+host defined `Organization`, `Place` and `Work`.
+
+**Two claims in the 2026-09-26 entry above are wrong and are corrected here.** A class the host
+defines *does* take part in `_named_elsewhere` — `register_identity` is called from `define`, and
+`_named_elsewhere("Thing", {"name": "Osteria Rossa"})` finds the `Restaurant`. And grown types
+*do* come back when a world is reopened: `open_world` applies the growth pass, which reading the
+store directly through `WorldRuntime` skips.
