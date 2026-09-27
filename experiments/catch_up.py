@@ -20,6 +20,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from terraweaver import authoring, formalise, ontology, outside, portraits, sentences  # noqa: E402
+from terraweaver.formalise import record  # noqa: E402
 from terraweaver.runtime import WorldRuntime  # noqa: E402
 
 from experiments.base_run import _the_key  # noqa: E402
@@ -31,7 +32,17 @@ def main() -> int:
     parser.add_argument("db", type=Path)
     parser.add_argument("--grown", type=Path, default=None)
     parser.add_argument("--limit", type=int, default=200)
+    parser.add_argument("--shape", action="store_true",
+                        help="print the distribution of readings this world has had and stop — "
+                             "no engineer, no calls, nothing spent")
     args = parser.parse_args()
+
+    if args.shape:
+        grown = args.grown or args.db.parent / "grown"
+        specs = ontology.load_specs(ROOT / "ontology" / "core", grown_dir=grown)
+        runtime = WorldRuntime(str(args.db), specs=specs, selves=False)
+        print(record.readable(record.distribution(runtime.world)))
+        return 0
 
     if not _the_key():
         print("NEBIUS_API_KEY is not set, so there is no engineer and nothing to catch up with.")
@@ -56,6 +67,9 @@ def main() -> int:
                                   run=runtime._the_world_writes)
         runtime._hand_back_what_moved(got.pop("moved", []))
         print("things that came in as names:", got, flush=True)
+
+    print("\n--- every reading this world has had")
+    print(record.readable(record.distribution(runtime.world)))
 
     print("\n--- links the world holds now")
     for name, cls in sorted(runtime.world.classes.items()):

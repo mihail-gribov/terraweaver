@@ -21,8 +21,10 @@ typed, seven words, the employment handover dated from the words, and the one in
 
 A link that cannot be placed stays bare, which is true of it. Nothing is marked hopeless.
 """
+import time
+
 from terraweaver import sentences
-from terraweaver.formalise import check, make, write
+from terraweaver.formalise import check, make, record, write
 from terraweaver.formalise.look import look, words_for
 
 # How many times the record's answer goes back to the engineer. Bounded for the reason a host's loop
@@ -48,7 +50,13 @@ def formalise(runtime, engineer, picker=None, limit: int = 100) -> dict:
     picker = picker or getattr(runtime.world, "jev", None) or outside.AsChoices(engineer)
     bare = sorted(sentences.unread(runtime.world, limit),
                   key=lambda link: when_said(runtime.world, link))
-    traces = [formalise_one(runtime, link, engineer, picker) for link in bare]
+    traces = []
+    for link in bare:
+        started = time.monotonic()
+        one = formalise_one(runtime, link, engineer, picker)
+        # Kept before the next link is read, so a reading that dies mid-run is still measured.
+        record.keep(runtime.world, link, one, time.monotonic() - started)
+        traces.append(one)
     return {"read": traces,
             "typed": sum(1 for one in traces if one["typed"]),
             "joined": sum(1 for one in traces if one["typed"] and not one.get("defined")),

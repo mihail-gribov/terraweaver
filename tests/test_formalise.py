@@ -13,6 +13,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from terraweaver import authoring, formalise, growth, ontology  # noqa: E402
+from terraweaver.formalise import record  # noqa: E402
 from terraweaver.runtime import WorldRuntime  # noqa: E402
 
 CORE = Path(__file__).resolve().parent.parent / "ontology" / "core"
@@ -96,6 +97,21 @@ def main() -> int:
           any("Paris" in n and l.valid_from is not None for n, l in links.items()), str(links))
     check("nothing is left bare", not any(l.valid_until is None
                                           for l in rt.world.all("Related", limit=None)))
+
+    # Every reading is written down as it happens, because a tally of one number per run cannot
+    # tell "typed on the first go" from "typed on the third after two refusals".
+    shape = record.distribution(rt.world)
+    check("every reading of this world is written down", shape["readings"] >= 2, str(shape))
+    check("with how many goes each took",
+          all(isinstance(k, int) and k >= 1 for k in shape["goes"]), str(shape["goes"]))
+    check("and how it ended", "done" in shape["went"], str(shape["went"]))
+    check("and what the check said, with how sure it was",
+          shape["verdicts"].get("says_so", 0) >= 2, str(shape["verdicts"]))
+    check("and whether the look already had the word",
+          shape["the look"]["found a word already there"] >= 1, str(shape["the look"]))
+    check("and it reads as lines", "reading(s)" in record.readable(shape),
+          record.readable(shape)[:120])
+
 
     # --- a date nobody said is never written ---
     rt = base_world()

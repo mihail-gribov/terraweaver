@@ -3055,3 +3055,71 @@ has to get through.
 `things that came in as names: {'read': 1, 'placed': 0, 'gave_up': 1}`. One link, one name, two
 minutes, nothing decided. Whether that is the model, the prompt or `formalise` is the next thing to
 find out — the tally says what happened and not why, which is itself worth fixing.
+
+## 2026-09-27 — every reading is written down, because one number per run is not a measurement
+
+A reading is a loop: the engineer writes lines, the check puts each claim to the picker, a refusal
+goes back, three goes at most. All of it was already in the trace `formalise_one` returns, and
+nothing kept it — `runtime._read_what_was_said` reduces the traces to `len(traces)` at the close and
+`catch_up` prints the tallies, so a run could say how many links were typed and nothing about how
+many goes it took, where they went, or how sure the check was when it refused. A tally cannot tell
+"typed on the first go" from "typed on the third after two refusals", and those are not the same
+system.
+
+So `formalise/record.py`: one row per reading in the world's own store — the link, the words as the
+host said them, goes, how it ended, the word it landed under, whether that word was made for it,
+seconds, every verdict with its confidence, and what the look found. `catch_up --shape` reads the
+distribution back and spends nothing.
+
+**What it said on the first case it was pointed at**, and it corrected a number of ours in the
+process: the reading of one link took **42.4 seconds**, not the two minutes reported earlier — that
+was the whole catch-up, one link plus the bare-name pass plus startup.
+
+    1 reading(s): 0 typed, 0 of them under a word made for it
+      goes:      1x3
+      ended:     not borne out by the words 1
+      verdicts:  not_in_it 3  (sure when refusing: 1.0)
+      seconds:   least 42.4, middle 42.4, most 42.4
+      said as:   one word 1
+
+## 2026-09-27 — the check reads the code, and three of four ways of writing one fact escape it
+
+Traced from the reading above, where the engineer wrote the right lines three times and the check
+refused them three times. Two things came out of it, and the first is a correction of what we said
+earlier today.
+
+**The verdict was wrong, not merely a rule meeting a degenerate input.** The account was
+`capital_of` and the claim `Chang'an capital of Tang Empire`; the picker answered `not_in_it` —
+"the sentence does not say this at all" — at 1.0. The word *is* in the account. What the account
+does not give is the **direction**, which the question has its own option for (`backwards`). So the
+honest answer was `says_so` or `backwards`, and the reason a model gave neither is the question:
+`_asking` asks "Does that sentence say that Chang'an capital of Tang Empire?" over a fragment that
+names neither end, and read literally a fragment with no names says nothing about anybody.
+
+**Which the design already answers:** the ends are not the text's to confirm. Which two things a
+fact is about is handed into the reading and never read out of words — `write.py` says so in as many
+words. The check exists against a claim nobody made *in the attributes* — the measured case is
+`starts="1792"` invented from nothing — and asking the text to bear out the two names asks about the
+one thing that was never in doubt.
+
+**And the claim is taken from the code's syntax, which is fragile.** `claims_in` parses for
+`a.set_word(b, ...)` with both ends bound to those two names. Measured, four ways of writing one
+fact with one invented date:
+
+    2 claims   a.set_founded(b, starts="1910")
+    0 claims   world.relate(a, b, "founded", starts="1910")
+    0 claims   founder, made = a, b; founder.set_founded(made, starts="1910")
+    0 claims   for x in [b]: a.set_founded(x, starts="1910")
+
+Three of the four make no claim as far as the check can see, so the invented date goes in unchecked.
+The hole is the syntax dependence, not the parser.
+
+**Where this goes, and it is the author's framing:** build the phrase and judge the result, not the
+source. The world can render what it is about to hold — `Chang'an capital of Tang Empire` — and put
+that beside what the host said; asked that way the answer here is plainly yes. And the claim should
+come from the written record rather than from the shape of the lines, which is how success is
+already judged (`write.typed_between`: "read from the record rather than from what the code appeared
+to do"). The objection `check.py` raises against judging afterwards — deleting is the expensive
+direction — is about committed writes by somebody else; these are the world's own, made under
+`stating("world")`, and `Relation.retract` exists for exactly what the world concluded and no longer
+believes.
