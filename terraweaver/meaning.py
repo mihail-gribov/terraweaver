@@ -115,12 +115,26 @@ def embedder():
     being written to needs. The API next, where nothing is installed — the contest machine, a
     fresh checkout. The stand-in last, so every path works with no model at all.
     """
+    local = Ollama()
     try:
-        urllib.request.urlopen(f"{OLLAMA}/api/tags", timeout=1).read()
-        return Ollama()
-    except (urllib.error.URLError, OSError, ValueError):
+        # Asked to embed, not asked whether it is alive. Probing `/api/tags` says the server is
+        # up and says nothing about whether the model will load — and measured 2026-09-28, with
+        # the card full of somebody else's run, it was up while `/api/embed` answered
+        # `do load request: … EOF` on every call. So the world took the local model, failed on
+        # every embedding, and wrote worlds with no meaning index at all: 0 rows where the world
+        # that scored 81% had 495. A key for the API was sitting in `.env` the whole time.
+        local.embed(["ready?"])
+        return local
+    except Exception:  # noqa: BLE001 - anything at all means this is not the one to use
         pass
-    return Nebius() if os.environ.get("NEBIUS_API_KEY") else Plain()
+    if os.environ.get("NEBIUS_API_KEY"):
+        try:
+            over_the_api = Nebius()
+            over_the_api.embed(["ready?"])
+            return over_the_api
+        except Exception:  # noqa: BLE001 - and then there is the stand-in, which always works
+            pass
+    return Plain()
 
 
 # How many of an entity's texts have a say when it is scored as a whole. All of them compete;

@@ -3512,3 +3512,44 @@ when a typed one is written — and the bare link is what held **the host's own 
 carries no description. So a world after the reading may read *thinner* to whoever asks it: the word
 arrived and the account went behind a closed link. That is checkable by reading back what a host sees
 for the same entity in both worlds, and it is the first candidate for seven points.
+
+## 2026-09-29 — why 81% became 37%: a one-letter name key, and an embedder that was never there
+
+The author asked the right question — we measured 81% on 24 September, so what is unfinished? Three
+things were, and two of them are ours.
+
+**The world that scored 81%** (`worlds/facts455`, frozen 24 Sep, commit `a328996`) holds 378 typed
+links, 2 bare ones, 33 relation types, and **495 rows of meanings** — the vectors a question searches
+by. Today's read world holds 298 typed, 76 bare, 27 types and 501 meanings; today's unread world
+holds 168 typed, 136 bare and **no meanings at all**. So structure is the same order of magnitude and
+does not explain three times the accuracy.
+
+**First, ours, and it is the reason the read world scored *below* the unread one.**
+`ontology.define_class` did `list(identified_by)` on what `define` stores as a string, so
+`list("name")` is `['n','a','m','e']` and the class came back from a reopened world identified by an
+attribute called `n`. Measured on the 455-fact world: **twenty** classes the reading had made — City,
+Country, Language, Sport, Religion, University, Work, Continent, SportPosition — every one keyed on
+`'n'`. And the reading *moves entities into the classes it makes*, so a thing findable by name as a
+`Thing` stopped being findable the moment it was placed, and the host answered "not recorded" about
+facts the world held. `City.identify(name="London")` returned nothing; it returns London now. This
+was found on 27 September, written down as "found while tracing this, not fixed here", and it cost
+the day's number.
+
+**Second, ours, and it silently emptied the meaning index.** `meaning.embedder()` probed
+`{OLLAMA}/api/tags` — whether the server is up — and then used it. With the card full of another of
+the author's runs (14.9 GB of 16.3), Ollama was up while every `/api/embed` answered
+`do load request: … EOF`. So the world took the local model, failed on every embedding, and wrote
+worlds with no meaning index — while a key for the same model over the API sat in `.env` the whole
+time. It is asked to embed now, not asked whether it is alive, and falls through: local, then the
+API, then the stand-in. With the card full it now reaches the API and embeds.
+
+**Third, the environment, and it is the author's to decide:** the GPU is held by
+`eval_prompts.py --tasks data/all_eval.jsonl` from another project. Nothing here touches it.
+
+**And a test that quietly needed a GPU.** `take_in` ranks labels against the type's description with
+the embedder, and `tests/test_growth.py` asserted the result — so it passed while bge-m3 could load
+and failed the moment it could not. The similarity is stood in for in the test now, deterministically,
+because what is under test is the world's logic and not the card.
+
+The 37% and the 30% therefore measure a world that could not search by meaning and, in the read case,
+had twenty of its classes unreachable by name. Both are fixed; the number has to be taken again.

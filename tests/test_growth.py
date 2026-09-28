@@ -144,6 +144,18 @@ def main() -> int:
     check("naming the shape it keeps needing",
           [(s["asked"], s["from"], s["to"], s["seen"]) for s in asked]
           == [("author of", "Thing", "Thing", 3)], str(asked))
+    # What the labels are ranked against is a model, and this check used to need a real one: it
+    # passed while Ollama could load bge-m3 and failed the moment somebody else's run filled the
+    # card — a unit test quietly depending on a GPU. The ranking is what is under test, so the
+    # similarity is stood in for here and the answer is the world's own logic.
+    class _Close:
+        """"author of" is the same idea as the type; anything else is not."""
+
+        def embed(self, texts):
+            return [[1.0] if "author" in text or "authorship" in text else [0.0]
+                    for text in texts]
+
+    base.world.meanings.model = _Close()
     closed = base.run('made = world.define_relation("authorship", "who wrote what",\n'
                       '                             nature="related_to",\n'
                       '                             subject=Thing, object=Thing,\n'
@@ -317,6 +329,27 @@ def main() -> int:
           '"email"' not in (_P(__file__).resolve().parent.parent / "ontology" / "core"
                             / "Person.json").read_text())
     _ontology.set_world(two.world)
+
+    # A class the host defines is identified by the attribute it named — and still is after the
+    # world is reopened. `list("name")` is `['n', 'a', 'm', 'e']`, so it used to come back keyed on
+    # an attribute called `n`, which nothing has. Measured 2026-09-28: twenty classes the reading
+    # had made were keyed that way in a 455-fact world, and since the reading moves entities into
+    # the classes it makes, a thing findable by name stopped being findable the moment it was
+    # placed. The host then answered "not recorded" about facts the world held.
+    from terraweaver import matching
+
+    where = Path(tempfile.mkdtemp(prefix="tw-keys-"))
+    rt = open_world(str(where / "world.db"), home=where)
+    rt.start_task("k", "define a class and put something in it", "recording")
+    rt.run('world.define("City", "a place people live in", "name")\n'
+           'City.new(name="London")', "k")
+    again = open_world(str(where / "world.db"), home=where)
+    check("a class the host defined keeps its name key when the world is reopened",
+          matching.NAME_KEYS.get("City") == "name", str(matching.NAME_KEYS.get("City")))
+    found = again.run('print(City.identify(name="London"))', "k")
+    check("so what was put in it is found by name again",
+          "London" in (found.get("output") or ""),
+          str(found.get("error") or found.get("output"))[:120])
 
     print()
     if failures:

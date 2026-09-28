@@ -2148,7 +2148,17 @@ def define_class(classes: dict[str, type], spec: dict[str, Any], name: str | Non
     spec = with_common_slots({**spec, "name": name})
     if spec.get("identified_by"):
         wanted = spec["identified_by"]
-        wanted = wanted if isinstance(wanted, dict) else {"name_keys": list(wanted)}
+        if isinstance(wanted, str):
+            # `list("name")` is `['n', 'a', 'm', 'e']`, so the class came back from a reopened world
+            # identified by an attribute called `n`, which nothing has. Measured 2026-09-28 on the
+            # 455-fact world: **twenty** classes the reading had made — City, Country, Language,
+            # Sport, Religion, University, Work — every one of them keyed on `'n'`, and the reading
+            # moves entities into those classes. So a thing findable by name as a `Thing` stopped
+            # being findable at all the moment it was placed, and the host answered "not recorded"
+            # about facts the world held. It is why the read world scored *below* the unread one.
+            wanted = {"name_keys": [wanted]}
+        elif not isinstance(wanted, dict):
+            wanted = {"name_keys": list(wanted)}
         matching.register_identity(name, **wanted)
     if True:
         namespace = {
