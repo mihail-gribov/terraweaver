@@ -3263,3 +3263,37 @@ Nothing is lost by this and the design says so in as many words: an untyped link
 and the words it was said in, the row saying nobody has read it stays open, and the reading is the
 same pass whenever it runs. What a live host gets is unchanged — the default is still 20 seconds at
 the close, which types the fact that was just said while the host is still there.
+
+## 2026-09-28 — `set_` is never the name of a value, whichever order it arrives in
+
+The first rule against this caught the wrong half. It refused an assignment to a name the class
+already answered with a call — and the order a host actually takes is the other one: assign to
+`set_performed_by` while no such word exists, so nothing is there to collide with and the attribute
+grows; define `performed_by` afterwards, and now the instance carries an attribute whose name the
+class answers with a method. The next `store.save` reads the method for that name and `json.dumps`
+raises on it, for good.
+
+Measured on the 455-fact world written this morning: **eleven** such attributes across `Person` and
+`Thing` — `set_chairperson`, `set_performed_by`, `set_official_language_of`, `set_associated_with`
+and the rest — with 854 and 431 instance rows and 19,019 rows of value history behind them. A host
+reaches for the assignment often, so the rule matters more than the first case suggested.
+
+**The rule does not depend on the order or on what exists.** A name beginning with `set_` is this
+world's own form for writing a link and is never the name of a value. The refusal says the call, and
+if the word does not exist yet it says how to make it:
+
+    say it with the call, not an assignment: kukai.set_performed_by(other) — performed_by is how a
+    link is written, one at a time, and `set_…` is never the name of a value. If the word does not
+    exist yet, define it: world.define_relation('performed_by', "<what this link is>", …)
+
+**The world written before the rule was repaired rather than rewritten**, because the write phase
+cost $6.87 and 35 minutes and the facts in it are sound: the eleven attributes came out of the class
+specs and their 20,304 rows out of the tables, with a copy kept beside it
+(`var/fc455/world-before-repair`). The reading resumes where it stopped — every reading is marked, so
+the queue only shrinks, which is what made two crashes cost time rather than money.
+
+**Two things about running anything long here, learned the hard way today.** A long job must be a
+transient systemd *service* (`systemd-run --user --unit=…`): `&`, `nohup` and even
+`systemd-run --scope` all leave it in the calling shell's process group, and all three were killed
+around the thirty-minute mark with no trace in their logs. And a phase that can be resumed is worth
+more than one that is fast: the write phase would have had to be paid for twice otherwise.

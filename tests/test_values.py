@@ -101,6 +101,12 @@ def main() -> int:
     said = str(rt.run('p.set_speaks = l', "k").get("error") or "")
     check("an assignment to a word for a link is refused with the call to write",
           "set_speaks(other)" in said and "not an assignment" in said, said[-160:])
+    # And before the word exists at all, which is the order a host actually takes: assign to
+    # `set_performed_by`, define `performed_by` afterwards, and the attribute and the method then
+    # share a name — the next save reads the method and json.dumps raises on it for good.
+    said = str(rt.run('p.set_performed_by = "somebody"', "k").get("error") or "")
+    check("and so is one for a word this world has not got yet",
+          "set_performed_by(other)" in said and "define_relation" in said, said[-160:])
     said = str(rt.run('p.describe = "a monk"', "k").get("error") or "")
     check("and so is an assignment over anything else the class does",
           "does, not a value it holds" in said, said[-160:])

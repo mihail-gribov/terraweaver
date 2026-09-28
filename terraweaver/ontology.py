@@ -1179,6 +1179,21 @@ class Entity:
                 # breaks over it (store._encode), and the write is refused here, where the reason
                 # can be said: a link is one link, and an assignment would say all of them.
                 already = getattr(type(self), name, None)
+                # `set_` is this world's own form for writing a link, whether or not the word
+                # exists yet. Checking only for a method that is already there left the other
+                # order open, and it is the one a host takes: assign to `set_performed_by` first,
+                # define `performed_by` second, and now the instance carries an attribute whose
+                # name the class answers with a method — the next save reads the method and
+                # `json.dumps` raises on it, for good. Measured 2026-09-28: eleven such attributes
+                # across two classes in one 455-fact world, and over a thousand rows.
+                if name.startswith("set_") and len(name) > 4:
+                    raise TypeError(
+                        f"say it with the call, not an assignment: "
+                        f"{_name_of_me(self)}.{name}(other) — {name[len('set_'):]} is how a link "
+                        f"is written, one at a time, and `set_…` is never the name of a value. "
+                        f"If the word does not exist yet, define it: "
+                        f"world.define_relation({name[len('set_'):]!r}, \"<what this link is>\", "
+                        f"nature=\"related_to\", cardinality=\"many-to-one\").")
                 if callable(already) and not isinstance(already, type):
                     me = _name_of_me(self) if "_name_of_me" in globals() else "it"
                     if name.startswith("set_"):
