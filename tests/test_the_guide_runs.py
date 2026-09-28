@@ -122,6 +122,27 @@ def main() -> int:
     check(f"every line the world shows runs in it ({total} lines tried)", broke == 0,
           f"{broke} of {total} named something the world no longer has")
 
+    # The door a host meets before any of those lines. A schema error is refused before the world
+    # sees the call, so the world cannot say what it wanted — and measured over a hundred questions,
+    # eighteen were lost to `1 validation error for start_task: stated Field required`, the host
+    # having written `task=` or called it with nothing at all.
+    import asyncio
+
+    from terraweaver import server as srv
+
+    async def schema_of(name: str) -> dict:
+        for tool in await srv.server.list_tools():
+            if tool.name == name:
+                return tool.input_schema
+        return {}
+
+    opening = asyncio.run(schema_of("start_task"))
+    check("start_task takes the name a host reaches for as well as its own",
+          {"stated", "task", "mode"} <= set(opening.get("properties", {})),
+          str(sorted(opening.get("properties", {}))))
+    check("and nothing about it is required, so the world answers instead of the schema",
+          not opening.get("required"), str(opening.get("required")))
+
     print("\n" + (f"{len(failures)} failed: " + ", ".join(f[:40] for f in failures) if failures
                   else "all guide lines ran"))
     return 1 if failures else 0
