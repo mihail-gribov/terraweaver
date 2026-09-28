@@ -271,30 +271,42 @@ class Store:
             for attr_name, raw in rows:
                 if attr_name in derived or attr_name not in known:
                     continue  # stored by an older version: now computed, or no longer part of the class
-                kind, payload = _decode(raw)
-                if kind == "dt":
-                    # Rows written before the world settled on one form of time carry a zone;
-                    # they come back in the same form as everything else.
-                    when = datetime.fromisoformat(payload)
-                    setattr(obj, attr_name,
-                            when.astimezone(timezone.utc).replace(tzinfo=None)
-                            if when.tzinfo is not None else when)
-                elif kind == "ref":
-                    try:
-                        setattr(obj, attr_name, self._load(payload, classes, memo))
-                    except KeyError:
-                        # Pointing at something the image no longer holds. Reading it as nothing
-                        # is the truth about the image; raising made one stale reference render
-                        # every instance of its class unreadable.
-                        setattr(obj, attr_name, None)
-                elif kind == "refs":
-                    kept = []
-                    for one in payload:
-                        try:
-                            kept.append(self._load(one, classes, memo))
-                        except KeyError:
-                            continue
-                    setattr(obj, attr_name, kept)
-                else:
-                    setattr(obj, attr_name, payload)
+                # A name the class now answers with something that will not be assigned — a
+                # relation's word declared as an attribute as well — refuses the load, and the
+                # refusal is right about a host's write and wrong here: an image is what it can be.
+                # Measured 2026-09-28: one such declaration made every `Person` in a 455-fact world
+                # unreadable and stopped the reading dead. Same lesson as the stale reference in
+                # `_fill`: what cannot be read is missing from the image, not fatal to it.
+                try:
+                    self._fill(obj, attr_name, _decode(raw), classes, memo)
+                except TypeError:
+                    continue
         return obj
+
+    def _fill(self, obj, attr_name: str, decoded: tuple, classes: dict, memo: dict) -> None:
+        """One stored row onto the image it belongs to. Called inside `trusted_writes`."""
+        kind, payload = decoded
+        if kind == "dt":
+            # Rows written before the world settled on one form of time carry a zone; they come
+            # back in the same form as everything else.
+            when = datetime.fromisoformat(payload)
+            setattr(obj, attr_name, when.astimezone(timezone.utc).replace(tzinfo=None)
+                    if when.tzinfo is not None else when)
+        elif kind == "ref":
+            try:
+                setattr(obj, attr_name, self._load(payload, classes, memo))
+            except KeyError:
+                # Pointing at something the image no longer holds. Reading it as nothing is the
+                # truth about the image; raising made one stale reference render every instance of
+                # its class unreadable.
+                setattr(obj, attr_name, None)
+        elif kind == "refs":
+            kept = []
+            for one in payload:
+                try:
+                    kept.append(self._load(one, classes, memo))
+                except KeyError:
+                    continue
+            setattr(obj, attr_name, kept)
+        else:
+            setattr(obj, attr_name, payload)

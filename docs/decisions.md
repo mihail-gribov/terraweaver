@@ -3297,3 +3297,30 @@ transient systemd *service* (`systemd-run --user --unit=…`): `&`, `nohup` and 
 `systemd-run --scope` all leave it in the calling shell's process group, and all three were killed
 around the thirty-minute mark with no trace in their logs. And a phase that can be resumed is worth
 more than one that is fast: the write phase would have had to be paid for twice otherwise.
+
+## 2026-09-28 — a relation's word is not also an attribute, and a load is not a host's write
+
+The other half of the same collision, found by the reading crashing on the world it had nearly
+finished. `Person` carried a declared attribute `died_in` beside the `died_in` the type had already
+put on the class, and then **every Person in that world was unreadable**: a load sets attributes,
+`object.__setattr__` honours a data descriptor, and the descriptor here is the relation's reading
+property whose whole job is to refuse an assignment — `died_in is read, not assigned`.
+
+The install site already guarded one direction (`hasattr(cls, word) or word in declared` — a declared
+attribute is never shadowed by a method). The door that was open is `world.attribute`, which declared
+the name without looking at what the class already answers with. It refuses now, and says which is
+which: `a.died_in` reads the link, `a.set_died_in` writes it, and an attribute needs another name.
+
+**And a load tolerates a row it cannot set.** Refusing an assignment is right about a host's write
+and wrong about rebuilding an image — an image is what it can be. The row-setting moved into
+`store._fill` and the loop skips a `TypeError`, which is the same lesson the stale-reference branch
+beside it already carried: one bad row must not cost the class.
+
+Repaired in place again: the attribute and its six rows out, the world readable, 169 people back, and
+the reading resumed with 14 of 157 links left and 264 of 367 names.
+
+**Three collisions of one shape in one day** — `set_<word>` grown before the word existed, `set_<word>`
+grown while it existed, `<word>` declared beside the word — all of them the same idea: the names a
+class answers with are one namespace, and anything that hands out a name has to look at the others.
+Two doors hand them out (`attribute`, and growth on assignment) and one installs them
+(`define_relation`), and each now checks the same thing.

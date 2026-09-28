@@ -208,6 +208,22 @@ class Authoring:
         from terraweaver import ontology
 
         spec = self._spec_of(cls)
+        # A name the class already answers with a relation's word cannot also be a value it holds.
+        # Measured 2026-09-28: `died_in` was declared on `Person` beside the `died_in` the type had
+        # already put there, and every Person in that world then became unreadable — the load sets
+        # attributes, `object.__setattr__` honours the property, and the property's job is to refuse
+        # an assignment. One declaration cost the class.
+        word = str(name).strip()
+        for type_name, other in self.world.classes.items():
+            rel = (getattr(other, "_spec", {}) or {}).get("relation")
+            if not rel:
+                continue
+            if word in (rel.get("kind"), rel.get("reverse")) or word == f"set_{rel.get('kind')}":
+                raise Refused(
+                    f"{word!r} is already how {type_name} is read on this class, so it cannot also "
+                    f"be a value it holds: a.{word} reads the link and a.set_{rel.get('kind')} "
+                    f"writes it. Give the attribute another name — or if this is the same idea, it "
+                    f"is the link, and it is already there.")
         attr = self._attribute_spec(name, description, type=type, changes=changes,
                                     required=required)
         standing = next((a for a in spec["attributes"] if a["name"] == attr["name"]), None)
