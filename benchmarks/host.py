@@ -181,13 +181,20 @@ def engineer() -> str | None:
     return outside.NEMOTRON if keys().get("NEBIUS_API_KEY") else None
 
 
-def start_server(db: Path, port: int, blank: bool = False) -> subprocess.Popen:
+def start_server(db: Path, port: int, blank: bool = False, reading: float = 0) -> subprocess.Popen:
     """An empty world of its own: the base, so nothing is in it but `user` and `agent`.
 
     `blank=True` goes further and takes the classes away too — the host defines the ontology
-    (`docs/open-ontology.md`)."""
+    (`docs/open-ontology.md`).
+
+    `reading=0` by default: during a measured ingestion the world does not read at the close, and
+    the reading is a phase of its own afterwards. The budget bounds when a reading may *start*, so
+    one slow reading still overruns the host's tool timeout — measured 2026-09-28, twice, a batch
+    lost to `finish_task` timing out. A run that types nothing during the write phase and everything
+    in one pass after it has neither problem, and says so in its own log."""
     server = subprocess.Popen(
         [sys.executable, "-m", "terraweaver.server", "--db", str(db), "--port", str(port),
+         "--reading-at-close", str(reading),
          *(["--blank"] if blank else [])],
         cwd=ROOT, env=keys(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     for _ in range(120):

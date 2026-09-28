@@ -21,6 +21,7 @@ no later pass repairs. The engineer says what this is; it never says which this 
 France" describes it exactly as it would the truth. This is a record of what somebody said.
 """
 import json
+import time
 from terraweaver import prompts
 from datetime import datetime, timezone
 
@@ -229,7 +230,8 @@ def words_about(world, entity) -> str:
 GOES = 3
 
 
-def formalise(world, engineer, limit: int = 50, jev=None, run=None) -> dict:
+def formalise(world, engineer, limit: int = 50, jev=None, run=None,
+              seconds: float | None = None) -> dict:
     """Read the prose-facts nobody has read, and put each into the record's own terms.
 
     Two steps, and the split between them is where the cost is. Finding the class is a walk down
@@ -239,6 +241,11 @@ def formalise(world, engineer, limit: int = 50, jev=None, run=None) -> dict:
 
     The code runs the way a host's code runs, through the same door, and what comes back goes
     to whoever wrote it — the same loop, with Nemotron where the agent usually stands.
+
+    `seconds` bounds it, because this runs inside the host's `finish_task` too. Measured
+    2026-09-28: the sentence reading was given a budget and this one was not, and a batch with
+    forty-eight bare names in it timed the close out anyway. What is not read stays unread, which
+    is what it is.
     """
     from terraweaver import ontology, outside
 
@@ -248,7 +255,10 @@ def formalise(world, engineer, limit: int = 50, jev=None, run=None) -> dict:
     # before, and the next thing they save writes that back — the reading undone by the very
     # next line the agent runs, quietly, with nothing to show it happened.
     moved: list[str] = []
+    began = time.monotonic()
     for one in unread(world, limit):
+        if seconds is not None and time.monotonic() - began > seconds:
+            break
         try:
             entity = world.store.load(one["entity_id"], world.classes)
         except Exception:  # noqa: BLE001 - a thing that has gone is not a thing we can read

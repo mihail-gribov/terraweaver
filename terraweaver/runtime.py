@@ -40,6 +40,11 @@ IDLE_RESET_SECONDS = 20 * 60
 # for `experiments/catch_up.py`, which is the same pass run on purpose.
 READING_AT_THE_CLOSE = 20.0
 
+
+def _left_of(until: float | None) -> float | None:
+    """What is left of the close's deadline, or None where there is no deadline at all."""
+    return None if until is None else max(0.0, until - time.monotonic())
+
 RUNS_SCHEMA = """
 CREATE TABLE IF NOT EXISTS runs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -695,8 +700,12 @@ class WorldRuntime:
         # doubt until something is said about it — so checking first meant a task that said six
         # facts in words could never close, and therefore was never read, and therefore never
         # closed. Each reading is marked, so a second attempt pays for nothing.
-        typed = self._read_what_was_said()
-        placed, still = self._read_what_things_are()
+        # One deadline for the whole close, spent by the sentence reading first and by the
+        # portraits with whatever is left. Two separate budgets is what let this time out: the
+        # first was bounded, the second was not, and together they were minutes.
+        until = time.monotonic() + READING_AT_THE_CLOSE
+        typed = self._read_what_was_said(until)
+        placed, still = self._read_what_things_are(until)
         standing = self.unresolved(key)
         if standing and not abandon and closing is None:
             lines = "\n".join(f"    {q.line()}" for q in standing[:8])
@@ -1003,7 +1012,7 @@ class WorldRuntime:
                              f'{ont.what_to_say(type(link), self.classes)}')
         return asked
 
-    def _read_what_things_are(self) -> tuple[dict, int]:
+    def _read_what_things_are(self, until: float | None = None) -> tuple[dict, int]:
         """Read what was said about the things that came in as bare names. At the close.
 
         The twin of `_read_what_was_said`, and here for the same reason: a run is stopped after
@@ -1019,7 +1028,8 @@ class WorldRuntime:
             silent = len(portraits.still_only_a_name(self.world))
             if not waiting:
                 return {}, silent
-            tally = portraits.formalise(self.world, engineer, run=self._the_world_writes)
+            tally = portraits.formalise(self.world, engineer, run=self._the_world_writes,
+                                        seconds=_left_of(until))
             self._hand_back_what_moved(tally.pop("moved", []))
             return tally, silent
         except Exception:  # noqa: BLE001 - reading is never what stops a task closing
@@ -1066,7 +1076,7 @@ class WorldRuntime:
                     if getattr(held, "id", None) == entity_id and held is not now:
                         session.namespace[name] = now
 
-    def _read_what_was_said(self) -> dict:
+    def _read_what_was_said(self, until: float | None = None) -> dict:
         """Turn the sentences this task said into links. At the close, where nothing waits.
 
         A run is stopped after ten seconds and the engineer takes four to twenty, so this cannot
@@ -1083,7 +1093,7 @@ class WorldRuntime:
         try:
             # Bounded, because this runs inside the host's `finish_task` and a call that does not
             # return is a batch lost. The rest stays queued for the next close or for `catch_up`.
-            got = formalise.formalise(self, engineer, seconds=READING_AT_THE_CLOSE)
+            got = formalise.formalise(self, engineer, seconds=_left_of(until))
         except Exception as wrong:  # noqa: BLE001 - reading is never what stops a task closing
             # Said, not swallowed. This returned an empty dict on any failure, and a reading that
             # raised a NameError on its first link — the prompts it named had been moved away —

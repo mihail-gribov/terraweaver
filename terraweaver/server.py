@@ -328,6 +328,11 @@ def main() -> None:
                         help="no classes at all: the host defines the ontology (docs/open-ontology.md)")
     parser.add_argument("--specs", default=None,
                         help="a directory of class specs to open a host-built world with")
+    parser.add_argument("--reading-at-close", type=float, default=None,
+                        help="seconds the close may spend reading what was said in words "
+                             "(0 to leave it all for experiments/catch_up.py). A reading is a "
+                             "handful of calls to an engineer and a batch of them is minutes, "
+                             "while the close happens inside the host's own finish_task.")
     parser.add_argument("--host", default="127.0.0.1", help="0.0.0.0 to serve the local network (token required)")
     parser.add_argument("--port", type=int, default=7000)
     parser.add_argument("--allow-origin", action="append", default=[],
@@ -335,6 +340,10 @@ def main() -> None:
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
+    if args.reading_at_close is not None:
+        import terraweaver.runtime as runtime_module
+
+        runtime_module.READING_AT_THE_CLOSE = args.reading_at_close
     if args.specs:
         # A world somebody already built: its classes come from the files it wrote them into.
         from terraweaver import authoring

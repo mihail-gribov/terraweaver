@@ -3239,3 +3239,27 @@ Three fixes, each where the thing actually went wrong:
 25, i.e. the shape of the numbers rather than any error we had thought to catch. The logging is what
 makes it visible next time: the same failure would now stop the run at that batch and name the call
 that failed.
+
+## 2026-09-28 — during a measured ingestion the world does not read at the close
+
+Two attempts at the full slice died the same way, one batch apart: `finish_task` timed out and the
+batch was lost. The first time a budget was put on the sentence reading. The second time the close
+timed out anyway, because **the portraits pass had no budget** — forty-eight bare names in one batch,
+each a walk down the class tree, and the two passes together were minutes. Both are bounded now by
+one deadline for the whole close (`_left_of`), and measured on the world the second attempt left
+behind, the close came back in **20.3s** where it had been minutes.
+
+That is still not safe, and the reason is worth writing down: a budget can only stop a reading from
+*starting*. One already-started reading has been measured at 45.9s, so the worst case still overruns
+whatever tool timeout the host has, and a lost batch is a lost measurement.
+
+**So a run turns it off.** `terraweaver.server --reading-at-close 0`, which `benchmarks/host.py`
+passes by default: during a measured ingestion the world records what it is told and types nothing,
+and the reading happens once afterwards with the world to itself
+(`run_fc.py` stands the server down, runs `experiments/catch_up.py`, brings it back for the
+questions). The close with reading off returns in **0.3s**.
+
+Nothing is lost by this and the design says so in as many words: an untyped link holds its two things
+and the words it was said in, the row saying nobody has read it stays open, and the reading is the
+same pass whenever it runs. What a live host gets is unchanged — the default is still 20 seconds at
+the close, which types the fact that was just said while the host is still there.
