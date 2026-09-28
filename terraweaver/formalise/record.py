@@ -36,7 +36,8 @@ CREATE TABLE IF NOT EXISTS readings (
     found TEXT,                  -- the word the look already had for this, if it had one
     looked INTEGER,              -- whether the look could be asked at all
     trouble TEXT,                -- what went wrong, in the words it went wrong in
-    whose_fault TEXT             -- technical (ours or the network's) or substantive (a judgement)
+    whose_fault TEXT,            -- technical (ours or the network's) or substantive (a judgement)
+    last_said TEXT               -- the last thing the world said back, which is the diagnosis
 );
 CREATE INDEX IF NOT EXISTS idx_readings_link ON readings(link_id);
 """
@@ -50,7 +51,7 @@ def _columns(conn) -> None:
     """
     have = {row[1] for row in conn.execute("PRAGMA table_info(readings)")}
     for column, kind in (("found", "TEXT"), ("looked", "INTEGER"),
-                        ("trouble", "TEXT"), ("whose_fault", "TEXT")):
+                        ("trouble", "TEXT"), ("whose_fault", "TEXT"), ("last_said", "TEXT")):
         if column not in have:
             conn.execute(f"ALTER TABLE readings ADD COLUMN {column} {kind}")
 
@@ -87,13 +88,17 @@ def keep(world, link, trace: dict, seconds: float) -> None:
         verdicts = [one for about in trace.get("checked", []) for one in about.get("claims", [])]
         world.store.conn.execute(
             "INSERT INTO readings (link_id, read_at, words, goes, went, kind, defined, seconds, "
-            "verdicts, found, looked, trouble, whose_fault) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "verdicts, found, looked, trouble, whose_fault, last_said) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (getattr(link, "id", None), datetime.now(timezone.utc).isoformat(),
              trace.get("words", "")[:400], len(trace.get("wrote", [])), trace.get("went", ""),
              trace.get("kind"), 1 if trace.get("defined") else 0, round(seconds, 2),
              json.dumps(verdicts), trace.get("found"),
-             1 if (trace.get("look") or {}).get("asked") else 0, *what_went_wrong(trace)))
+             1 if (trace.get("look") or {}).get("asked") else 0, *what_went_wrong(trace),
+             # The last thing the world said back. A count of "gave up" says a reading failed and
+             # not why, and why is a sentence the world already wrote — measured 2026-09-28, nine
+             # readings of twenty-one gave up in a cold world and nothing anywhere said on what.
+             (trace.get("answered") or [""])[-1][:400]))
         world.store.conn.commit()
     except Exception:  # noqa: BLE001 - a reading is not lost because its measurement was
         return
@@ -109,7 +114,7 @@ def distribution(world) -> dict:
     _columns(world.store.conn)
     rows = world.store.conn.execute(
         "SELECT goes, went, kind, defined, seconds, verdicts, words, found, looked, trouble, "
-        "whose_fault FROM readings").fetchall()
+        "whose_fault, last_said FROM readings").fetchall()
     if not rows:
         return {"readings": 0}
     goes = Counter(row[0] for row in rows)
@@ -147,6 +152,11 @@ def distribution(world) -> dict:
         # network lost and a reading the check refused both read as "not typed".
         "went wrong": dict(Counter(row[10] for row in rows if row[10]).most_common()),
         "what went wrong": dict(Counter((row[9] or "")[:60] for row in rows if row[9]).most_common(5)),
+        # What the world said back on the ones that failed, which is where a "gave up" becomes a
+        # reason somebody can act on.
+        "what it said back": dict(Counter(
+            " ".join((row[11] or "").split())[:110] for row in rows
+            if row[9] and row[11]).most_common(4)),
     }
 
 
@@ -173,4 +183,6 @@ def readable(shape: dict) -> str:
         out.append("  fault:     " + "; ".join(f"{k} {n}" for k, n in shape["went wrong"].items()))
         for what, n in shape["what went wrong"].items():
             out.append(f"             {n}x {what}")
+        for said, n in shape["what it said back"].items():
+            out.append(f"      said:  {n}x {said}")
     return "\n".join(out)
