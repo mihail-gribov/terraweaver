@@ -71,10 +71,12 @@ def main() -> int:
             spent["turns"] += got["turns"]
             spent["cost"] += got["cost"]
             trouble = hosting.went_wrong(got)
+            fumbled = hosting.hosts_own(got)
             right = False if trouble else fc.correct(got["text"], question.gold)
             results.append({"id": question.id, "question": question.text, "gold": question.gold,
                             "answer": got["text"][:300], "correct": right,
-                            **({"trouble": trouble} if trouble else {})})
+                            **({"trouble": trouble} if trouble else {}),
+                            **({"the host's own": fumbled[:3]} if fumbled else {})})
             if trouble:
                 (out_dir / "trouble.jsonl").open("a").write(
                     json.dumps({"question": question.id, **trouble}) + "\n")
@@ -89,6 +91,7 @@ def main() -> int:
     answered = [one for one in results if not one.get("trouble")]
     summary = {"accuracy": round(sum(r["correct"] for r in answered) / max(1, len(answered)), 3),
                "questions": len(answered), "never reached the world": len(results) - len(answered),
+               "the host's own bad calls": sum(1 for one in results if one.get("the host's own")),
                "world": args.db, "label": args.label,
                "cost_usd": round(spent["cost"], 2), "turns": spent["turns"],
                "minutes": round((time.monotonic() - started) / 60, 1)}

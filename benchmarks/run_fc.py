@@ -151,6 +151,7 @@ def main() -> int:
             spent["turns"] += got["turns"]
             spent["cost"] += got["cost"]
             trouble = hosting.went_wrong(got)
+            fumbled = hosting.hosts_own(got)
             if trouble:
                 # Technical, not substantive: the host never reached the world, so whatever it
                 # answered is not evidence about this world. Said out loud and the run stops, rather
@@ -195,6 +196,7 @@ def main() -> int:
             spent["turns"] += got["turns"]
             spent["cost"] += got["cost"]
             trouble = hosting.went_wrong(got)
+            fumbled = hosting.hosts_own(got)
             right = False if trouble else fc.correct(got["text"], question.gold)
             results.append({"id": question.id, "question": question.text, "gold": question.gold,
                             "answer": got["text"][:300], "correct": right,
@@ -202,7 +204,8 @@ def main() -> int:
                             # A question the host could not put to the world is not a question this
                             # world answered wrongly, and counted as wrong it lowers the number for a
                             # reason that has nothing to do with the world. Kept apart and reported.
-                            **({"trouble": trouble} if trouble else {})})
+                            **({"trouble": trouble} if trouble else {}),
+                            **({"the host's own": fumbled[:3]} if fumbled else {})})
             if trouble:
                 (out_dir / "trouble.jsonl").open("a").write(
                     json.dumps({"question": question.id, **trouble}) + "\n")
@@ -222,6 +225,7 @@ def main() -> int:
     answered = [one for one in results if not one.get("trouble")]
     summary = {"accuracy": round(sum(r["correct"] for r in answered) / max(1, len(answered)), 3),
                "questions": len(answered), "never reached the world": len(troubled),
+               "the host's own bad calls": sum(1 for one in results if one.get("the host's own")),
                "cost_usd": round(spent["cost"], 2),
                "turns": spent["turns"], "minutes": round((time.monotonic() - started) / 60, 1)}
     (out_dir / "results.json").write_text(json.dumps(

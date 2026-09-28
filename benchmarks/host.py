@@ -240,12 +240,30 @@ def went_wrong(got: dict) -> dict | None:
                 "kind": "technical", "turns": got.get("turns"), "said": got.get("text", "")[:300]}
     if got.get("trouble"):
         return {"what": got["trouble"], "kind": "technical", "turns": got.get("turns")}
-    ours = [one for one in got.get("tool_errors") or []
-            if "No such tool available" not in one and "Invalid tool name" not in one]
+    ours = [one for one in got.get("tool_errors") or [] if not _the_hosts_own(one)]
     if ours:
         return {"what": f"the world failed {len(ours)} call(s): {ours[0]}", "kind": "technical",
                 "turns": got.get("turns"), "all": ours[:5]}
     return None
+
+
+# A failed call the host brought on itself. Measured over one hundred questions: eighteen
+# `validation error for start_task` (it wrote `task=` for `stated=`, or called it with nothing),
+# four `Cannot create agent worktree` from a tool that has no business here, two `Unknown skill`
+# for a tool of ours called as one, one misspelling of the world's own name. None of it is our
+# plumbing failing, so none of it is kept out of the number — a host that cannot work the world's
+# door is answering badly, and that is the thing being measured. It is counted and reported.
+HOSTS_OWN = ("No such tool available", "Invalid tool name", "validation error",
+             "Unknown skill", "Cannot create agent worktree")
+
+
+def _the_hosts_own(said: str) -> bool:
+    return any(one in said for one in HOSTS_OWN)
+
+
+def hosts_own(got: dict) -> list[str]:
+    """The calls this turn failed on its own account, for a run to report beside its number."""
+    return [one for one in got.get("tool_errors") or [] if _the_hosts_own(one)]
 
 
 def forget_folder_memory(folder: Path) -> None:

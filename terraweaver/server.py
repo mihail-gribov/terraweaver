@@ -173,15 +173,27 @@ async def unset_variables(names: str, ctx: Context) -> str:
 
 
 @server.tool()
-async def start_task(stated: str, mode: str, ctx: Context) -> str:
+async def start_task(ctx: Context, stated: str = "", mode: str = "", task: str = "") -> str:
     """Open a task before working. `stated` says what this piece of work is, in your own words,
-    as a sentence. `mode` is "recording" — putting something into the world — or "answering" —
-    finding something out of it.
+    as a sentence (`task` is taken as the same thing). `mode` is "recording" — putting something
+    into the world — or "answering" — finding something out of it.
 
     Call this first, every time the user moves on to something new. The world cannot see a
     conversation start or end, so this is the only boundary it has: what is still yours to use,
     what was left unanswered, and what the next task inherits all hang on it. Finish with
     finish_task."""
+    # Both taken, and both optional, because the alternative is what was measured: of a hundred
+    # questions put to one world, **eighteen** were lost to `1 validation error for start_task:
+    # stated Field required` — the host had written `task=` (the obvious name) or called it with no
+    # arguments at all. A schema error is refused before the world sees the call, so the world
+    # cannot say what it wanted; and a host that cannot open a task answers from nothing. What the
+    # world would say, it now gets to say.
+    stated = (stated or task or "").strip()
+    mode = (mode or "").strip().lower()
+    if not stated or not mode:
+        return ("Say both, in one call: start_task(stated=\"<what this piece of work is, as a "
+                "sentence>\", mode=\"recording\" or \"answering\"). `recording` puts something "
+                "into the world; `answering` finds something out of it. Nothing is opened yet.")
     key = _session_key(ctx)
     try:
         opened = runtime.start_task(key, stated, mode)

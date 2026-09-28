@@ -3324,3 +3324,37 @@ grown while it existed, `<word>` declared beside the word — all of them the sa
 class answers with are one namespace, and anything that hands out a name has to look at the others.
 Two doors hand them out (`attribute`, and growth on assignment) and one installs them
 (`define_relation`), and each now checks the same thing.
+
+## 2026-09-28 — eighteen questions of a hundred lost to the name of an argument
+
+The first number off the read 455-fact world was 26.3% over 76 questions, with **24 kept out of it**
+by the guard written that morning. Every one of the 24 turned out to be the host's own bad call, not
+our plumbing:
+
+| | |
+|---|---|
+| 18 | `1 validation error for start_task: stated Field required` — it wrote `task=`, or called it with nothing |
+| 4 | `Cannot create agent worktree: not in a git repository` — a tool with no business here |
+| 2 | `Unknown skill: mcp__terraweaver__describe_world` — a tool of ours called as a skill |
+
+**So the guard was too broad and the number was flattering.** A host that cannot work the world's own
+door is answering badly, and that is the thing being measured; only our side failing is kept out.
+`hosting.went_wrong` now recognises the host's own (`HOSTS_OWN`) and leaves those in, while
+`hosting.hosts_own` counts them so a run reports them beside its number. Over all hundred the honest
+figure was 20%.
+
+**And eighteen of a hundred is a door, not a host.** `stated` is an unusual name and `task` is the
+obvious guess; a schema error is refused before the world sees the call, so the world never got to
+say what it wanted, and a host that cannot open a task answers from nothing. `start_task` now takes
+`task` as the same thing, takes `mode` in any case, has both optional, and says in its own words what
+to write when either is missing. The world's rule — enforce in code, and refuse in a way that says
+what to write instead — applies to the MCP boundary too, which is the one place it had not been
+applied.
+
+**What the number does not measure, and why it is not comparable.** That world's write phase ran
+under the old code, which accepted `person.set_chairperson = "Mahmoud Abbas"` as an attribute; the
+repair dropped 1,285 such rows, and they were facts the host had recorded — in the wrong place, but
+recorded. So the world that was asked is a world with part of its record cut out. The reading itself
+was sound and is worth keeping: of 150 links said in words, **136 typed, 133 of them joined to a word
+already there and only 3 words made** — and a third of all readings (119 of 355) came from accounts of
+a single word, which before that morning were refused outright and never recorded at all.
