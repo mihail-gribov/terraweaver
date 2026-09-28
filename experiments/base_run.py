@@ -293,19 +293,28 @@ than once over time, give the one that holds now, not the first one."""
 
 
 def _the_key() -> bool:
-    """Put the key where a child process will find it, from the places it is kept here."""
+    """Put every key where a child process will find it, from the places they are kept here.
+
+    Returns whether there is an engineer to be had, which is what the callers ask about — but it
+    loads them all, because the other one matters just as much and reading only `NEBIUS_API_KEY`
+    was how the reading went on asking the engineer its closed questions long after the server had
+    been given a decision model. Nothing in `terraweaver` reads `.env`; a key reaches a world from
+    whoever started it, and this is that place for everything under `experiments/`.
+    """
     import os
 
-    if os.environ.get("NEBIUS_API_KEY"):
-        return True
     for env in (ROOT / ".env", Path(os.path.expanduser("~/Projects/ai-safity/.env"))):
         if not env.exists():
             continue
         for line in env.read_text().splitlines():
-            if line.startswith("NEBIUS_API_KEY"):
-                os.environ["NEBIUS_API_KEY"] = line.split("=", 1)[1].strip().strip('"')
-                return True
-    return False
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            name, value = line.split("=", 1)
+            name, value = name.strip(), value.strip().strip('"')
+            if value and not os.environ.get(name):
+                os.environ[name] = value
+    return bool(os.environ.get("NEBIUS_API_KEY"))
 
 
 def start_base_server(db: Path, port: int, one_door: bool = False) -> subprocess.Popen:

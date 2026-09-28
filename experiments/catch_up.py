@@ -13,6 +13,7 @@ Nothing here is special to being late: it is the same pass the close runs, run o
     .venv/bin/python experiments/catch_up.py <world.db> [--grown <dir>]
 """
 import argparse
+import os
 import sys
 from pathlib import Path
 
@@ -53,6 +54,19 @@ def main() -> int:
     runtime = WorldRuntime(str(args.db), specs=specs, selves=False)
     authoring.install(runtime.world, grown)
     runtime.world.engineer = outside.Nemotron(ttl=120)
+    # And the decision model, where there is one. Without this line the reading falls back to the
+    # engineer for every closed question — `look` and `check` both — which is the arrangement the
+    # server was fixed out of on 2026-09-28 and which this, the place the reading actually runs, went
+    # on doing. It shows in the record: `sure when refusing 1.00` on every verdict is a generative
+    # model's signature, since it answers everything at 1.00 whether it is right or wrong.
+    if os.environ.get("TYPESAFE_API_KEY"):
+        try:
+            runtime.world.jev = outside.Jev()
+        except Exception as wrong:  # noqa: BLE001 - a world with no picker asks the engineer
+            print(f"no picker: {type(wrong).__name__}: {wrong}", flush=True)
+    print(f"engineer: {getattr(runtime.world.engineer, 'model', '?')}   "
+          f"picker: {getattr(getattr(runtime.world, 'jev', None), 'model', 'the engineer stands in')}",
+          flush=True)
 
     said, waiting = sentences.count(runtime.world)
     asked, unread = portraits.count(runtime.world)
