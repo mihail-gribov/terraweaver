@@ -33,7 +33,7 @@ from terraweaver.formalise.look import look, words_for
 GOES = 3
 
 
-def formalise(runtime, engineer, picker=None, limit: int = 100) -> dict:
+def formalise(runtime, engineer, picker=None, limit: int = 100, seconds: float | None = None) -> dict:
     """Every bare link nobody has read, in the order it was said, looked for and then written.
 
     The order is not housekeeping. Everything the world does with a second fact about the same two
@@ -51,13 +51,22 @@ def formalise(runtime, engineer, picker=None, limit: int = 100) -> dict:
     bare = sorted(sentences.unread(runtime.world, limit),
                   key=lambda link: when_said(runtime.world, link))
     traces = []
+    began = time.monotonic()
     for link in bare:
+        # A budget, because "at the close, where nothing waits on it" was not true of the one thing
+        # that waits: the host's own call. Twenty links at eight seconds each is minutes inside
+        # `finish_task`, and measured on the first batch of a 455-fact run the call timed out three
+        # times over and the batch was lost. What does not fit stays in the queue — it is unread,
+        # which is what it is, and the next close or `catch_up` takes it.
+        if seconds is not None and time.monotonic() - began > seconds:
+            break
         started = time.monotonic()
         one = formalise_one(runtime, link, engineer, picker)
         # Kept before the next link is read, so a reading that dies mid-run is still measured.
         record.keep(runtime.world, link, one, time.monotonic() - started)
         traces.append(one)
     return {"read": traces,
+            "left unread": max(0, len(bare) - len(traces)),
             "typed": sum(1 for one in traces if one["typed"]),
             "joined": sum(1 for one in traces if one["typed"] and not one.get("defined")),
             "defined": sum(1 for one in traces if one.get("defined")),

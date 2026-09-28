@@ -277,8 +277,12 @@ class Nemotron(Open):
     # 3000 tokens came back `finish_reason='length'` with **nothing at all** — 3000 spent thinking
     # and none left to say it — and 8000 finished the same question in 2845 with the right answer.
     # Two of nine readings in one run were lost that way and reported as "the engineer answered with
-    # nothing", which is true and points at the wrong thing.
-    ROOM = 8000
+    # nothing", which is true and points at the wrong thing. 8000 was not the end of it: measured
+    # 2026-09-28 over 25 readings of one batch, one was still cut off with nothing said, so the
+    # cliff is per question and not per size. 16000 is the same argument applied once more, and the
+    # reading now says when it happens (`readings.whose_fault` = technical) instead of it looking
+    # like a model with no opinion.
+    ROOM = 16000
 
     def __init__(self, model: str = NEMOTRON, key: str | None = None, ttl: float = TTL,
                  thinking_room: int = ROOM):

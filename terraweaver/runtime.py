@@ -33,6 +33,13 @@ MAX_OUTPUT = 20_000
 # A session idle this long is taken to be a finished task: the next call starts a fresh one.
 IDLE_RESET_SECONDS = 20 * 60
 
+# How long the close may spend reading what was said in words. One reading is a handful of calls to
+# an engineer and takes seconds; twenty links take minutes, and the close happens inside the host's
+# own `finish_task`. Measured 2026-09-28 on the first batch of a 455-fact run: the call timed out
+# three times over and the batch was lost. What does not fit stays queued — for the next close, or
+# for `experiments/catch_up.py`, which is the same pass run on purpose.
+READING_AT_THE_CLOSE = 20.0
+
 RUNS_SCHEMA = """
 CREATE TABLE IF NOT EXISTS runs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1074,7 +1081,9 @@ class WorldRuntime:
         if not waiting:
             return {}
         try:
-            got = formalise.formalise(self, engineer)
+            # Bounded, because this runs inside the host's `finish_task` and a call that does not
+            # return is a batch lost. The rest stays queued for the next close or for `catch_up`.
+            got = formalise.formalise(self, engineer, seconds=READING_AT_THE_CLOSE)
         except Exception as wrong:  # noqa: BLE001 - reading is never what stops a task closing
             # Said, not swallowed. This returned an empty dict on any failure, and a reading that
             # raised a NameError on its first link — the prompts it named had been moved away —

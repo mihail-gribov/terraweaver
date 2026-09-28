@@ -48,6 +48,22 @@ Answer from what is recorded, with the value and nothing else. If a thing was re
 than once over time, give the one that holds now, not the first one."""
 
 
+def _read_it_all(work: Path, port: int) -> str:
+    """Read every link said in words, in a process of its own, and say what the readings looked like.
+
+    Its own process because the world server owns the database while it runs: the server is stopped
+    for this, the reading has the world to itself, and the server comes back for the questions. The
+    reading is the world's own work and needs no host, so nothing is lost by the world being shut to
+    one for a few minutes.
+    """
+    del port  # the reading talks to the database, not to a server
+    ran = subprocess.run([sys.executable, "experiments/catch_up.py", str(work / "world.db"),
+                          "--grown", str(work / "grown")],
+                         cwd=ROOT, env=hosting.keys(), capture_output=True, text=True)
+    return (ran.stdout or "") + (f"\n[the reading itself failed]\n{ran.stderr[-800:]}"
+                                 if ran.returncode else "")
+
+
 def _what_went_wrong(got: dict) -> dict | None:
     """The technical failures of one turn, told apart from anything the host decided.
 
@@ -61,11 +77,21 @@ def _what_went_wrong(got: dict) -> dict | None:
                 "kind": "technical", "turns": got.get("turns"), "said": got.get("text", "")[:300]}
     if got.get("trouble"):
         return {"what": got["trouble"], "kind": "technical", "turns": got.get("turns")}
-    if got.get("tool_errors"):
-        return {"what": f"the world failed {len(got['tool_errors'])} call(s): "
-                        f"{got['tool_errors'][0]}", "kind": "technical",
-                "turns": got.get("turns"), "all": got["tool_errors"][:5]}
+    ours = [one for one in got.get("tool_errors") or [] if not _the_hosts_own(one)]
+    if ours:
+        return {"what": f"the world failed {len(ours)} call(s): {ours[0]}", "kind": "technical",
+                "turns": got.get("turns"), "all": ours[:5]}
     return None
+
+
+def _the_hosts_own(said: str) -> bool:
+    """Whether a failed call failed because the host asked for something that is not there.
+
+    `No such tool available: mcp__tensorweaver__run` — the host misspelling the world's own name —
+    was logged as "the world failed" and the question kept out of the number. It is the host's
+    doing, it is the kind of thing a host does, and calling it our breakage hides a real one.
+    """
+    return "No such tool available" in said or "Invalid tool name" in said
 
 
 def main() -> int:
@@ -87,6 +113,9 @@ def main() -> int:
                         help="write just these facts (22,28,33) — the aimed re-run of the ones "
                              "that went wrong, at a few cents each. Each keeps the day its own "
                              "batch was said on, so what is later stays later")
+    parser.add_argument("--no-read", dest="read", action="store_false",
+                        help="skip the reading phase — the world keeps what it was told in words "
+                             "and nothing is typed, which is what a world with no engineer is")
     parser.add_argument("--keep", default=None,
                         help="where the world is built, kept afterwards for reask.py "
                              "(a temporary folder by default, also kept but harder to find)")
@@ -165,6 +194,26 @@ def main() -> int:
                                 **got["limited"]}) + "\n")
             print(f"  recorded {day} ({len(due)} facts)  {got['turns']} turns  "
                   f"${spent['cost']:.2f} so far")
+
+        # The reading, as its own phase and not inside anybody's call. The close has a budget of
+        # twenty seconds, so most of what a batch said in words is still queued; here it is all read
+        # at once, with the world to itself and nothing waiting on it. This is the deferred reading
+        # the design allows for — `experiments/catch_up.py` is the same pass — and it is also the
+        # only way the write phase stays free of minutes-long closes.
+        if args.mode == "world" and args.read:
+            from terraweaver.formalise import record
+
+            print("reading what was said in words, with nobody waiting…", flush=True)
+            # The server owns the database while it runs, so it stands down for this and comes back
+            # for the questions. Nothing is lost: the reading is the world's own work and wants no
+            # host, and the questions open fresh sessions anyway.
+            hosting.stop(server)
+            server = None
+            read = _read_it_all(work, args.port)
+            print(read, flush=True)
+            (out_dir / "reading.txt").write_text(read)
+            server = hosting.start_server(work / "world.db", args.port)
+            hosting.answering(args.port)
 
         asked_on = (last_day + timedelta(days=1)).isoformat()
         results = []
