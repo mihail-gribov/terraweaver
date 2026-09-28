@@ -183,6 +183,28 @@ def main() -> int:
     check("a day that month has not got is not a date",
           refused(lambda: timeutil.told("February 30 2023")))
 
+    # A period is a moment or it is refused, whatever it was written as. These are managed
+    # attributes and skip every other check, so a string written straight into one used to be stored
+    # as a string — and then every time-filtered read of that class raised `'str' object has no
+    # attribute 'year'` from inside `holds_at`. Measured 2026-09-28: one such value killed the whole
+    # reading phase of a 455-fact run on its first link, and the hundred questions after it were put
+    # to a world with nothing typed in it.
+    rt = base.world()
+    rt.run('world.define_relation("capital_of", "the seat of a state", nature="related_to",'
+           ' cardinality="many-to-one", subject_is="the capital", object_is="the state")', "p")
+    rt.run('a = Thing.new(name="Rome")\nb = Thing.new(name="Italy")\nl = a.set_capital_of(b)', "p")
+    for said, wanted in (('"1792"', "1792"), ('"since 2019"', "2019"), ('date(2019, 3, 1)', "2019")):
+        got = rt.run(f'l.valid_from = {said}\nprint(repr(l.valid_from))', "p")
+        check(f"a period written as {said} comes back a moment",
+              got.get("error") is None and wanted in (got.get("output") or ""),
+              str(got.get("error") or got.get("output"))[:90])
+    no_time = rt.run('l.valid_from = "not a date"', "p")
+    check("and one that reads as no time at all is refused, not stored",
+          no_time.get("error") is not None and "cannot read" in str(no_time["error"]),
+          str(no_time.get("error"))[:90])
+    check("so the class still reads back after it",
+          rt.run('print(len(world.all(CapitalOf)))', "p").get("error") is None)
+
     print()
     if failures:
         print(f"{len(failures)} failed: {', '.join(failures)}")

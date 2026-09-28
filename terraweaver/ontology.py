@@ -1166,6 +1166,25 @@ class Entity:
     def __setattr__(self, name, value):
         spec = type(self)._spec
         class_name = type(self).__name__
+        if name in ("valid_from", "valid_until", "created_at", "accessed_at") and value is not None:
+            # A moment, whatever it was written as. These are managed attributes, so they skip every
+            # check below — and a string written straight into one is stored as a string and then
+            # every time-filtered read of that class raises `'str' object has no attribute 'year'`
+            # from deep inside `holds_at`. Measured 2026-09-28: one such value killed the whole
+            # reading phase of a 455-fact run on its first link, and the hundred questions after it
+            # were put to a world with nothing typed in it at all. A period is a moment or it is
+            # refused here, where the reason can be said.
+            from terraweaver import timeutil
+
+            if not isinstance(value, datetime):
+                read, _sure = timeutil.told(value)
+                if read is None or getattr(read, "moment", None) is None:
+                    raise TypeError(
+                        f"{name} is a moment, and {value!r} does not read as one. Say it as a date "
+                        f"— date(2019, 3, 1), datetime(2019, 3, 1) or \"2019-03-01\" — or say when "
+                        f"it holds through the door that takes it: "
+                        f"entity.keep(starts=..., until=...).")
+                value = read.moment
         if name not in _MANAGED_ATTRS and not name.startswith("_"):
             declared = next((a for a in spec["attributes"] if a["name"] == name), None)
             # An attribute the class doesn't have used to be accepted and then lost on save —
