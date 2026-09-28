@@ -41,6 +41,17 @@ ANOTHER = "says_another"
 # is wrong, so the doubt goes to the line and not against it.
 SURE_ENOUGH = 0.6
 
+# **Which two things a fact is about is the host's to say, and the world does not second-guess it.**
+# So `not_in_it` about the *link* is not acted on: the two ends were handed into the reading, the
+# host having said they are joined, and the only things the words settle are the word for the link,
+# which way it runs, and what is written on it. Measured 2026-09-28 over sixteen links whose
+# direction was written down by hand: every false alarm came back as `not_in_it` about the link —
+# four of sixteen, two of them above the threshold — and not one wrong `backwards`. Acting on them
+# would have taken correct links back; acting on `backwards` would have cost nothing. A wrong word
+# does slip through this way, and that is the cheaper loss: the word is what `look` and the host's
+# own read-back at the close are for, while a link taken back is a fact gone.
+ACTS_ON_THE_LINK = (BACKWARDS,)
+
 
 def _asking(claim: dict) -> tuple:
     """One claim as a closed question: what to ask, and the options with what each means."""
@@ -178,6 +189,8 @@ def not_borne_out(picker, words: str, links: list) -> tuple:
                       # link. The verdict is the decision model's answer and the last word there is.
                       "at": n, "of": getattr(claim.get("link"), "id", None)})
         if verdict == SAYS_SO or sure < SURE_ENOUGH:
+            continue
+        if claim["what"] == "link" and verdict not in ACTS_ON_THE_LINK:
             continue
         refused.append(_why(claim, verdict))
     if not refused:

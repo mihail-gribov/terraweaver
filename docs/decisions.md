@@ -3404,3 +3404,39 @@ threshold everywhere else.
 Measured on the two cases: a date the words do not give comes off and **the link stays typed** where
 before the whole fact was lost; a link the words are not about at all is still taken back. Both are
 `tests/test_formalise.py`.
+
+## 2026-09-28 — measured: the generative model's confidence carries no information, and only `backwards` is worth acting on
+
+`experiments/02_link_direction`, sixteen links of a real world whose direction was written down by
+hand, both parties asked the same question at the same moment — the question the live reading asks,
+built by `check._asking`.
+
+| | right | sure when wrong | when right |
+|---|---|---|---|
+| jev (the decision model) | 12/16 — 75% | **0.83** | 0.99 |
+| nemotron answering as a picker | 12/16 — 75% | **1.00** | 1.00 |
+
+**Both were wrong on the same four links**, which is how one knows the question is being measured
+rather than the model's mood.
+
+**The generative model answers 1.00 whether it is right or wrong.** Its confidence carries no
+information at all, so `SURE_ENOUGH` is dead under it — there is nothing to threshold. The decision
+model has a usable spread: 0.59, 0.78 and 0.83 on its errors against 0.99 on its right answers. That
+is the division of labour argued for by measurement rather than by principle, and it is also why the
+fallback (`AsChoices`) is a fallback and not an arrangement.
+
+**Two kinds of error, and they do not cost the same.** Two links were genuinely backwards and both
+parties said `says_so` — a missed reversal, which costs nothing that was there before. Two links were
+written correctly and both said `not_in_it` — a false alarm, and under the settling rule a false
+alarm *takes a correct link back*. Every false alarm in the sample came back in that one shape, and
+there was **not one wrong `backwards`**.
+
+So `ACTS_ON_THE_LINK = (BACKWARDS,)`: about the link itself only a reversal is acted on. `not_in_it`
+is recorded and left alone, and the reason is not only the numbers — **which two things a fact is
+about is the host's to say**, the two ends are handed into the reading, and the only things the words
+settle are the word, which way it runs, and what is written on it. A wrong word does slip through
+this way; that is the cheaper loss, because the word is what `look` and the host's own read-back at
+the close are for, while a link taken back is a fact gone.
+
+`tests/test_formalise.py` was rewritten where it asserted the old behaviour, rather than the code
+being bent to keep the tests: a picker saying the link is about something else no longer unmakes it.

@@ -138,13 +138,14 @@ def main() -> int:
     # lost and a reading the check refused both read as "not typed", and they are not the same news.
     rt = base_world()
     say(rt, "Rome is the capital of Italy.", "Rome", "Italy")
-    refuses = Picker(invented=["capital of"])
-    formalise.formalise(rt, Engineer([DEFINE + "a.set_capital_of(b)"] * 3), refuses)
+    # Lines that run and join nothing: three goes and the reading gives up, which is a judgement
+    # about the words and not a breakage of ours.
+    formalise.formalise(rt, Engineer(["pass"] * 3), Picker(words=["capital_of"]))
     shape = record.distribution(rt.world)
-    check("a refused reading is written down as a judgement, not as a breakage",
+    check("a reading that gave up is written down as a judgement, not as a breakage",
           shape["went wrong"] == {"substantive": 1}, str(shape["went wrong"]))
     check("and what it was is kept in the words it happened in",
-          any("borne out" in what for what in shape["what went wrong"]),
+          any("gave up" in what for what in shape["what went wrong"]),
           str(shape["what went wrong"]))
 
     rt = base_world()
@@ -171,14 +172,19 @@ def main() -> int:
           len(kept) == 1 and kept[0].valid_from is None,
           str([(l.display_name(), l.valid_from) for l in kept]))
 
+    # Which two things a fact is about is the host's to say. A picker that says the words are about
+    # something else is not acted on over the link itself: measured, every false alarm came back in
+    # exactly that shape — four of sixteen links, two of them above the threshold — and acting on
+    # them would have taken correct links back.
     rt = base_world()
     say(rt, "Rome is the capital of Italy.", "Rome", "Italy")
     got = formalise.formalise(rt, Engineer([DEFINE + "a.set_capital_of(b)"] * 3),
                               Picker(invented=["capital of"]))
-    trace = got["read"][0]
-    check("a link the words are not about at all is still taken back",
-          got["typed"] == 0 and any("taken back" in one for one in trace.get("settled") or []),
-          f"{got['typed']} typed, settled={trace.get('settled')}")
+    check("a picker that says the link is about something else does not unmake it",
+          got["typed"] == 1, f"{got['typed']} typed of one")
+    check("and the link stands with the word it was given",
+          len(rt.world.all("CapitalOf", limit=None)) == 1,
+          str([l.display_name() for l in rt.world.all("CapitalOf", limit=None)]))
 
     # --- read in the order said: an earlier fact is read first and the later one hands over ---
     rt = base_world()

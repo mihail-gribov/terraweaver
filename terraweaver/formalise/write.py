@@ -91,10 +91,12 @@ def settle_by_verdict(world, links: list, about: dict) -> list[str]:
 
         backwards on the link        the ends go round — it is the one thing the words did settle
         not in it, an attribute      that attribute comes off and the link stays
-        not in it, the link          nothing here was said: the link is taken back
+        not in it, the link          left alone: which two things this is about is the host's to
+                                     say, and every false alarm measured came back in this shape
 
     What is not done is asking again. The engineer has had its three goes; this is the decision
-    model's turn to be believed.
+    model's turn to be believed — about the word, the direction and what is written on the link, and
+    not about whether the two things belong together, which nobody here asked it.
     """
     from terraweaver import ontology
 
@@ -118,8 +120,8 @@ def settle_by_verdict(world, links: list, about: dict) -> list[str]:
                         world.save(link)
                         did.append(f"{link.display_name()} — {name} dropped, the words do not give it")
                 else:
-                    take_back(world, [link])
-                    did.append(f"{link.display_name()} — taken back, the words are about something else")
+                    did.append(f"{link.display_name()} — kept: the words do not bear out the word, "
+                               f"but which two things this is about was not the picker's to judge")
         except Exception as wrong:  # noqa: BLE001 - a reading is not lost because the settling failed
             did.append(f"could not settle: {type(wrong).__name__}")
     return did

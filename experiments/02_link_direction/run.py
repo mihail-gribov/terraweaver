@@ -33,6 +33,17 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "benchmarks"))
+
+import os  # noqa: E402
+
+import host as hosting  # noqa: E402
+
+# The keys, from the one place that reads `.env` — nothing in `terraweaver` does, and a service
+# started by systemd inherits nothing. Without this the run says "no picker can be reached" while
+# both keys sit in the file beside it, which is what it said the first time it was run.
+os.environ.update({k: v for k, v in hosting.keys().items()
+                   if k in ("NEBIUS_API_KEY", "TYPESAFE_API_KEY")})
 
 from experiments.check_expected import open_world, written_down  # noqa: E402
 from terraweaver import outside, prompts  # noqa: E402
@@ -41,8 +52,6 @@ from terraweaver.formalise import check  # noqa: E402
 
 def pickers(room: int) -> dict:
     """Everybody who can answer a closed question here, and nobody who cannot be reached."""
-    import os
-
     out = {}
     if os.environ.get("TYPESAFE_API_KEY"):
         try:
