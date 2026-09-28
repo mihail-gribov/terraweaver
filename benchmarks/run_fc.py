@@ -64,36 +64,6 @@ def _read_it_all(work: Path, port: int) -> str:
                                  if ran.returncode else "")
 
 
-def _what_went_wrong(got: dict) -> dict | None:
-    """The technical failures of one turn, told apart from anything the host decided.
-
-    A host that could not reach the world, or a turn the CLI itself ended with an error, is not the
-    host answering badly — it is our side failing, and the two were indistinguishable in the numbers
-    until now. Whatever the host did with the world it could reach is a substantive outcome and is
-    measured by the check and by the reading's own record, not here.
-    """
-    if got.get("unreachable"):
-        return {"what": f"the world was unreachable: {', '.join(got['unreachable'])}",
-                "kind": "technical", "turns": got.get("turns"), "said": got.get("text", "")[:300]}
-    if got.get("trouble"):
-        return {"what": got["trouble"], "kind": "technical", "turns": got.get("turns")}
-    ours = [one for one in got.get("tool_errors") or [] if not _the_hosts_own(one)]
-    if ours:
-        return {"what": f"the world failed {len(ours)} call(s): {ours[0]}", "kind": "technical",
-                "turns": got.get("turns"), "all": ours[:5]}
-    return None
-
-
-def _the_hosts_own(said: str) -> bool:
-    """Whether a failed call failed because the host asked for something that is not there.
-
-    `No such tool available: mcp__tensorweaver__run` — the host misspelling the world's own name —
-    was logged as "the world failed" and the question kept out of the number. It is the host's
-    doing, it is the kind of thing a host does, and calling it our breakage hides a real one.
-    """
-    return "No such tool available" in said or "Invalid tool name" in said
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -180,7 +150,7 @@ def main() -> int:
                               agent.conversation(), None, log, args.model)
             spent["turns"] += got["turns"]
             spent["cost"] += got["cost"]
-            trouble = _what_went_wrong(got)
+            trouble = hosting.went_wrong(got)
             if trouble:
                 # Technical, not substantive: the host never reached the world, so whatever it
                 # answered is not evidence about this world. Said out loud and the run stops, rather
@@ -224,7 +194,7 @@ def main() -> int:
                               agent.conversation(), None, log, args.model)
             spent["turns"] += got["turns"]
             spent["cost"] += got["cost"]
-            trouble = _what_went_wrong(got)
+            trouble = hosting.went_wrong(got)
             right = False if trouble else fc.correct(got["text"], question.gold)
             results.append({"id": question.id, "question": question.text, "gold": question.gold,
                             "answer": got["text"][:300], "correct": right,

@@ -10,7 +10,6 @@ variable, no re-ingestion in between to muddy it.
 """
 import argparse
 import json
-import subprocess
 import sys
 import tempfile
 import time
@@ -53,38 +52,44 @@ def main() -> int:
 
     work = Path(tempfile.mkdtemp(prefix="tw-reask-"))
     log = out_dir / "host.jsonl"
-    server = subprocess.Popen(
-        [sys.executable, "-m", "terraweaver.server", "--db", args.db, "--port", str(args.port),
-         *(["--specs", args.specs] if args.specs else [])],
-        cwd=ROOT, env=hosting.keys(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    import urllib.request
-    for _ in range(120):
-        try:
-            urllib.request.urlopen(f"http://127.0.0.1:{args.port}/health", timeout=1)
-            break
-        except OSError:
-            time.sleep(0.5)
+    # The world as every world opens: the base, then what it grew, which sits beside its database.
+    # `--specs` is the other thing — a world whose classes are *all* grown — and passing it for a
+    # world with base classes killed the server with `KeyError: 'AIAgent'`. The server died, the
+    # wait below gave up quietly, and a hundred questions were put to a host with no tools at all:
+    # every answer "I don't have access to terraweaver tools", recorded as 1% accuracy. Measured
+    # 2026-09-28, and the reason both the open and the wait are no longer silent.
+    server = hosting.start_server(Path(args.db), args.port, blank=bool(args.specs))
 
     agent = hosting.World(work, args.label, args.port)
     results, spent = [], {"turns": 0, "cost": 0.0}
     started = time.monotonic()
     try:
         for number, question in enumerate(questions, 1):
+            hosting.answering(args.port)
             got = hosting.ask(agent, ASK.format(when="2020-01-20", question=question.text),
                               agent.conversation(), None, log, args.model)
             spent["turns"] += got["turns"]
             spent["cost"] += got["cost"]
-            right = fc.correct(got["text"], question.gold)
+            trouble = hosting.went_wrong(got)
+            right = False if trouble else fc.correct(got["text"], question.gold)
             results.append({"id": question.id, "question": question.text, "gold": question.gold,
-                            "answer": got["text"][:300], "correct": right})
+                            "answer": got["text"][:300], "correct": right,
+                            **({"trouble": trouble} if trouble else {})})
+            if trouble:
+                (out_dir / "trouble.jsonl").open("a").write(
+                    json.dumps({"question": question.id, **trouble}) + "\n")
             print(f"{'ok ' if right else '   '} {number:>3}/{len(questions)} {question.gold} "
                   f"<- {got['text'][:70].replace(chr(10), ' ')}", flush=True)
     finally:
         hosting.stop(server)
         hosting.forget_folder_memory(agent.cwd)
 
-    summary = {"accuracy": round(sum(r["correct"] for r in results) / max(1, len(results)), 3),
-               "questions": len(results), "world": args.db, "label": args.label,
+    # Over the questions that reached the world. The ones that did not are reported beside the
+    # number and never inside it — counted as wrong, a world nobody could reach read as 1% accuracy.
+    answered = [one for one in results if not one.get("trouble")]
+    summary = {"accuracy": round(sum(r["correct"] for r in answered) / max(1, len(answered)), 3),
+               "questions": len(answered), "never reached the world": len(results) - len(answered),
+               "world": args.db, "label": args.label,
                "cost_usd": round(spent["cost"], 2), "turns": spent["turns"],
                "minutes": round((time.monotonic() - started) / 60, 1)}
     (out_dir / "results.json").write_text(json.dumps({"summary": summary, "runs": results}, indent=2))

@@ -226,6 +226,28 @@ def answering(port: int, seconds: float = 60) -> bool:
     return False
 
 
+def went_wrong(got: dict) -> dict | None:
+    """The technical failures of one turn, told apart from anything the host decided.
+
+    A host that could not reach the world, or a turn the CLI itself ended with an error, is not the
+    host answering badly — it is our side failing, and the two were indistinguishable in the numbers.
+    A call that failed because the host asked for a tool that is not there is the host's own doing
+    (`mcp__tensorweaver__run`, the world's name misspelt) and is left to it. Shared by every runner
+    here, because the one that lacked it recorded a world nobody could reach as 1% accuracy.
+    """
+    if got.get("unreachable"):
+        return {"what": f"the world was unreachable: {', '.join(got['unreachable'])}",
+                "kind": "technical", "turns": got.get("turns"), "said": got.get("text", "")[:300]}
+    if got.get("trouble"):
+        return {"what": got["trouble"], "kind": "technical", "turns": got.get("turns")}
+    ours = [one for one in got.get("tool_errors") or []
+            if "No such tool available" not in one and "Invalid tool name" not in one]
+    if ours:
+        return {"what": f"the world failed {len(ours)} call(s): {ours[0]}", "kind": "technical",
+                "turns": got.get("turns"), "all": ours[:5]}
+    return None
+
+
 def forget_folder_memory(folder: Path) -> None:
     """Drop the per-folder memory Claude Code kept for a run's working directory.
 
