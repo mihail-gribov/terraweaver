@@ -89,6 +89,16 @@ ask)
     --label "$(basename "$(dirname "$world")")"
   ;;
 
+direction)
+  # Which way round, put to every picker that can be reached, in the words the world itself uses.
+  # Reads and asks; writes nothing. See experiments/02_link_direction/README.md for what it settles.
+  world="${2:?say which world: scripts/measure.sh direction var/gate-noread}"
+  many="${3:-60}"
+  rm -f "$logs/direction.log"
+  serve tw-direction "$logs/direction.log" \
+    "$python" -u experiments/02_link_direction/run.py "$world" --limit "$many"
+  ;;
+
 status)
   for unit in tw-gate tw-full tw-read tw-ask; do
     state="$(systemctl --user is-active "$unit.service" 2>/dev/null || true)"
