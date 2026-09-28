@@ -173,7 +173,10 @@ def not_borne_out(picker, words: str, links: list) -> tuple:
             continue
         verdict = max(scored, key=scored.get)
         sure = float(scored.get(verdict, 0.0))
-        trace.append({"claim": _readable(claim), "verdict": verdict, "sure": round(sure, 3)})
+        trace.append({"claim": _readable(claim), "verdict": verdict, "sure": round(sure, 3),
+                      # Enough to act on when the goes run out: which claim this was, and of which
+                      # link. The verdict is the decision model's answer and the last word there is.
+                      "at": n, "of": getattr(claim.get("link"), "id", None)})
         if verdict == SAYS_SO or sure < SURE_ENOUGH:
             continue
         refused.append(_why(claim, verdict))

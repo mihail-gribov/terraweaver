@@ -154,6 +154,32 @@ def main() -> int:
     check("an engineer that said nothing is written down as technical",
           shape["went wrong"] == {"technical": 1}, str(shape["went wrong"]))
 
+    # --- the goes run out, and the decision model's answer is acted on rather than thrown away ---
+    # 12 readings of 355 used to end "not borne out by the words" and 71 "gave up", every one a link
+    # the engineer had written and the record then lost, while the picker had already said what was
+    # wrong with it.
+    rt = base_world()
+    say(rt, "Rome is the capital of Italy.", "Rome", "Italy")
+    got = formalise.formalise(rt, Engineer([DEFINE + 'a.set_capital_of(b, starts="1792")'] * 3),
+                              Picker(invented=["1792"]))
+    trace = got["read"][0]
+    check("a date the words do not give comes off and the link stays",
+          got["typed"] == 1 and trace["went"] == "settled on the picker's verdict",
+          f"{got['typed']} typed, went={trace['went']}")
+    kept = rt.world.all("CapitalOf", limit=None, history=True)
+    check("and the link it stayed as holds no date",
+          len(kept) == 1 and kept[0].valid_from is None,
+          str([(l.display_name(), l.valid_from) for l in kept]))
+
+    rt = base_world()
+    say(rt, "Rome is the capital of Italy.", "Rome", "Italy")
+    got = formalise.formalise(rt, Engineer([DEFINE + "a.set_capital_of(b)"] * 3),
+                              Picker(invented=["capital of"]))
+    trace = got["read"][0]
+    check("a link the words are not about at all is still taken back",
+          got["typed"] == 0 and any("taken back" in one for one in trace.get("settled") or []),
+          f"{got['typed']} typed, settled={trace.get('settled')}")
+
     # --- read in the order said: an earlier fact is read first and the later one hands over ---
     rt = base_world()
     say(rt, "Anna has worked at Acme since 2019.", "Anna", "Acme")

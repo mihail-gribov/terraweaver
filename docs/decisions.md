@@ -3358,3 +3358,49 @@ recorded. So the world that was asked is a world with part of its record cut out
 was sound and is worth keeping: of 150 links said in words, **136 typed, 133 of them joined to a word
 already there and only 3 words made** — and a third of all readings (119 of 355) came from accounts of
 a single word, which before that morning were refused outright and never recorded at all.
+
+## 2026-09-28 — the generative model generates, the decision model decides and checks
+
+Stated by the author as a rule, strictly, and it is the one the code already claimed and did not
+keep. `look` — is there already a word for this? — and `check` — do the words bear out what is about
+to be written? — are each one question with named options, which is what a decision model is for.
+`make` is the open one and the only one.
+
+**What was actually happening.** Nothing set `world.jev`, so both closed questions fell through to
+`outside.AsChoices(engineer)` — the generative model answering them "at an engineer's price", as the
+code says of itself. Measured 2026-09-28 over 355 readings: `look` asked 355 times, and in **331** of
+them it only had to pick a word the record already held — each time of a reasoning model with sixteen
+thousand tokens of thinking room. Median reading 7.1s, worst 118.8s, 79 minutes in all.
+
+So the server now gives the world a picker whenever there is a key for one, and every closed question
+goes to it. The fallback stays for a world that can reach nobody else, because a reading that cannot
+ask is a reading that does not happen — it is a fallback and not the arrangement.
+
+**A caution stated and overruled, which is worth recording as that.** A decision model was taken off
+link direction on 2026-09-24 for answering wrong at p=0.93, and I raised it again here: a confidently
+wrong verdict corrupts a correct link. The author's rule stands, and two things hold the risk where it
+can be seen — `check.SURE_ENOUGH` at 0.6, below which a verdict is not acted on, and
+`readings.verdicts`, which keeps every verdict with its confidence, so a picker that starts refusing
+correct links shows up in the distribution instead of in a lost fact nobody can trace.
+`experiments/02_link_direction` measures both parties on the question as the world now asks it.
+
+## 2026-09-28 — when the goes run out, the decision model's answer is acted on
+
+Also the author's, and it recovers work that was being thrown away. Three goes, and if the check still
+refuses the reading ended: measured, **12 of 355** ended "not borne out by the words" and **71** "gave
+up" — each one a link the engineer had written, which the record then lost. And in every one of them
+the decision model had already said what was wrong with it, with a confidence behind it.
+
+Its answer is the last word, so `write.settle_by_verdict` acts on it instead of discarding:
+
+    backwards on the link      the ends go round — it is the one thing the words did settle
+    not in it, an attribute    that attribute comes off and the link stays
+    not in it, the link        nothing here was said, so the link is taken back
+
+What is not done is asking again: the engineer has had its three goes, and this is the decision
+model's turn to be believed. Only a verdict at or above `SURE_ENOUGH` is acted on, which is the same
+threshold everywhere else.
+
+Measured on the two cases: a date the words do not give comes off and **the link stays typed** where
+before the whole fact was lost; a link the words are not about at all is still taken back. Both are
+`tests/test_formalise.py`.

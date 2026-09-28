@@ -42,8 +42,29 @@ def formalise(runtime, engineer, picker=None, limit: int = 100, seconds: float |
     that starts later than what is there. Read newest-first, a 2019 employment arrived against a
     2023 one already standing and there was no honest line that would record it.
 
-    No picker configured, the engineer answers the closed questions too (`outside.AsChoices`): the
-    same question and options, one answer with all the weight, at an engineer's price.
+    **The division of labour is the point, and it is strict.** The generative model generates: one
+    open call, `make`, for the lines that declare the word and write the link. Everything that is a
+    decision goes to the decision model — `look`, whether a word for this already exists, and
+    `check`, whether the words bear out what is about to be written. Both are one question with
+    named options, which is what a closed model is built for: an order of magnitude cheaper,
+    calibrated, and it answers in a fraction of the time.
+
+    Measured 2026-09-28 over 355 readings with no picker configured: every closed question went to
+    the engineer instead (`outside.AsChoices`) — `look` 355 times, and in 331 of them it only had to
+    pick a word the record already held, each time of a reasoning model with sixteen thousand tokens
+    of thinking room. Median reading 7.1s, worst 118.8s, 79 minutes in all. That is the generative
+    model doing the decision model's work, and paying for it twice over in time and money.
+
+    The fallback stays for a world that can reach nobody else, because a reading that cannot ask is
+    a reading that does not happen. It is a fallback and not the arrangement.
+
+    **What to watch, since a decision model was once taken off this very question.** On 2026-09-24
+    one answered link direction wrong at p=0.93, and a confidently wrong verdict corrupts a correct
+    link. The question has changed since (a phrase put beside the account, `backwards` named), and
+    `experiments/02_link_direction` measures both parties on it. `check.SURE_ENOUGH` is the
+    threshold that holds the risk, and `readings.verdicts` records every verdict with its
+    confidence, so a picker that starts refusing correct links shows up in the distribution rather
+    than in a lost fact nobody can trace.
     """
     from terraweaver import outside
 
@@ -112,14 +133,29 @@ def formalise_one(runtime, link, engineer, picker) -> dict:
         unsupported, about = check.not_borne_out(picker, words, made)
         trace["checked"].append(about)
         if unsupported:
+            trace["answered"].append(unsupported)
+            if go == GOES - 1:
+                # No goes left, so the decision model's answer is the last word and is acted on
+                # rather than thrown away: the ends go round where it said backwards, an attribute
+                # it did not find in the words comes off, and only a link the words are not about
+                # at all is taken back. Measured 2026-09-28: 12 readings of 355 ended here and 71
+                # gave up, each one a link the engineer had written and the record then lost.
+                settled = write.settle_by_verdict(world, made, about)
+                trace["settled"] = settled
+                still = write.typed_between(world, subject, obj)
+                if still:
+                    trace["went"] = "settled on the picker's verdict"
+                    trace["typed"] = [one.display_name() for one in still]
+                    trace["kind"] = type(still[0])._spec["relation"]["kind"]
+                    trace["defined"] = sorted({n for n, _, _ in words_for(world)} - before) or None
+                    write.end_the_bare_one(world, link)
+                else:
+                    trace["went"] = "not borne out by the words"
+                break
             # The world's own conclusion, taken back before anybody reads it: these were written
             # under `stating("world")`, so `retract` will have them, and what the host said is
             # untouched — the bare link and its words are still there to be read again.
             write.take_back(world, made)
-            trace["answered"].append(unsupported)
-            if go == GOES - 1:
-                trace["went"] = "not borne out by the words"
-                break
             code, trouble = make.lines(engineer, make.again(asked, code, unsupported))
             continue
         trace["answered"].append(answer[:2000])

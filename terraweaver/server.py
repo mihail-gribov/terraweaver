@@ -274,14 +274,34 @@ def _token() -> str:
 
 
 def _give_it_an_engineer(world) -> None:
-    """The engineer, if this machine has the key for one. Optional, always.
+    """The two it can reach: the engineer that writes, and the picker that chooses. Both optional.
 
-    Without it `world.say` still works and still joins the two things — the link is made at
+    Without an engineer `world.say` still works and still joins the two things — the link is made at
     once and stays untyped, which is a poor link and a real one. With it, the untyped links are
     read at the close of each task and become what they are.
+
+    Without a picker every closed question goes to the engineer as well (`outside.AsChoices`), which
+    works and is the wrong way round: measured 2026-09-28 over 355 readings, `look` — "is there
+    already a word for this?" — was asked 355 times and in 331 of them only had to pick a word the
+    record already held, each time of a reasoning model with sixteen thousand tokens of thinking
+    room. That is the question a decision model exists for.
+
+    Only that one. The other closed question, whether the words bear out what is about to be
+    written, is not given away here: a wrong verdict there refuses a correct link or lets an
+    invented one through, and a picker measured wrong on it at p=0.93 cannot be wired at any
+    threshold (`experiments/02_link_direction` asks whether that still holds of the question as the
+    world asks it now). Being wrong about `look` costs a second word for one idea, which the counts
+    show and a merge undoes.
     """
     import os
 
+    if os.environ.get("TYPESAFE_API_KEY"):
+        try:
+            from terraweaver import outside
+
+            world.jev = outside.Jev()
+        except Exception:  # noqa: BLE001 - a world with no picker asks the engineer instead
+            pass
     if not os.environ.get("NEBIUS_API_KEY"):
         return
     try:

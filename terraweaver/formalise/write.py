@@ -8,6 +8,7 @@ identity recovered from words is the one mistake no later pass repairs. The writ
 own, the lowest standing there is.
 """
 from terraweaver import ontology, timeutil
+from terraweaver.formalise import check
 from terraweaver.formalise.look import words_for
 
 
@@ -77,3 +78,48 @@ def take_back(world, links: list) -> None:
                 world.store.forget(link.id)
         except Exception:  # noqa: BLE001 - a reading is not lost because the unmaking failed
             continue
+
+
+def settle_by_verdict(world, links: list, about: dict) -> list[str]:
+    """Act on the decision model's answer, once there are no goes left.
+
+    Three goes and the check still refuses: until now that threw the reading away — 12 readings of
+    355 ended "not borne out by the words" and 71 "gave up", every one of them a link the engineer
+    had written and the record then lost. And in each of them the decision model had already said
+    *what* was wrong, with a confidence behind it. Its answer is the last word, so it is acted on
+    rather than discarded:
+
+        backwards on the link        the ends go round — it is the one thing the words did settle
+        not in it, an attribute      that attribute comes off and the link stays
+        not in it, the link          nothing here was said: the link is taken back
+
+    What is not done is asking again. The engineer has had its three goes; this is the decision
+    model's turn to be believed.
+    """
+    from terraweaver import ontology
+
+    held = {link.id: link for link in links}
+    did = []
+    for one in about.get("claims", []):
+        verdict, link = one.get("verdict"), held.get(one.get("of"))
+        if link is None or verdict in (None, "says_so") or one.get("sure", 0) < check.SURE_ENOUGH:
+            continue
+        what = (one.get("claim") or {}).get("what")
+        try:
+            with ontology.trusted_writes(), ontology.stating("world"):
+                if verdict == check.BACKWARDS and what == "link":
+                    link.subject, link.object = link.object, link.subject
+                    world.save(link)
+                    did.append(f"{link.display_name()} — put round, as the words say")
+                elif what != "link":
+                    name = (one.get("claim") or {}).get("name")
+                    if name:
+                        setattr(link, name, None)
+                        world.save(link)
+                        did.append(f"{link.display_name()} — {name} dropped, the words do not give it")
+                else:
+                    take_back(world, [link])
+                    did.append(f"{link.display_name()} — taken back, the words are about something else")
+        except Exception as wrong:  # noqa: BLE001 - a reading is not lost because the settling failed
+            did.append(f"could not settle: {type(wrong).__name__}")
+    return did
