@@ -3476,3 +3476,39 @@ what a host is refused, and both wrong to:
 **Both are the same mistake of ours, three times today**: a door written for a host refusing the
 world's own engineer, which cannot go and ask the user. `start_task` was the first (18 questions of a
 hundred), the class door the second, these two the third and fourth.
+
+## 2026-09-28 — the number, and the thing it says we have not got
+
+One world, 455 facts, the same hundred questions, one changed thing — read or not read. This is the
+comparison the whole day was spent earning, and it does not say what we expected.
+
+| var/run2, 455 facts, 100 questions | all | where the host worked the door |
+|---|---|---|
+| written, nothing typed | **37/100** | 36/97 — 37% |
+| the same world, after the reading | 30/100 | 24/84 — 29% |
+
+At n=100 one sigma is 4.7 points, so seven points is about one and a half: **not proof that the
+reading hurts, and certainly not the gain it was built for.** The honest summary of the day is that
+the writing became very good — 96% of facts owed on a 25-fact gate, $4.98 for 455 facts against
+$6.87 — the reading became mechanically sound — 126 of 136 links typed, 117 of them joined to a word
+already there, 9 words made — and **none of that reaches the answers**.
+
+**A check that penalised the world for working, corrected here.** `check_expected --upto 100` read
+68% on the untyped world against 61% on the typed one, and the seven it called lost were not lost:
+fact 25 is `Ferdinand von Richthofen is a citizen of Germany`, and the world holds
+`CitizenOf → Germany (ENDED)` beside `CitizenOf → Canada` standing, because a later fact in the
+slice said Canada. The typed world superseded correctly; the untyped one "passed" because prose
+supersedes nothing and both tellings sit side by side. On a world written from 455 facts the
+expectations for the first hundred cannot judge supersession, and the instrument needs a third
+verdict for it — a pair with an *ended* link of the owed kind, which is deterministic.
+
+**And the sixteen "host's own bad calls" in the typed run are not about the typed world**: nine are
+`Unknown skill: mcp__terraweaver__describe_world` — a tool of ours invoked through the Skill
+mechanism — five are attempts to create a git worktree, two the same skill mistake on `start_task`.
+Excluding them changes nothing (29% against 37%), so the gap is not their doing.
+
+**The next thing to measure, and it needs no model.** `write.end_the_bare_one` ends the bare link
+when a typed one is written — and the bare link is what held **the host's own words**. The typed link
+carries no description. So a world after the reading may read *thinner* to whoever asks it: the word
+arrived and the account went behind a closed link. That is checkable by reading back what a host sees
+for the same entity in both worlds, and it is the first candidate for seven points.
