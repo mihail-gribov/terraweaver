@@ -5,6 +5,7 @@ the world doesn't second-guess it. What the world does is keep what was there be
 overwrite leaves the old value here, with the moment it stopped holding. Nothing a host writes
 can erase a fact for good, and "where did Ada work before?" stays answerable.
 """
+import json
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
@@ -43,9 +44,21 @@ class ValueHistory:
         store.conn.executescript(SCHEMA)
 
     def record(self, instance, attr: str, old_value) -> None:
+        try:
+            kept = _encode(old_value)
+        except TypeError:
+            # Keeping the past is worth less than being able to write at all, and this is the one
+            # place where the two met: an agent wrote `person.set_speaks = ...`, the growth took
+            # `set_speaks` for an attribute, and the old value read off the class for it was the
+            # bound setter. `json.dumps` raised on a method — and from then on *every* write to any
+            # Person in that world raised. `start_task` died, `run` died, and sixteen batches of a
+            # measured run would have gone the same way. The write itself is refused at the
+            # attribute door, where the reason can be said; here the old value is kept as what it
+            # looked like, so nothing that goes wrong once goes wrong for good.
+            kept = json.dumps({"$unstorable": f"{type(old_value).__name__}: {str(old_value)[:200]}"})
         self.store.conn.execute(
             "INSERT INTO value_history (instance_id, attr, value, until) VALUES (?, ?, ?, ?)",
-            (instance.id, attr, _encode(old_value), timeutil.now().isoformat()),
+            (instance.id, attr, kept, timeutil.now().isoformat()),
         )
 
     def of(self, instance, attr: str) -> list[Past]:

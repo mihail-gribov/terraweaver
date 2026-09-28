@@ -3202,3 +3202,40 @@ be asked at all (and a check that cannot run lets the lines stand, so this failu
 trace anywhere), or nothing came back from the engineer. Substantive: not borne out by the words,
 gave up, nothing was said about it. `catch_up --shape` prints the split and the wording underneath
 it, so "not typed" can be asked *why* without opening a transcript.
+
+## 2026-09-28 — an assignment where a word wanted a call, and the world it poisoned
+
+The full slice was started and stopped at the third batch, on a number that looked wrong rather than
+an error: 25 facts in **5 turns**. The batch was empty, and so would the sixteen after it have been.
+
+**The chain, in one line each.** The host wrote `person.set_speaks = "Japanese"` — an assignment
+where the word wanted a call. Growth took `set_speaks` for a new attribute, because a name the class
+did not declare is taken on the fly rather than refused. The next write to that attribute asked
+history to keep the old value, and the old value read off the class for that name was the **bound
+setter itself**. `json.dumps` raised on a method. From then on every write to any `Person` in that
+world raised: `start_task` answered "Object of type method is not JSON serializable", `describe_world`
+and `run` timed out, and the host — correctly — reported the server broken and recorded nothing.
+
+Three fixes, each where the thing actually went wrong:
+
+- **The write is refused at the attribute door, where the reason can be said.** A name the class
+  already answers with a call is not a value it can hold: `say it with the call, not an assignment:
+  kukai.set_speaks(other) — speaks is a word for a link, and a link is written one at a time while
+  the end reads back every one of them`. The same for anything else the class does (`describe`,
+  `relate`): *that is something a Person does, not a value it holds*. A name nothing answers still
+  grows, which is the behaviour that exists so a fact is never lost for want of an attribute.
+- **Keeping the past is worth less than being able to write at all.** `history.record` keeps a value
+  it cannot encode as what it looked like. Narrowly there and not in `store._encode`: a graph save
+  that cannot encode a value must still raise and leave nothing behind, which is a guarantee with a
+  test of its own — the first attempt at this broke it, and the test caught it.
+- **A failed tool call is technical trouble and is written down.** `host.ask` collects every
+  `tool_result` with `is_error` — "The operation timed out.", a raise inside the server — which is
+  not the same thing as the world refusing something, since a refusal comes back as an ordinary
+  result and is the world working. A batch turn with any of them stops the run; a question turn with
+  any of them is kept out of `accuracy` and reported. The benign `rate_limit_event` with status
+  "allowed" no longer goes in the log, because a log of things that are fine is not a log.
+
+**What found it was not the logging.** It was a batch costing 5 turns where the others cost 16 and
+25, i.e. the shape of the numbers rather than any error we had thought to catch. The logging is what
+makes it visible next time: the same failure would now stop the run at that batch and name the call
+that failed.

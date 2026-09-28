@@ -61,6 +61,10 @@ def _what_went_wrong(got: dict) -> dict | None:
                 "kind": "technical", "turns": got.get("turns"), "said": got.get("text", "")[:300]}
     if got.get("trouble"):
         return {"what": got["trouble"], "kind": "technical", "turns": got.get("turns")}
+    if got.get("tool_errors"):
+        return {"what": f"the world failed {len(got['tool_errors'])} call(s): "
+                        f"{got['tool_errors'][0]}", "kind": "technical",
+                "turns": got.get("turns"), "all": got["tool_errors"][:5]}
     return None
 
 
@@ -155,7 +159,7 @@ def main() -> int:
                 (out_dir / "trouble.jsonl").open("a").write(
                     json.dumps({"batch": day.isoformat(), "facts": len(due), **trouble}) + "\n")
                 raise RuntimeError(f"batch {day}: {trouble['what']}")
-            if got.get("limited"):
+            if (got.get("limited") or {}).get("status") not in (None, "allowed"):
                 (out_dir / "trouble.jsonl").open("a").write(
                     json.dumps({"batch": day.isoformat(), "what": "rate limit",
                                 **got["limited"]}) + "\n")

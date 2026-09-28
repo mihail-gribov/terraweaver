@@ -1171,6 +1171,26 @@ class Entity:
             # An attribute the class doesn't have used to be accepted and then lost on save —
             # a write that looked fine and never happened.
             if declared is None:
+                # A name the class already answers with a call is not a value it can hold. Written
+                # as an assignment — `person.set_speaks = "Japanese"`, which is what a host reaches
+                # for — the growth took it for a new attribute, and the old value history then read
+                # off the class for it was the bound setter itself: `json.dumps` raised on a method
+                # and every write to any Person in that world raised after it. Storage no longer
+                # breaks over it (store._encode), and the write is refused here, where the reason
+                # can be said: a link is one link, and an assignment would say all of them.
+                already = getattr(type(self), name, None)
+                if callable(already) and not isinstance(already, type):
+                    me = _name_of_me(self) if "_name_of_me" in globals() else "it"
+                    if name.startswith("set_"):
+                        raise TypeError(
+                            f"say it with the call, not an assignment: {me}.{name}(other) — "
+                            f"{name[len('set_'):]} is a word for a link, and a link is written one "
+                            f"at a time while the end reads back every one of them. "
+                            f"{me}.{name[len('set_'):]} is how it reads.")
+                    raise TypeError(
+                        f"{name!r} is something a {class_name} does, not a value it holds: "
+                        f"{me}.{name}(...). If a value of that name is wanted, it needs another "
+                        f"name — this one is taken by the call.")
                 near = did_you_mean(name, [a["name"] for a in spec["attributes"]])
                 if near:
                     setattr(self, take_as(class_name, name, near), value)

@@ -89,6 +89,25 @@ def main() -> int:
     check("a real number raises nothing",
           len([q for q in ada.questions() if "010-2030" in q.text]) == 0)
 
+    # --- a name the class answers with a call is not a value it can hold ---
+    # Written as an assignment, `set_speaks` was taken for a new attribute, and the old value
+    # history then read off the class for it was the bound setter: json.dumps raised on a method
+    # and every write to any Person in that world raised after it, for the rest of a measured run.
+    rt = base.world()
+    rt.run('world.define_relation("speaks", "a person and a language they speak", '
+           'nature="related_to", cardinality="many-to-many", subject_is="the speaker", '
+           'object_is="the language")', "k")
+    rt.run('p = Person.new(full_name="Kukai")\nl = Thing.new(name="Japanese")', "k")
+    said = str(rt.run('p.set_speaks = l', "k").get("error") or "")
+    check("an assignment to a word for a link is refused with the call to write",
+          "set_speaks(other)" in said and "not an assignment" in said, said[-160:])
+    said = str(rt.run('p.describe = "a monk"', "k").get("error") or "")
+    check("and so is an assignment over anything else the class does",
+          "does, not a value it holds" in said, said[-160:])
+    check("while the call itself goes through", rt.run('p.set_speaks(l)', "k").get("error") is None)
+    check("and a name nothing answers still grows",
+          rt.run('p.mood = "calm"', "k").get("error") is None)
+
     print()
     if failures:
         print(f"{len(failures)} failed: {', '.join(failures)}")

@@ -106,7 +106,8 @@ def ask(host, prompt: str, flags: list[str], resume: str | None, log: Path,
             f"the host produced nothing (exit {run.returncode}). stderr: "
             f"{(run.stderr or '').strip()[:800] or '(empty)'}")
     outcome = {"text": "", "session": resume, "turns": 0, "cost": 0.0,
-               "seconds": time.monotonic() - started, "unreachable": [], "limited": None}
+               "seconds": time.monotonic() - started, "unreachable": [], "limited": None,
+               "tool_errors": []}
     for line in run.stdout.splitlines():
         try:
             event = json.loads(line)
@@ -120,6 +121,14 @@ def ask(host, prompt: str, flags: list[str], resume: str | None, log: Path,
             # reading it ran at the close held the server past the 30-second handshake.
             outcome["unreachable"] = [one.get("name") for one in event.get("mcp_servers") or []
                                       if one.get("status") not in ("connected", "ok", None)]
+        for block in (event.get("message") or event).get("content") or []:
+            # A tool the world could not complete — a timeout, a raise inside the server. Not the
+            # same thing as the world refusing something, which comes back as an ordinary result
+            # and is the world working. Measured 2026-09-28: a `json.dumps` on a method poisoned
+            # every write in one world, and from there the host got "The operation timed out." for
+            # the rest of the batch while the run recorded the batch as done.
+            if isinstance(block, dict) and block.get("type") == "tool_result" and block.get("is_error"):
+                outcome["tool_errors"].append(str(block.get("content"))[:200])
         if event.get("type") == "rate_limit_event":
             about = (event.get("rate_limit_info") or {})
             outcome["limited"] = {k: about.get(k) for k in ("status", "rateLimitType",
