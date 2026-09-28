@@ -34,7 +34,9 @@ CREATE TABLE IF NOT EXISTS readings (
     seconds REAL,
     verdicts TEXT,               -- every claim the check judged, with how sure it was
     found TEXT,                  -- the word the look already had for this, if it had one
-    looked INTEGER               -- whether the look could be asked at all
+    looked INTEGER,              -- whether the look could be asked at all
+    trouble TEXT,                -- what went wrong, in the words it went wrong in
+    whose_fault TEXT             -- technical (ours or the network's) or substantive (a judgement)
 );
 CREATE INDEX IF NOT EXISTS idx_readings_link ON readings(link_id);
 """
@@ -47,9 +49,34 @@ def _columns(conn) -> None:
     asked for by name or the insert fails silently and the measurement quietly stops.
     """
     have = {row[1] for row in conn.execute("PRAGMA table_info(readings)")}
-    for column, kind in (("found", "TEXT"), ("looked", "INTEGER")):
+    for column, kind in (("found", "TEXT"), ("looked", "INTEGER"),
+                        ("trouble", "TEXT"), ("whose_fault", "TEXT")):
         if column not in have:
             conn.execute(f"ALTER TABLE readings ADD COLUMN {column} {kind}")
+
+
+def what_went_wrong(trace: dict) -> tuple:
+    """What stopped this reading, and whether it was technical or a judgement about the words.
+
+    The distinction is the whole point of writing any of this down. Twice in one afternoon a
+    technical failure was read as the system's opinion — an engineer "that answered nothing" had in
+    fact been cut off mid-thought, and a reading "that typed nothing" had been refused by a check
+    whose question could not be answered. Counted together they say the reading does not work;
+    told apart they say which part to fix.
+    """
+    for about in trace.get("checked", []):
+        if about.get("failed"):
+            # The check could not be asked at all, and a check that cannot run lets the lines
+            # stand — so this is a failure that leaves no other trace anywhere.
+            return f"the check could not be asked: {about['failed']}", "technical"
+    went = trace.get("went") or ""
+    if went.startswith("nothing came back"):
+        return went, "technical"
+    if went in ("not borne out by the words", "gave up"):
+        return went, "substantive"
+    if went == "nothing was said about it":
+        return went, "substantive"
+    return None, None
 
 
 def keep(world, link, trace: dict, seconds: float) -> None:
@@ -60,12 +87,13 @@ def keep(world, link, trace: dict, seconds: float) -> None:
         verdicts = [one for about in trace.get("checked", []) for one in about.get("claims", [])]
         world.store.conn.execute(
             "INSERT INTO readings (link_id, read_at, words, goes, went, kind, defined, seconds, "
-            "verdicts, found, looked) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "verdicts, found, looked, trouble, whose_fault) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (getattr(link, "id", None), datetime.now(timezone.utc).isoformat(),
              trace.get("words", "")[:400], len(trace.get("wrote", [])), trace.get("went", ""),
              trace.get("kind"), 1 if trace.get("defined") else 0, round(seconds, 2),
              json.dumps(verdicts), trace.get("found"),
-             1 if (trace.get("look") or {}).get("asked") else 0))
+             1 if (trace.get("look") or {}).get("asked") else 0, *what_went_wrong(trace)))
         world.store.conn.commit()
     except Exception:  # noqa: BLE001 - a reading is not lost because its measurement was
         return
@@ -80,8 +108,8 @@ def distribution(world) -> dict:
     run_script(world.store.conn, SCHEMA)
     _columns(world.store.conn)
     rows = world.store.conn.execute(
-        "SELECT goes, went, kind, defined, seconds, verdicts, words, found, looked "
-        "FROM readings").fetchall()
+        "SELECT goes, went, kind, defined, seconds, verdicts, words, found, looked, trouble, "
+        "whose_fault FROM readings").fetchall()
     if not rows:
         return {"readings": 0}
     goes = Counter(row[0] for row in rows)
@@ -115,6 +143,10 @@ def distribution(world) -> dict:
         # found again is one idea kept, and a word made where one existed is the same idea twice.
         "the look": {"asked": sum(1 for row in rows if row[8]),
                      "found a word already there": sum(1 for row in rows if row[7])},
+        # Whose fault it was, which is the question a count of failures cannot answer: a reading the
+        # network lost and a reading the check refused both read as "not typed".
+        "went wrong": dict(Counter(row[10] for row in rows if row[10]).most_common()),
+        "what went wrong": dict(Counter((row[9] or "")[:60] for row in rows if row[9]).most_common(5)),
     }
 
 
@@ -137,4 +169,8 @@ def readable(shape: dict) -> str:
     look = shape["the look"]
     out.append(f"  the look:  asked {look['asked']}, already had the word "
                f"{look['found a word already there']}")
+    if shape["went wrong"]:
+        out.append("  fault:     " + "; ".join(f"{k} {n}" for k, n in shape["went wrong"].items()))
+        for what, n in shape["what went wrong"].items():
+            out.append(f"             {n}x {what}")
     return "\n".join(out)

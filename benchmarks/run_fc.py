@@ -48,6 +48,22 @@ Answer from what is recorded, with the value and nothing else. If a thing was re
 than once over time, give the one that holds now, not the first one."""
 
 
+def _what_went_wrong(got: dict) -> dict | None:
+    """The technical failures of one turn, told apart from anything the host decided.
+
+    A host that could not reach the world, or a turn the CLI itself ended with an error, is not the
+    host answering badly — it is our side failing, and the two were indistinguishable in the numbers
+    until now. Whatever the host did with the world it could reach is a substantive outcome and is
+    measured by the check and by the reading's own record, not here.
+    """
+    if got.get("unreachable"):
+        return {"what": f"the world was unreachable: {', '.join(got['unreachable'])}",
+                "kind": "technical", "turns": got.get("turns"), "said": got.get("text", "")[:300]}
+    if got.get("trouble"):
+        return {"what": got["trouble"], "kind": "technical", "turns": got.get("turns")}
+    return None
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -123,34 +139,67 @@ def main() -> int:
                 continue
             last_day = day
             listed = "\n".join(f"- {fact}" for fact in due)
+            if server is not None and not hosting.answering(args.port):
+                raise RuntimeError(f"the world stopped answering before the batch of {day} — "
+                                   f"nothing was written for it, and a run with a batch missing is "
+                                   f"not a measurement")
             got = hosting.ask(agent, RECORD.format(when=day.isoformat(), facts=listed),
                               agent.conversation(), None, log, args.model)
             spent["turns"] += got["turns"]
             spent["cost"] += got["cost"]
+            trouble = _what_went_wrong(got)
+            if trouble:
+                # Technical, not substantive: the host never reached the world, so whatever it
+                # answered is not evidence about this world. Said out loud and the run stops, rather
+                # than a batch of 25 facts quietly missing from a number.
+                (out_dir / "trouble.jsonl").open("a").write(
+                    json.dumps({"batch": day.isoformat(), "facts": len(due), **trouble}) + "\n")
+                raise RuntimeError(f"batch {day}: {trouble['what']}")
+            if got.get("limited"):
+                (out_dir / "trouble.jsonl").open("a").write(
+                    json.dumps({"batch": day.isoformat(), "what": "rate limit",
+                                **got["limited"]}) + "\n")
             print(f"  recorded {day} ({len(due)} facts)  {got['turns']} turns  "
                   f"${spent['cost']:.2f} so far")
 
         asked_on = (last_day + timedelta(days=1)).isoformat()
         results = []
         for number, question in enumerate(questions, 1):
+            if server is not None:
+                hosting.answering(args.port)
             got = hosting.ask(agent, ASK.format(when=asked_on, question=question.text),
                               agent.conversation(), None, log, args.model)
             spent["turns"] += got["turns"]
             spent["cost"] += got["cost"]
-            right = fc.correct(got["text"], question.gold)
+            trouble = _what_went_wrong(got)
+            right = False if trouble else fc.correct(got["text"], question.gold)
             results.append({"id": question.id, "question": question.text, "gold": question.gold,
                             "answer": got["text"][:300], "correct": right,
-                            "turns": got["turns"], "cost": round(got["cost"], 3)})
-            print(f"{'ok ' if right else '   '} {number:>3}/{len(questions)} {question.gold} "
-                  f"<- {got['text'][:80].replace(chr(10), ' ')}")
+                            "turns": got["turns"], "cost": round(got["cost"], 3),
+                            # A question the host could not put to the world is not a question this
+                            # world answered wrongly, and counted as wrong it lowers the number for a
+                            # reason that has nothing to do with the world. Kept apart and reported.
+                            **({"trouble": trouble} if trouble else {})})
+            if trouble:
+                (out_dir / "trouble.jsonl").open("a").write(
+                    json.dumps({"question": question.id, **trouble}) + "\n")
+            print(f"{'!! ' if trouble else ('ok ' if right else '   ')} "
+                  f"{number:>3}/{len(questions)} {question.gold} "
+                  f"<- {(trouble['what'] if trouble else got['text'][:80]).replace(chr(10), ' ')}")
     finally:
         if server:
             hosting.stop(server)
         if agent:
             hosting.forget_folder_memory(agent.cwd)
 
-    summary = {"accuracy": round(sum(r["correct"] for r in results) / max(1, len(results)), 3),
-               "questions": len(results), "cost_usd": round(spent["cost"], 2),
+    # Accuracy over the questions that actually reached the world. The ones that did not are
+    # reported beside it and never hidden inside it: a technical loss counted as a wrong answer is a
+    # number about our plumbing wearing the world's name.
+    troubled = [one for one in results if one.get("trouble")]
+    answered = [one for one in results if not one.get("trouble")]
+    summary = {"accuracy": round(sum(r["correct"] for r in answered) / max(1, len(answered)), 3),
+               "questions": len(answered), "never reached the world": len(troubled),
+               "cost_usd": round(spent["cost"], 2),
                "turns": spent["turns"], "minutes": round((time.monotonic() - started) / 60, 1)}
     (out_dir / "results.json").write_text(json.dumps(
         {"config": config, "summary": summary, "runs": results}, indent=2))

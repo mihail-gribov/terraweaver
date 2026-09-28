@@ -134,6 +134,26 @@ def main() -> int:
     check("the link holds no start, which is what the sentence gave",
           len(rome) == 1 and rome[0].valid_from is None, str([(l, l.valid_from) for l in rome]))
 
+    # A failure is written down with whose fault it was. Counted together, a reading the network
+    # lost and a reading the check refused both read as "not typed", and they are not the same news.
+    rt = base_world()
+    say(rt, "Rome is the capital of Italy.", "Rome", "Italy")
+    refuses = Picker(invented=["capital of"])
+    formalise.formalise(rt, Engineer([DEFINE + "a.set_capital_of(b)"] * 3), refuses)
+    shape = record.distribution(rt.world)
+    check("a refused reading is written down as a judgement, not as a breakage",
+          shape["went wrong"] == {"substantive": 1}, str(shape["went wrong"]))
+    check("and what it was is kept in the words it happened in",
+          any("borne out" in what for what in shape["what went wrong"]),
+          str(shape["what went wrong"]))
+
+    rt = base_world()
+    say(rt, "Rome is the capital of Italy.", "Rome", "Italy")
+    formalise.formalise(rt, Engineer([]), Picker(words=["capital_of"]))
+    shape = record.distribution(rt.world)
+    check("an engineer that said nothing is written down as technical",
+          shape["went wrong"] == {"technical": 1}, str(shape["went wrong"]))
+
     # --- read in the order said: an earlier fact is read first and the later one hands over ---
     rt = base_world()
     say(rt, "Anna has worked at Acme since 2019.", "Anna", "Acme")

@@ -106,15 +106,29 @@ def ask(host, prompt: str, flags: list[str], resume: str | None, log: Path,
             f"the host produced nothing (exit {run.returncode}). stderr: "
             f"{(run.stderr or '').strip()[:800] or '(empty)'}")
     outcome = {"text": "", "session": resume, "turns": 0, "cost": 0.0,
-               "seconds": time.monotonic() - started}
+               "seconds": time.monotonic() - started, "unreachable": [], "limited": None}
     for line in run.stdout.splitlines():
         try:
             event = json.loads(line)
         except json.JSONDecodeError:
             continue
+        if event.get("subtype") == "init":
+            # The one failure that used to pass for a result. A session whose world server did not
+            # answer has no tools at all: it says so in words, the batch is reported "recorded",
+            # and the number is of a run that never reached the world. Measured 2026-09-27 — five
+            # facts of six lost this way, because the session before had just closed a task and the
+            # reading it ran at the close held the server past the 30-second handshake.
+            outcome["unreachable"] = [one.get("name") for one in event.get("mcp_servers") or []
+                                      if one.get("status") not in ("connected", "ok", None)]
+        if event.get("type") == "rate_limit_event":
+            about = (event.get("rate_limit_info") or {})
+            outcome["limited"] = {k: about.get(k) for k in ("status", "rateLimitType",
+                                                            "utilization", "isUsingOverage")}
         if event.get("type") == "result":
             outcome.update(text=event.get("result") or "", session=event.get("session_id"),
                            turns=event.get("num_turns", 0), cost=event.get("total_cost_usd", 0.0))
+            if event.get("is_error") or event.get("subtype") not in (None, "success"):
+                outcome["trouble"] = f"{event.get('subtype')}: {str(event.get('result'))[:300]}"
     return outcome
 
 
@@ -177,6 +191,23 @@ def start_server(db: Path, port: int, blank: bool = False) -> subprocess.Popen:
             time.sleep(0.5)
     server.kill()
     raise RuntimeError(f"world server on {port} didn't answer in a minute")
+
+
+def answering(port: int, seconds: float = 60) -> bool:
+    """Whether the world server answers now — asked before a turn, not after it went wrong.
+
+    The close of a task runs the reading, which takes tens of seconds per link, and the server is
+    busy for all of it. The next batch is a new session with a 30-second handshake, so it can arrive
+    while the world is still reading and get no tools at all. Waiting here costs nothing when the
+    world is free and saves the batch when it is not.
+    """
+    for _ in range(int(seconds * 2)):
+        try:
+            urllib.request.urlopen(f"http://127.0.0.1:{port}/health", timeout=1)
+            return True
+        except OSError:
+            time.sleep(0.5)
+    return False
 
 
 def forget_folder_memory(folder: Path) -> None:

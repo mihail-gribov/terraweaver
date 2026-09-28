@@ -3173,3 +3173,32 @@ the host said is still there to read.
 the engineer's literal (`"since 2019"`) and is now asked about what the world holds (`2019-01-01`).
 The option says "in those words or plainly the same time in other words", which is what it is for,
 and the refusal rate and the confidences now land in `readings` where a false alarm will show.
+
+## 2026-09-27 — a failure is written down with whose fault it was: technical or substantive
+
+Asked for by the author, and the day had made the case twice over: an engineer "that answered
+nothing" had been cut off mid-thought with its whole budget spent thinking, and a reading "that typed
+nothing" had been refused by a check whose question could not be answered. Both were read as the
+system not working. Counted together, failures say the reading is broken; told apart, they say which
+part to fix.
+
+**On the harness side, the failure that used to pass for a result.** A host session whose world
+server did not answer has no tools at all — it says so in words and the batch was reported
+"recorded". Measured that morning: five facts of six lost that way, because the session before had
+closed a task and the reading it ran at the close held the server past the 30-second handshake.
+
+- `host.ask` now reads the `init` event's `mcp_servers` and reports any that did not connect, keeps
+  the `rate_limit_event` it sees, and marks a turn the CLI itself ended with an error.
+- `host.answering(port)` waits for the world's health before a turn, which costs nothing when the
+  world is free and saves the batch when it is reading.
+- `run_fc.py` stops on a batch whose world was unreachable — a run with a batch missing is not a
+  measurement — and writes every such event to `trouble.jsonl` beside the results.
+- **A question that never reached the world is not a wrong answer.** It is kept out of `accuracy`
+  and reported beside it as `never reached the world`. Counted as wrong it lowered the number for a
+  reason that had nothing to do with the world, which is our plumbing wearing the world's name.
+
+**On the reading side**, `readings` gains `trouble` and `whose_fault`. Technical: the check could not
+be asked at all (and a check that cannot run lets the lines stand, so this failure left no other
+trace anywhere), or nothing came back from the engineer. Substantive: not borne out by the words,
+gave up, nothing was said about it. `catch_up --shape` prints the split and the wording underneath
+it, so "not typed" can be asked *why* without opening a transcript.
