@@ -655,6 +655,13 @@ class Entity:
 
         A relation takes a period like anything else, and a cyclic one the same way: a cleaner
         every other week, a class every Tuesday term-time."""
+        if isinstance(self_first := other, str) and hasattr(how, "id"):
+            # Said the other way round — `a.relate("associated_with", b)`. Both a host and the
+            # reading's own engineer write it like that, and the world used to answer
+            # "no relation type Thing(id=…)", printing the entity where the word should be.
+            # Measured 2026-09-28, it was one of the two lines that killed a reading phase. Which
+            # of the two is the word and which is the thing is not in doubt here, so it is taken.
+            other, how = how, self_first
         if _is_a_sentence(how):
             return current_world().said_of(self, other, how, starts=starts)
         # A word this world already holds has a call of its own on the class, and that is where
@@ -1128,13 +1135,19 @@ class Entity:
                 if not rel or rel.get("free"):
                     continue
                 if word in (rel.get("kind"), rel.get("reverse")):
+                    # Watched, not enforced — which the refusal that used to stand here said in
+                    # its own last clause and then contradicted by raising. The ends a type names
+                    # are what it has been seen between, so a call from a new end is news about
+                    # the word and not an error in the link: the call is handed over and the
+                    # world notes what it has learned. Measured 2026-09-28: refusing it killed
+                    # 24 readings of 54, and the advice it gave — say it in the words it came in —
+                    # is a circle when it is the reading being told, since the words are what the
+                    # reading is reading.
                     ends = " → ".join(("/".join(rel.get(side) or ["any"]) for side in ("from", "to")))
-                    raise TypeError(
-                        f"{word} has run between {ends}, and this one is a "
-                        f"{type(self).__name__}. If that is the fact, say it in the words it "
-                        f"came in — {_name_of_me(self)}.relate(other, \"…\") — and the word for "
-                        f"it is found here; the ends a type names are what it has seen, not a "
-                        f"rule about what it may see.")
+                    note_hint(f"{word} had run between {ends} and has now been said of a "
+                              f"{type(self).__name__} — the word's ends are what it has seen.")
+                    return _sets_the_role(cls.__name__, rel,
+                                          word == rel.get("reverse")).__get__(self, type(self))
         spec = type(self)._spec
         known = [a["name"] for a in spec.get("attributes", [])]
         from terraweaver import matching

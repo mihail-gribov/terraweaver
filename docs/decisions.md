@@ -3440,3 +3440,39 @@ the close are for, while a link taken back is a fact gone.
 
 `tests/test_formalise.py` was rewritten where it asserted the old behaviour, rather than the code
 being bent to keep the tests: a picker saying the link is about something else no longer unmakes it.
+
+## 2026-09-28 — two doors that killed a reading phase, and the untyped floor it left behind
+
+The full run went through: 455 facts in 19 batches, **$4.98** against $6.87 the time before, no
+trouble logged. Then the reading phase died on its first link —
+`AttributeError: 'str' object has no attribute 'year'` out of `holds_at` — and the hundred questions
+were put to a world with **nothing typed in it at all**: `accuracy 0.37`, all hundred reaching the
+world, three of the host's own bad calls, $10.51, 94 minutes.
+
+That is not the number we were after, and it is a number worth having: **37% is the floor** — 455
+facts recorded by the host in its own words and vocabulary, with no reading. The world is kept as
+`var/run2/world-untyped`, so what the reading adds can now be measured on one world with one changed
+thing, which is the comparison this morning's mistake was missing.
+
+**Why the reading died**: a string written straight into `valid_from`. Those are managed attributes
+and skip every check in `__setattr__`, so a string was stored as a string and then every time-filtered
+read of that class raised from inside `holds_at`. A period is a moment or it is refused now, at the
+door, where the reason can be said (`tests/test_time.py`).
+
+**Then the reading ran, and 29 of 54 gave up — and the new `last_said` column said why on the first
+try**: 24 of them `(no output) [stopped on the first line]`. Two doors, both refusing the engineer
+what a host is refused, and both wrong to:
+
+- `a.relate("associated_with", b)` — the word first. The world answered `no relation type
+  Thing(id=…)`, printing the entity where the word should be. Which of the two is the word is not in
+  doubt, so it is taken either way round now.
+- `a.set_associated_with(b)` where the type had been seen between other classes —
+  `TypeError: associated_with has run between any → any, and this one is a Thing`, advising *say it
+  in the words it came in*, which is a circle when the reading is what is being told: the words are
+  what it is reading. And the refusal contradicted itself in its own last clause — "the ends a type
+  names are what it has seen, **not a rule about what it may see**". It is watched now, as it says:
+  the call is handed over and the world notes what it has learned.
+
+**Both are the same mistake of ours, three times today**: a door written for a host refusing the
+world's own engineer, which cannot go and ask the user. `start_task` was the first (18 questions of a
+hundred), the class door the second, these two the third and fourth.

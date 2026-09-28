@@ -230,6 +230,32 @@ def main() -> int:
     if failures:
         print(f"{len(failures)} failed: {', '.join(failures)}")
         return 1
+    # A word said from an end the type has not been seen between: news about the word, not an error
+    # in the link. The refusal that used to stand here said so in its own last clause — "the ends a
+    # type names are what it has seen, not a rule about what it may see" — and then raised. Measured
+    # 2026-09-28: it killed 24 readings of 54, and the advice it gave, say it in the words it came
+    # in, is a circle when the reading is what is being told.
+    rt = base.world()
+    rt.run('world.define_relation("plays_position", "a player and the position they play",'
+           ' nature="related_to", cardinality="many-to-many", subject_is="the player",'
+           ' object_is="the position", subject="Person", object="Thing")', "w")
+    from_a_new_end = rt.run('x = Thing.new(name="quarterback")\ny = Thing.new(name="American '
+                            'football")\nprint(type(x.set_plays_position(y)).__name__)', "w")
+    check("a word said from an end it has not been seen between is taken",
+          "PlaysPosition" in (from_a_new_end.get("output") or ""),
+          str(from_a_new_end.get("error") or from_a_new_end.get("output"))[:120])
+
+    # The two arguments either way round. Both a host and the reading's engineer write the word
+    # first, and the world used to answer "no relation type Thing(id=…)" — the entity printed where
+    # the word should be, on the first line of a block, three goes in a row.
+    rt = base.world()
+    rt.run('a = Person.new(full_name="Coco")\nb = Thing.new(name="Chanel")', "w")
+    said = rt.run('one = a.relate(b, "founded the house of")\n'
+                  'two = a.relate("founded the house of", b)\nprint(one.id == two.id)', "w")
+    check("the words and the thing are taken in either order",
+          "True" in (said.get("output") or ""),
+          str(said.get("error") or said.get("output"))[:120])
+
     print("all relation tests passed")
     return 0
 
