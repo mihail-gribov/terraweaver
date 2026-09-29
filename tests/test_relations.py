@@ -256,6 +256,27 @@ def main() -> int:
           "True" in (said.get("output") or ""),
           str(said.get("error") or said.get("output"))[:120])
 
+    # An assignment where the word wants a call is taken as the call. It used to raise, and the
+    # raising was measured: of 285 names read in one world, 49 ended on it — every one the engineer
+    # writing `x.citizen_of = y`. The engineer has three goes and no way to ask, so a door that only
+    # says no loses the fact, and what the assignment means was never in doubt.
+    rt = base.world()
+    rt.run('world.define_relation("citizen_of", "a person and the country they belong to",'
+           ' nature="related_to", cardinality="many-to-one", subject_is="the citizen",'
+           ' object_is="the country")', "c")
+    rt.run('p = Person.new(full_name="Ada")\nc = Thing.new(name="France")', "c")
+    took = rt.run('p.citizen_of = c\nprint(p.citizen_of.name)', "c")
+    check("an assignment to a word is taken as the call it means",
+          "France" in (took.get("output") or ""),
+          str(took.get("error") or took.get("output"))[:110])
+    check("and the world says it took it that way",
+          any("taken as" in one for one in took.get("hints") or []),
+          str(took.get("hints"))[:120])
+    empty = rt.run('p.citizen_of = None', "c")
+    check("while assigning nothing is still refused, with what to do instead",
+          empty.get("error") is not None and "keep(until" in str(empty["error"]),
+          str(empty.get("error"))[:110])
+
     print("all relation tests passed")
     return 0
 

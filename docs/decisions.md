@@ -3752,3 +3752,21 @@ the word wants a call. It is the mistake the host makes from the other side of t
 `set_*` assignment that poisoned a world two days ago — and the same medicine applies: a door refuses
 in words that say what to write, or it takes what it is given. This one raises, and the engineer
 cannot go and ask anybody.
+
+## 2026-09-30 — an assignment where the word wants a call is taken as the call
+
+The forty-nine refusals above, cured where they happened. `x.citizen_of = y` raised
+`citizen_of is read, not assigned`, and the message was right about the shape and wrong about what to
+do with it: the engineer cannot read a refusal and come back the way a host can — it has three goes
+and then the thing stays unplaced. Of 285 names read, 49 ended exactly there, on four words
+(`citizen_of` 22, `died_in` 15, `associated_with` 10, `headquarters_in` 2).
+
+What the assignment means was never in doubt: one link, this thing to that one. So it is taken, and
+the difference is **noted rather than enforced** — an assignment reads as replacement and this adds
+one link, which is the type's rule to decide and not the syntax's, and the note says so in the run's
+own words. Assigning `None` is still refused, because there is no link to write from nothing and
+ending one has its own door (`rel.keep(until=...)`).
+
+This is the same lesson as `set_*` from the other side of the same door, and as `start_task` before
+it: **a door refuses in words that say what to write, or it takes what it is given.** Three of
+today's four remaining problems were one door each.

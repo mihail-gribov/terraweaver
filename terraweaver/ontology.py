@@ -1912,11 +1912,27 @@ def _relation_role(type_name: str, rel: dict, backwards: bool):
         return got
 
     def refuse(self, value):
-        raise TypeError(
-            f"{word} is read, not assigned. Say it: a.set_{word}(b) — one at a time, which is "
-            f"what writing a link is" + ("" if only_one else
-            f", while {word} reads back every one of them") + ". Whether a second one corrects "
-            f"the first or stands beside it is the type's rule, not the syntax's.")
+        """An assignment where the word wants a call — taken as the call, and said so.
+
+        This raised, and the raising was measured: of 285 names read in one world, **49** ended on
+        it, every one of them the engineer writing `x.citizen_of = y` instead of
+        `x.set_citizen_of(y)`. The engineer cannot read the message and try again the way a host
+        can — it has three goes and then the thing stays unplaced — so a door that only says no
+        loses the fact. What the assignment means is not in doubt: one link, this thing to that one.
+
+        Taken, then, and the difference is noted rather than enforced: an assignment reads as
+        replacement and this adds one link, which is the type's rule to decide and not the
+        syntax's. Nothing is guessed — `set_` does exactly this — and nothing is lost.
+        """
+        if value is None:
+            raise TypeError(
+                f"{word} is read, not assigned, and there is nothing to write from None. To end a "
+                f"link, end it: rel.keep(until=...) or rel.expire().")
+        note_hint(f"{_name_of_me(self)}.{word} = … was taken as "
+                  f"{_name_of_me(self)}.set_{word}(…) — a link is written one at a time, and an "
+                  f"assignment adds this one rather than replacing what is there. Whether a second "
+                  f"corrects the first is the type's rule.")
+        return getattr(self, f"set_{word}")(value)
 
     return property(read, refuse, doc=(f"{rel.get('reads') or kind}. Reads "
                                        f"{'one' if only_one else 'a list'}; "
