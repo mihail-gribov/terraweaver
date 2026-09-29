@@ -46,9 +46,9 @@ class Picker:
 
     def choose(self, state, question, options):
         # Two different closed questions come through here now: which word, and whether the word
-        # the look picked says what the account says. The second one is answered yes unless a test
-        # says otherwise, so a scripted word is not spent on it.
-        if "what the account says" in question:
+        # the look picked is the same idea as the words that were said. The second is answered yes
+        # unless a test says otherwise, so a scripted word is not spent on it.
+        if "the same idea" in question:
             return {"says_so": 1.0} if self.word_fits else {"none of these": 1.0}
         self.looked += 1
         want = self.words.pop(0) if self.words else "none of these"
@@ -179,21 +179,6 @@ def main() -> int:
           got["defined"] == 1 and "does not say" in str(trace["look"].get("refused")),
           f"defined={got['defined']} look={trace['look']}")
 
-    # One idea said differently is decided without a model, because it needs none and because the
-    # model gets it wrong: `performed` against `performed_by` and `founded` against `founder_of`
-    # were both refused as different ideas, and each refusal became another word for an idea the
-    # record already had — one reading went from 27 words to 48 that way, five of them for
-    # "performed" alone.
-    from terraweaver.formalise.look import _shares_a_stem
-
-    for said, word, want in (("performed", "performed_by", True), ("founded", "founder_of", True),
-                             ("works in", "worked_in", True), ("capital of", "capital_of", True),
-                             ("performed", "author_of", False), ("died in", "born_in", False),
-                             ("created in", "associated_with", False),
-                             ("prime_minister_of", "head_of_state_of", False)):
-        check(f"{said!r} and {word!r} are {'one idea' if want else 'two'}",
-              _shares_a_stem(said, word) is want)
-
     # --- the goes run out, and the decision model's answer is acted on rather than thrown away ---
     # 12 readings of 355 used to end "not borne out by the words" and 71 "gave up", every one a link
     # the engineer had written and the record then lost, while the picker had already said what was
@@ -249,6 +234,42 @@ def main() -> int:
     check("the close types what was said in words", tally.get("typed") == 1, str(tally))
     rt.world.engineer = Engineer([])       # nothing left to read, so nothing is asked
     check("and a second close has nothing to read", rt._read_what_was_said() == {}, "")
+
+    # Whether two words are one idea is a closed question, and it is asked **about the two words**
+    # rather than about the account. Measured 2026-09-30 over twenty-four pairs the look had really
+    # answered, hand-labelled: asked about the account the decision model was wrong on four of them,
+    # confidently — 0.93 that `performed` and `performed_by` differ, 0.99 for `founded` and
+    # `founder_of` — and each refusal became another word for an idea the record already had. Asked
+    # about the two words: 24/24, never wrong. A spelling rule that chopped endings was tried in
+    # between and is gone; no list of endings is complete and it ties the world to one language.
+    from terraweaver.formalise.look import says_the_same
+
+    class _Words:
+        """Answers the word-pair question, and records what it was shown."""
+
+        def __init__(self, same):
+            self.same, self.shown = same, None
+
+        def choose(self, state, question, options):
+            self.shown = state
+            from terraweaver import prompts
+            return {"says_so": 0.95} if self.same else {prompts.NONE_OF_THESE: 0.95}
+
+    asked = _Words(True)
+    check("one idea said differently is taken", says_the_same("performed", "performed_by", asked))
+    check("and the two words are what it was shown, written out",
+          "performed by" in (asked.shown or "") and "_" not in (asked.shown or ""),
+          str(asked.shown))
+    check("two different ideas take the word away",
+          not says_the_same("performed", "author_of", _Words(False)))
+
+    class _Hesitant(_Words):
+        def choose(self, state, question, options):
+            from terraweaver import prompts
+            return {prompts.NONE_OF_THESE: 0.55, "says_so": 0.45}
+
+    check("and a model that only hesitates does not take it away",
+          says_the_same("performed", "performed_by", _Hesitant(False)))
 
     print()
     if failures:

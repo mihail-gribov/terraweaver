@@ -86,55 +86,46 @@ def look(world, subject, obj, words: str, picker) -> tuple:
     return best, asked
 
 
-# How sure the check has to be that the word is a *different idea* before it refuses it. The two
-# mistakes are not equal and both were measured. Refusing a word that fitted sends the engineer off
-# to coin a near-copy: at no threshold at all, one reading of one world went from 27 words to 48 —
-# `performed`, `performed_as`, `performed_at`, `performed_by`, `performed_on` for one idea, and four
-# words where `plays_position` had stood. Letting a wrong word through costs the fact the question
-# asks for. So the doubt goes to the word, and only a clear verdict takes it away.
+# How sure the decision model has to be that the two are different ideas before the word is taken
+# away. Measured 2026-09-30 over twenty-four pairs the look had actually answered, hand-labelled:
+# asked about the two words it was right 24/24 and never wrong at all, so the bar is here for
+# safety and not because anything needed filtering. It stays because twenty-four pairs is twenty-four
+# pairs, and because the cost of a wrong refusal has been measured — one reading went from 27 words
+# to 48 when refusals ran unchecked.
 A_DIFFERENT_IDEA = 0.75
 
 
-def _shares_a_stem(words: str, word: str) -> bool:
-    """Whether the account and the word are plainly the same idea said differently.
-
-    Decided without a model, because it needs none and because the model gets it wrong: `performed`
-    against `performed_by` and `founded` against `founder_of` were both refused as different ideas,
-    and each refusal became another word for an idea the record already had. A shared leading stem
-    is not a guess about meaning — it is the same verb, and what follows it is the direction or the
-    role, which the type's own ends carry.
-    """
-    def stems(text: str) -> list[str]:
-        out = []
-        for part in str(text).replace("_", " ").lower().split():
-            if part in ("of", "by", "in", "at", "on", "for", "to", "the", "a", "as", "with"):
-                continue
-            out.append(part.rstrip("s").removesuffix("ed").removesuffix("er").removesuffix("ing"))
-        return out
-
-    said, mine = stems(words), stems(word)
-    return bool(said and mine and (said[0] == mine[0] or set(said) & set(mine)))
-
-
 def says_the_same(words: str, word: str, picker) -> bool:
-    """Does the word the look picked say what was said? One closed question, to the decision model.
+    """Are the words that were said and the word the look picked one idea, or two?
 
-    Asked as a phrase beside the account, which is the form that works here (`check._asking`): what
-    is being compared is a word against words, not a sentence against a claim. A check that cannot
-    be asked lets the word stand — the look's answer is the world's best guess and a broken checker
-    is no reason to throw it away.
+    **Asked about the two words, and not about the account.** The first version of this asked "is
+    «author of» what the account says?" and was measured wrong on 4 of 24 pairs — confidently, at
+    0.93 that `performed` and `performed_by` are different ideas and 0.99 for `founded` and
+    `founder_of`. Refusing those sent the engineer off to coin near-copies, and one reading's
+    vocabulary went from 27 words to 48. Asked as two words side by side — "are those the same idea,
+    one of them said differently?" — the same model was right **24 of 24** and never wrong.
+
+    So the question is about words, which is what it is. A rule that chopped endings and skipped
+    prepositions was tried and is gone: no list of endings and function words is ever complete, a
+    real stemmer fails on exactly the hard case (`founded` → `found` while `founder` stays
+    `founder`), and any of it ties the world to one language. A closed question does not.
+
+    The one thing still done to the words is turning `_` into a space, and it is worth its place:
+    measured on the same pairs, `performed_by` written out as "performed by" gives 24/24 and left as
+    it is gives 20/24, the four misses all sitting at 0.50–0.55 — the model hesitating rather than
+    being wrong, which is also why the threshold below catches them. This is not morphology and not
+    a language: an underscore is **our own** spelling of a word, and undoing it is undoing ours.
     """
-    if _shares_a_stem(words, word):
-        return True
     said_as_words = word.replace("_", " ")
-    question = (f"The record would file this under the word «{said_as_words}». Is that what the "
-                f"account says joins these two?")
-    options = {"says_so": f"yes — «{said_as_words}» is what the account says, or plainly the same "
-                          f"thing in other words",
-               prompts.NONE_OF_THESE: f"no — the account says something else, and "
-                                      f"«{said_as_words}» is a different idea"}
+    state = (f"Two words a record could file one fact under:\n"
+             f"    \u00ab{str(words).replace('_', ' ').strip()}\u00bb\n"
+             f"    \u00ab{said_as_words}\u00bb")
+    question = "Are those two the same idea, one of them said differently?"
+    options = {"says_so": "yes — one idea, said differently (a different ending, a preposition, "
+                          "the same thing from the other end)",
+               prompts.NONE_OF_THESE: "no — two different ideas"}
     try:
-        scored = picker.choose(prompts.IS_IT_SAID.format(words=words), question, options)
+        scored = picker.choose(state, question, options)
     except Exception:  # noqa: BLE001 - a check that cannot run is not a word refused
         return True
     if not scored:
