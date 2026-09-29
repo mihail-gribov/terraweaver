@@ -109,31 +109,33 @@ class Nebius:
 
 
 def embedder():
-    """The best available, without ceremony.
+    """The API first, the local model only when it is asked for, the stand-in last.
 
-    The local model first: it costs nothing and answers in milliseconds, which is what a world
-    being written to needs. The API next, where nothing is installed — the contest machine, a
-    fresh checkout. The stand-in last, so every path works with no model at all.
+    **The world needs no card of its own.** The engineer is on Token Factory, the picker is on
+    TypeSafe, and this is on Nebius — a world is reached over an API and so is everything it
+    reaches. A local model was preferred here because it costs nothing and answers in
+    milliseconds, and the price of that preference was measured on 2026-09-28: another of the
+    author's runs filled the card, Ollama stayed up while every `/api/embed` answered
+    `do load request: … EOF`, and the world wrote two 455-fact worlds with **no meaning index at
+    all** — 0 rows where the world that scored 81% had 495. The behaviour of the world depended
+    on what else happened to be on the machine, invisibly, and a judge running this on a clean
+    machine has no Ollama at all.
+
+    So the API is the way, and the local model is an optimisation somebody turns on
+    (`TERRAWEAVER_OLLAMA_FIRST=1`) when they know the card is theirs. Either way it is asked to
+    embed and not asked whether it is alive: a server that is up and cannot load its model is
+    exactly the case that cost the measurement.
     """
-    local = Ollama()
-    try:
-        # Asked to embed, not asked whether it is alive. Probing `/api/tags` says the server is
-        # up and says nothing about whether the model will load — and measured 2026-09-28, with
-        # the card full of somebody else's run, it was up while `/api/embed` answered
-        # `do load request: … EOF` on every call. So the world took the local model, failed on
-        # every embedding, and wrote worlds with no meaning index at all: 0 rows where the world
-        # that scored 81% had 495. A key for the API was sitting in `.env` the whole time.
-        local.embed(["ready?"])
-        return local
-    except Exception:  # noqa: BLE001 - anything at all means this is not the one to use
-        pass
-    if os.environ.get("NEBIUS_API_KEY"):
+    wanted = [Ollama, Nebius] if os.environ.get("TERRAWEAVER_OLLAMA_FIRST") else [Nebius, Ollama]
+    for which in wanted:
+        if which is Nebius and not os.environ.get("NEBIUS_API_KEY"):
+            continue
         try:
-            over_the_api = Nebius()
-            over_the_api.embed(["ready?"])
-            return over_the_api
-        except Exception:  # noqa: BLE001 - and then there is the stand-in, which always works
-            pass
+            asked = which()
+            asked.embed(["ready?"])
+            return asked
+        except Exception:  # noqa: BLE001 - anything at all means this is not the one to use
+            continue
     return Plain()
 
 
