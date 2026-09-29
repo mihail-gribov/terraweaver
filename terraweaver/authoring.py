@@ -77,6 +77,33 @@ def _clean(name: str) -> str:
     return re.sub(r"[^0-9A-Za-z_]+", "_", (name or "").strip()).strip("_")
 
 
+def _the_other_way(kind: str) -> str:
+    """The word this link reads as from the far end.
+
+    Every kind needs one, and that was learned by taking it away: `entity.relations(kind)` finds
+    only the links this entity is the *subject* of, so the reverse name is the one way to address
+    the other end — `org.relations("chairs_of")` is how you ask who chairs it, and without a reverse
+    that question has no words at all.
+
+    What was wrong was not having one but how it was made: `f"{kind}_of"` unconditionally, so
+    `capital_of` read back as `capital_of_of` and `performed_by` as `performed_by_of`. A role said
+    from one side with `_of` or `_by` turns round by **dropping** it — `a.set_capital_of(b)` reads
+    "a is b's capital", so from b the word is `capital`, and "the capital of France" is a question
+    the world can now answer. Measured 2026-09-29: `CapitalOf Harare → France` stood, correct, in a
+    world that answered "nothing is recorded about the capital of France", because reading it from
+    France meant knowing `capital_of_of`.
+
+    Everything else keeps the old ending. `born_in_of` is not beautiful and it is addressable, which
+    is what the far end needs first.
+    """
+    word = str(kind or "").strip()
+    for ending in ("_of", "_by"):
+        if word.endswith(ending) and len(word) > len(ending):
+            # Dropping always shortens, so the reverse can never come out as the word itself.
+            return word[: -len(ending)]
+    return f"{word}_of"
+
+
 def _type_name(kind: str) -> str:
     """`keeps_bees_for` -> `KeepsBeesFor`: a class named the way the world's classes are named.
 
@@ -434,7 +461,7 @@ class Authoring:
                 # first thing it had ever been told. Eight of ten wrong answers in one run.
                 "functional": holds if one_object else False,
                 "inverse_functional": holds if one_subject else False,
-                "reverse": f"{kind}_of",
+                "reverse": _the_other_way(kind),
                 "labels": [],
                 "example": self._example(kind, subject, object),
                 "reads": reads or self._reads(kind, subject, object, subject_is, object_is),

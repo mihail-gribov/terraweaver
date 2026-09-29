@@ -215,7 +215,7 @@ def main() -> int:
                           "('subject', 'object')", (tokyo_link.id,))
     rt.store.conn.commit()
     rt.store._identity.clear()
-    got = rt.run('print([t.name for t in Thing.get(name="Germany").related("capital_of_of")])', "k2")
+    got = rt.run('print([t.name for t in Thing.get(name="Germany").related("capital")])', "k2")
     check("one unreadable link does not take the rest of its type with it",
           got["ok"] and "Berlin" in (got["output"] or ""),
           str(got.get("error") or got.get("output"))[:160])

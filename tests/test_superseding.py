@@ -153,14 +153,14 @@ def main() -> int:
     out, got = ran(rt, 'org = Thing.ensure(name="Fatah", nature="agent")\n'
                        'Person.new(full_name="One").set_led_by(org)\n'
                        'Person.new(full_name="Two").set_led_by(org)\n'
-                       'print(len(org.related("led_by_of")))')
+                       'print(len(org.related("led")))')
     check("two subjects on one object both stand, since nothing said otherwise", out == "2", out)
     check("and the world asks about it once, naming the fix",
           any("one_per_object" in q for q in (got.get("questions") or [])),
           str(got.get("questions"))[:110])
     out, _ = ran(rt, 'led_by.one_per_object = True\n'
                      'Person.new(full_name="Three").set_led_by(org)\n'
-                     'print([p.display_name() for p in org.related("led_by_of")])')
+                     'print([p.display_name() for p in org.related("led")])')
     check("and once it is said, the later one supersedes", out == "['Three']", out)
 
     # --- a link written from the wrong end is a different fact, and the world had the check ---
@@ -203,7 +203,7 @@ def main() -> int:
     out, got = ran(rt, 'usa = Thing.ensure(name="United States", nature="place")\nt = now()\n'
                        'for n in ("A One", "B Two", "C Three", "D Four", "E Five"):\n'
                        '    Person.new(full_name=n).set_citizen_of(usa,  starts=t)\n'
-                       'print(len(usa.related("citizen_of_of")))')
+                       'print(len(usa.related("citizen")))')
     check("one per object leaves only the last", out == "1", out)
     check("and the world asks whether it can have several at once",
           any("each ending the last" in q for q in (got.get("questions") or [])),
@@ -212,7 +212,7 @@ def main() -> int:
     # "there is one at a time"; told otherwise, it takes them back. What a person ended stays
     # ended, because that was said rather than worked out.
     out, got = ran(rt, 'citizen_of.one_per_object = False\n'
-                       'print(len(usa.related("citizen_of_of")))')
+                       'print(len(usa.related("citizen")))')
     check("and saying it can brings back the ones the world ended", out == "5", out)
     check("and it says what it took back",
           any("hold again" in h for h in (got.get("hints") or [])), str(got.get("hints"))[:110])

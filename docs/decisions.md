@@ -3706,3 +3706,27 @@ word for an idea the record already had. On those the question is right 13 of 14
 is invisible from the other — while the type's own `roles` already carry the inverse and go unused.
 The names pass gives up on 55 of 284, and it is the **engineer** giving up: its code never runs within
 its goes. And placing is still partial — 63 of 284 — so a class holds a fifth of what belongs to it.
+
+## 2026-09-30 — a role said with `_of` turns round by dropping it, not by adding another
+
+`capital_of` read back from the far end as **`capital_of_of`**, because the reverse was
+`f"{kind}_of"` with nothing looked at first (`authoring.py:437`). The cost was measured on
+2026-09-29: `CapitalOf Harare → France` stood in the world, correct and current, and the host
+answered "nothing is recorded about the capital of France" — because reading it from France meant
+knowing `capital_of_of`, which nobody would ever write.
+
+A role said from one side with `_of` or `_by` turns round by **dropping** it. `a.set_capital_of(b)`
+reads "a is b's capital", so from b the word is `capital`, and `France.capital` now answers. The same
+for `author_of` → `author`, `performed_by` → `performed`, `citizen_of` → `citizen`,
+`head_of_state_of` → `head_of_state`. Everything else keeps the appended form: `born_in` →
+`born_in_of` is not beautiful and it is addressable, which is what matters more.
+
+**A first attempt that removed capability, and the tests caught it.** I first gave no reverse at all
+to kinds like `born_in`, on my own claim that `entity.relations(kind)` finds a link from either end.
+It does not — `Fatah.relations("chairs")` comes back empty where `chairs_of` answers — so the reverse
+name is the one way to address the far end, and taking it away took the question with it. Nine checks
+in `test_superseding.py` failed on exactly that, which is the second time today a test has refuted
+something I asserted about the world's own behaviour.
+
+The tests that spelled the old nonsense out (`related("capital_of_of")`, `"led_by_of"`,
+`"citizen_of_of"`) now say `capital`, `led`, `citizen`.
