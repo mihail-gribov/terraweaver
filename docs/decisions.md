@@ -3665,3 +3665,44 @@ twenty-one extra words in one reading.
 a real run — the first by a count nobody would have predicted, the second by **reading the vocabulary
 with my own eyes**. Neither would have shown up in a number. `catch_up --shape` now carries the look's
 answers so the next such claim can be argued from rows rather than from taste.
+
+## 2026-09-30 — whether two words are one idea is a closed question, asked about the two words
+
+The author's point, and it was right on both counts: a small model can do this, and the chopping of
+endings cannot. No list of endings and function words is ever complete, a real stemmer fails on the
+hard case (`founded` → `found` while `founder` stays `founder`), and any of it ties the world to one
+language. So the spelling rule is gone and the question goes to the decision model — but **asked
+about the two words, not about the account**, and measured before it was wired.
+
+**The framing is the whole of it.** Twenty-four pairs the look had really answered, hand-labelled:
+
+| asked | right | sure when wrong |
+|---|---|---|
+| "is «author of» what the account says?" | 20/24 | 0.85 |
+| **"are those two the same idea, one said differently?"** | **24/24** | never wrong |
+
+In the first framing it was confidently wrong on exactly the cases that cost: 0.93 that `performed`
+and `performed_by` are different ideas, 0.99 for `founded` and `founder_of`.
+
+**One transformation stays and earns it.** Turning `_` into a space: `performed_by` written out gives
+24/24, left as it is gives 20/24, and the four misses sit at 0.50–0.55 — hesitation, not error, which
+the threshold catches anyway. This is not morphology and not a language: an underscore is the world's
+own spelling of a word, and undoing it undoes ours.
+
+**My own option text was wrong twice.** It offered "the same thing from the other end" as a reason to
+call two words one idea — so the model called `parent_of` and `child_of` one idea, which is the
+direction error the world fights everywhere else. The reverse of a word is its own name, not this
+one. Reworded, `parent_of`/`child_of` comes back *different*, and across both labelled sets the
+question is right 29 of 31, both misses inside one boundary a person would argue about
+(`employed by` / `worked in` / `works in field`).
+
+**And the same question is now put to the word the look passed over.** Measured over 25 refusals from
+two readings: **nine** were of a word that said the same thing — `famous for` refused against
+`famous_for`, `child` against `child_of`, `founded` against `founded_by` — and each became a second
+word for an idea the record already had. On those the question is right 13 of 14.
+
+**What this leaves, named with their numbers.** The reverse word is glued as `f"{kind}_of"`
+(`authoring.py:437`), so `capital_of` reads back as `capital_of_of` and a fact written from one end
+is invisible from the other — while the type's own `roles` already carry the inverse and go unused.
+The names pass gives up on 55 of 284, and it is the **engineer** giving up: its code never runs within
+its goes. And placing is still partial — 63 of 284 — so a class holds a fifth of what belongs to it.

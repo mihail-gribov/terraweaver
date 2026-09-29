@@ -77,6 +77,16 @@ def look(world, subject, obj, words: str, picker) -> tuple:
              "nearest": nearest, "nearest_sure": round(float(words_here.get(nearest, 0.0)), 3)
              if nearest else None}
     if best == prompts.NONE_OF_THESE or best not in options:
+        # "None of these" is put to the same question about the word that came closest, because the
+        # look refuses words it should not: measured 2026-09-30 over 25 refusals from two readings of
+        # one world, nine were of a word that was the same idea — `famous for` refused against
+        # `famous_for`, `child` against `child_of`, `founded` against `founded_by`. Each of those
+        # became another word for an idea the record already had, and two words for one idea switch
+        # supersession off. Asked as two words the decision model got 13 of those 14 right, and the
+        # one it missed is a boundary a person would argue about too.
+        if nearest is not None and says_the_same(words, nearest, picker):
+            asked["taken"] = f"{nearest} — the look passed it over and it says the same"
+            return nearest, asked
         return None, asked
     if CHECKED and not says_the_same(words, best, picker):
         # A word that means something else is not this link's word, and a new one is honest about
@@ -121,9 +131,10 @@ def says_the_same(words: str, word: str, picker) -> bool:
              f"    \u00ab{str(words).replace('_', ' ').strip()}\u00bb\n"
              f"    \u00ab{said_as_words}\u00bb")
     question = "Are those two the same idea, one of them said differently?"
-    options = {"says_so": "yes — one idea, said differently (a different ending, a preposition, "
-                          "the same thing from the other end)",
-               prompts.NONE_OF_THESE: "no — two different ideas"}
+    options = {"says_so": "yes — one idea, said differently: a different ending, a preposition, "
+                          "the same verb as a noun",
+               prompts.NONE_OF_THESE: "no — two different ideas, or the same idea from the other "
+                                      "end, which is its own word and not this one"}
     try:
         scored = picker.choose(state, question, options)
     except Exception:  # noqa: BLE001 - a check that cannot run is not a word refused

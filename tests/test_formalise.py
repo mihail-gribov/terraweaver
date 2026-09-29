@@ -271,6 +271,37 @@ def main() -> int:
     check("and a model that only hesitates does not take it away",
           says_the_same("performed", "performed_by", _Hesitant(False)))
 
+    # And the same question is put to the word the look passed over. Measured 2026-09-30: of 25
+    # refusals across two readings, nine were of a word that said the same thing — `famous for`
+    # refused against `famous_for` — and each became a second word for one idea.
+    class _Passes:
+        """Says "none of these" to the word question, and "the same" to the pair question."""
+
+        def __init__(self, near):
+            self.near = near
+
+        def choose(self, state, question, options):
+            from terraweaver import prompts
+            if "the same idea" in question:
+                return {"says_so": 0.95}
+            return {prompts.NONE_OF_THESE: 0.6, self.near: 0.4}
+
+        def ask(self, state, questions):
+            return {key: {"probabilities": {"says_so": 1.0}} for key in questions}
+
+    rt = base_world()
+    say(rt, "Rome is the capital of Italy.", "Rome", "Italy")
+    formalise.formalise(rt, Engineer([DEFINE + "a.set_capital_of(b)"]), Picker(words=["capital_of"]))
+    say(rt, "Paris has been the capital of France since 1792.", "Paris", "France")
+    got = formalise.formalise(rt, Engineer(['a.set_capital_of(b, starts="1792")']),
+                              _Passes("capital_of"))
+    check("a word the look passed over is taken when it says the same",
+          got["typed"] == 1 and got["defined"] == 0,
+          str({k: v for k, v in got.items() if k != "read"}))
+    check("and the trace says it was passed over",
+          "passed it over" in str(got["read"][0]["look"].get("taken")),
+          str(got["read"][0]["look"]))
+
     print()
     if failures:
         print(f"{len(failures)} failed: {', '.join(failures)}")
