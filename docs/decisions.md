@@ -3591,3 +3591,33 @@ measurement is not touched.
 
 Also: `meaning.embedder()` is asked once per process now. Probing per world opened put a network call
 in front of every test.
+
+## 2026-09-29 — the experiment that should have been first: the same questions, two worlds, one code
+
+The author asked why 81% became 37%, and the answer was two days of guessing away until the obvious
+control was run: **ask `facts455` the same hundred questions with today's code.** That separates the
+world from the code, and nothing else does.
+
+| the same 100 questions, today's code, same host and judge | all | where the host worked the door |
+|---|---|---|
+| `facts455` — built 22–24 Sep on the old core with the fixture | **64/100** | 53/81 — 65% |
+| `run2` — built 28 Sep on the five-class base, then read | 35/100 | 31/87 — 35% |
+
+And for the record, the same `facts455` scored **81%** on 24 September with the code of that day.
+
+**So the gap is in the world, and the code cost something too.**
+
+- **29 points are the world**: 64 against 35, same code, same questions, six sigma. A world the host
+  built with its own 33 relation types and no entity classes answers nearly twice as well as one built
+  on the five-class base and then typed by the reading.
+- **16 points look like the code**: 81 then against 64 now on the same world. Part of that is honest
+  accounting — this run counts the host's own fumbled calls against the answer and the September run
+  had no such accounting at all; 19 questions had one. Part is ours to find.
+
+**What this puts the work on.** Not the reading's mechanics, which are sound — 126 of 136 links typed,
+117 joined to a word already there. The thing to fix is what the reading *leaves behind*: it makes
+classes and places a fifth of what it reads into them, and a world where `Country` holds five
+countries while Germany is a `Thing` answers worse than a world with no `Country` at all. Today's
+lookup changes make a miss point at what is there, which is worth five points (30 → 35) and is not the
+cure. The cure is either placing everything of a kind or making no class for it — and the measurement
+now exists to tell which.
