@@ -12,6 +12,17 @@ ones come first and the rest follow, and a way out is always among them.
 """
 from terraweaver import prompts
 
+# How far ahead "none of these" has to be before a new word is made. The two mistakes here do not
+# cost the same, and the measurement says so: a second word for one idea puts the two tellings of a
+# fact into different types, and **supersession works inside a type**, so neither ends the other and
+# the world answers with whichever it meets first. Measured 2026-09-29 on the FactConsolidation
+# slice: `Madonna → AssociatedWith` beside `The Beatles → PerformedBy`, both standing, the question
+# "who performed Past Masters" answered with the earlier one — and that shape is most of the
+# difference between 64% and 35%. Joining a word that is nearly right costs far less: the link is
+# there, it is found, and `take_in` can move it when somebody decides. So the doubt goes to the
+# existing word, and a new one is made only when nothing here is close.
+A_NEW_WORD_NEEDS = 0.15
+
 
 def words_for(world) -> list:
     """Every relation type this record holds, the free one excepted — (class name, class, relation).
@@ -55,8 +66,21 @@ def look(world, subject, obj, words: str, picker) -> tuple:
     if not scored:
         return None, {"asked": True, "said": None}
     best = max(scored, key=scored.get)
+    words_here = {word: p for word, p in scored.items()
+                  if word in options and word != prompts.NONE_OF_THESE}
+    nearest = max(words_here, key=words_here.get) if words_here else None
     asked = {"asked": True, "options": list(options), "said": best,
-             "sure": round(float(scored.get(best, 0.0)), 3)}
+             "sure": round(float(scored.get(best, 0.0)), 3),
+             # Kept so the margin below can be argued from data rather than taste.
+             "nearest": nearest, "nearest_sure": round(float(words_here.get(nearest, 0.0)), 3)
+             if nearest else None}
     if best == prompts.NONE_OF_THESE or best not in options:
+        if nearest is not None:
+            ahead = float(scored.get(best, 0.0)) - float(words_here[nearest])
+            if ahead <= A_NEW_WORD_NEEDS:
+                # Close, so the word this record already has wins: two words for one idea is the
+                # expensive mistake, and joining a near word is the cheap one.
+                asked["taken"] = f"{nearest} — {round(ahead, 3)} behind 'none of these'"
+                return nearest, asked
         return None, asked
     return best, asked

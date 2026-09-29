@@ -155,6 +155,48 @@ def main() -> int:
     check("an engineer that said nothing is written down as technical",
           shape["went wrong"] == {"technical": 1}, str(shape["went wrong"]))
 
+    # --- a new word is made only when nothing the record holds is close ---
+    # Two words for one idea put the two tellings of a fact into different types, and supersession
+    # works inside a type: measured 2026-09-29, `Madonna → AssociatedWith` stood beside
+    # `The Beatles → PerformedBy` and the question "who performed Past Masters" was answered with
+    # the earlier one. Joining a near word costs far less, so the doubt goes to the word that is here.
+    class _Torn:
+        """Says "none of these", with an existing word close behind."""
+
+        def __init__(self, near, gap):
+            self.near, self.gap, self.looked = near, gap, 0
+
+        def choose(self, state, question, options):
+            self.looked += 1
+            from terraweaver import prompts
+            return {prompts.NONE_OF_THESE: 0.5 + self.gap / 2, self.near: 0.5 - self.gap / 2}
+
+        def ask(self, state, questions):
+            return {key: {"probabilities": {"says_so": 1.0}} for key in questions}
+
+    rt = base_world()
+    say(rt, "Rome is the capital of Italy.", "Rome", "Italy")
+    formalise.formalise(rt, Engineer([DEFINE + "a.set_capital_of(b)"]), Picker(words=["capital_of"]))
+    say(rt, "Paris has been the capital of France since 1792.", "Paris", "France")
+    torn = _Torn("capital_of", 0.05)
+    got = formalise.formalise(rt, Engineer(['a.set_capital_of(b, starts="1792")']), torn)
+    check("a word the record holds wins when 'none of these' is only just ahead",
+          got["typed"] == 1 and got["defined"] == 0, str({k: v for k, v in got.items() if k != "read"}))
+    check("and the trace says which word it took and by how much",
+          "capital_of" in str(got["read"][0]["look"].get("taken")),
+          str(got["read"][0]["look"]))
+
+    rt = base_world()
+    say(rt, "Rome is the capital of Italy.", "Rome", "Italy")
+    formalise.formalise(rt, Engineer([DEFINE + "a.set_capital_of(b)"]), Picker(words=["capital_of"]))
+    say(rt, "Anna has worked at Acme since 2019.", "Anna", "Acme")
+    clear = _Torn("capital_of", 0.9)
+    works = ('world.define_relation("works_at", "a person working for an employer", '
+             'cardinality="many-to-one", subject_is="an employee", object_is="an employer")\n')
+    got = formalise.formalise(rt, Engineer([works + 'a.set_works_at(b)']), clear)
+    check("while a word is still made when nothing here is close", got["defined"] == 1,
+          str({k: v for k, v in got.items() if k != "read"}))
+
     # --- the goes run out, and the decision model's answer is acted on rather than thrown away ---
     # 12 readings of 355 used to end "not borne out by the words" and 71 "gave up", every one a link
     # the engineer had written and the record then lost, while the picker had already said what was

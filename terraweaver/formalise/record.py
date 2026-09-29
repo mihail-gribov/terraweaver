@@ -51,7 +51,8 @@ def _columns(conn) -> None:
     """
     have = {row[1] for row in conn.execute("PRAGMA table_info(readings)")}
     for column, kind in (("found", "TEXT"), ("looked", "INTEGER"),
-                        ("trouble", "TEXT"), ("whose_fault", "TEXT"), ("last_said", "TEXT")):
+                        ("trouble", "TEXT"), ("whose_fault", "TEXT"), ("last_said", "TEXT"),
+                        ("nearest", "TEXT"), ("nearest_sure", "REAL"), ("look_said", "TEXT")):
         if column not in have:
             conn.execute(f"ALTER TABLE readings ADD COLUMN {column} {kind}")
 
@@ -88,8 +89,8 @@ def keep(world, link, trace: dict, seconds: float) -> None:
         verdicts = [one for about in trace.get("checked", []) for one in about.get("claims", [])]
         world.store.conn.execute(
             "INSERT INTO readings (link_id, read_at, words, goes, went, kind, defined, seconds, "
-            "verdicts, found, looked, trouble, whose_fault, last_said) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "verdicts, found, looked, trouble, whose_fault, last_said, nearest, nearest_sure, "
+            "look_said) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (getattr(link, "id", None), datetime.now(timezone.utc).isoformat(),
              trace.get("words", "")[:400], len(trace.get("wrote", [])), trace.get("went", ""),
              trace.get("kind"), 1 if trace.get("defined") else 0, round(seconds, 2),
@@ -98,7 +99,12 @@ def keep(world, link, trace: dict, seconds: float) -> None:
              # The last thing the world said back. A count of "gave up" says a reading failed and
              # not why, and why is a sentence the world already wrote — measured 2026-09-28, nine
              # readings of twenty-one gave up in a cold world and nothing anywhere said on what.
-             (trace.get("answered") or [""])[-1][:400]))
+             (trace.get("answered") or [""])[-1][:400],
+             # What the look nearly took, and how sure it was. The margin that decides whether a new
+             # word is made (`look.A_NEW_WORD_NEEDS`) can only be argued from these.
+             (trace.get("look") or {}).get("nearest"),
+             (trace.get("look") or {}).get("nearest_sure"),
+             (trace.get("look") or {}).get("said")))
         world.store.conn.commit()
     except Exception:  # noqa: BLE001 - a reading is not lost because its measurement was
         return
@@ -114,7 +120,7 @@ def distribution(world) -> dict:
     _columns(world.store.conn)
     rows = world.store.conn.execute(
         "SELECT goes, went, kind, defined, seconds, verdicts, words, found, looked, trouble, "
-        "whose_fault, last_said FROM readings").fetchall()
+        "whose_fault, last_said, nearest, nearest_sure, look_said FROM readings").fetchall()
     if not rows:
         return {"readings": 0}
     goes = Counter(row[0] for row in rows)
@@ -147,7 +153,14 @@ def distribution(world) -> dict:
         # Convergence, which is the thing a vocabulary is judged on: a word already in the record
         # found again is one idea kept, and a word made where one existed is the same idea twice.
         "the look": {"asked": sum(1 for row in rows if row[8]),
-                     "found a word already there": sum(1 for row in rows if row[7])},
+                     "found a word already there": sum(1 for row in rows if row[7]),
+                     # How often it said "none of these" while a word here was close behind — the
+                     # case that used to make a second word for one idea.
+                     "said none of these": sum(1 for row in rows if row[14]
+                                               and row[14] not in (row[7], None)),
+                     "took the near word instead": sum(1 for row in rows if row[12] and row[7]
+                                                       and row[12] == row[7] and row[14]
+                                                       and row[14] != row[7])},
         # Whose fault it was, which is the question a count of failures cannot answer: a reading the
         # network lost and a reading the check refused both read as "not typed".
         "went wrong": dict(Counter(row[10] for row in rows if row[10]).most_common()),
