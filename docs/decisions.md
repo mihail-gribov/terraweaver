@@ -3730,3 +3730,25 @@ something I asserted about the world's own behaviour.
 
 The tests that spelled the old nonsense out (`related("capital_of_of")`, `"led_by_of"`,
 `"citizen_of_of"`) now say `capital`, `led`, `citizen`.
+
+## 2026-09-30 — the names pass says why it failed, and it is one mistake forty-nine times
+
+A fifth of the names ended badly and the pass said only how many. `portraits.shape` reads the rows
+back — how they ended, what the walk decided, and **what the world said** when the engineer's code
+would not run (`_the_loop` returns it now, as the link side has done since yesterday). Read off the
+455-fact world, whose rows were already there:
+
+    285 name(s) read, 52 of them placed under another class
+      ended:     done 155; gave up 56; refused 49; nothing to run 21
+      walked to: Person 186; Thing 23; City 23; Country 13; Work 10; Company 7
+      and what the world said on the ones that failed:
+             22x citizen_of is read, not assigned. Say it: a.set_citizen_of(b) …
+             15x died_in is read, not assigned …
+             10x associated_with is read, not assigned …
+              2x headquarters_in is read, not assigned …
+
+**Every one of the 49 refusals is the same mistake**: the engineer writes `x.citizen_of = y` where
+the word wants a call. It is the mistake the host makes from the other side of the same door — the
+`set_*` assignment that poisoned a world two days ago — and the same medicine applies: a door refuses
+in words that say what to write, or it takes what it is given. This one raises, and the engineer
+cannot go and ask anybody.

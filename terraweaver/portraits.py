@@ -163,6 +163,42 @@ def mark(world, statement_id: str, entity_id: str, read_as: dict, became: str | 
     world.store.conn.commit()
 
 
+def shape(world) -> str:
+    """What the names pass did, and on what it failed — the same instrument the links have.
+
+    A tally of `read / placed / defined / gave_up` says a fifth of the names ended badly and nothing
+    about which fifth or why. This reads the rows back: how they ended, what the walk decided, and
+    the words the world said to the engineer when its code would not run. Nothing here calls a model.
+    """
+    import collections
+
+    run_script(world.store.conn, SCHEMA)
+    rows = world.store.conn.execute("SELECT read_as, became FROM portraits").fetchall()
+    if not rows:
+        return "no name has been read in this world yet."
+    went, walked, said, placed = collections.Counter(), collections.Counter(), collections.Counter(), 0
+    for raw, became in rows:
+        try:
+            one = json.loads(raw or "{}")
+        except Exception:  # noqa: BLE001
+            continue
+        went[one.get("went") or ("refused" if "refused" in one else "(nothing said)")] += 1
+        walked[one.get("walked_to") or "(nowhere)"] += 1
+        if became:
+            placed += 1
+        if one.get("went") in ("gave up", "nothing to run") or "refused" in one:
+            trouble = one.get("refused") or one.get("said_back") or ""
+            said[" ".join(str(trouble).split())[:100] or "(nothing recorded)"] += 1
+    out = [f"{len(rows)} name(s) read, {placed} of them placed under another class"]
+    out.append("  ended:     " + "; ".join(f"{k} {n}" for k, n in went.most_common()))
+    out.append("  walked to: " + "; ".join(f"{k} {n}" for k, n in walked.most_common(6)))
+    if said:
+        out.append("  and what the world said on the ones that failed:")
+        for what, n in said.most_common(5):
+            out.append(f"             {n}x {what}")
+    return "\n".join(out)
+
+
 def count(world) -> tuple[int, int]:
     """How many things came in as bare names, and how many prose-facts are still unread."""
     run_script(world.store.conn, SCHEMA)
@@ -351,13 +387,14 @@ def formalise(world, engineer, limit: int = 50, jev=None, run=None,
             mark(world, one["statement_id"], one["entity_id"],
                  {**read_as, "refused": str(wrong)[:200]})
             continue
-        read_as["code"], read_as["went"] = _the_loop(engineer, run, entity, asked, said, tally)
+        read_as["code"], read_as["went"], read_as["said_back"] = _the_loop(
+            engineer, run, entity, asked, said, tally)
         mark(world, one["statement_id"], one["entity_id"], read_as, became)
     tally["moved"] = moved
     return tally
 
 
-def _the_loop(engineer, run, entity, asked: str, said: dict, tally: dict) -> tuple[list, str]:
+def _the_loop(engineer, run, entity, asked: str, said: dict, tally: dict) -> tuple[list, str, str]:
     """Run what the engineer wrote, and hand back whatever the world says until it is done.
 
     Exactly the loop a host is in: write, read what the world says back, answer that. The only
@@ -370,13 +407,19 @@ def _the_loop(engineer, run, entity, asked: str, said: dict, tally: dict) -> tup
     written = []
     code = str(said.get("code") or "").strip()
     if run is None or not code:
-        return written, "nothing to run" if run is not None else "nowhere to run it"
+        return written, "nothing to run" if run is not None else "nowhere to run it", ""
+    said_back = ""
     for go in range(GOES):
         written.append(code)
         got = run(entity, code)
+        # Kept, because a count of give-ups says a reading failed and not why — and why is a
+        # sentence the world has already written. Measured 2026-09-29 on the link side: the same
+        # column named the cause of 24 failures at a glance, where an hour had gone on guessing.
+        # 56 of 285 names ended here with nothing anywhere to say on what.
+        said_back = format_result(got)[:600]
         if got.get("ok"):
             tally["ran"] += 1
-            return written, "done"
+            return written, "done", said_back
         if go == GOES - 1:
             break
         back = (f"{asked}\n\nYou wrote this, and the record answered:\n\n{code}\n\n"
@@ -388,7 +431,7 @@ def _the_loop(engineer, run, entity, asked: str, said: dict, tally: dict) -> tup
         if not code:
             break
     tally["gave_up"] += 1
-    return written, "gave up"
+    return written, "gave up", said_back
 
 
 def _say(engineer, asked: str) -> dict | None:

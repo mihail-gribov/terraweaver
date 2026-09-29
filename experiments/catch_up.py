@@ -84,6 +84,8 @@ def main() -> int:
 
     print("\n--- every reading this world has had")
     print(record.readable(record.distribution(runtime.world)))
+    print("\n--- and every name it has read")
+    print(portraits.shape(runtime.world))
 
     print("\n--- links the world holds now")
     for name, cls in sorted(runtime.world.classes.items()):
