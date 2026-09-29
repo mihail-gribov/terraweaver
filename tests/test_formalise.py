@@ -179,6 +179,21 @@ def main() -> int:
           got["defined"] == 1 and "does not say" in str(trace["look"].get("refused")),
           f"defined={got['defined']} look={trace['look']}")
 
+    # One idea said differently is decided without a model, because it needs none and because the
+    # model gets it wrong: `performed` against `performed_by` and `founded` against `founder_of`
+    # were both refused as different ideas, and each refusal became another word for an idea the
+    # record already had — one reading went from 27 words to 48 that way, five of them for
+    # "performed" alone.
+    from terraweaver.formalise.look import _shares_a_stem
+
+    for said, word, want in (("performed", "performed_by", True), ("founded", "founder_of", True),
+                             ("works in", "worked_in", True), ("capital of", "capital_of", True),
+                             ("performed", "author_of", False), ("died in", "born_in", False),
+                             ("created in", "associated_with", False),
+                             ("prime_minister_of", "head_of_state_of", False)):
+        check(f"{said!r} and {word!r} are {'one idea' if want else 'two'}",
+              _shares_a_stem(said, word) is want)
+
     # --- the goes run out, and the decision model's answer is acted on rather than thrown away ---
     # 12 readings of 355 used to end "not borne out by the words" and 71 "gave up", every one a link
     # the engineer had written and the record then lost, while the picker had already said what was

@@ -3621,3 +3621,47 @@ countries while Germany is a `Thing` answers worse than a world with no `Country
 lookup changes make a miss point at what is there, which is worth five points (30 → 35) and is not the
 cure. The cure is either placing everything of a kind or making no class for it — and the measurement
 now exists to tell which.
+
+## 2026-09-30 — the look's word is checked, and two of my own fixes were thrown out by the measurement
+
+Working through the causes of 35% against 64%, in order. The first and most expensive: **two words
+for one idea put the two tellings of a fact into different types, and supersession works inside a
+type** — `Madonna → AssociatedWith` stood beside `The Beatles → PerformedBy`, both current, and "who
+performed Past Masters" was answered with the earlier one.
+
+**Attempt one, thrown out.** A margin: make a new word only when "none of these" is ahead of the best
+existing word by 0.15. Measured over 136 readings of one world: it fired **3 times**, narrowed no
+vocabulary at all (10 words made against 9), and it leaned the wrong way — towards taking an existing
+word, which is the error that actually costs. The decision model, when it says "none of these", says
+it decisively; there is rarely a near word behind it to prefer.
+
+**What the record showed instead**, once the look's answers were written down (`readings.look_said`,
+`nearest`, `nearest_sure`): the look was **joining the wrong word, confidently**. `author_of` for
+facts whose words were `performed` — four times, at 0.95, 0.92, 0.83, 0.62. That is worse than a
+duplicate: a duplicate holds the fact with its own meaning and `take_in` can move it, while
+`Lou Reed author_of Blood on the Tracks` cannot be found by anybody asking who performed it and
+supersedes the wrong things. So my own framing — "being wrong in the look is cheap" — was wrong.
+
+**Attempt two, also thrown out, and it made things worse.** Check the look's answer the way every
+claim here is checked: spell the word out and ask the decision model whether it says what the account
+says. It refused **25 of 62** readings — and the vocabulary went from 27 words to **48**:
+`performed`, `performed_as`, `performed_at`, `performed_by`, `performed_on` for one idea, four words
+where `plays_position` had stood, `head_of` beside `head_of_state` beside `head_of_state_of`. Refuse
+a word that fitted and the engineer coins a near-copy, which is the disease it was meant to cure.
+
+Reading the refusals showed which were right and which were not:
+
+    right   'created in' vs associated_with · 'performed' vs author_of · 'famous for' vs author_of
+    wrong   'performed' vs performed_by     · 'founded'   vs founder_of
+
+**What stands, and why in this shape.** One idea said differently is decided **without a model**
+(`_shares_a_stem`), because it needs none and the model gets it wrong: a shared leading stem is the
+same verb, and what follows it — `_by`, `_of`, `_in` — is direction or role, which the type's ends
+already carry. For the rest the model decides, but only a **clear** verdict takes a word away
+(`A_DIFFERENT_IDEA = 0.75`), because the cost of refusing a word that fitted has now been measured at
+twenty-one extra words in one reading.
+
+**And the lesson worth more than the fix.** Both of my attempts passed the tests and were refuted by
+a real run — the first by a count nobody would have predicted, the second by **reading the vocabulary
+with my own eyes**. Neither would have shown up in a number. `catch_up --shape` now carries the look's
+answers so the next such claim can be argued from rows rather than from taste.

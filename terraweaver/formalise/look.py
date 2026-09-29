@@ -86,6 +86,36 @@ def look(world, subject, obj, words: str, picker) -> tuple:
     return best, asked
 
 
+# How sure the check has to be that the word is a *different idea* before it refuses it. The two
+# mistakes are not equal and both were measured. Refusing a word that fitted sends the engineer off
+# to coin a near-copy: at no threshold at all, one reading of one world went from 27 words to 48 —
+# `performed`, `performed_as`, `performed_at`, `performed_by`, `performed_on` for one idea, and four
+# words where `plays_position` had stood. Letting a wrong word through costs the fact the question
+# asks for. So the doubt goes to the word, and only a clear verdict takes it away.
+A_DIFFERENT_IDEA = 0.75
+
+
+def _shares_a_stem(words: str, word: str) -> bool:
+    """Whether the account and the word are plainly the same idea said differently.
+
+    Decided without a model, because it needs none and because the model gets it wrong: `performed`
+    against `performed_by` and `founded` against `founder_of` were both refused as different ideas,
+    and each refusal became another word for an idea the record already had. A shared leading stem
+    is not a guess about meaning — it is the same verb, and what follows it is the direction or the
+    role, which the type's own ends carry.
+    """
+    def stems(text: str) -> list[str]:
+        out = []
+        for part in str(text).replace("_", " ").lower().split():
+            if part in ("of", "by", "in", "at", "on", "for", "to", "the", "a", "as", "with"):
+                continue
+            out.append(part.rstrip("s").removesuffix("ed").removesuffix("er").removesuffix("ing"))
+        return out
+
+    said, mine = stems(words), stems(word)
+    return bool(said and mine and (said[0] == mine[0] or set(said) & set(mine)))
+
+
 def says_the_same(words: str, word: str, picker) -> bool:
     """Does the word the look picked say what was said? One closed question, to the decision model.
 
@@ -94,6 +124,8 @@ def says_the_same(words: str, word: str, picker) -> bool:
     be asked lets the word stand — the look's answer is the world's best guess and a broken checker
     is no reason to throw it away.
     """
+    if _shares_a_stem(words, word):
+        return True
     said_as_words = word.replace("_", " ")
     question = (f"The record would file this under the word «{said_as_words}». Is that what the "
                 f"account says joins these two?")
@@ -107,4 +139,6 @@ def says_the_same(words: str, word: str, picker) -> bool:
         return True
     if not scored:
         return True
-    return max(scored, key=scored.get) != prompts.NONE_OF_THESE
+    against = float(scored.get(prompts.NONE_OF_THESE, 0.0))
+    return not (max(scored, key=scored.get) == prompts.NONE_OF_THESE
+                and against >= A_DIFFERENT_IDEA)
