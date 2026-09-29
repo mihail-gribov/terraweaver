@@ -12,16 +12,19 @@ ones come first and the rest follow, and a way out is always among them.
 """
 from terraweaver import prompts
 
-# How far ahead "none of these" has to be before a new word is made. The two mistakes here do not
-# cost the same, and the measurement says so: a second word for one idea puts the two tellings of a
-# fact into different types, and **supersession works inside a type**, so neither ends the other and
-# the world answers with whichever it meets first. Measured 2026-09-29 on the FactConsolidation
-# slice: `Madonna → AssociatedWith` beside `The Beatles → PerformedBy`, both standing, the question
-# "who performed Past Masters" answered with the earlier one — and that shape is most of the
-# difference between 64% and 35%. Joining a word that is nearly right costs far less: the link is
-# there, it is found, and `take_in` can move it when somebody decides. So the doubt goes to the
-# existing word, and a new one is made only when nothing here is close.
-A_NEW_WORD_NEEDS = 0.15
+# What the look answers is a hypothesis about meaning, so it is checked the way every other claim
+# here is checked: the word is spelled out and put beside the words that were said, and the decision
+# model is asked whether they say the same. Measured 2026-09-29 over 136 readings of one world, this
+# is not a formality — the look answered `author_of` for facts whose words were `performed`, four
+# times, at 0.95, 0.92, 0.83 and 0.62. A fact under a word that means something else is worse than a
+# second word for one idea: the duplicate still holds the fact with its own meaning and can be
+# merged, while `Lou Reed author_of Blood on the Tracks` cannot be found by anybody asking who
+# performed it, and supersedes the wrong things.
+#
+# A margin for "none of these" was tried first and is gone: it fired three times in 136, narrowed no
+# vocabulary (10 words made against 9), and it leaned the wrong way — towards taking an existing
+# word, which is the error this check exists to catch.
+CHECKED = True
 
 
 def words_for(world) -> list:
@@ -71,16 +74,37 @@ def look(world, subject, obj, words: str, picker) -> tuple:
     nearest = max(words_here, key=words_here.get) if words_here else None
     asked = {"asked": True, "options": list(options), "said": best,
              "sure": round(float(scored.get(best, 0.0)), 3),
-             # Kept so the margin below can be argued from data rather than taste.
              "nearest": nearest, "nearest_sure": round(float(words_here.get(nearest, 0.0)), 3)
              if nearest else None}
     if best == prompts.NONE_OF_THESE or best not in options:
-        if nearest is not None:
-            ahead = float(scored.get(best, 0.0)) - float(words_here[nearest])
-            if ahead <= A_NEW_WORD_NEEDS:
-                # Close, so the word this record already has wins: two words for one idea is the
-                # expensive mistake, and joining a near word is the cheap one.
-                asked["taken"] = f"{nearest} — {round(ahead, 3)} behind 'none of these'"
-                return nearest, asked
+        return None, asked
+    if CHECKED and not says_the_same(words, best, picker):
+        # A word that means something else is not this link's word, and a new one is honest about
+        # that. `take_in` moves the links if somebody later decides the two words are one idea.
+        asked["refused"] = f"{best} does not say what the words say"
         return None, asked
     return best, asked
+
+
+def says_the_same(words: str, word: str, picker) -> bool:
+    """Does the word the look picked say what was said? One closed question, to the decision model.
+
+    Asked as a phrase beside the account, which is the form that works here (`check._asking`): what
+    is being compared is a word against words, not a sentence against a claim. A check that cannot
+    be asked lets the word stand — the look's answer is the world's best guess and a broken checker
+    is no reason to throw it away.
+    """
+    said_as_words = word.replace("_", " ")
+    question = (f"The record would file this under the word «{said_as_words}». Is that what the "
+                f"account says joins these two?")
+    options = {"says_so": f"yes — «{said_as_words}» is what the account says, or plainly the same "
+                          f"thing in other words",
+               prompts.NONE_OF_THESE: f"no — the account says something else, and "
+                                      f"«{said_as_words}» is a different idea"}
+    try:
+        scored = picker.choose(prompts.IS_IT_SAID.format(words=words), question, options)
+    except Exception:  # noqa: BLE001 - a check that cannot run is not a word refused
+        return True
+    if not scored:
+        return True
+    return max(scored, key=scored.get) != prompts.NONE_OF_THESE

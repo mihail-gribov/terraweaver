@@ -40,10 +40,16 @@ class Engineer:
 class Picker:
     """The closed questions: which word (scripted), and whether a claim is said (a date only if named)."""
 
-    def __init__(self, words=(), invented=()):
+    def __init__(self, words=(), invented=(), word_fits=True):
         self.words, self.invented, self.looked = list(words), set(invented), 0
+        self.word_fits = word_fits
 
     def choose(self, state, question, options):
+        # Two different closed questions come through here now: which word, and whether the word
+        # the look picked says what the account says. The second one is answered yes unless a test
+        # says otherwise, so a scripted word is not spent on it.
+        if "what the account says" in question:
+            return {"says_so": 1.0} if self.word_fits else {"none of these": 1.0}
         self.looked += 1
         want = self.words.pop(0) if self.words else "none of these"
         return {want: 1.0} if want in options else {}
@@ -155,47 +161,23 @@ def main() -> int:
     check("an engineer that said nothing is written down as technical",
           shape["went wrong"] == {"technical": 1}, str(shape["went wrong"]))
 
-    # --- a new word is made only when nothing the record holds is close ---
-    # Two words for one idea put the two tellings of a fact into different types, and supersession
-    # works inside a type: measured 2026-09-29, `Madonna → AssociatedWith` stood beside
-    # `The Beatles → PerformedBy` and the question "who performed Past Masters" was answered with
-    # the earlier one. Joining a near word costs far less, so the doubt goes to the word that is here.
-    class _Torn:
-        """Says "none of these", with an existing word close behind."""
-
-        def __init__(self, near, gap):
-            self.near, self.gap, self.looked = near, gap, 0
-
-        def choose(self, state, question, options):
-            self.looked += 1
-            from terraweaver import prompts
-            return {prompts.NONE_OF_THESE: 0.5 + self.gap / 2, self.near: 0.5 - self.gap / 2}
-
-        def ask(self, state, questions):
-            return {key: {"probabilities": {"says_so": 1.0}} for key in questions}
-
+    # --- the word the look picks is checked against the words that were said ---
+    # Measured 2026-09-29: the look answered `author_of` for facts whose words were `performed`,
+    # four times, at 0.95, 0.92, 0.83 and 0.62. A fact under a word that means something else cannot
+    # be found by anybody asking in the words it was said in, and it supersedes the wrong things — so
+    # the look's answer is a hypothesis, and it is put back to the decision model as a phrase.
     rt = base_world()
     say(rt, "Rome is the capital of Italy.", "Rome", "Italy")
     formalise.formalise(rt, Engineer([DEFINE + "a.set_capital_of(b)"]), Picker(words=["capital_of"]))
-    say(rt, "Paris has been the capital of France since 1792.", "Paris", "France")
-    torn = _Torn("capital_of", 0.05)
-    got = formalise.formalise(rt, Engineer(['a.set_capital_of(b, starts="1792")']), torn)
-    check("a word the record holds wins when 'none of these' is only just ahead",
-          got["typed"] == 1 and got["defined"] == 0, str({k: v for k, v in got.items() if k != "read"}))
-    check("and the trace says which word it took and by how much",
-          "capital_of" in str(got["read"][0]["look"].get("taken")),
-          str(got["read"][0]["look"]))
-
-    rt = base_world()
-    say(rt, "Rome is the capital of Italy.", "Rome", "Italy")
-    formalise.formalise(rt, Engineer([DEFINE + "a.set_capital_of(b)"]), Picker(words=["capital_of"]))
-    say(rt, "Anna has worked at Acme since 2019.", "Anna", "Acme")
-    clear = _Torn("capital_of", 0.9)
-    works = ('world.define_relation("works_at", "a person working for an employer", '
-             'cardinality="many-to-one", subject_is="an employee", object_is="an employer")\n')
-    got = formalise.formalise(rt, Engineer([works + 'a.set_works_at(b)']), clear)
-    check("while a word is still made when nothing here is close", got["defined"] == 1,
-          str({k: v for k, v in got.items() if k != "read"}))
+    say(rt, "Lou Reed performed Blood on the Tracks.", "Lou Reed", "Blood on the Tracks")
+    wrong_word = Picker(words=["capital_of"], word_fits=False)
+    plays = ('world.define_relation("performed", "who performed a work", '
+             'cardinality="many-to-many", subject_is="the performer", object_is="the work")\n')
+    got = formalise.formalise(rt, Engineer([plays + "a.set_performed(b)"]), wrong_word)
+    trace = got["read"][0]
+    check("a word that does not say what the account says is refused, and a word is made",
+          got["defined"] == 1 and "does not say" in str(trace["look"].get("refused")),
+          f"defined={got['defined']} look={trace['look']}")
 
     # --- the goes run out, and the decision model's answer is acted on rather than thrown away ---
     # 12 readings of 355 used to end "not borne out by the words" and 71 "gave up", every one a link

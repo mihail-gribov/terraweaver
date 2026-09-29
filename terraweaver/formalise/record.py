@@ -154,13 +154,13 @@ def distribution(world) -> dict:
         # found again is one idea kept, and a word made where one existed is the same idea twice.
         "the look": {"asked": sum(1 for row in rows if row[8]),
                      "found a word already there": sum(1 for row in rows if row[7]),
-                     # How often it said "none of these" while a word here was close behind — the
-                     # case that used to make a second word for one idea.
+                     # What it said, against what was taken: a word picked and then refused by the
+                     # check reads as `said` without a `found`, which is the case worth watching.
                      "said none of these": sum(1 for row in rows if row[14]
-                                               and row[14] not in (row[7], None)),
-                     "took the near word instead": sum(1 for row in rows if row[12] and row[7]
-                                                       and row[12] == row[7] and row[14]
-                                                       and row[14] != row[7])},
+                                               and "none" in str(row[14]).lower()),
+                     "picked a word the check would not have": sum(
+                         1 for row in rows if row[14] and "none" not in str(row[14]).lower()
+                         and not row[7])},
         # Whose fault it was, which is the question a count of failures cannot answer: a reading the
         # network lost and a reading the check refused both read as "not typed".
         "went wrong": dict(Counter(row[10] for row in rows if row[10]).most_common()),
