@@ -3553,3 +3553,41 @@ because what is under test is the world's logic and not the card.
 
 The 37% and the 30% therefore measure a world that could not search by meaning and, in the read case,
 had twenty of its classes unreachable by name. Both are fixed; the number has to be taken again.
+
+## 2026-09-29 — a miss hands back what the world does have, and the moment goes to the reading
+
+The rest of the gap to 81%, found by reading the transcript of the question the world got wrong. The
+host asked the sensible thing — `Country.find(name="Germany")`, of a class the world itself had made
+— and got **not found**. Then it listed what was there: `Country` held Japan, Great Britain, Israel,
+India and France; Germany had stayed a `Thing`. And the world did hold the answer,
+`LocatedIn Germany → Africa`, one lookup away, so the host reported that the world did not know
+which continent Germany is on.
+
+**Partial placing is worse than none.** The reading makes a class and puts into it only what it
+manages to read — 52 placed of 281 names read, 56 given up, 20 classes made — and every entity it
+does not place is then invisible to the class it belongs to. `facts455`, which scored 81%, made no
+entity classes at all, so everything was looked up as a `Thing` and found.
+
+**Three changes, and the shape of them is the author's.**
+
+- **A miss says what the world does have**, all of it: `no Country of that name — what this world has
+  of it: a Thing called Germany. Which of them was meant is yours to say.` `_named_elsewhere` answers
+  "is the name taken" and takes the first answer; `_all_named_elsewhere` is the other question and
+  returns every one.
+- **`identify` hands back those candidates and makes nothing.** It used to *create* — a second
+  Germany, a `Country` this time, which is the duplicate every other door here exists to prevent. The
+  host wanted the entity; it gets the entities, with their classes, and picks. **Prague is a city and
+  a café and a cinema**, and which was meant is not the world's to decide.
+- **The moment is recorded and handed to the reading** (`portraits.looked_for`, and the thing goes
+  back in the queue). The world says nothing about whether Germany is a Country; it stops losing the
+  question. The reading puts the expected class into the words it reads and tests it by walking down
+  from where the thing sits — **the descent first**, because a class a host asked for is almost
+  always below the one the thing is in, and all of them after that while there are few.
+
+**A mistake of mine, recorded because it cost a measurement.** I ran those probes against the world a
+re-ask was measuring, and the old `identify` created the duplicate Germany while the questions were
+being asked. That run is void. The probes belong on a copy — `var/probe` — and the world under
+measurement is not touched.
+
+Also: `meaning.embedder()` is asked once per process now. Probing per world opened put a network call
+in front of every test.

@@ -256,7 +256,37 @@ class World:
             needs = ambiguous_identity(class_name, attrs, certain or similar, exact=bool(certain))
             self.pending = needs
             return needs
+        if not scored:
+            self._say_where_it_is_instead(class_name, attrs)
         return matching.FindResult(certain, similar, class_name)
+
+    def _say_where_it_is_instead(self, class_name: str, attrs: dict) -> None:
+        """Nothing of that name here — but the world has it under another class, so say which.
+
+        Measured 2026-09-29, and it is most of the difference between a world that answers and one
+        that does not. The reading makes classes and places into them only what it manages to read:
+        one world ended with a `Country` holding Japan, Great Britain, Israel, India and France
+        while Germany stayed a `Thing`. A host asked `Country.find(name="Germany")` — the sensible
+        question, of a class the world itself had made — got "not found", and reported that the
+        world did not know which continent Germany is on. The world knew: `LocatedIn Germany →
+        Africa`, the right answer, one lookup away. Partial placing is worse than none unless the
+        miss says where the thing actually is.
+        """
+        try:
+            elsewhere = self._all_named_elsewhere(class_name, attrs)
+        except Exception:  # noqa: BLE001 - a hint is never what stops a lookup
+            return
+        if not elsewhere:
+            return
+        said = ", ".join(f"a {other} called {one.display_name()}" for other, one in elsewhere[:4])
+        key = matching.NAME_KEYS.get(elsewhere[0][0], "name")
+        ontology.note_hint(
+            f"no {class_name} of that name — what this world has of it: {said}. Which of them was "
+            f"meant is yours to say: {elsewhere[0][0]}.identify({key}="
+            f"{elsewhere[0][1].display_name()!r}). A class here holds what has been read into it, "
+            f"not everything that belongs to the idea.")
+        for other, one in elsewhere:
+            self._looked_for_as(one, class_name, other)
 
     def _only_match(self, class_name: str, attrs: dict, scored: list):
         """One candidate, and nothing that disagrees with it, is not an ambiguity — it's them.
@@ -310,6 +340,45 @@ class World:
                 if matching.normalize(str(getattr(entity, key, "") or "")) == wanted:
                     return other, entity
         return None
+
+    def _all_named_elsewhere(self, class_name: str, attrs: dict) -> list:
+        """Everybody of that name, under whatever class, so the asker can choose.
+
+        `_named_elsewhere` answers "is the name taken", which is one question and takes the first
+        answer. This is the other one: a lookup that found nothing under the class it was told has
+        to be given what the world does have, all of it. Prague is a city and a café and a cinema,
+        and which of them was meant is the asker's to say — the world offers candidates and never
+        picks, here as everywhere.
+        """
+        name = attrs.get(matching.NAME_KEYS.get(class_name, ""))
+        if not isinstance(name, str) or not name.strip():
+            return []
+        wanted = matching.normalize(name)
+        out = []
+        for other, cls in self.classes.items():
+            if other == class_name or "relation" in cls._spec:
+                continue
+            key = matching.NAME_KEYS.get(other)
+            if not key:
+                continue
+            for entity in self.all(other, limit=None, any_time=True):
+                if matching.normalize(str(getattr(entity, key, "") or "")) == wanted:
+                    out.append((other, entity))
+        return out
+
+    def _looked_for_as(self, entity, class_name: str, was: str) -> None:
+        """Hand the moment to the reading: somebody expected this to be a `class_name`.
+
+        The world says nothing about whether it is. What it does is stop losing the question —
+        a miss used to be answered and forgotten, and the placing that caused it stayed as it was.
+        """
+        try:
+            from terraweaver import portraits
+
+            portraits.looked_for(self, entity, class_name, was)
+            portraits.comes_in(self, entity)        # back in the reading's queue, with a reason
+        except Exception:  # noqa: BLE001 - never what stops a lookup
+            return
 
     def _same_by_strong_key(self, class_name: str, attrs: dict, twins: list):
         """An address nobody else has is not a resemblance — it is them.
@@ -409,6 +478,24 @@ class World:
         by_name = {name_key: attrs[name_key]} if name_key in attrs else dict(attrs)
         if matching.score_candidates(everyone, class_name, by_name, filter_others=True):
             return []          # the name is here; it was the narrowing that left nothing
+        # Under another class, which is the world's answer and not a reason to make a second one.
+        # `Country.identify(name="Germany")` on a world whose `Country` holds five countries and
+        # not Germany used to *create* a Country called Germany — a duplicate of the Thing already
+        # there, which is the one thing every other door here exists to prevent. The host wanted
+        # the entity; it gets the entity, and hears which class it is under.
+        elsewhere = self._all_named_elsewhere(class_name, attrs)
+        if elsewhere:
+            said = ", ".join(f"a {other} ({one.display_name()})" for other, one in elsewhere[:4])
+            ontology.note_hint(
+                f"nothing here is a {class_name} of that name, and the world has {said} — so "
+                f"those are what you are given and nothing was made. Which of them was meant is "
+                f"yours to say: Prague is a city and a café and a cinema, and the world does not "
+                f"choose between them.")
+            for other, one in elsewhere:
+                self._looked_for_as(one, class_name, other)
+            found = [one for _, one in elsewhere]
+            ontology.note_looked_up(found)
+            return found
         # The nature hint asks the same thing in the old door's words and guesses a variable
         # name out of the display name. What comes back from here is asked properly, after the
         # run, about the variable the host actually wrote — so it is not asked twice.

@@ -41,6 +41,20 @@ CREATE TABLE IF NOT EXISTS portraits (
     became TEXT                      -- the class it put the thing under, if it moved it
 );
 CREATE INDEX IF NOT EXISTS idx_portraits_entity ON portraits(entity_id);
+
+-- Somebody looked for this thing under a class it is not in. Not an answer and not a correction:
+-- a question for the reading to put, and the reason it is worth putting. Measured 2026-09-29: a
+-- world whose `Country` held five countries while Germany stayed a `Thing` answered "not
+-- recorded" about a fact it held, because the host asked `Country.find(name="Germany")` — which
+-- is the sensible question of a class the world itself had made.
+CREATE TABLE IF NOT EXISTS looked_for (
+    entity_id TEXT NOT NULL,
+    class_name TEXT NOT NULL,     -- what somebody expected it to be
+    was TEXT,                     -- what it is now
+    asked_at TEXT NOT NULL,
+    read_at TEXT,                 -- when the reading put the question, if it has
+    PRIMARY KEY (entity_id, class_name)
+);
 """
 
 
@@ -107,6 +121,37 @@ def still_only_a_name(world) -> list[str]:
         except Exception:  # noqa: BLE001
             continue
     return silent
+
+
+def looked_for(world, entity, class_name: str, was: str | None = None) -> None:
+    """Note that somebody expected this thing to be a `class_name`, for the reading to check.
+
+    The world does not act on it: whether Prague is a city or a café is not settled by somebody
+    having asked for a café. It is a hypothesis with a reason behind it — a host asked, which is
+    evidence about the idea — and it goes to the reading, which tests it the way it tests every
+    placing: by walking down from where the thing sits. That walk is the priority, because a class
+    somebody expected is almost always below the one the thing is in.
+    """
+    run_script(world.store.conn, SCHEMA)
+    try:
+        world.store.conn.execute(
+            "INSERT OR IGNORE INTO looked_for (entity_id, class_name, was, asked_at) "
+            "VALUES (?, ?, ?, ?)",
+            (entity.id, class_name, was or type(entity).__name__,
+             datetime.now(timezone.utc).isoformat()))
+        world.store.conn.commit()
+    except Exception:  # noqa: BLE001 - never what stops a lookup
+        return
+
+
+def expected_of(world, entity_id: str) -> list[str]:
+    """The classes somebody has looked for this thing under, newest last. For the reading to read."""
+    run_script(world.store.conn, SCHEMA)
+    try:
+        return [row[0] for row in world.store.conn.execute(
+            "SELECT class_name FROM looked_for WHERE entity_id = ? ORDER BY asked_at", (entity_id,))]
+    except Exception:  # noqa: BLE001
+        return []
 
 
 def mark(world, statement_id: str, entity_id: str, read_as: dict, became: str | None = None) -> None:
@@ -271,6 +316,14 @@ def formalise(world, engineer, limit: int = 50, jev=None, run=None,
         # about the thing. A second account arriving later says what the first did not, and
         # placing the thing on half of what is known about it is worse than waiting.
         words = words_about(world, entity) or f"    {one['words']}"
+        # What somebody expected it to be, put first, because a class a host asked for is almost
+        # always below the one the thing is in — and because the asking is evidence about the idea
+        # that nothing else here carries. It is a hypothesis to test, never an answer: Prague is a
+        # city and a café and a cinema, and which was meant the world does not decide.
+        expected = expected_of(world, one["entity_id"])
+        if expected:
+            words = (f"{words}\n    Somebody looked for this under "
+                     f"{' and '.join(sorted(set(expected)))} and did not find it there.")
         at, wanting = walk_down(world, entity, words, jev)
         asked = _asking(world, entity, words, at, make_new=bool(wanting))
         said = _say(engineer, asked)

@@ -108,6 +108,9 @@ class Nebius:
         return [_unit(item.embedding) for item in sorted(answer.data, key=lambda d: d.index)]
 
 
+_CHOSEN = None
+
+
 def embedder():
     """The API first, the local model only when it is asked for, the stand-in last.
 
@@ -126,6 +129,11 @@ def embedder():
     embed and not asked whether it is alive: a server that is up and cannot load its model is
     exactly the case that cost the measurement.
     """
+    # Asked once per process: the answer cannot change while it runs, and asking it per world
+    # opened put a network call in front of every test.
+    global _CHOSEN
+    if _CHOSEN is not None:
+        return _CHOSEN
     wanted = [Ollama, Nebius] if os.environ.get("TERRAWEAVER_OLLAMA_FIRST") else [Nebius, Ollama]
     for which in wanted:
         if which is Nebius and not os.environ.get("NEBIUS_API_KEY"):
@@ -133,10 +141,12 @@ def embedder():
         try:
             asked = which()
             asked.embed(["ready?"])
+            _CHOSEN = asked
             return asked
         except Exception:  # noqa: BLE001 - anything at all means this is not the one to use
             continue
-    return Plain()
+    _CHOSEN = Plain()
+    return _CHOSEN
 
 
 # How many of an entity's texts have a say when it is scored as a whole. All of them compete;
