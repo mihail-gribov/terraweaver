@@ -3796,3 +3796,24 @@ mistake in the syntax.
 one party doing open work — it writes the lines — and the failures above were its code rather than
 its judgement, which is the kind of care a larger model is better at. The closed questions are
 untouched: they go to the decision model, which is a different party.
+
+## 2026-09-30 — the junior engineer writes the first go, the senior writes the one after a refusal
+
+Taking the larger model for everything was the author's first call and their second corrected it:
+the junior will do for the simple work. So the split is by **how the work went**, not by what it is.
+The first go is the junior's — measured, 106 of 136 readings finish there — and the senior is asked
+only where the record refused the junior's lines, which is the remaining fifth. Asking the same model
+the same way again mostly gets the same lines back, which is what made the retry cheap and useless.
+
+    TERRAWEAVER_ENGINEER        nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B    3B active, the first go
+    TERRAWEAVER_ENGINEER_AGAIN  nvidia/nemotron-3-super-120b-a12b       12B active, after a refusal
+
+`world.better` carries the senior and is set wherever a world is opened with keys — the server and
+`catch_up`. Without it the junior tries again as it always did, so a world that can reach only one
+model is unaffected. Both passes use it: the sentence reading (`formalise.again_with`) and the names
+pass (`portraits._the_loop`).
+
+**And it undoes a confound I had just created.** An hour ago I moved the engineer up a size *and*
+made the world tolerate the two commonest slips in its code (`true`, a stray indent) — two changes
+at once, so a better number would have said nothing about which. Now the junior writes the first go
+as before, and what the tolerance is worth can be read on its own.

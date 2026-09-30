@@ -54,6 +54,8 @@ def main() -> int:
     runtime = WorldRuntime(str(args.db), specs=specs, selves=False)
     authoring.install(runtime.world, grown)
     runtime.world.engineer = outside.Nemotron(ttl=120)
+    # The senior writes the go that follows a refusal; the junior writes the first, and finishes most.
+    runtime.world.better = outside.Nemotron(outside.NEMOTRON_SENIOR, ttl=180)
     # And the decision model, where there is one. Without this line the reading falls back to the
     # engineer for every closed question — `look` and `check` both — which is the arrangement the
     # server was fixed out of on 2026-09-28 and which this, the place the reading actually runs, went
@@ -65,6 +67,7 @@ def main() -> int:
         except Exception as wrong:  # noqa: BLE001 - a world with no picker asks the engineer
             print(f"no picker: {type(wrong).__name__}: {wrong}", flush=True)
     print(f"engineer: {getattr(runtime.world.engineer, 'model', '?')}   "
+          f"again: {getattr(getattr(runtime.world, 'better', None), 'model', '(the same one)')}   "
           f"picker: {getattr(getattr(runtime.world, 'jev', None), 'model', 'the engineer stands in')}",
           flush=True)
 

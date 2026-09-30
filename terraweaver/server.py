@@ -308,6 +308,8 @@ def _give_it_an_engineer(world) -> None:
         from terraweaver import outside
 
         world.engineer = outside.Nemotron(ttl=25)
+        # And the senior, for the go that follows a refusal. The junior finishes most of them.
+        world.better = outside.Nemotron(outside.NEMOTRON_SENIOR, ttl=40)
     except Exception:  # noqa: BLE001 - a world with no engineer is a world that does not read
         pass
 

@@ -38,7 +38,12 @@ JEV_MODEL = "jev-1.13.0"        # pinned, not an alias: an alias moves and the a
 # an indented block, a `get` for a thing nobody had recorded. Two of those the world now takes as
 # written; the third is the kind of care a larger model is better at. The closed questions are not
 # affected — they go to the decision model, which is a different party entirely.
-NEMOTRON = os.environ.get("TERRAWEAVER_ENGINEER", "nvidia/nemotron-3-super-120b-a12b")
+# Two engineers, and the junior does most of the work. Both are open-question models — they write
+# the lines — and the split is by how the work went, not by what it is: the first go is the junior's,
+# and the senior is called only where the junior's lines came back refused. Measured 2026-09-30, 106
+# of 136 readings finished on the first go, so the expensive one is asked about the remaining fifth.
+NEMOTRON = os.environ.get("TERRAWEAVER_ENGINEER", "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B")
+NEMOTRON_SENIOR = os.environ.get("TERRAWEAVER_ENGINEER_AGAIN", "nvidia/nemotron-3-super-120b-a12b")
 NEBIUS = "https://api.tokenfactory.nebius.com/v1/"
 
 

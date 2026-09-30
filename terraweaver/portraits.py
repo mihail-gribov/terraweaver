@@ -388,13 +388,14 @@ def formalise(world, engineer, limit: int = 50, jev=None, run=None,
                  {**read_as, "refused": str(wrong)[:200]})
             continue
         read_as["code"], read_as["went"], read_as["said_back"] = _the_loop(
-            engineer, run, entity, asked, said, tally)
+            engineer, run, entity, asked, said, tally, getattr(world, "better", None))
         mark(world, one["statement_id"], one["entity_id"], read_as, became)
     tally["moved"] = moved
     return tally
 
 
-def _the_loop(engineer, run, entity, asked: str, said: dict, tally: dict) -> tuple[list, str, str]:
+def _the_loop(engineer, run, entity, asked: str, said: dict, tally: dict,
+              senior=None) -> tuple[list, str, str]:
     """Run what the engineer wrote, and hand back whatever the world says until it is done.
 
     Exactly the loop a host is in: write, read what the world says back, answer that. The only
@@ -426,7 +427,8 @@ def _the_loop(engineer, run, entity, asked: str, said: dict, tally: dict) -> tup
                 f"{format_result(got)[:1500]}\n\nWrite the lines that still have to run — the "
                 f"ones that finished are done and must not be sent again. `class` is null now; "
                 f"the class is made. Nothing new is invented: only what the words above say.")
-        again = _say(engineer, back)
+        # The senior engineer writes the go that follows a refusal, where the world can reach one.
+        again = _say(getattr(entity, "_better", None) or senior or engineer, back)
         code = str((again or {}).get("code") or "").strip()
         if not code:
             break

@@ -156,7 +156,10 @@ def formalise_one(runtime, link, engineer, picker) -> dict:
             # under `stating("world")`, so `retract` will have them, and what the host said is
             # untouched — the bare link and its words are still there to be read again.
             write.take_back(world, made)
-            code, trouble = make.lines(engineer, make.again(asked, code, unsupported))
+            # The second go is the senior's: the junior has written lines the record would not have,
+            # and asking the same model the same way again mostly gets the same lines.
+            code, trouble = make.lines(again_with(runtime, engineer),
+                                       make.again(asked, code, unsupported))
             continue
         trace["answered"].append(answer[:2000])
         if made:
@@ -171,8 +174,19 @@ def formalise_one(runtime, link, engineer, picker) -> dict:
             break
         back = (make.joined_nothing(asked, code, answer[:1200]) if got.get("ok")
                 else make.again(asked, code, answer[:1500]))
-        code, trouble = make.lines(engineer, back)
+        code, trouble = make.lines(again_with(runtime, engineer), back)
     return trace
+
+
+def again_with(runtime, engineer):
+    """Who writes the second attempt: the senior engineer, where this world can reach one.
+
+    The junior writes the first go and finishes most of them. When the record refuses its lines,
+    asking the same model the same way again mostly gets the same lines back — so the go that
+    follows a refusal goes to the larger model, and only that go. `world.better` is set where a
+    world is opened with keys (server, catch_up); without it the junior tries again as before.
+    """
+    return getattr(runtime.world, "better", None) or engineer
 
 
 def words_of(link) -> str:
