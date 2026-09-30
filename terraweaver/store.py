@@ -11,6 +11,7 @@ of this store. References to other instances are encoded as {"$ref": id} /
 (a link, its two ends, and the links those ends are in) don't recurse forever.
 """
 import json
+import logging
 import sqlite3
 import uuid
 from contextlib import contextmanager
@@ -74,6 +75,9 @@ def run_script(conn, script: str) -> None:
     for statement in "\n".join(lines).split(";"):
         if statement.strip():
             conn.execute(statement)
+
+
+log = logging.getLogger("terraweaver")
 
 
 class Connection(sqlite3.Connection):
@@ -330,20 +334,46 @@ class Store:
                 f'SELECT attr, value FROM "{self.values_table(cls.__name__)}" WHERE instance_id = ?',
                 (instance_id,)
             ).fetchall()
-            for attr_name, raw in rows:
-                if attr_name in derived or attr_name not in known:
-                    continue  # stored by an older version: now computed, or no longer part of the class
-                # A name the class now answers with something that will not be assigned — a
-                # relation's word declared as an attribute as well — refuses the load, and the
-                # refusal is right about a host's write and wrong here: an image is what it can be.
-                # Measured 2026-09-28: one such declaration made every `Person` in a 455-fact world
-                # unreadable and stopped the reading dead. Same lesson as the stale reference in
-                # `_fill`: what cannot be read is missing from the image, not fatal to it.
-                try:
-                    self._fill(obj, attr_name, _decode(raw), classes, memo)
-                except TypeError:
-                    continue
+            filled = False
+            try:
+                self._rows_onto(obj, rows, derived, known, classes, memo)
+                filled = True
+            finally:
+                if not filled:
+                    # A half-built object must not stay where the next lookup will find it. The
+                    # identity map is what makes one row one object, and `memo[id] = obj` happens
+                    # before the fill because a cyclic reference has to find it there — so a fill
+                    # that raises used to leave a shell behind, and from then on the world was
+                    # worse than wrong about that thing: `Person.get(full_name="Thomas Kyd")`
+                    # answered `NotInWorld` while the record held the name, and the next `save`
+                    # of the shell wrote null over every value it had. Measured 2026-09-30 on a
+                    # 455-fact world: 21 entities, 29 of the 105 facts the world did not hold.
+                    memo.pop(instance_id, None)
+                    self._identity.pop(instance_id, None)
         return obj
+
+    def _rows_onto(self, obj, rows, derived, known, classes: dict, memo: dict) -> None:
+        """Every stored row onto the image, each one on its own."""
+        for attr_name, raw in rows:
+            if attr_name in derived or attr_name not in known:
+                continue  # stored by an older version: now computed, or no longer part of the class
+            # A name the class now answers with something that will not be assigned — a
+            # relation's word declared as an attribute as well — refuses the load, and the
+            # refusal is right about a host's write and wrong here: an image is what it can be.
+            # Measured 2026-09-28: one such declaration made every `Person` in a 455-fact world
+            # unreadable and stopped the reading dead. Same lesson as the stale reference in
+            # `_fill`: what cannot be read is missing from the image, not fatal to it.
+            #
+            # Every refusal, not only `TypeError`. The door refuses in whatever words fit the
+            # mistake — `ValueError` for a period that is not a moment, `AttributeError` for a
+            # word the class no longer has — and which exception it picked is not something the
+            # loading of an image should depend on. What is said is kept, and the row that cannot
+            # be read is the one thing missing (docs/code-review-2026-09-30.md 3.1.9).
+            try:
+                self._fill(obj, attr_name, _decode(raw), classes, memo)
+            except (TypeError, ValueError, AttributeError) as wrong:
+                log.debug("%s.%s would not load: %r", type(obj).__name__, attr_name, wrong)
+                continue
 
     def _fill(self, obj, attr_name: str, decoded: tuple, classes: dict, memo: dict) -> None:
         """One stored row onto the image it belongs to. Called inside `trusted_writes`."""

@@ -365,7 +365,55 @@ def a_reading_may_not_rename_the_thing_it_is_reading() -> None:
     check("the host can still correct a name", position.name == "centre")
 
 
+def a_row_that_will_not_load_costs_only_that_row() -> None:
+    """A refusal on one stored value must not cost the image, and must not leave a shell behind.
+
+    Not from the review — found 2026-10-01 by `experiments/why_it_failed.py` on a 455-fact world:
+    21 entities held a name in the record and nothing in the image, and it was 29 of the 105 facts
+    that world did not hold. The identity map registers an object before its values are filled,
+    because a cyclic reference has to find it there; a fill that raised left the half-built object
+    in the map, and from then on `Person.get(full_name=…)` answered `NotInWorld` about something
+    the record plainly held, while the next `save` wrote null over every value it had.
+    """
+    from terraweaver import store as store_module
+
+    rt = base.world()
+    kyd = rt.world.new("Person", full_name="Thomas Kyd")
+    kyd.describe("English dramatist")
+    held = kyd.id
+    rt.world.store._identity.clear()
+
+    real = store_module.Store._fill
+
+    def one_bad_row(self, obj, attr_name, decoded, classes, memo):
+        if attr_name == "descriptions":
+            raise ValueError("this row will not read")
+        return real(self, obj, attr_name, decoded, classes, memo)
+
+    store_module.Store._fill = one_bad_row
+    try:
+        loaded = rt.world.store.load(held, rt.world.classes)
+    finally:
+        store_module.Store._fill = real
+
+    check("the load keeps everything else", getattr(loaded, "full_name", None) == "Thomas Kyd",
+          repr(getattr(loaded, "full_name", None)))
+    check("and the one row that would not read is the one thing missing",
+          getattr(loaded, "descriptions", None) in (None, []),
+          repr(getattr(loaded, "descriptions", None)))
+
+    found = rt.world.get("Person", full_name="Thomas Kyd")
+    check("the world still knows it is there", getattr(found, "full_name", None) == "Thomas Kyd",
+          repr(found))
+    rt.world.save(found)
+    row = dict(rt.world.store.conn.execute(
+        "SELECT attr, value FROM Person WHERE instance_id = ? AND attr = 'full_name'", (held,)))
+    check("and saving it does not write null over the name", row.get("full_name") == '"Thomas Kyd"',
+          str(row))
+
+
 def main() -> None:
+    a_row_that_will_not_load_costs_only_that_row()
     a_reading_may_not_rename_the_thing_it_is_reading()
     a_placing_is_stated_so_it_survives_a_rebuild()
     finding_3_1_6_a_separation_holds_through_a_third_party()
