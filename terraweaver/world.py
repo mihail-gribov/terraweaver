@@ -1003,8 +1003,15 @@ class World:
             else:
                 self.facts.state(instance.id, name, ontology._as_statement(value),
                                  source=source, run_id=run_id, class_name=class_name)
-        if isinstance(attrs.get("tags"), list) and attrs["tags"]:
-            instance._set_tags(attrs["tags"])
+        # A bare string where a list was expected is taken as the one tag it plainly is. The
+        # constructor tidies the image either way, so `Person(tags="vip")` looked right and then
+        # lost the tag on the next rebuild, because nothing here stated it
+        # (docs/code-review-2026-09-30.md 3.2.7).
+        told = attrs.get("tags")
+        if isinstance(told, str) and told.strip():
+            told = [told]
+        if isinstance(told, list) and told:
+            instance._set_tags(told)
         if not getattr(self, "_reading_it_later", False):
             _ask_its_nature(instance, class_name, attrs)
         self._apply_deferred(instance)

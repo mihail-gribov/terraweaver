@@ -313,9 +313,13 @@ class Meanings:
         return {row["ref"] for row in texts_module.search(world, limit=20000)}
 
     def _texts(self, world):
-        for comment in world.comments.search(limit=5000, any_time=True):
-            if comment.about is not None and comment.text:
-                yield f"comment:{comment.id}", comment.about.id, "comment", comment.text
+        # Remarks are not listed here. Every remark's text is stated as one more `descriptions`
+        # with the period the remark holds for, so it arrives below from the texts table, with
+        # its validity. Listed here as well it was indexed twice: every hit came back twice and
+        # ate the caller's `limit`, and the second copy was named `comment:N`, which `_holding`
+        # does not filter, so a remark that had expired went on answering `like()`
+        # (docs/code-review-2026-09-30.md 3.4.7).
+        #
         # Lists of texts come from the texts table, where each one has a name made from the
         # text itself. That name survives a rebuild and survives its neighbours being removed,
         # so a vector is re-made when the text changes and not when the list shifts around.

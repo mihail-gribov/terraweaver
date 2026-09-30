@@ -527,6 +527,24 @@ def _classes_here(world) -> str:
     return "\n".join(lines[:40])
 
 
+def _as_attribute(said: dict) -> dict:
+    """One attribute as the world's own door takes it, and nothing else the engineer wrote.
+
+    `define` takes five named arguments and a sixth key is a `TypeError`. The engineer writes what
+    it thinks belongs on an attribute — `unit`, `example`, `source` — and one extra key took the
+    whole class down: the raise landed in the "name already taken" branch, which read it as a
+    class to join, so the thing stayed a bare Thing and every later one of its kind had nowhere to
+    go (docs/code-review-2026-09-30.md 3.4.4).
+    """
+    out = {"name": said["name"], "description": str(said.get("description") or "")}
+    if isinstance(said.get("type"), str) and said["type"].strip():
+        out["type"] = said["type"].strip()
+    for word in ("changes", "required"):
+        if isinstance(said.get(word), bool):
+            out[word] = said[word]
+    return out
+
+
 def _make_one(world, spec, under: str, tally: dict) -> str | None:
     """Make the class the engineer described, under the class the walk stopped at.
 
@@ -546,7 +564,7 @@ def _make_one(world, spec, under: str, tally: dict) -> str | None:
     # An attribute the world refuses does not cost the class. An engineer writes attribute
     # descriptions as labels — "Land area" — and `define` wants a sentence; losing City over
     # `area_sqkm` left the thing a bare Thing and every later city with nowhere to go.
-    attributes = [a for a in (spec.get("attributes") or []) if isinstance(a, dict)
+    attributes = [_as_attribute(a) for a in (spec.get("attributes") or []) if isinstance(a, dict)
                   and a.get("name") and a["name"] not in ("name", "full_name")
                   and len(str(a.get("description") or "").strip()) >= DESCRIBED_ENOUGH]
     # What tells two of these apart is what tells two of the parent apart: a kind of Person is

@@ -213,8 +213,21 @@ class Facts:
         ).fetchone()
         if again:
             row_id, times = again
-            self.conn.execute(f"UPDATE {table} SET restated_at = ?, times = ? WHERE id = ?",
-                              (when, times + 1, row_id))
+            # Last heard is a high-water mark, never a step backwards. A telling that carries an
+            # older `stated_at` than the row already has — a file re-read with the date it was
+            # written on, a run under `set_now` — used to move `restated_at` back with it, and
+            # `restated_at` is what "the later one" is resolved by, so an old telling could
+            # unseat a newer correction (docs/code-review-2026-09-30.md 3.1.5).
+            #
+            # Not fixed here, and named so it is not forgotten: the match ignores `run_id`, so if
+            # run B says what run A already said, B's telling lands on A's row and
+            # `retract_run("A")` takes back a fact B also stated. Keying on the run would make one
+            # row per run for every repeated fact, which is the thing this dedup exists to
+            # prevent — and `retract_run` has no caller outside its own test. It needs a column
+            # that holds the runs, which is a schema change, which needs a gate.
+            self.conn.execute(
+                f"UPDATE {table} SET restated_at = ?, times = ? WHERE id = ?",
+                (max(when, self._last_said(table, row_id)), times + 1, row_id))
             return f"{table}:{row_id}"
         return self._insert(table, subject, slot, value, valid_from, valid_until, when, source,
                             run_id, None)
@@ -251,6 +264,15 @@ class Facts:
         table, row = _split(statement_id)
         self.conn.execute(f"UPDATE {table} SET retracted_by = ? WHERE id = ?",
                           (by or "retracted", row))
+
+    def _last_said(self, table: str, row_id: int) -> int:
+        """When this row was last heard, as it stands — `restated_at` if there is one, else `stated_at`.
+
+        A stamp, the way the table holds one: microseconds as an integer (`_iso`).
+        """
+        row = self.conn.execute(
+            f"SELECT restated_at, stated_at FROM {table} WHERE id = ?", (row_id,)).fetchone()
+        return (row[0] or row[1] or 0) if row else 0
 
     def retract_run(self, run_id: str) -> int:
         """Undo a whole run — later, a whole ticket. What makes the world's own work reversible

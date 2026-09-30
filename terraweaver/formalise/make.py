@@ -61,7 +61,14 @@ def lines(engineer, asked: str) -> tuple:
     said = raw.strip()
     if said.startswith("```"):
         said = said.split("```")[1] if said.count("```") >= 2 else said.removeprefix("```")
-        said = said.removeprefix("python").strip()
+        # Whatever word the fence was opened with, and there are several: "python", "py", "py3",
+        # sometimes the language of the day. Stripping only "python" left `py` standing as the
+        # first line of the block, which is a `NameError` on line one and the whole block unwritten
+        # (docs/code-review-2026-09-30.md 3.4.11).
+        first, newline, rest = said.partition("\n")
+        if first.strip() and first.strip().isalnum() and len(first.strip()) <= 12 and newline:
+            said = rest
+        said = said.strip()
     if not said:
         return "", f"nothing but a fence came back: {raw.strip()[:200]}"
     return said, ""

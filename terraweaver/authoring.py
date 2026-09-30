@@ -418,6 +418,9 @@ class Authoring:
             )
         if cardinality not in CARDINALITY:
             raise Refused(f"cardinality is one of {', '.join(CARDINALITY)}")
+        taken = self._word_already_spoken_for(kind)
+        if taken is not None:
+            return taken
         one_subject, one_object = CARDINALITY[cardinality]
         # One axis, per side, and it is about a moment. `AT_A_TIME` on a side says that side holds
         # one at a time: a new one ends the standing one where it begins, and nothing is deleted or
@@ -622,6 +625,43 @@ class Authoring:
         return found[:limit]
 
     # --- the plumbing ---
+
+    def _word_already_spoken_for(self, kind: str):
+        """The type this word already belongs to, or None. `define` refuses a duplicate; this did not.
+
+        Two things could go wrong and both did silently. Defining `mentor_of` twice rebuilt the
+        class and replaced its cardinality, its ends and its description, under every link already
+        written with the old rules. And a new word could be another type's reverse — `founded_by`
+        is made with reverse `founded`, and then `define_relation("founded", …)` gave two types
+        answering to one word, with `resolve_kind` returning whichever it reached first
+        (docs/code-review-2026-09-30.md 3.4.5, 3.4.6).
+
+        Neither is refused outright, because a host that says a word twice is not making a mistake
+        worth a run: what it asked for exists, so it is handed the type that holds it and told
+        which. Changing a type is a different call and it says so.
+        """
+        from terraweaver import ontology as _ontology
+        from terraweaver import relations
+
+        for name, cls in relations.relation_classes(self.world.classes).items():
+            rel = relations.spec(cls)
+            if kind == rel["kind"]:
+                _ontology.note_hint(
+                    f"{kind} is already a word in this world — {name} ({rel.get('description') or ''}"
+                    f"). That type, not a second one. Nothing about it was changed: a type's "
+                    f"cardinality and ends are the rules every link already written under it was "
+                    f"checked by, so they are not replaced by saying the word again. To change "
+                    f"one, change it by name.")
+                return cls
+            if rel.get("reverse") and kind == rel["reverse"]:
+                _ontology.note_hint(
+                    f"{kind} is how {name} ({rel['kind']}) already reads from the far end, so a "
+                    f"type of that word would leave two answering to one word and whichever was "
+                    f"found first would win. Said from the other end it is the same fact: "
+                    f"b.relate(a, \"{kind}\") writes a {name}. If it is a different fact, it "
+                    f"needs a word that says so.")
+                return cls
+        return None
 
     def _attribute_spec(self, name: str, description: str, type: str = "str",
                         changes: bool = True, required: bool = False) -> dict:
