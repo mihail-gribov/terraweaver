@@ -23,7 +23,6 @@ import math
 import re
 import signal
 import statistics
-from typing import Any
 from contextlib import contextmanager
 from types import SimpleNamespace
 

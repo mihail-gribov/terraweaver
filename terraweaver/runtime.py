@@ -26,7 +26,7 @@ from terraweaver.ontology import Entity, build_classes, load_specs
 from terraweaver.resolution import NeedsResolution
 from terraweaver.session import Session
 from terraweaver.store import Store
-from terraweaver.variables import VariableError, WorldVariables
+from terraweaver.variables import WorldVariables
 from terraweaver.world import NotInWorld, World
 
 log = logging.getLogger("terraweaver")

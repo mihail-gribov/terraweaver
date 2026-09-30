@@ -109,9 +109,7 @@ class Question:
         from terraweaver import ontology
 
         kind = self.kind[len("nature_of_"):]
-        world = ontology.current_world()
-        if world is None:
-            return None
+        world = ontology.current_world()   # raises when nothing is bound; never None
         for cls in world.classes.values():
             rel = (getattr(cls, "_spec", {}) or {}).get("relation") or {}
             if rel.get("kind") != kind:

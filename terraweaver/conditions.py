@@ -7,7 +7,7 @@ against a stored time with a time zone. Here both sides go through timeutil firs
 A date as an upper bound means the whole day: between(Monday, Sunday) includes Sunday, and
 before(date) is before that day begins.
 """
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timedelta
 
 from terraweaver import timeutil
 

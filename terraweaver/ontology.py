@@ -1726,9 +1726,7 @@ def _reopen_what_the_world_ended(cls, side: str) -> None:
     premise it has now been told is wrong, so they go with it. Ends a host set itself are not
     touched: those were said, not worked out.
     """
-    world = current_world()
-    if world is None:
-        return
+    world = current_world()          # raises when nothing is bound; it never comes back None
     brought = 0
     for link in world.all(cls.__name__, limit=None, history=True):
         if getattr(link, "valid_until", None) is None:
@@ -2205,69 +2203,68 @@ def define_class(classes: dict[str, type], spec: dict[str, Any], name: str | Non
         elif not isinstance(wanted, dict):
             wanted = {"name_keys": list(wanted)}
         matching.register_identity(name, **wanted)
-    if True:
-        namespace = {
-            "__doc__": spec.get("description", ""),
-            "_spec": spec,
-            # Shared, mutated-in-place: lets a method implementation reach sibling classes.
-            "_classes": classes,
-        }
-        base = Entity
-        if "relation" in spec:
-            from terraweaver.relations import Relation
+    namespace = {
+        "__doc__": spec.get("description", ""),
+        "_spec": spec,
+        # Shared, mutated-in-place: lets a method implementation reach sibling classes.
+        "_classes": classes,
+    }
+    base = Entity
+    if "relation" in spec:
+        from terraweaver.relations import Relation
 
-            base = Relation
-            # A side that says it holds one holds one at a time. Specs on disk from when "one
-            # ever" was a category say `True`, and there is nothing to migrate: read as what the
-            # world now does, which is the only thing it ever did — the "one ever" branch printed
-            # a note and ended nothing, so a world reopened here loses no behaviour it had.
-            for side in ("functional", "inverse_functional"):
-                if spec["relation"].get(side) is True:
-                    spec["relation"][side] = AT_A_TIME
-            # The ends take anything. What classes a relation runs between is not a promise the
-            # world holds a host to — it is something the world watches and can count, and it was
-            # wrong as a promise: declared from the first example anybody saw, it refused the
-            # second, and a host told its type does not take these ends defines a second type
-            # with the class names in it. `relation["from"]` and `["to"]` stay, to describe the
-            # type and to measure an odd link against; they no longer stop one being written.
-            ends = [
-                {"name": "subject", "type": "ref:any", "required": True,
-                 "description": "Where the relation starts — "
-                                + (spec["relation"].get("reads") or "the subject")},
-                {"name": "object", "type": "ref:any", "required": True,
-                 "description": "Where the relation leads."},
-            ]
-            if not any(a["name"] == "subject" for a in spec["attributes"]):
-                spec["attributes"] = ends + spec["attributes"]
-            for end in spec["attributes"][:2]:
-                if "any" in end["type"]:
-                    end["type"] = "ref:any"
-        for attr in spec.get("attributes", []):
-            if str(attr.get("derived", "")).startswith("self."):
-                namespace[attr["name"]] = _same_entity_property(name, attr)
-            elif "derived" in attr:
-                namespace[attr["name"]] = _derived_property(name, attr)
-        for method in spec.get("methods", []):
-            mname = method["name"]
-            impl = impls.get((name, mname))
-            namespace[mname] = _intentional(impl) if impl else _make_stub(name, mname)
-        # Everything shared comes from Entity; a generated class carries only its own
-        # spec and methods.
-        made = _RelationClass if spec.get("relation") else type
-        standing = classes.get(name)
-        if standing is not None and (standing.__bases__ == (base,)):
-            # Grown, not replaced. A new class object leaves every instance already in hand —
-            # and the name bound in the run's namespace — pointing at the old spec, so a host
-            # that does exactly what the world just told it to do gets the same refusal twice:
-            #     world.attribute(Person, "email", "...")
-            #     person.email = "ada@example.org"      -> Person has no attribute 'email'
-            # There is no way past that from inside the run, and the way out of a refusal that
-            # repeats itself is prose. Same class, new spec: what was made before the growth
-            # keeps working, and isinstance still means what it says.
-            for key, value in namespace.items():
-                if key != "_classes":
-                    setattr(standing, key, value)
-            return standing
-        classes[name] = made(name, (base,), namespace)
-        _lend_relations(classes, name)
-        return classes[name]
+        base = Relation
+        # A side that says it holds one holds one at a time. Specs on disk from when "one
+        # ever" was a category say `True`, and there is nothing to migrate: read as what the
+        # world now does, which is the only thing it ever did — the "one ever" branch printed
+        # a note and ended nothing, so a world reopened here loses no behaviour it had.
+        for side in ("functional", "inverse_functional"):
+            if spec["relation"].get(side) is True:
+                spec["relation"][side] = AT_A_TIME
+        # The ends take anything. What classes a relation runs between is not a promise the
+        # world holds a host to — it is something the world watches and can count, and it was
+        # wrong as a promise: declared from the first example anybody saw, it refused the
+        # second, and a host told its type does not take these ends defines a second type
+        # with the class names in it. `relation["from"]` and `["to"]` stay, to describe the
+        # type and to measure an odd link against; they no longer stop one being written.
+        ends = [
+            {"name": "subject", "type": "ref:any", "required": True,
+             "description": "Where the relation starts — "
+                            + (spec["relation"].get("reads") or "the subject")},
+            {"name": "object", "type": "ref:any", "required": True,
+             "description": "Where the relation leads."},
+        ]
+        if not any(a["name"] == "subject" for a in spec["attributes"]):
+            spec["attributes"] = ends + spec["attributes"]
+        for end in spec["attributes"][:2]:
+            if "any" in end["type"]:
+                end["type"] = "ref:any"
+    for attr in spec.get("attributes", []):
+        if str(attr.get("derived", "")).startswith("self."):
+            namespace[attr["name"]] = _same_entity_property(name, attr)
+        elif "derived" in attr:
+            namespace[attr["name"]] = _derived_property(name, attr)
+    for method in spec.get("methods", []):
+        mname = method["name"]
+        impl = impls.get((name, mname))
+        namespace[mname] = _intentional(impl) if impl else _make_stub(name, mname)
+    # Everything shared comes from Entity; a generated class carries only its own
+    # spec and methods.
+    made = _RelationClass if spec.get("relation") else type
+    standing = classes.get(name)
+    if standing is not None and (standing.__bases__ == (base,)):
+        # Grown, not replaced. A new class object leaves every instance already in hand —
+        # and the name bound in the run's namespace — pointing at the old spec, so a host
+        # that does exactly what the world just told it to do gets the same refusal twice:
+        #     world.attribute(Person, "email", "...")
+        #     person.email = "ada@example.org"      -> Person has no attribute 'email'
+        # There is no way past that from inside the run, and the way out of a refusal that
+        # repeats itself is prose. Same class, new spec: what was made before the growth
+        # keeps working, and isinstance still means what it says.
+        for key, value in namespace.items():
+            if key != "_classes":
+                setattr(standing, key, value)
+        return standing
+    classes[name] = made(name, (base,), namespace)
+    _lend_relations(classes, name)
+    return classes[name]

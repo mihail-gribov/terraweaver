@@ -138,29 +138,28 @@ def _read_into(world, files: "SelfFiles", role: str, entity, path: Path) -> str:
     """Retract what this file said before, state what it says now, and remember its shape."""
     from terraweaver import ontology
 
-    if True:
-        fields, body = parse(path.read_text())
-        source = path.name
-        said_before = set()
-        for statement in world.facts.about(entity.id):
-            if statement.source == source:
-                said_before.add(statement.slot)
-                world.facts.retract(statement.id)
-        declared = {a["name"] for a in type(entity)._spec["attributes"] if "derived" not in a}
-        stated = {name: value for name, value in fields.items() if name in declared}
-        body_slot = BODY_GOES_TO.get(role, "descriptions")
-        if body and body_slot in declared:
-            stated[body_slot] = body
+    fields, body = parse(path.read_text())
+    source = path.name
+    said_before = set()
+    for statement in world.facts.about(entity.id):
+        if statement.source == source:
+            said_before.add(statement.slot)
+            world.facts.retract(statement.id)
+    declared = {a["name"] for a in type(entity)._spec["attributes"] if "derived" not in a}
+    stated = {name: value for name, value in fields.items() if name in declared}
+    body_slot = BODY_GOES_TO.get(role, "descriptions")
+    if body and body_slot in declared:
+        stated[body_slot] = body
+    for name, value in stated.items():
+        world.facts.state(entity.id, name, value, source=source,
+                          class_name=type(entity).__name__)
+    # Until images are built from statements, the file also writes through to the entity;
+    # when assembly takes over (docs/architecture.md, step 2) this half goes away.
+    with ontology.trusted_writes():
+        for name in said_before - set(stated):  # a line taken out of the file takes its value
+            setattr(entity, name, None)
         for name, value in stated.items():
-            world.facts.state(entity.id, name, value, source=source,
-                              class_name=type(entity).__name__)
-        # Until images are built from statements, the file also writes through to the entity;
-        # when assembly takes over (docs/architecture.md, step 2) this half goes away.
-        with ontology.trusted_writes():
-            for name in said_before - set(stated):  # a line taken out of the file takes its value
-                setattr(entity, name, None)
-            for name, value in stated.items():
-                setattr(entity, name, value)
-        world.save(entity)
-        files.remember(role, path)
-        return f"{role} from {path.name}"
+            setattr(entity, name, value)
+    world.save(entity)
+    files.remember(role, path)
+    return f"{role} from {path.name}"

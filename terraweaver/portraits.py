@@ -275,7 +275,8 @@ def walk_down(world, entity, words: str, jev) -> tuple[str, str | None]:
             return at, at
         if best in seen or best not in children:
             return at, None
-        at, _ = best, seen.add(best)
+        seen.add(best)
+        at = best
 
 
 SYSTEM = prompts.PLACING_A_THING

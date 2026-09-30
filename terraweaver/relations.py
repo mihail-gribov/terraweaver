@@ -23,7 +23,6 @@ ontology with a `relation` section that says how the link behaves; the world che
 "At any time" is checked by overlapping validity periods, not by "now": divorced in 2020 and
 married in 2022 is no conflict. Design: docs/relations.md.
 """
-from typing import Any
 
 import difflib
 
@@ -427,9 +426,9 @@ def _make_the_type(world, subject, obj, kind: str, period: dict, attrs: dict, wh
                                                       f"{obj.display_name()}"})
 
     theirs = spec(made)
-    if theirs["kind"] != word:
-        pass       # nothing swaps a word now; the near neighbour is said when the type is made
-    else:
+    # Only when the type made is the word asked for. A near neighbour is named where the type is
+    # made, and nothing swaps a word here.
+    if theirs["kind"] == word:
         ontology.note_hint(
             f"there was no type for '{kind}', so I made one: nature=related_to, between "
             f"anything and anything, one per subject at a time — saying it again with something "
@@ -666,20 +665,9 @@ def relate(world, a, b, kind: str, period: dict, attrs: dict):
     if period:
         world.apply_period(created, period)
     _note_same_label(world, name, rel, subject, obj, attrs, start, end, created)
-    if False:  # asked for before the link is made now, not noted after
-        # A type that changes is a type with a time, so here the time is part of the fact and
-        # not decoration on it. The world used to fill it in with today, which reads back a year
-        # later as the day the job began — a date nobody said, indistinguishable from one
-        # somebody did. So it asks, and it takes words: nobody knows the day they started
-        # caring about something, and "before now" is a true sentence about it.
-        ontology.note_hint(
-            f"{name} holds one at a time, so when it began is part of the fact — and none was "
-            f"said, so this one has no start. Say when, in whatever words you have: "
-            f"starts='now', 'yesterday', '3 years ago', 'March 2006', '2006-01-01', or, when "
-            f"that is all you know, starts=before(now) / starts=after(date(2006, 1, 1)). Until "
-            f"then I cannot "
-            f"tell this from the one before it except by which you told me last."
-        )
+    # When a one-at-a-time link began used to be asked for here, after the link was made, and
+    # it is asked for before it is made now — `_how_to_make_room` and `_hand_over` both take the
+    # date. The words are kept in `_why_not_to_assume`, which is where they are said.
     if rel.get("free"):
         _note_a_type_is_wanted(world, created)
     if first_of_its_kind:

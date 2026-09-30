@@ -365,10 +365,12 @@ def look_at_types(world, limit: int = 20, can_ask: bool = True) -> dict[str, lis
         except Exception as wrong:  # noqa: BLE001 - one that fails is not a world that fails
             log.debug("look_at_types: %s could not be read: %r", name, wrong, exc_info=True)
             continue
-        # Written in either way: a blank filled is not a question, and a pass with
-        # nobody listening still leaves the type checkable for the next one.
-        lines = _what_it_offered(name, account, said, world) if can_ask else (
-            _what_it_offered(name, account, said, world) and [])
+        # Written in either way: a blank filled is not a question, and a pass with nobody
+        # listening still leaves the type checkable for the next one. So it is called for what it
+        # writes, and what it would have said is dropped when nobody is listening — as a
+        # statement, not as a boolean expression standing in for one.
+        offered = _what_it_offered(name, account, said, world)
+        lines = offered if can_ask else []
         world.store.conn.execute(
             "INSERT OR REPLACE INTO type_checks (class_name, looked_at, reader, said) "
             "VALUES (?, ?, ?, ?)",

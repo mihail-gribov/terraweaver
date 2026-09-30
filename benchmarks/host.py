@@ -14,7 +14,6 @@ import json
 import os
 import subprocess
 import sys
-import tempfile
 import time
 import urllib.request
 from pathlib import Path

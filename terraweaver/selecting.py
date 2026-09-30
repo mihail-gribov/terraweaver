@@ -38,7 +38,6 @@ one thing, the world answers from whichever end has the link and says it correct
 pick out many, it does not — "everyone with a membership" that quietly included the employers
 would leave the direction meaning nothing.
 """
-from datetime import datetime
 
 DEFAULT_LIMIT = 50
 

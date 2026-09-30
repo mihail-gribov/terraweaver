@@ -42,7 +42,7 @@ of them is exactly where it was.
 import hashlib
 import json
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any
 
 SAID, WORKED_OUT = "facts", "reasoning"

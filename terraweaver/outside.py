@@ -21,7 +21,6 @@ for one and marks what it could not read, so a later pass finds it.
 """
 import json
 from terraweaver import prompts
-import math
 import os
 import time
 import urllib.error
