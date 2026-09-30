@@ -391,7 +391,13 @@ def formalise(world, engineer, limit: int = 50, jev=None, run=None,
                     if made:
                         at, read_as["defined"] = made, made
                 if at and at != type(entity).__name__ and at in world.classes:
-                    entity = world.retype(entity, at)
+                    # Through the door that states it. `world.retype` moves the image and says
+                    # nothing, so the record did not hold the placing and the next
+                    # `world.rebuild()` read the thing back under the class it came in as:
+                    # measured 2026-09-30 on the gate, `Chang'an` was placed under `City`, had no
+                    # `is_a` in the record, and came back a `Thing`. `become` states `is_a` and
+                    # then retypes, which is what `relations.take_in` has always done.
+                    entity = entity.become(at)
                     became = at
                     moved.append(one["entity_id"])
                     tally["placed"] += 1

@@ -1102,7 +1102,9 @@ class WorldRuntime:
         session = self.session(THE_WORLDS_OWN)
         session.namespace["it"] = entity
         try:
-            with ontology.stating("world"):
+            # `it` is handed over as the thing it is, and which thing that is is not the reading's
+            # to change: `reading_one` holds its name for the duration (ontology.py).
+            with ontology.stating("world"), ontology.reading_one(entity):
                 return self.run(code, THE_WORLDS_OWN)
         finally:
             # The world's own reading is not a task and does not accumulate one. It used to go

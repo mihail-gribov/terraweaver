@@ -19,6 +19,9 @@ from typing import Any
 _WRITE_GUARD = None
 _FILLING = False
 _TRUSTED = False
+# The one thing the world is reading, and the attribute that says which thing it is: while a
+# reading runs, that attribute is not the reading's to change. See `reading_one`.
+_IDENTITY_HELD: tuple | None = None
 # The world the classes currently belong to, so `Person.find(...)` can reach it without
 # every class having to be handed a store.
 _WORLD = None
@@ -333,6 +336,39 @@ def trusted_writes():
         yield
     finally:
         _TRUSTED = previous
+
+
+@contextmanager
+def reading_one(entity):
+    """While the world reads one thing, that thing's name is not the reading's to change.
+
+    The rule was written down and not enforced: "the engineer says what this is; it never says
+    which this is" (portraits.py). Measured 2026-09-30 on a gate of 25 facts — the engineer
+    reading the `Position` called "center" wrote `it.name = "Lisa Leslie"`, the name of the person
+    who plays it, and the position was renamed. Two of forty-nine names in one pass: the fact
+    "Lisa Leslie plays the position of center" then reads as a fact the world has lost, and the
+    world holds two things called Lisa Leslie. The same happened to "goalkeeper".
+
+    Identity is settled before a write and a write only records — so a reading may say anything
+    about what a thing *is* and nothing about *which* thing it is. Saying the same name again is
+    not a change and passes.
+    """
+    global _IDENTITY_HELD
+    previous = _IDENTITY_HELD
+    held = None
+    if entity is not None and getattr(entity, "id", None):
+        from terraweaver import matching
+
+        cls = type(entity)
+        key = (cls._spec.get("identified_by")
+               or matching.NAME_KEYS.get(cls.__name__) or "name")
+        if any(a["name"] == key for a in cls._spec.get("attributes", [])):
+            held = (entity.id, key, getattr(entity, key, None))
+    _IDENTITY_HELD = held
+    try:
+        yield
+    finally:
+        _IDENTITY_HELD = previous
 
 
 
@@ -801,8 +837,12 @@ class Entity:
                              + ". Define one with world.authoring.define(...) first.")
         if name == type(self).__name__:
             return self
+        # Whose word it is, kept with it. Left to the default this went in as the agent's telling
+        # even when the world itself was placing the thing, and the world's own work has to be
+        # retractable in one move and ranked below what it was told (`stating`, `retract_run`).
+        source, run_id = stated_by()
         world.facts.state(self.subject_id, assembly.IS_A, name, valid_from=when,
-                          class_name=type(self).__name__)
+                          source=source, run_id=run_id, class_name=type(self).__name__)
         return world.retype(self, name)
 
     def describe(self, text: str, when=None, tentative: bool = False, until=None, ttl=None,
@@ -1193,6 +1233,16 @@ class Entity:
     def __setattr__(self, name, value):
         spec = type(self)._spec
         class_name = type(self).__name__
+        if (_IDENTITY_HELD is not None and not _TRUSTED
+                and getattr(self, "id", None) == _IDENTITY_HELD[0] and name == _IDENTITY_HELD[1]
+                and value != _IDENTITY_HELD[2]):
+            raise AttributeError(
+                f"{name} says which thing this is, and which thing this is was settled before "
+                f"you were asked about it — it is {_IDENTITY_HELD[2]!r}, and it stays that. What "
+                f"you were asked is what it *is*: its class, what it has, a line about it. If "
+                f"{value!r} is another thing entirely, it is another thing: nothing here is "
+                f"renamed into it. If it is another name for this same one, it is an alias: "
+                f"it.aliases = (it.aliases or []) + [{value!r}] keeps both.")
         if not name.startswith("_") and _is_a_question(value):
             # A lookup that came back a question, written in as if it were a thing. It reached
             # `json.dumps` and raised `Object of type NeedsResolution is not JSON serializable`

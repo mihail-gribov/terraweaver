@@ -307,7 +307,67 @@ def finding_3_1_6_a_separation_holds_through_a_third_party() -> None:
           groups(True) == [["a", "b"], ["c"]], str(groups(True)))
 
 
+def a_placing_is_stated_so_it_survives_a_rebuild() -> None:
+    """The names pass places a thing under a class; the record has to say so, or a rebuild undoes it.
+
+    Not from the review — found on 2026-09-30 while checking the review's fixes on a real run.
+    `Chang'an` had been placed under `City`, the record held no `is_a`, and `world.rebuild()` read
+    it back as the `Thing` it came in as. And whose placing it is is kept with it: the world's own
+    goes in under `world`, so it ranks below what the world was told and comes off in one move.
+    """
+    from terraweaver import ontology
+
+    rt = base.world()
+    rt.world.extras["define"](
+        "City", "a place where many people live together, with its own government", "name",
+        [{"name": "population", "description": "how many people live there now", "type": "int"}],
+        parent="Thing", source="world")
+    thing = rt.world.new("Thing", name="Chang'an")
+    with ontology.stating("world"):
+        placed = thing.become("City")
+    said = [one for one in rt.world.facts.about(placed.subject_id) if one.slot == "is_a"]
+    check("a placing is in the record", [one.value for one in said] == ["City"], str(said))
+    check("and it is the world's own", [one.source for one in said] == ["world"], str(said))
+
+    rt.world.rebuild()
+    again = rt.world.store.load(placed.id, rt.world.classes)
+    check("and it survives a rebuild", type(again).__name__ == "City",
+          f"it came back a {type(again).__name__}")
+    check("with its name", again.display_name() == "Chang'an", repr(again.display_name()))
+
+
+def a_reading_may_not_rename_the_thing_it_is_reading() -> None:
+    """The world says what a thing is; which thing it is was settled before it was asked.
+
+    Not from the review — found on 2026-09-30 on a gate of 25 facts. The engineer reading the
+    position called "center" wrote `it.name = "Lisa Leslie"`, the name of the person who plays it,
+    and the position was renamed: the fact "Lisa Leslie plays the position of center" then read as
+    a fact the world had lost, and the world held two things called Lisa Leslie. The rule was in
+    portraits.py's own docstring and nothing enforced it.
+    """
+    rt = base.world()
+    position = rt.world.new("Thing", name="center")
+    rt.world.new("Person", full_name="Lisa Leslie")
+
+    renamed = rt._the_world_writes(position, 'it.name = "Lisa Leslie"')
+    check("a reading cannot rename the thing", not renamed.get("ok"), str(renamed)[:160])
+    again = rt.world.store.load(position.id, rt.world.classes)
+    check("and the thing keeps its name", again.display_name() == "center",
+          repr(again.display_name()))
+
+    # The same name said again is not a change, and a reading that repeats it is not refused.
+    same = rt._the_world_writes(position, 'it.name = "center"\nit.describe("a basketball position")')
+    check("saying the same name again goes through", same.get("ok"), str(same.get("error"))[:160])
+
+    # And outside a reading the name is the host's to correct, as it always was.
+    position.name = "centre"
+    rt.world.save(position)
+    check("the host can still correct a name", position.name == "centre")
+
+
 def main() -> None:
+    a_reading_may_not_rename_the_thing_it_is_reading()
+    a_placing_is_stated_so_it_survives_a_rebuild()
     finding_3_1_6_a_separation_holds_through_a_third_party()
     finding_3_3_7_the_echo_says_what_actually_ran()
     finding_3_3_3_a_task_that_cannot_close_is_still_dropped()

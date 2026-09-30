@@ -818,8 +818,9 @@ def take_in(world, kind, idea: str | None = None) -> list:
                 link.subject, link.object = link.object, link.subject
             link.describe(f"turned round on becoming {name}: it was written "
                           f"'{getattr(link, 'label', '')}'")
+        said_by, run = ontology.stated_by()
         world.facts.state(getattr(link, "subject_id", None) or link.id, assembly.IS_A, name,
-                          class_name=type(link).__name__)
+                          source=said_by, run_id=run, class_name=type(link).__name__)
         taken.append(world.retype(link, name))
     return taken
 
@@ -1859,7 +1860,9 @@ def merge(world, keep, drop) -> dict:
     into, gone = spec(world.classes[kept]), spec(world.classes[dropped])
     moving = [r for r in world.all(dropped, limit=None, history=True)]
     for link in moving:
+        said_by, run = ontology.stated_by()
         world.facts.state(getattr(link, "subject_id", None) or link.id, assembly.IS_A, kept,
+                          source=said_by, run_id=run,
                           class_name=dropped)
     taken = [world.retype(link, kept) for link in moving]
     # What the dropped type knew, the kept one keeps: its words, and the word itself.

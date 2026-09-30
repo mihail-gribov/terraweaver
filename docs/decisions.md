@@ -4080,3 +4080,43 @@ shown a comment marked "never reached" directly above a line that had just run. 
 carries the spans of *every* top-level statement, attempted or not: a comment is handed back as it
 was written, and "never reached" is said only of a statement the executor never got to, which
 happens when it gives up after three failures.
+
+## 2026-09-30 — the reading renamed the thing it was reading, and a placing was never stated
+
+Two defects the gate found that the review does not contain. Both are the same shape: a rule this
+world states about itself, in writing, and nothing enforcing it.
+
+**The reading renamed the thing.** `portraits.py`'s own docstring says "Which thing it is, is never
+read… The engineer says what this is; it never says which this is." On a gate of 25 facts the
+engineer reading the `Position` called `center` wrote `it.name = "Lisa Leslie"` — the name of the
+person who plays it — and the position was renamed. The same happened to `goalkeeper`
+(`→ "Rogério Ceni"`). Two of forty-nine names in one pass, and the cost is double: "Lisa Leslie
+plays the position of center" reads as a fact the world has lost, *and* the world now holds two
+things called Lisa Leslie. `runs` and `value_history` in `var/gate/world.db` hold both moments.
+
+Enforced in code now, not in the prompt: `ontology.reading_one(entity)` holds the identifying
+attribute of the thing being read for the duration of the reading, and `_the_world_writes` enters
+it. A write of a *different* value to that attribute is refused in words — which thing it is was
+settled before the reading was asked, and if the new name is another name for the same one, that
+is an alias. Saying the same name again is not a change and goes through, and outside a reading a
+name is the host's to correct exactly as before.
+
+**A placing was applied to the image and never stated.** The names pass called `world.retype`,
+which moves the image and says nothing. `Chang'an` was placed under `City`, the record held no
+`is_a`, and `world.rebuild()` read it back as the `Thing` it came in as — so every placing the pass
+had ever made was undone by the next rebuild. `Entity.become` and `relations.take_in` have always
+done the two steps in the right order; the pass now goes through `become`. Reproduced: state,
+retype, rebuild, and the class survives.
+
+And whose placing it is is kept with it. `become` and `take_in` stated `is_a` without a source, so
+the default applied and the *world's own* placing went in as the agent's telling — which ranks it
+with what the world was told and puts it out of reach of `retract_run`. Both now pass
+`stated_by()`.
+
+**Still open, with the evidence in `var/gate/world.db`.** Two instances hold a name in the record
+and `null` in the image (`City 8342817a…` → `Chang'an`, `Person f492035a…` → `Imelda Marcos`); both
+display as a raw id, both come back correctly after `world.rebuild()`, so the record is intact and
+the image-writing path is not. Half the mechanism is reproducible without a model: `retype`
+followed by a `save` of any stale reference to the pre-retype object — a session variable, a link's
+end — writes the old class's rows back and the thing loads as what it was.
+`runtime._hand_back_what_moved` repoints session variables and nothing repoints what a link holds.
