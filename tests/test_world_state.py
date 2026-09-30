@@ -356,6 +356,27 @@ def main() -> int:
           "Rent" in (once_more["output"] or "") and "2027" in (once_more["output"] or ""),
           str(once_more["output"] or once_more["error"]))
 
+    # A link that lost an end joins nobody, and it is kept out of every read in one place rather
+    # than at each reader. Measured 2026-09-30: 20 of 898 links in one world had lost an end, and
+    # each could end a whole pass — two readers were mended one at a time before it was clear that
+    # mending readers is endless.
+    classes, store, world = fresh_world()
+    Thing = classes["Thing"]
+    a, b = Thing(name="Harare"), Thing(name="France")
+    store.save_graph(a)
+    store.save_graph(b)
+    link = world.relate(a, b, "related", description="Harare is the capital of France")
+    whole = len(world.all("Related", limit=None, history=True))
+    from terraweaver import ontology as _ont
+
+    with _ont.trusted_writes():
+        link.object = None
+    store.save_graph(link)
+    left = world.all("Related", limit=None, history=True)
+    check("a link that lost an end is not in the answer",
+          len(left) == whole - 1, f"{len(left)} of {whole}")
+    check("and reading the class still works at all", isinstance(left, list))
+
     print()
     if failures:
         print(f"{len(failures)} failed: {', '.join(failures)}")

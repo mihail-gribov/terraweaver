@@ -3854,3 +3854,37 @@ should say so in those words.
 
 The world is kept (`var/run8/world`), so the hundred questions cost nothing to ask again once the
 account resets.
+
+## 2026-09-30 — a link that lost an end is kept out of every read, in one place
+
+Measured on the world the last run built: **20 of 898** links have lost an end — fourteen of them
+bare `Related`, the rest singles — and every one of them could end a whole pass, because reading one
+raises from wherever it is touched. Two readers had already been mended one at a time
+(`relations._between`, `store._fill`) before it was clear that mending readers is endless: anything
+that walks links can meet one.
+
+So it is done where they all come through. `World._whole_ones` drops a link with a missing end from
+every read of a relation class, and the world says how many it is holding back — once per class, not
+once per read. Nothing is deleted and nothing is repaired: what the link was made of is still in the
+record, the row saying nobody has read it stays open, and a pass that can run is worth more than a
+row nobody can use.
+
+**Where the missing ends come from is not yet known**, and the 2% is worth chasing later; what is
+settled is that one bad row no longer costs a pass. It is the same shape as three other things this
+week — the method in history, the relation word declared as an attribute, the string in a period —
+and the same rule: **the world reads what it can and says what it cannot, rather than raising.**
+
+**And the names pass, measured over 254 names against the 285 of the world before it:**
+
+| | before | now |
+|---|---|---|
+| done | 155 — 54% | 174 — **69%** |
+| the world refused | **49** | 7 |
+| the engineer gave up | 56 — 20% | 48 — 19% |
+
+The refusals are gone, which is the assignment taken as a call. The give-ups did **not** move, so
+neither the tolerance for `true` and a stray indent nor the senior engineer on the second go touched
+them — an honest negative for both — and the record now names what they are instead: eight links with
+a missing end (the above), four `NeedsResolution` reaching `json.dumps` through
+`it.citizen_of = Thing.get(...)`, one `NotInWorld` which is a refusal on the merits, and 22 where the
+engineer returned no code at all.

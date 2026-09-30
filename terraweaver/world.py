@@ -73,6 +73,9 @@ class World:
         # it to build images; without it every slot is treated as holding one thing.
         self.specs = specs or {name: cls._spec for name, cls in classes.items()}
         self.resolutions: list[dict] = []
+        # Said once per class, not once per read: a link that lost an end is news, and the same
+        # news forty times over is noise.
+        self._said_about_ends: set[str] = set()
         # Host-facing calls a mode adds on top of the core — an experiment that lets the host
         # define its own classes needs `define(...)` where nothing in the core offers one. Kept
         # in a named place rather than bolted onto the facade, so what is ours and what a mode
@@ -213,12 +216,41 @@ class World:
         """
         ontology.note_world_call("world_queries")
         instances = self.store.load_all(self._name(cls), self.classes)
+        instances = self._whole_ones(self._name(cls), instances)
         if not (history or any_time):
             moment = timeutil.now()
             instances = [e for e in instances if timeutil.in_period(
                 getattr(e, "valid_from", None), getattr(e, "valid_until", None), moment)]
         instances.sort(key=lambda e: e.accessed_at, reverse=True)
         return instances[:limit] if limit else instances
+
+    def _whole_ones(self, class_name: str, instances: list) -> list:
+        """Links missing an end, kept out of every read at once instead of at each reader.
+
+        A link with no subject joins nobody, and reading one raises from wherever it is touched:
+        measured 2026-09-30, **20 of 898** links in one world had lost an end — fourteen of them
+        bare `Related` — and each was able to end a whole pass. Two readers were mended one at a
+        time (`relations._between`, `store._fill`) before it was clear that mending readers is
+        endless; this is the one place they all come through.
+
+        Not deleted and not repaired. What the link was made of is in the record, the row says
+        nobody has read it, and a pass that can run is worth more than a row nobody can use. The
+        world says how many it is holding back, once, so the number is not lost either.
+        """
+        cls = self.classes.get(class_name)
+        if cls is None or "relation" not in getattr(cls, "_spec", {}):
+            return instances
+        whole = [one for one in instances
+                 if getattr(one, "subject", None) is not None
+                 and getattr(one, "object", None) is not None]
+        left = len(instances) - len(whole)
+        if left and class_name not in self._said_about_ends:
+            self._said_about_ends.add(class_name)
+            ontology.note_hint(
+                f"{left} {class_name} link(s) have lost an end and are not in this answer. What "
+                f"they were made of is still in the record; nothing can be read from a link that "
+                f"joins one thing.")
+        return whole
 
     def find(self, cls, history: bool = False, any_time: bool = False, **attrs):
         """Entities matching the given attributes, split into matches and resemblances.
