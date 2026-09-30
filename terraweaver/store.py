@@ -232,6 +232,17 @@ class Store:
                     if _is_instance(item):
                         self._collect(item, visited, out)
 
+    def forget_derivations(self) -> None:
+        """Say that every table derived from the statements has to be built again.
+
+        The derived tables keep a mark of the record they were built from (`texts._BUILT_AT`,
+        `Meanings._fresh_at`). Anything that empties or replaces them wholesale — `clear_all`, a
+        rebuild — has to drop the mark with them, or the next read is told they are up to date.
+        """
+        from terraweaver import texts
+
+        texts._BUILT_AT.pop(id(self.conn), None)
+
     def clear_all(self) -> None:
         with self.transaction():
             for (table,) in self.conn.execute(
@@ -243,6 +254,7 @@ class Store:
                 if self.conn.execute("SELECT 1 FROM sqlite_master WHERE name = ?", (table,)).fetchone():
                     self.conn.execute(f"DELETE FROM {table}")
             self._identity.clear()
+            self.forget_derivations()
 
     def clear(self, class_name: str) -> None:
         with self.transaction():

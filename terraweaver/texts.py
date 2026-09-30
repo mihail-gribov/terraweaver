@@ -53,11 +53,29 @@ def name_of(text: str) -> str:
     return "text:" + hashlib.sha1(" ".join(str(text).split()).encode()).hexdigest()[:16]
 
 
-def rebuild(world) -> int:
-    """Derive both tables again from every statement. Returns how many sayings there are."""
+# What the table was built from, per connection: the number of writes the record had seen. A
+# rebuild is a DELETE and a walk over every statement in the world, and it ran on *every* search —
+# which is every `like()`, every `entities()`, every `similar()` (docs/code-review-2026-09-30.md
+# 2.4). Keyed by the connection so two worlds in one process do not read each other's mark, and
+# held in memory so a fresh process always builds once.
+_BUILT_AT: dict[int, int] = {}
+
+
+def rebuild(world, force: bool = False) -> int:
+    """Derive both tables again from every statement. Returns how many sayings there are.
+
+    Skipped when nothing has been said since the last one. `force=True` builds regardless, which
+    is what a caller wants after something outside the statements has changed.
+    """
     from terraweaver import periods, timeutil
 
     conn = world.store.conn
+    mark = getattr(world.facts, "writes", None)
+    if not force and mark is not None and _BUILT_AT.get(id(conn)) == mark:
+        return conn.execute("SELECT count(*) FROM said").fetchone()[0] \
+            if _has_table(conn, "said") else 0
+    if mark is not None:
+        _BUILT_AT[id(conn)] = mark
     run_script(conn, SCHEMA)
     conn.execute("DELETE FROM said")
     rows = 0
@@ -79,6 +97,11 @@ def rebuild(world) -> int:
                 rows += 1
     conn.commit()
     return rows
+
+
+def _has_table(conn, name: str) -> bool:
+    return bool(conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?", (name,)).fetchone())
 
 
 def holding(world, subject: str, slot: str | None = None, at=None) -> list[str]:

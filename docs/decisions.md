@@ -3986,6 +3986,17 @@ benchmarks: a fact numbered with a tab — `"12.\tfact"` — matched the numbere
 raised `IndexError` on the split, and `KEY="..."` in `.env` was passed on with its quotes, which
 authenticates nowhere and looks exactly like having no key.
 
+**The third of the review's first four: derived tables built on read.** `tags.holding` was the
+measured one (0.24 s → 0.001 s, above). The other two are the texts table, rebuilt from every
+statement in the world on every `texts.search` — which is every `like()`, `entities()` and
+`similar()`, twice — and the meanings index, whose *embedding* was already incremental by digest
+while finding out what to embed walked every class of the world twice. Both now ask the record
+whether anything has been said since they were last built: `Facts.writes` counts writes to the
+statements, in memory and not in the database, so two processes never have to agree and a fresh
+process always builds once. A rebuild is now one per write burst instead of one per read —
+measured on 400 described entities, 4 ms a search against 0.0 ms — and anything that empties a
+derived table drops the mark with it (`store.forget_derivations`, `Meanings.forget`).
+
 **Left as it was, on purpose.** `judge.declined()` matches decline phrases as substrings and can
 credit a confident answer that happens to contain one — changing how a measurement is graded
 without a labelled set to grade the change against would make the next number harder to trust, not

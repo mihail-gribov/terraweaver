@@ -170,13 +170,25 @@ class Meanings:
     def __init__(self, store, model=None):
         self.store = store
         self.model = model or embedder()
+        # What the index was last brought up to date at, per connection: the record's write count.
+        self._fresh_at: dict[int, int] = {}
         run_script(store.conn, SCHEMA)
         store.conn.commit()
 
     # --- keeping the index up to date ---
 
     def refresh(self, world, limit: int = 500) -> int:
-        """Embed what has changed since last time. Returns how many texts were done."""
+        """Embed what has changed since last time. Returns how many texts were done.
+
+        Skipped outright when nothing has been said since the last refresh. The embedding was
+        already incremental — a digest per text — but *finding out* what to embed walks every
+        class of the world twice, and that walk ran on every `like()`, `entities()` and
+        `similar()` (docs/code-review-2026-09-30.md 2.4). Everything it reads is derived from the
+        statements, so the record's own write count is the honest witness.
+        """
+        mark = getattr(getattr(world, "facts", None), "writes", None)
+        if mark is not None and self._fresh_at.get(id(world.store.conn)) == mark:
+            return 0
         wanted = list(self._texts(world))[:limit]
         known = {ref: (digest, model) for ref, digest, model in self.store.conn.execute(
             "SELECT ref, digest, model FROM meanings")}
@@ -191,6 +203,8 @@ class Meanings:
                     "vector) VALUES (?, ?, ?, ?, ?, ?, ?)",
                     (ref, subject, kind, text, _digest(text), self.model.name, json.dumps(vector)))
         self.store.conn.commit()
+        if mark is not None:
+            self._fresh_at[id(world.store.conn)] = mark
         return len(due)
 
     def vectors_for(self, refs_and_texts: list[tuple[str, str]]) -> dict[str, list]:
@@ -225,6 +239,7 @@ class Meanings:
     def forget(self) -> None:
         """Drop the index. It is a derivation; rebuilding costs time and nothing else."""
         self.store.conn.execute("DELETE FROM meanings")
+        self._fresh_at.clear()        # and the mark saying it was up to date, which it is not
 
     # --- asking ---
 

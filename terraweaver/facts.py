@@ -151,6 +151,13 @@ def reference(subject: str) -> dict:
 class Facts:
     def __init__(self, conn):
         self.conn = conn
+        # How many times the record has been written to, in this process. Everything derived from
+        # the statements — the texts table, the meanings index — was rebuilt from scratch on every
+        # read because there was no way to ask "has anything changed"; this is that way. A number
+        # in memory and not in the database on purpose: a fresh process starts at zero and every
+        # derivation rebuilds once, which is exactly right, and two processes never have to agree
+        # on anything (docs/code-review-2026-09-30.md 2.4).
+        self.writes = 0
         _run(conn, SUBJECTS)
         conn.commit()
         # A world written before time became a number is brought over on the way in, once. Two
@@ -228,6 +235,7 @@ class Facts:
             self.conn.execute(
                 f"UPDATE {table} SET restated_at = ?, times = ? WHERE id = ?",
                 (max(when, self._last_said(table, row_id)), times + 1, row_id))
+            self.writes += 1
             return f"{table}:{row_id}"
         return self._insert(table, subject, slot, value, valid_from, valid_until, when, source,
                             run_id, None)
@@ -266,6 +274,7 @@ class Facts:
         table, row = _split(statement_id)
         self.conn.execute(f"UPDATE {table} SET valid_until = ? WHERE id = ? AND valid_until IS NULL",
                           (_iso(at) or _now(), row))
+        self.writes += 1
 
     def retract(self, statement_id: str, by: str | None = None) -> None:
         """Take a statement back — it was wrong, or the run that made it was undone. It stays in
@@ -273,6 +282,7 @@ class Facts:
         table, row = _split(statement_id)
         self.conn.execute(f"UPDATE {table} SET retracted_by = ? WHERE id = ?",
                           (by or "retracted", row))
+        self.writes += 1
 
     def _last_said(self, table: str, row_id: int) -> int:
         """When this row was last heard, as it stands — `restated_at` if there is one, else `stated_at`.
@@ -292,6 +302,7 @@ class Facts:
                 f"UPDATE {table} SET retracted_by = 'run undone' WHERE run_id = ? "
                 f"AND retracted_by IS NULL", (run_id,))
             undone += cursor.rowcount
+        self.writes += undone
         return undone
 
     def forget_reasoning(self, subject: str | None = None) -> int:
@@ -306,6 +317,7 @@ class Facts:
                 f"UPDATE {table} SET retracted_by = 'forgotten' WHERE {where}",
                 (subject,) if subject else ())
             undone += cursor.rowcount
+        self.writes += undone
         return undone
 
     # --- reading ---
@@ -400,6 +412,7 @@ class Facts:
              source, run_id, json.dumps(basis) if basis is not None else None,
              _digest(basis) if basis is not None else None),
         )
+        self.writes += 1
         return f"{table}:{cursor.lastrowid}"
 
     def _query(self, where: str, args: list, tables: list[str],
