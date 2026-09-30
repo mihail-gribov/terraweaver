@@ -169,7 +169,12 @@ def _at_once(links: list) -> int:
         if end is not None:
             moments.append((timeutil.as_datetime(end), -1))
     most = held = 0
-    for _, change in sorted(moments, key=lambda pair: (pair[0], -pair[1])):
+    # An end at T is sorted before a start at T, not after it. The other way round, a clean
+    # handover — one link ends the day the next begins — counts as two held at once, and
+    # `contradicts()` then reports every handover the world itself made as a broken
+    # one-at-a-time rule, which is what `findings()` puts on the agenda
+    # (docs/code-review-2026-09-30.md 3.2.1).
+    for _, change in sorted(moments, key=lambda pair: (pair[0], pair[1])):
         held += change
         most = max(most, held)
     return most

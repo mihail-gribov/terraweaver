@@ -85,8 +85,13 @@ def holding(world, entity, at=None) -> list[str]:
     the entity, which is a snapshot written when somebody last touched it while time moved on."""
     from terraweaver import periods
 
-    periods.rebuild(world)
     subject = getattr(entity, "subject_id", None) or entity.id
+    # This subject's stretches, not the whole table. `rebuild` is a DELETE and a full
+    # re-derivation over every statement in the world, and it was run on every read of one
+    # entity's tags — measured 0.24 s at 100 entities and 0.84 s at 200, with `vocabulary`,
+    # `tagged`, `due_for_review`, `merge` and `selecting._carries` all coming through here
+    # (docs/code-review-2026-09-30.md 3.2.3).
+    periods.rebuild_for(world, subject)
     return tidy(periods.holding(world, subject, "tags", at))
 
 

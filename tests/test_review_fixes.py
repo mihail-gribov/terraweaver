@@ -180,7 +180,38 @@ def finding_3_1_2_one_subject_rebuilt_keeps_its_repeats() -> None:
           f"{len(after)} cycles after rebuild_for")
 
 
+def finding_3_2_2_one_question_per_thing_not_per_pair() -> None:
+    """Ten employees of one organisation must open one question about it, not nine."""
+    rt = base.world()
+    base.word(rt, "works_at", "who works where", cardinality="many-to-one",
+              subject_is="employee", object_is="employer")
+    firm = rt.world.new("Thing", name="DataWorks")
+    for n in range(10):
+        rt.world.relate(rt.world.new("Person", full_name=f"P{n}"), firm, "works_at")
+    asked = [q for q in rt.world.questions.open_() if q.kind == "one_works_at_per_object"]
+    check("3.2.2 one question about the organisation", len(asked) == 1,
+          f"{len(asked)} questions: {[q.text[:40] for q in asked]}")
+
+
+def finding_3_2_1_a_clean_handover_is_not_two_at_once() -> None:
+    """One link ending the moment the next begins is a handover, not a broken rule."""
+    from terraweaver import properties
+
+    rt = base.world()
+    base.word(rt, "mayor_of", "who is the mayor of what", cardinality="many-to-many",
+              subject_is="mayor", object_is="city")
+    city = rt.world.new("Thing", name="Paris")
+    first = rt.world.relate(rt.world.new("Person", full_name="A"), city, "mayor_of",
+                            starts=datetime(2010, 1, 1), until=datetime(2020, 1, 1))
+    second = rt.world.relate(rt.world.new("Person", full_name="B"), city, "mayor_of",
+                             starts=datetime(2020, 1, 1))
+    check("3.2.1 a handover is one at a time", properties._at_once([first, second]) == 1,
+          f"_at_once said {properties._at_once([first, second])}")
+
+
 def main() -> None:
+    finding_3_2_1_a_clean_handover_is_not_two_at_once()
+    finding_3_2_2_one_question_per_thing_not_per_pair()
     finding_3_1_2_one_subject_rebuilt_keeps_its_repeats()
     finding_3_1_3_the_later_statement_wins_under_a_moved_clock()
     finding_2_3_only_the_transaction_commits()

@@ -1157,7 +1157,12 @@ def _check_functional(world, name, rel, subject, obj, start, end, attrs):
                     f"rather than join: {rel['kind']}.one_per_object = True. If it can have "
                     f"several, nothing to do.",
                     options=["one at a time", "several is right"],
-                    involves=[r.subject, subject],
+                    # Not `involves=[r.subject, subject]`. What makes two of these doubts the same
+                    # doubt is the thing and the word — "does this have one at a time?" — and with
+                    # the pair in the key every further holder asked it again: measured 9 questions
+                    # on one organisation with 10 employees (docs/code-review-2026-09-30.md 3.2.2).
+                    # The two holders are still named in the text, where they are of use.
+                    touches=[f"relation:{rel['kind']}"],
                 )
                 break
     if rel.get("inverse_functional") == "at_any_time":
