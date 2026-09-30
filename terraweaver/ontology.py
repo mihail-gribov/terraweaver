@@ -1179,6 +1179,18 @@ class Entity:
     def __setattr__(self, name, value):
         spec = type(self)._spec
         class_name = type(self).__name__
+        if not name.startswith("_") and _is_a_question(value):
+            # A lookup that came back a question, written in as if it were a thing. It reached
+            # `json.dumps` and raised `Object of type NeedsResolution is not JSON serializable`
+            # — nine of ninety failed readings in one world, and the reason said nothing about
+            # what had happened. The question is what the door is for: it says which candidates
+            # there were and how to settle it, and nothing is written until somebody has.
+            raise TypeError(
+                f"{class_name}.{name} was given the answer to a lookup that did not settle: "
+                f"{getattr(value, 'reason', 'two or more things could be meant')}. Nothing is "
+                f"written from a question. Look again with more to go on — another attribute, a "
+                f"fuller name — or settle it: world.settle(<the question>, <the one meant>). "
+                f"{getattr(value, 'question', '')}".strip())
         if name in ("valid_from", "valid_until", "created_at", "accessed_at") and value is not None:
             # A moment, whatever it was written as. These are managed attributes, so they skip every
             # check below — and a string written straight into one is stored as a string and then
@@ -1879,6 +1891,13 @@ def _lend_relations(classes: dict, defined: str) -> None:
                 backwards = side == "to"
                 setattr(cls, word, _relation_role(type_name, rel, backwards))
                 setattr(cls, f"set_{word}", _sets_the_role(type_name, rel, backwards))
+
+
+def _is_a_question(value) -> bool:
+    """Whether this is an unsettled lookup rather than something that can be written down."""
+    from terraweaver.resolution import NeedsResolution
+
+    return isinstance(value, NeedsResolution)
 
 
 def _relation_role(type_name: str, rel: dict, backwards: bool):

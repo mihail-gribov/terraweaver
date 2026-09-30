@@ -180,6 +180,9 @@ def clusters(facts, rule: Callable[[list, list], bool] = same_name) -> dict[str,
     for a, b in told_same:  # what the user settled is not the rule's business
         if a in leader and b in leader:
             union(a, b)
+    # Told apart and told the same about the same two is the user contradicting themselves, and
+    # the record keeps both; the separation is the one that protects an image from a guess, so it
+    # is the one acted on here. Nothing is deleted and `resolution` has both statements.
     # Who could be whom, worked out for everyone before anything is joined. Doing it as we go
     # would let the order subjects happen to be in decide who someone is: the first Anna would
     # take the ambiguous mention and the second would never get a look.
@@ -192,8 +195,17 @@ def clusters(facts, rule: Callable[[list, list], bool] = same_name) -> dict[str,
         # One candidate each way is an answer. Two is a question — and merging into either would
         # be a guess dressed up as a fact. The world knows two Annas; a third mention of "Anna"
         # belongs to neither until something says which (see `unsettled`).
-        if len(partners[a]) == 1 and len(partners[b]) == 1:
-            union(a, b)
+        if len(partners[a]) != 1 or len(partners[b]) != 1:
+            continue
+        # And a rule's match may not undo what the user separated. `told_apart` was honoured for
+        # the direct pair only, so "a is b" told plus a rule match between b and c joined a and c
+        # — two people the user had said were different, in one image
+        # (docs/code-review-2026-09-30.md 3.1.6). `_kept_apart` was written for this and had no
+        # caller; it asks the question of the groups as they stand, which is the only place the
+        # answer is knowable.
+        if _kept_apart(told_apart, find, a, b):
+            continue
+        union(a, b)
     return {subject: find(subject) for subject in by_subject}
 
 

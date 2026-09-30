@@ -16,10 +16,16 @@ So: one row per reading, in the world's own store, and a distribution read back 
 are the world's, not the agent's — nothing here is offered at a host's door.
 """
 import json
+import logging
 from collections import Counter
 from datetime import datetime, timezone
 
 from terraweaver.store import run_script
+
+# One failure must not stop the world, and that is not the same as nobody hearing about it.
+# Measured 2026-09-30: a TypeError from one extra key in what the engineer wrote lost a whole
+# class, silently, for as long as the pass has existed (docs/code-review-2026-09-30.md 2.9).
+log = logging.getLogger("terraweaver")
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS readings (
@@ -106,7 +112,8 @@ def keep(world, link, trace: dict, seconds: float) -> None:
              (trace.get("look") or {}).get("nearest_sure"),
              (trace.get("look") or {}).get("said")))
         world.store.conn.commit()
-    except Exception:  # noqa: BLE001 - a reading is not lost because its measurement was
+    except Exception as wrong:  # noqa: BLE001 - a reading is not lost because its measurement was
+        log.debug("%s", wrong, exc_info=True)
         return
 
 

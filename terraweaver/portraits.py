@@ -21,11 +21,17 @@ no later pass repairs. The engineer says what this is; it never says which this 
 France" describes it exactly as it would the truth. This is a record of what somebody said.
 """
 import json
+import logging
 import time
 from terraweaver import prompts
 from datetime import datetime, timezone
 
 from terraweaver.store import run_script
+
+# One failure must not stop the world, and that is not the same as nobody hearing about it.
+# Measured 2026-09-30: a TypeError from one extra key in what the engineer wrote lost a whole
+# class, silently, for as long as the pass has existed (docs/code-review-2026-09-30.md 2.9).
+log = logging.getLogger("terraweaver")
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS bare_names (
@@ -97,7 +103,8 @@ def unread(world, limit: int = 50) -> list[dict]:
     for entity_id in bare:
         try:
             said = world.facts.about(entity_id, "descriptions")
-        except Exception:  # noqa: BLE001 - a thing that has gone says nothing
+        except Exception as wrong:  # noqa: BLE001 - a thing that has gone says nothing
+            log.debug("%s", wrong, exc_info=True)
             continue
         for statement in said:
             if statement.id in done or statement.source == OURS:
@@ -118,7 +125,8 @@ def still_only_a_name(world) -> list[str]:
         try:
             if not world.facts.about(entity_id, "descriptions"):
                 silent.append(entity_id)
-        except Exception:  # noqa: BLE001
+        except Exception as wrong:  # noqa: BLE001
+            log.debug("%s", wrong, exc_info=True)
             continue
     return silent
 
@@ -140,7 +148,8 @@ def looked_for(world, entity, class_name: str, was: str | None = None) -> None:
             (entity.id, class_name, was or type(entity).__name__,
              datetime.now(timezone.utc).isoformat()))
         world.store.conn.commit()
-    except Exception:  # noqa: BLE001 - never what stops a lookup
+    except Exception as wrong:  # noqa: BLE001 - never what stops a lookup
+        log.debug("%s", wrong, exc_info=True)
         return
 
 
@@ -150,7 +159,8 @@ def expected_of(world, entity_id: str) -> list[str]:
     try:
         return [row[0] for row in world.store.conn.execute(
             "SELECT class_name FROM looked_for WHERE entity_id = ? ORDER BY asked_at", (entity_id,))]
-    except Exception:  # noqa: BLE001
+    except Exception as wrong:  # noqa: BLE001
+        log.debug("%s", wrong, exc_info=True)
         return []
 
 
@@ -180,7 +190,8 @@ def shape(world) -> str:
     for raw, became in rows:
         try:
             one = json.loads(raw or "{}")
-        except Exception:  # noqa: BLE001
+        except Exception as wrong:  # noqa: BLE001
+            log.debug("%s", wrong, exc_info=True)
             continue
         went[one.get("went") or ("refused" if "refused" in one else "(nothing said)")] += 1
         walked[one.get("walked_to") or "(nowhere)"] += 1
@@ -254,7 +265,8 @@ def walk_down(world, entity, words: str, jev) -> tuple[str, str | None]:
                             f"record has no class for")
         try:
             scored = jev.choose(state, f"Which of these is {entity.display_name()}?", options)
-        except Exception:  # noqa: BLE001 - one that fails leaves it where it sits
+        except Exception as wrong:  # noqa: BLE001 - one that fails leaves it where it sits
+            log.debug("%s", wrong, exc_info=True)
             return at, None
         if not scored:
             return at, None
@@ -290,7 +302,8 @@ def words_about(world, entity) -> str:
     said = []
     try:
         remarks = entity.described() if hasattr(entity, "described") else []
-    except Exception:  # noqa: BLE001
+    except Exception as wrong:  # noqa: BLE001
+        log.debug("%s", wrong, exc_info=True)
         remarks = []
     for remark in remarks:
         text = getattr(remark, "text", None)
@@ -342,7 +355,8 @@ def formalise(world, engineer, limit: int = 50, jev=None, run=None,
             break
         try:
             entity = world.store.load(one["entity_id"], world.classes)
-        except Exception:  # noqa: BLE001 - a thing that has gone is not a thing we can read
+        except Exception as wrong:  # noqa: BLE001 - a thing that has gone is not a thing we can read
+            log.debug("%s", wrong, exc_info=True)
             mark(world, one["statement_id"], one["entity_id"], {"gone": True})
             continue
         if entity is None:
@@ -439,7 +453,8 @@ def _the_loop(engineer, run, entity, asked: str, said: dict, tally: dict,
 def _say(engineer, asked: str) -> dict | None:
     try:
         said = engineer.json(SYSTEM, asked)
-    except Exception:  # noqa: BLE001 - an engineer that fails leaves the words for a later pass
+    except Exception as wrong:  # noqa: BLE001 - an engineer that fails leaves the words for a later pass
+        log.debug("%s", wrong, exc_info=True)
         return None
     return said if isinstance(said, dict) else None
 
@@ -503,7 +518,8 @@ def _already_joined(world, entity) -> str:
     try:
         for link in entity.relations():
             lines.append(f"    {link.display_name()[:100]}")
-    except Exception:  # noqa: BLE001 - a thing whose links cannot be read is joined to nothing
+    except Exception as wrong:  # noqa: BLE001 - a thing whose links cannot be read is joined to nothing
+        log.debug("%s", wrong, exc_info=True)
         return "    (nothing yet)"
     return "\n".join(sorted(set(lines))[:30]) or "    (nothing yet)"
 
@@ -578,7 +594,8 @@ def _make_one(world, spec, under: str, tally: dict) -> str | None:
     try:
         made = grow(spec["name"], spec.get("description") or spec["name"], known_by, attributes,
                     parent=under, brief=spec.get("brief"), source="world")
-    except Exception:  # noqa: BLE001 - a name already taken is a class to join, not to force
+    except Exception as wrong:  # noqa: BLE001 - a name already taken is a class to join, not to force
+        log.debug("%s", wrong, exc_info=True)
         cls = world.classes.get(str(spec["name"]).strip())
         if cls is None or cls._spec.get("relation") or cls._spec["name"] == under:
             return None

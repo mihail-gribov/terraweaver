@@ -22,10 +22,13 @@ Three things keep it honest:
   path: the world's own methods are bound by the same rules as the agent's.
 """
 import ast
+import logging
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
 from terraweaver import sandbox
+
+log = logging.getLogger("terraweaver")
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS procedures (
@@ -118,8 +121,15 @@ class Procedures:
             if procedure.attaches_to not in classes:
                 continue
             namespace: dict = {}
-            source = _as_a_function(procedure.signature, _as_it_will_run(procedure.body))
-            exec(compile(source, f"<procedure {procedure.name}>", "exec"), _procedure_globals(), namespace)
+            try:
+                source = _as_a_function(procedure.signature, _as_it_will_run(procedure.body))
+                exec(compile(source, f"<procedure {procedure.name}>", "exec"),
+                     _procedure_globals(), namespace)
+            except Exception as wrong:  # noqa: BLE001 - one bad procedure is not a world that
+                # will not open. It is stored, so it is said out loud rather than skipped in
+                # silence: a procedure that cannot be bound is a defect somebody has to see.
+                log.warning("procedure %s was not bound: %r", procedure.name, wrong)
+                continue
             function = namespace[procedure.signature.split("(")[0]]
             function.__doc__ = procedure.because
             setattr(classes[procedure.attaches_to], procedure.signature.split("(")[0],

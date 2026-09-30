@@ -272,7 +272,31 @@ def finding_3_3_7_the_echo_says_what_actually_ran() -> None:
           and '# c = Person.new(full_name="Two")' not in shown, shown[:400])
 
 
+def finding_3_1_6_a_separation_holds_through_a_third_party() -> None:
+    """Told a and c are different: a rule match between b and c may not join them anyway."""
+    import sqlite3
+
+    from terraweaver import assembly
+    from terraweaver.facts import Facts, reference
+
+    def groups(separated: bool):
+        facts = Facts(sqlite3.connect(":memory:"))
+        facts.state("a", "full_name", "Ann Lee", source="user")
+        facts.state("b", "full_name", "Anna Sullivan", source="user")
+        facts.state("c", "full_name", "Anna Sullivan", source="user")
+        facts.state("a", assembly.SAME_AS, reference("b"), source="user")
+        if separated:
+            facts.state("a", assembly.NOT_SAME_AS, reference("c"), source="user")
+        return sorted(sorted(image.subjects) for image in assembly.assemble(facts).values())
+
+    check("3.1.6 without a separation the rule joins all three",
+          groups(False) == [["a", "b", "c"]], str(groups(False)))
+    check("3.1.6 and the separation keeps them apart",
+          groups(True) == [["a", "b"], ["c"]], str(groups(True)))
+
+
 def main() -> None:
+    finding_3_1_6_a_separation_holds_through_a_third_party()
     finding_3_3_7_the_echo_says_what_actually_ran()
     finding_3_3_3_a_task_that_cannot_close_is_still_dropped()
     finding_3_3_4_one_sessions_modules_are_its_own()
