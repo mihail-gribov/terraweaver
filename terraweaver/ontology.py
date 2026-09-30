@@ -1901,13 +1901,16 @@ def _relation_role(type_name: str, rel: dict, backwards: bool):
     """
     kind = rel["kind"]
     word = (rel.get("reverse") or kind) if backwards else kind
-    # Which end may hold several at one moment. `functional` says a subject has one object;
-    # `inverse_functional` says an object has one subject.
-    only_one = rel.get("inverse_functional") if backwards else rel.get("functional")
 
     def read(self):
+        # Which end may hold several at one moment, read from the spec now rather than captured
+        # when the property was lent. `functional` says a subject has one object;
+        # `inverse_functional` says an object has one subject — and either can be changed while
+        # the world runs (`Type.one_per_subject = False`), after which two links stand and this
+        # went on handing back the first of them as if it were the only one
+        # (docs/code-review-2026-09-30.md 3.2.5).
         got = self.related(word)
-        if only_one:
+        if rel.get("inverse_functional") if backwards else rel.get("functional"):
             return got[0] if got else None
         return got
 
@@ -1939,8 +1942,10 @@ def _relation_role(type_name: str, rel: dict, backwards: bool):
                   f"corrects the first is the type's rule.")
         return getattr(self, f"set_{word}")(value)
 
+    # The docstring is written once, when the property is lent, and says what the type says now.
+    reads_one = rel.get("inverse_functional") if backwards else rel.get("functional")
     return property(read, refuse, doc=(f"{rel.get('reads') or kind}. Reads "
-                                       f"{'one' if only_one else 'a list'}; "
+                                       f"{'one' if reads_one else 'a list'}; "
                                        f"written with set_{word}(other)."))
 
 

@@ -337,8 +337,14 @@ def _check_roles(world, name, cls, subject, obj, role, start, end) -> None:
         if not most:
             continue
         holders = []
+        # A link with no start given holds from now, so now is what the standing ones are compared
+        # against — the same substitution `_check_functional` makes two screens down. Without it
+        # `_overlaps` was called with no dates at all, which is true of everything, so a mother
+        # link that ended in 2015 still blocked recording a mother in 2026 — and blocked it at the
+        # write door, with a hard refusal (docs/code-review-2026-09-30.md 3.2.9).
+        at = start if start is not None else timeutil.now()
         for r in world.all(name, limit=None, history=True):
-            if not _overlaps(r, start, end):
+            if not _overlaps(r, at, end):
                 continue
             plays = r.role_of(r.subject) if same(r.object, obj) else r.role_of(r.object) if same(r.subject, obj) else None
             if plays in members and not same(r.other(obj), subject):
@@ -1063,8 +1069,30 @@ def _hand_over(world, standing, held, start, name: str, at=None) -> None:
         # type says about how many there can be — and when that is withdrawn, so is this: a
         # country declared to have one citizen ended six of them, and `one_per_object = False`
         # afterwards left every one of them ended, because nothing said who had ended them.
+        # A link cannot end before it began. The standing one holds from `valid_from` or, where
+        # nothing was said, from when it was recorded, and ending it at an earlier `start` wrote
+        # periods that read "from None until 2010, created 2026" — a link that was never true
+        # (docs/code-review-2026-09-30.md 3.2.10). When the new one starts before the old one
+        # began, the old one is left alone and the two dates are put to whoever knows.
+        ends = timeutil.as_datetime(start)
+        began = timeutil.as_datetime(getattr(standing, "valid_from", None)
+                                     or getattr(standing, "created_at", None))
+        if began is not None and ends is not None and ends < began:
+            world.questions.raise_(
+                standing, "which_came_first",
+                f"{held.display_name()} had {standing.display_name()} from "
+                f"{timeutil.show(began)}, and this one is said to start "
+                f"{timeutil.show(ends)} — before it. {name} holds one at a time, so one of the "
+                f"two dates is wrong, or the older link ended earlier than anybody said. Both "
+                f"links are recorded; which is it?",
+            )
+            ontology.note_hint(
+                f"{standing.display_name()} holds from {timeutil.show(began)} and this one starts "
+                f"{timeutil.show(ends)}, which is earlier — so that one is left standing rather "
+                f"than ended before it began. Both are in the world; the dates are asked about.")
+            return
         with ontology.trusted_writes(), ontology.stating("world"):
-            standing.valid_until = timeutil.as_datetime(start)
+            standing.valid_until = ends
             world.save(standing)
         ontology.note_hint(
             f"{held.display_name()} had {standing.display_name()}, and {name} holds one at a "
