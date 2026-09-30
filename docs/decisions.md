@@ -3888,3 +3888,87 @@ them — an honest negative for both — and the record now names what they are 
 a missing end (the above), four `NeedsResolution` reaching `json.dumps` through
 `it.citizen_of = Thing.get(...)`, one `NotInWorld` which is a refusal on the merits, and 22 where the
 engineer returned no code at all.
+
+## 2026-09-30 — the review's findings, fixed: eleven highs, and the two that were losing facts
+
+`docs/code-review-2026-09-30.md` is a read-only review of the whole package, written today at
+`9045ab8`. It changed nothing, so nothing in this week's measurements was induced by it — that
+question is answered in its own section 5, with what the runs bear out and what they measured out.
+This entry is the other half: everything it found that was plainly wrong is now fixed, each with a
+test, in `tests/test_review_fixes.py`, named by the finding.
+
+**What was losing data, and is what this is really about.**
+
+- **The engineer was called as a function.** `inspector.look_at_types` did `ask(account)` on an
+  `outside.Nemotron`, which answers `.json(...)` and has no `__call__`; the `TypeError` went into a
+  bare `except`. In `var/run8`: **28 types defined, 0 ever read.** A whole deferred pass had never
+  run once in any served world. `inspector.names_asker` wraps the engineer in `outside.namer`,
+  which is the adapter that was already there.
+- **`typed_between` answered a different question.** It returned every current typed link between
+  the two ends, not the ones this reading wrote, so a link about another fact was counted as the
+  reading's work, judged against words it had nothing to do with, and the bare link holding the
+  real words was ended as done. In `var/run8`, **7 of 402 end-pairs carry two types** —
+  `CapitalOf` beside `MayorOf`, `AuthorOf` beside `FamousFor`. The reading now snapshots what was
+  standing before it writes and diffs against that.
+- **Only `store.transaction` commits.** Thirty `conn.commit()` calls in seventeen modules each
+  ended whatever transaction they were inside, so "a run that raises keeps nothing it wrote" was
+  void: `x = [Person.new(full_name="Ann", tags=["friend"]), 1/0]` kept Ann, because the tags write
+  goes through `periods.rebuild_for`, which committed. Mending thirty callers is the wrong shape of
+  fix — the next module to want durability writes `commit()` again, and rightly. So the rule lives
+  in one place: `store.Connection.commit` is a no-op while a transaction holds it, and
+  `Store.transaction` keeps the depth. Verified both ways: with the guard removed, Ann survives.
+- **The echo after a failure said the opposite of what happened.** A statement that raises does not
+  end the block — the other statements run and write — and the block handed back commented them out
+  under "from here on, nothing ran", while the error said "N after it never ran". The host read
+  that and sent them again. `_exec_by_statement` now carries what happened to each statement on the
+  exception, and both the error and the echo are written from it.
+
+**The rest of the eleven highs.** `rebuild_for` deleted a subject's repeat rows and reinserted only
+its stretches, so every tags write wiped that entity's repeats. The tie-break between two
+statements said in one moment was the *string* id, where `facts_p:10` sorts before `facts_p:9`, and
+a stable reverse sort kept the earlier — measured, twelve corrections under `set_now` resolved to
+the eighth. `properties._at_once` sorted a start before an end at the same moment, so every clean
+handover the world itself made was reported as a broken one-at-a-time rule. `_check_functional`
+keyed its question on the pair, so an organisation with ten employees opened nine of the same
+question. `tags.holding` ran a full `periods.rebuild` on every read: **0.24 s at 100 entities and
+0.84 s at 200, now 0.001 s.** `set_variable` built `world.pin({name}, …)` without `keep` and had
+therefore never once worked. `world.pin("agent", …)` was allowed and shadowed the assistant.
+`start_task` over a task that would not close left it open and leaked its `touched` set into the
+new one. And `sandbox.MODULES` was one shared dict: `math.sqrt = 7` in one session was `7` in every
+session and every world in the process.
+
+**Measured out rather than fixed.** The tie-break is real and could not have touched the benchmark:
+stamps are microsecond integers and `var/run8` holds zero ties. `_check_roles` blocking an ended
+holder is real and no spec in that world declares a role `max`. `went_wrong` is applied by the two
+scripts we measure with. Naming what a finding *cannot* explain is half of what a finding is for.
+
+**What else went in, from the mediums.** A procedure reached the real `World`, so
+`return world.store.conn` handed its caller the database connection — it now goes through the same
+door host code does, resolved when it runs rather than when it was bound, and its imports work
+because it is compiled from what the check leaves. An extra key in an engineer-written attribute
+raised `TypeError` inside a bare `except` that read it as "name taken", and the class was lost.
+`define_relation` overwrote an existing type's cardinality and ends in silence, and a new word
+could be another type's reverse. A remark was indexed twice and the second copy ignored expiry. A
+`not_same_as` the user told was honoured for the direct pair only, so a rule match through a third
+subject joined two people they had separated (`_kept_apart` was written for this and had no
+caller). `classes_like` and `twins` re-embedded the whole vocabulary on every `define`, inside the
+host's ten-second run; the index is a cache and is now used as one. A malformed URL made every
+comparison through `canonical()` raise. `"0 weeks"` parsed and then divided by zero. A transitive
+chain followed `nxt[0]` and dropped a second whole.
+
+**And two of our own, both named in last night's give-up tally.** A `NeedsResolution` written in as
+if it were a thing reached `json.dumps` and said `Object of type NeedsResolution is not JSON
+serializable`; the door now refuses it in words, with the question it came back with. And a name or
+a list where a link wants a thing — 14 of 90 failed names — said `MarriedTo links two entities; got
+Person and str`, which is true and unactionable; it now names the call that finds the thing, with
+the class and the key that class is found by.
+
+**The suite is one command**: `tests/run_all.py`, 27 scripts, one process each, and a script that
+prints `FAIL` and exits 0 counts as failed — which is how a loop over four of them used to read as
+a passing suite.
+
+**Not done, and deliberately.** `docs/architecture.md` still describes two databases, fifteen
+modules and tickets; bringing it back to the code is its own piece of work. The whole-file grown
+override of a preset class (2.10) is a design decision to argue, not a defect to patch. Splitting
+the three god modules and the five benchmark `main()`s is refactoring, and refactoring on the way
+into a measurement is how a measurement stops meaning anything.
