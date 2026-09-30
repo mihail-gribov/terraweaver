@@ -4016,3 +4016,45 @@ binding the world per class or through a `contextvars.ContextVar` changes how ev
 package reaches its world, and the benchmark we are about to run depends on the clock staying put
 across tasks. So a task closing now *says* the clock is still moved, and the binding itself waits
 for a moment when nothing is being measured.
+
+## 2026-09-30 — the gate on the fixed code: 23 of 23 links, no refusals, 84% of the facts as owed
+
+The chain run from scratch on the review fixes, 25 facts (`scripts/measure.sh gate`, $0.19, 22
+minutes), and then `experiments/check_expected.py`, which reads the world against what each fact
+owed — per fact, no model, and it names the ones that failed.
+
+| | before (run8, 455 facts) | this gate (25 facts) |
+|---|---|---|
+| links typed | 423 of 442 — 96% | **23 of 23 — 100%** |
+| left unread | 19 | **0** |
+| the world refused a name | 8 | **0** |
+| the engineer gave up on a name | 67 of 318 — 19% | 7 of 49 — 14% |
+| facts as owed | — | **21 of 25 — 84%** |
+| backwards | — | **0** |
+| a link the world does not hold | — | **0** |
+
+Twenty-five facts is twenty-five facts and a gate is not the number. What it does say is that
+nothing in the reading is broken by the fixes and that the two failure shapes that used to be
+everywhere — a link written backwards, a fact whose link the world does not hold — did not occur
+at all.
+
+**One of the five failures was the checker's.** "Galwegians RFC is associated with the sport of
+rugby union" was reported as a fact the world had lost, and the world held `Sport: Rugby Union`
+*and* the link: `check_expected.named()` was comparing `"rugby union"` against `"Rugby Union"`,
+case-sensitively. A checker that calls a fact missing over a capital letter makes the number wrong
+towards pessimism, which is no better than the other direction. Both sides are folded now; the
+gate reads 84% rather than 80%.
+
+**The four that remain are the host's, and are the next thread.** Three are "plays the position of
+X", and in all three the position went into `notes` as prose — `notes: 'wide receiver'`,
+`'Brazilian footballer who plays as a goalkeeper'` — where nothing finds it and nothing supersedes
+it. The `_facts_hiding_in_prose` gate at the close exists for exactly this and did not fire,
+because it only fires when the prose names something *already in the world*, and "wide receiver"
+is not in it. The fourth is worse: `Galileo Galilei educated_at University of California, Berkeley`
+where the fact said University of Pisa — the host reached for a university that was already there
+instead of recording the one it was told about, which is the identity rule ("identity is settled
+first, and a write only records") broken at the host's end. Also visible on that entity:
+`team: 'astronomer, physicist'`, a grown attribute used for something that is not what it says.
+
+None of the four is a defect in the world. They are what the world cannot stop a host doing yet,
+and that is a different piece of work from this one.

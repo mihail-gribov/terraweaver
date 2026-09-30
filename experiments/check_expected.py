@@ -78,13 +78,20 @@ def main() -> int:
         for entity in runtime.world.all(cls.__name__, limit=None, history=True):
             said = next((getattr(entity, k, None) for k in keys if getattr(entity, k, None)), None)
             if said:
-                by_name.setdefault(said, []).append(entity)
+                by_name.setdefault(str(said).strip().lower(), []).append(entity)
 
     def named(text: str):
-        if text in by_name:
-            return by_name[text]
+        # Case does not decide whether a thing is in the world. Measured 2026-09-30: the gate
+        # reported "Galwegians RFC is associated with the sport of rugby union" as a fact the
+        # world had lost, and the world held `Sport: Rugby Union` and the link — the check was
+        # comparing "rugby union" against "Rugby Union". A checker that calls a fact missing
+        # because of a capital letter makes the number wrong in the direction of pessimism, which
+        # is no better than the other direction.
+        wanted = str(text or "").strip().lower()
+        if wanted in by_name:
+            return by_name[wanted]
         for name, got in by_name.items():
-            if name and (name in text or text in name) and abs(len(name) - len(text)) < 6:
+            if name and (name in wanted or wanted in name) and abs(len(name) - len(wanted)) < 6:
                 return got
         return []
 
