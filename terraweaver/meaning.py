@@ -25,8 +25,10 @@ import hashlib
 import json
 import math
 import os
+import time
 import urllib.error
 import urllib.request
+from contextlib import contextmanager
 
 from terraweaver.store import run_script
 
@@ -106,6 +108,59 @@ class Nebius:
 
         answer = llm.client().embeddings.create(model=self.name, input=texts)
         return [_unit(item.embedding) for item in sorted(answer.data, key=lambda d: d.index)]
+
+
+# How long the meaning checks inside one host run may wait, *in total*. The run is stopped after
+# ten seconds, so anything in it that talks to the outside has to be bounded — and bounded once
+# for the whole run rather than once per call, which is the mistake this codebase has already made
+# and fixed at the close (`runtime.READING_AT_THE_CLOSE`). Measured 2026-09-30: with a deadline of
+# 1.5 s per call, one `world.define` still cost 6 s, because a define asks four or five times.
+# Past the budget the meaning check is simply not done, the word is left for the pass that runs at
+# the close where nothing is waiting, and the spelling check — which is free — still answers.
+INLINE_SECONDS = 2.0
+_SPENDING_UNTIL: float | None = None
+
+
+@contextmanager
+def spending(seconds: float = INLINE_SECONDS):
+    """One budget for every meaning check inside this run. Nested calls join the outermost."""
+    global _SPENDING_UNTIL
+    if _SPENDING_UNTIL is not None:
+        yield
+        return
+    _SPENDING_UNTIL = time.monotonic() + seconds
+    try:
+        yield
+    finally:
+        _SPENDING_UNTIL = None
+
+
+def left_to_spend(asked: float | None) -> float | None:
+    """What is left of the run's budget, or `asked` when nothing set one. 0 means stop asking."""
+    if _SPENDING_UNTIL is None:
+        return asked
+    return max(0.0, _SPENDING_UNTIL - time.monotonic())
+
+
+def within_seconds(seconds: float | None, work):
+    """Run `work()` and give up on it after `seconds`. None means it did not answer in time.
+
+    Only ever a network call: nothing that touches this world's connection is run here, because a
+    connection belongs to the thread that made it. The worker is left to finish on its own — an
+    embedding already asked for is paid for either way — and what is bounded is the *waiting*.
+    """
+    import concurrent.futures
+
+    seconds = left_to_spend(seconds)
+    if seconds is not None and seconds <= 0:
+        return None                     # the run has spent what it had; ask at the close instead
+    pool = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+    try:
+        return pool.submit(work).result(timeout=seconds)
+    except Exception:  # noqa: BLE001 - not answering in time is an outcome, not a failure
+        return None
+    finally:
+        pool.shutdown(wait=False)
 
 
 _CHOSEN = None
@@ -207,7 +262,7 @@ class Meanings:
             self._fresh_at[id(world.store.conn)] = mark
         return len(due)
 
-    def vectors_for(self, refs_and_texts: list[tuple[str, str]]) -> dict[str, list]:
+    def vectors_for(self, refs_and_texts: list[tuple[str, str]], within: float | None = None) -> dict[str, list]:
         """Vectors for these (ref, text) pairs, embedding only what is new or has changed.
 
         The index as a cache, which is what it is. `twins()` and `classes_like()` re-embedded
@@ -226,7 +281,14 @@ class Meanings:
                 due.append((ref, text))
         for batch in range(0, len(due), 32):
             chunk = due[batch:batch + 32]
-            for (ref, text), vector in zip(chunk, self.model.embed([t for _, t in chunk])):
+            # The embedding is a network call and is the only thing bounded. Everything below runs
+            # on this thread: the connection belongs to it, and writing to SQLite from a worker is
+            # not a saving, it is a different bug.
+            vectors = (within_seconds(within, lambda: self.model.embed([t for _, t in chunk]))
+                       if within else self.model.embed([t for _, t in chunk]))
+            if vectors is None:
+                break                      # out of time: what is cached is what the caller gets
+            for (ref, text), vector in zip(chunk, vectors):
                 out[ref] = vector
                 self.store.conn.execute(
                     "INSERT OR REPLACE INTO meanings (ref, subject, kind, text, digest, model, "
@@ -235,6 +297,12 @@ class Meanings:
         if due:
             self.store.conn.commit()
         return out
+
+    def vector_of(self, text: str, within: float | None = None) -> list | None:
+        """One text's vector, not kept: what a caller is asking *about*. None if it timed out."""
+        got = (within_seconds(within, lambda: self.model.embed([text]))
+               if within else self.model.embed([text]))
+        return got[0] if got else None
 
     def forget(self) -> None:
         """Drop the index. It is a derivation; rebuilding costs time and nothing else."""

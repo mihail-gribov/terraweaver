@@ -533,10 +533,15 @@ def twins(world, close: float = 0.82) -> list[tuple]:
             said.append((name, f"{rel.get('kind', name)}. {cls._spec.get('description', '')}"))
     if len(said) < 2:
         return []
-    # Through the index, so a word already seen costs nothing: this runs from `on_new_type`,
-    # inside the host's own run, and re-embedding the whole vocabulary there was a network call
-    # per `define_relation` (docs/code-review-2026-09-30.md 3.4.3).
-    held = world.meanings.vectors_for([(f"type:{name}", text) for name, text in said])
+    # Through the index, so a word already seen costs nothing, and on a deadline, because this
+    # runs from `on_new_type` inside the host's own ten-second run. Re-embedding the whole
+    # vocabulary there was a network call per `define_relation`, and the wait could take the
+    # host's whole block with it (docs/code-review-2026-09-30.md 3.4.3). Not answered in time,
+    # nothing is reported and the types stay marked unread for the pass at the close.
+    from terraweaver import meaning
+
+    held = world.meanings.vectors_for([(f"type:{name}", text) for name, text in said],
+                                      within=meaning.INLINE_SECONDS)
     vectors = [held.get(f"type:{name}") for name, _ in said]
     pairs = []
     for i in range(len(said)):

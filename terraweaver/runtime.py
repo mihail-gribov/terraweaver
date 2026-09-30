@@ -18,7 +18,7 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from terraweaver import initiative, matching, onboarding, ontology, sandbox
+from terraweaver import initiative, matching, meaning, onboarding, ontology, sandbox
 from terraweaver.describe import (COMMON_MEMBERS, HOST_GUIDE, catalogue, describe_for_prompt, short,
                                   describe_methods)
 from terraweaver import timeutil
@@ -1457,8 +1457,12 @@ class WorldRuntime:
             # anything that mattered. What a completed statement wrote is a whole thought — the
             # subgraph a single call touches is saved together inside it — so keeping it costs
             # no consistency, and the host is told exactly where the block stopped.
+            # One budget for every meaning check this run makes, spent across all of them. Each
+            # `define` asks the embedder four or five times, and bounding each call separately
+            # still added up past what the sandbox allows the whole run (meaning.INLINE_SECONDS).
             with contextlib.redirect_stdout(stdout), ontology.track_access() as counts, \
-                    ontology.record_changes() as recording, sandbox.time_limit():
+                    ontology.record_changes() as recording, sandbox.time_limit(), \
+                    meaning.spending():
                 for said in _about_to_invent(self, tree):
                     ontology.note_hint(said)
                 if skipped_imports:
@@ -2118,12 +2122,23 @@ def _reads_like(runtime, proposed: list) -> list[str]:
         theirs = [key for key in known if key.startswith(f"{what}:")]
         if not theirs:
             continue
-        from terraweaver import authoring
+        from terraweaver import authoring, meaning
 
-        vectors = runtime.world.meanings.model.embed([text] + [known[k][1] for k in theirs])
+        # Through the index and on a deadline: this runs before a `define` in the host's own block
+        # and it re-embedded every class, every relation type and every attribute in the world for
+        # each name proposed — measured 2026-09-30, 6.4 s for one `world.define` on a base world,
+        # inside a run the sandbox stops after ten (docs/code-review-2026-09-30.md 3.3.15).
+        held = runtime.world.meanings.vectors_for(
+            [(f"word:{known[k][0]}", known[k][1]) for k in theirs], within=meaning.INLINE_SECONDS)
+        asked = runtime.world.meanings.vector_of(text, within=meaning.INLINE_SECONDS)
+        if not asked or not held:
+            continue
         best, score = None, 0.0
-        for key, vector in zip(theirs, vectors[1:]):
-            close = sum(a * b for a, b in zip(vectors[0], vector))
+        for key in theirs:
+            vector = held.get(f"word:{known[key][0]}")
+            if vector is None:
+                continue
+            close = sum(a * b for a, b in zip(asked, vector))
             if close > score:
                 best, score = known[key][0], close
         if best and score >= authoring.SAME_IDEA - 0.08 and best.lower() != name.lower():

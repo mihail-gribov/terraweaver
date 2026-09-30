@@ -4120,3 +4120,33 @@ the image-writing path is not. Half the mechanism is reproducible without a mode
 followed by a `save` of any stale reference to the pre-retype object — a session variable, a link's
 end — writes the old class's rows back and the thing loads as what it was.
 `runtime._hand_back_what_moved` repoints session variables and nothing repoints what a link holds.
+
+## 2026-09-30 — one budget for what a run asks the outside, because five deadlines are not a deadline
+
+`tests/test_round_trip.py` failed on a machine at load 20 with `RunTimeout: the run took longer
+than 10 seconds` on a block of `define_relation` calls, and passed on its own. It was not the load
+alone: a `define` asks the embedder four or five times — `classes_like`, the word it is asking
+about, `_reads_like` before the statement runs, `twins` from `inspector.on_new_type` — and every
+one of them was a network call inside the host's own ten seconds, which is what the review says
+about this seam (2.4, 3.4.3, 3.3.15).
+
+Three things, in this order, and the order matters.
+
+**The index is a cache** (recorded above): the known words are embedded once and kept, so a define
+pays for the one text it is asking about. Measured: 2.12 s cold, then 0.48 s.
+
+**Only the network call is bounded, and on the calling thread's terms.** The first attempt put
+`vectors_for` behind a deadline — and `vectors_for` writes to SQLite, and a connection belongs to
+the thread that made it. Writing from a worker to save a wait is not a saving, it is a different
+bug. So `Meanings.vectors_for(..., within=…)` reads and writes here and bounds only
+`model.embed`, and `vector_of` does the same for the one text a caller is asking about.
+
+**One budget for the whole run.** Per-call deadlines of 1.5 s still let a single `world.define`
+cost 6 s, because a define asks five times. `meaning.spending()` is entered once in
+`runtime.run`, `within_seconds` asks it what is left, and when the budget is gone the checks stop
+asking. Measured on the same busy machine: 2.00 s for a define, the near-duplicate still noticed
+when the embedder is quick, and the worker that ran past the deadline still writes its vector into
+the index — so what a slow run paid for, the next run has for nothing.
+
+This is the same shape as `READING_AT_THE_CLOSE`: one deadline for the whole close, not one per
+reading, which is a lesson this codebase had already learned and paid for once.

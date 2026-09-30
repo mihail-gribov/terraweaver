@@ -633,13 +633,20 @@ class Authoring:
         if guess:
             found.append((guess, known[guess]))
         try:
-            # Through the index: the known words are embedded once and kept, so a `define` inside
-            # the host's own run pays for the one text it is asking about
-            # (docs/code-review-2026-09-30.md 3.4.3).
+            # Through the index, and on a deadline. The known words are embedded once and kept, so
+            # this pays for the one text it is asking about — and even that is bounded, because
+            # this runs inside the host's own ten-second run and a block of defines on a busy
+            # machine lost the whole block to the wait (docs/code-review-2026-09-30.md 3.4.3).
+            # Not answered in time, the meaning check is left to the pass at the close.
+            from terraweaver import meaning
+
             meanings = self.world.meanings
             names = [n for n in known if n != (guess or "")]
-            held = meanings.vectors_for([(f"word:{n}", f"{n}: {known[n]}") for n in names])
-            asked = meanings.model.embed([wanted])[0]
+            held = meanings.vectors_for([(f"word:{n}", f"{n}: {known[n]}") for n in names],
+                                        within=meaning.INLINE_SECONDS)
+            asked = meanings.vector_of(wanted, within=meaning.INLINE_SECONDS)
+            if not asked or not held:
+                return found[:limit]
             scored = sorted(((sum(a * b for a, b in zip(asked, held[f"word:{name}"])), name)
                              for name in names if f"word:{name}" in held), reverse=True)
             for score, name in scored[:limit]:
