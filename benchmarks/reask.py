@@ -58,7 +58,8 @@ def main() -> int:
     # wait below gave up quietly, and a hundred questions were put to a host with no tools at all:
     # every answer "I don't have access to terraweaver tools", recorded as 1% accuracy. Measured
     # 2026-09-28, and the reason both the open and the wait are no longer silent.
-    server = hosting.start_server(Path(args.db), args.port, blank=bool(args.specs))
+    server = hosting.start_server(Path(args.db), args.port,
+                                  specs=Path(args.specs) if args.specs else None)
 
     agent = hosting.World(work, args.label, args.port)
     results, spent = [], {"turns": 0, "cost": 0.0}

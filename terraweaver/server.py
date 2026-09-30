@@ -388,21 +388,25 @@ def main() -> None:
         import terraweaver.runtime as runtime_module
 
         runtime_module.READING_AT_THE_CLOSE = args.reading_at_close
-    if args.specs:
-        # A world somebody already built: its classes come from the files it wrote them into.
-        from terraweaver import authoring
+    if args.specs or args.blank:
+        # A world somebody already built, or one with the mechanism and no vocabulary. Either way
+        # it is opened the way `open_world` opens one — a bare name is a world's name and becomes
+        # `<worlds>/<name>/world.db`, not a file called `mike` in whatever directory the server
+        # was started from — and either way it is given an engineer, which these two branches
+        # never did (docs/code-review-2026-09-30.md 3.3.13).
+        from terraweaver import authoring, where
 
-        specs = {json.loads(path.read_text())["name"]: json.loads(path.read_text())
-                 for path in sorted(Path(args.specs).glob("*.json"))}
-        runtime = WorldRuntime(args.db, specs=specs, selves=False)
-        authoring.install(runtime.world, Path(args.specs))
-    elif args.blank:
-        # A world with the mechanism and no vocabulary. The host defines the classes; the world
-        # keeps them uniform and answers "is there already something for this?".
-        from terraweaver import authoring
-
-        runtime = WorldRuntime(args.db, specs={}, selves=False)
-        authoring.install(runtime.world, Path(args.db).with_suffix("").parent / "grown")
+        db, home = args.db, None
+        if db != ":memory:" and "/" not in db and not db.endswith(".db"):
+            folder = where(db)
+            folder.mkdir(parents=True, exist_ok=True)
+            db, home = str(folder / "world.db"), folder
+        specs = ({json.loads(path.read_text())["name"]: json.loads(path.read_text())
+                  for path in sorted(Path(args.specs).glob("*.json"))} if args.specs else {})
+        grown = Path(args.specs) if args.specs else Path(db).parent / "grown"
+        runtime = WorldRuntime(db, specs=specs, selves=False, home=home)
+        authoring.install(runtime.world, grown)
+        _give_it_an_engineer(runtime.world)
     else:
         # The world as every world opens: the base, what it has grown, the calls that define more
         # — one recipe, `open_world` — and the engineer, if this machine has a key for one.

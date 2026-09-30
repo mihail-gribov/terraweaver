@@ -273,6 +273,10 @@ class Store:
         ids = [r[0] for r in self.conn.execute("SELECT id FROM instances WHERE class_name = ?", (class_name,))]
         return [self._load(instance_id, classes, self._identity) for instance_id in ids]
 
+    def classes_here(self) -> set[str]:
+        """Every class something in this database belongs to, as the rows say."""
+        return {row[0] for row in self.conn.execute("SELECT DISTINCT class_name FROM instances")}
+
     def _load(self, instance_id: str, classes: dict[str, type], memo: dict[str, Any] | None = None):
         memo = self._identity if memo is None else memo
         if instance_id in memo:
@@ -281,6 +285,17 @@ class Store:
         if row is None:
             raise KeyError(f"no instance with id {instance_id!r}")
 
+        if row[0] not in classes:
+            # A world opened without the class something in it belongs to. It is a configuration
+            # mistake and not a missing row, so it says which class and that the world was opened
+            # without it — `KeyError: 'AIAgent'` from four frames down killed a server at startup
+            # and a hundred questions were then put to a host that had no tools at all
+            # (docs/code-review-2026-09-30.md 3.4.9).
+            raise RuntimeError(
+                f"this world holds a {row[0]} and was opened without that class. Open it the way "
+                f"it was built: `open_world(<name>)` for a world with the base classes, "
+                f"`--specs <dir>` only for one whose classes are all its own. It holds: "
+                f"{', '.join(sorted(self.classes_here()))}.")
         cls = classes[row[0]]
         obj = object.__new__(cls)  # bypass __init__: cyclic refs must register in memo before being filled in
         # Loading is machinery, not a user-driven change: no guard, and nothing to record.

@@ -21,6 +21,7 @@ Three things keep it honest:
 - it may only read and write through the object model, like any host code. There is no privileged
   path: the world's own methods are bound by the same rules as the agent's.
 """
+import ast
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
@@ -67,9 +68,12 @@ class Procedures:
         is never stored — the world doesn't get to save itself a landmine."""
         if not because.strip():
             raise ValueError("say why this procedure exists — what kept being written by hand")
-        sandbox.check(body)  # raises SandboxViolation or SyntaxError, and nothing is stored
-        compile(f"def {signature}:\n" + "\n".join("    " + line for line in body.splitlines()),
-                f"<procedure {name}>", "exec")
+        # Checked, and compiled from what the check leaves — not from the text as written. The
+        # check takes out the imports the world already offers, and the text still had them: the
+        # procedure was defined without complaint and then raised `ImportError` on its first call,
+        # because host code has no `__import__` (docs/code-review-2026-09-30.md 3.3.11).
+        runs = _as_it_will_run(body)     # raises SandboxViolation or SyntaxError, nothing stored
+        compile(_as_a_function(signature, runs), f"<procedure {name}>", "exec")
         self.store.conn.execute(
             "INSERT OR REPLACE INTO procedures (name, attaches_to, signature, body, because, added_at, uses) "
             "VALUES (?, ?, ?, ?, ?, ?, COALESCE((SELECT uses FROM procedures WHERE name = ?), 0))",
@@ -114,8 +118,7 @@ class Procedures:
             if procedure.attaches_to not in classes:
                 continue
             namespace: dict = {}
-            source = f"def {procedure.signature}:\n" + "\n".join(
-                "    " + line for line in procedure.body.splitlines())
+            source = _as_a_function(procedure.signature, _as_it_will_run(procedure.body))
             exec(compile(source, f"<procedure {procedure.name}>", "exec"), _procedure_globals(), namespace)
             function = namespace[procedure.signature.split("(")[0]]
             function.__doc__ = procedure.because
@@ -134,15 +137,66 @@ def _counting(book: "Procedures", name: str, function):
     return called
 
 
+def _as_it_will_run(body: str) -> str:
+    """The body as it will actually be run: checked, with the offered imports taken out."""
+    return ast.unparse(sandbox.check(body))
+
+
+def _as_a_function(signature: str, body: str) -> str:
+    return f"def {signature}:\n" + "\n".join("    " + line for line in body.splitlines())
+
+
+class _Door:
+    """The world as host code reaches it, and not the world itself.
+
+    A procedure is the world's own code and is held to the same rules as the agent's — that is
+    the promise at the top of this module, and it was not kept: `world` here was the real `World`,
+    so `return world.store.conn` handed a procedure's caller the database connection
+    (docs/code-review-2026-09-30.md 3.3.11). What a procedure may reach is what the `run` door
+    offers, which is `WorldView` — the same names, checked by the same list.
+    """
+
+    def __init__(self, world):
+        self._world = world
+
+    def __getattr__(self, name):
+        from terraweaver.runtime import WorldView
+
+        if name.startswith("_"):
+            raise AttributeError(name)
+        extra = (self._world.extras or {}).get(name)
+        if extra is not None:
+            return extra
+        if not hasattr(WorldView, name):
+            known = [n for n in dir(WorldView) if not n.startswith("_")]
+            raise AttributeError(f"a procedure reaches the world the way host code does, and it "
+                                 f"has no {name!r}. It can: {', '.join(sorted(known))}.")
+        return getattr(self._world, name)
+
+
+class _Globals(dict):
+    """The names a procedure sees, resolved when it runs rather than when it was bound.
+
+    A procedure bound at start-up used to capture the world that was current then, and under
+    `open_world()` — or a second world in the same process — it went on writing into the first
+    one. Resolved on the lookup, a procedure always runs against the world it was called in.
+    """
+
+    def __missing__(self, name):
+        from terraweaver import ontology
+
+        world = ontology.current_world()
+        if name == "world":
+            return _Door(world)
+        if name in world.classes:
+            return world.classes[name]
+        raise KeyError(name)
+
+
 def _procedure_globals() -> dict:
     """What a procedure may reach: the same as host code, and nothing besides."""
-    from terraweaver import ontology
-
-    out = sandbox.modules()
+    out = _Globals(sandbox.modules())
     out["__builtins__"] = sandbox.BUILTINS
-    out["world"] = ontology.current_world()
-    for name, cls in ontology.current_world().classes.items():
-        out[name] = cls
     return out
 
 

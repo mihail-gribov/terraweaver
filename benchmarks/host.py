@@ -181,11 +181,15 @@ def engineer() -> str | None:
     return outside.NEMOTRON if keys().get("NEBIUS_API_KEY") else None
 
 
-def start_server(db: Path, port: int, blank: bool = False, reading: float = 0) -> subprocess.Popen:
+def start_server(db: Path, port: int, blank: bool = False, reading: float = 0,
+                 specs: Path | None = None) -> subprocess.Popen:
     """An empty world of its own: the base, so nothing is in it but `user` and `agent`.
 
     `blank=True` goes further and takes the classes away too — the host defines the ontology
-    (`docs/open-ontology.md`).
+    (`docs/open-ontology.md`). `specs` opens a world whose classes are all grown, from the files it
+    wrote them into: without it the server has no class for anything the world holds, so nothing
+    in it can be loaded — `--specs` was accepted by `reask.py` and never reached the server
+    (docs/code-review-2026-09-30.md 3.4.9).
 
     `reading=0` by default: during a measured ingestion the world does not read at the close, and
     the reading is a phase of its own afterwards. The budget bounds when a reading may *start*, so
@@ -195,7 +199,8 @@ def start_server(db: Path, port: int, blank: bool = False, reading: float = 0) -
     server = subprocess.Popen(
         [sys.executable, "-m", "terraweaver.server", "--db", str(db), "--port", str(port),
          "--reading-at-close", str(reading),
-         *(["--blank"] if blank else [])],
+         *(["--specs", str(specs)] if specs else []),
+         *(["--blank"] if blank and not specs else [])],
         cwd=ROOT, env=keys(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     for _ in range(120):
         if server.poll() is not None:
