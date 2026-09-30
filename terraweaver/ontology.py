@@ -1167,6 +1167,20 @@ class Entity:
                 f"and brings it back; if nothing ever said it, say it now."
             )
         near = did_you_mean(name, known, synonyms)
+        # `set_<word>` for a word this world has no type for is a *link* being written, and the
+        # answer is the link door. Answered with "give the class the attribute", the host went
+        # looking for an attribute: measured 2026-09-30, the same 25 facts took 24 turns against
+        # 3, most of them spent on `set_born_in` — a fact about two things — being sent towards
+        # `world.attribute`. Which of the two it is is not a guess: `set_` says a link.
+        if name.startswith("set_") and len(name) > 4:
+            word = name[len("set_"):].replace("_", " ")
+            raise AttributeError(
+                f"{type(self).__name__} has no {name!r}, because this world has no word "
+                f"{word!r} for a link yet. A fact about two things is written by saying it: "
+                f"`this.relate(other, \"{word}\")` — the world finds or makes the word, and "
+                f"`set_{name[len('set_'):]}` exists from then on. If it is not about two things "
+                f"but a value this one holds, it is an attribute: "
+                f"world.attribute({type(self).__name__}, \"<name>\", \"<what it is>\").")
         raise AttributeError(
             f"{type(self).__name__} has no {name!r}"
             + (f" — did you mean {near!r}? " if near else ". ")

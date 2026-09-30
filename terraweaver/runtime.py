@@ -1847,19 +1847,24 @@ def _block_as_it_stands(code: str, exc: BaseException, reason: str) -> str:
         ran_lines, broke_lines = set(), set()
         for start, end, ran in by:
             (ran_lines if ran else broke_lines).update(range(start, end + 1))
+        # A line inside a statement nothing ever got to is said to be never reached. Everything
+        # outside every statement is a comment or a blank and is handed back as it was written:
+        # marked, it said "never reached" of a comment sitting above a line that had run, which
+        # is worse than saying nothing about it at all.
+        never = {n for start, end in (getattr(exc, "statement_spans", None) or [])
+                 for n in range(start, end + 1)} - ran_lines - broke_lines
         out = ["# --- what the world did with this block, line by line ---"]
         for n, line in enumerate(lines, start=1):
-            if n in ran_lines:
-                out.append(line)
-            elif n in broke_lines:
-                out.append(f"# !! {line}" + (f"      # {why}" if n == where else ""))
-                if n in failed_at and n != where:
-                    out[-1] = f"# !! {line}      # failed too"
+            if n in broke_lines:
+                out.append(f"# !! {line}"
+                           + (f"      # {why}" if n == where
+                              else "      # failed too" if n in failed_at else ""))
+            elif n in never:
+                out.append(f"# (never reached) {line}")
             else:
-                out.append(f"# (never reached) {line}" if line.strip() else line)
-        done = len(ran_lines)
-        out.append(f"# --- {done} line(s) above ran and are in the world: do not send them "
-                   f"again. Send the commented ones, fixed. ---")
+                out.append(line)
+        out.append(f"# --- {len(ran_lines)} line(s) above ran and are in the world: do not send "
+                   f"them again. Send the commented ones, fixed. ---")
         return "\n".join(out)
     out = ["# --- done and kept, do not send again ---"] + lines[:where - 1]
     out.append(f"# !! stopped here — {why}")
@@ -1920,19 +1925,23 @@ def _exec_by_statement(tree, namespace: dict, store) -> None:
     # — so the host sent them again and the world recorded them twice
     # (docs/code-review-2026-09-30.md 3.3.7).
     outcome: list[tuple[int, int, bool]] = []
+    # And where every top-level statement sits, attempted or not — the difference between a line
+    # nothing ever reached and a line that is not code at all (a comment, a blank) is knowable
+    # only from here.
+    spans = [(one.lineno, getattr(one, "end_lineno", None) or one.lineno) for one in tree.body]
     for statement in tree.body:
         piece = ast.Module(body=[statement], type_ignores=[])
-        spans = (statement.lineno, getattr(statement, "end_lineno", None) or statement.lineno)
+        mine = (statement.lineno, getattr(statement, "end_lineno", None) or statement.lineno)
         try:
             with store.transaction():
                 exec(compile(piece, "<run>", "exec"), namespace)
-            outcome.append((*spans, True))
+            outcome.append((*mine, True))
             if broke:
                 ran_after += 1
         except (Exception, sandbox.RunTimeout) as failed:  # noqa: BLE001 - carrying on is the point
             if isinstance(failed, sandbox.RunTimeout):
                 raise                      # out of time is out of time; the rest would not run
-            outcome.append((*spans, False))
+            outcome.append((*mine, False))
             broke.append(failed)
             if len(broke) >= _GIVE_UP_AFTER:
                 break
@@ -1957,6 +1966,7 @@ def _exec_by_statement(tree, namespace: dict, store) -> None:
             )
         broke[0].by_statement = outcome
         broke[0].of_statements = len(tree.body)
+        broke[0].statement_spans = spans
         raise broke[0]
 
 

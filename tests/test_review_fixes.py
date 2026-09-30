@@ -271,6 +271,18 @@ def finding_3_3_7_the_echo_says_what_actually_ran() -> None:
           'c = Person.new(full_name="Two")' in shown
           and '# c = Person.new(full_name="Two")' not in shown, shown[:400])
 
+    # A line that is not code at all is not a line anything reached or failed on. Marked as
+    # "never reached" it said so of a comment above a line that had just run.
+    commented = format_result(rt.run(
+        '# record the people\na = Person.new(full_name="Three")\n\n# and one that fails\n'
+        'b = 1/0\nc = Person.new(full_name="Four")\nd = 1/0\ne = 1/0\n'
+        'f = Person.new(full_name="Five")', "host"))
+    check("3.3.7 a comment is handed back as written",
+          "# record the people" in commented
+          and "(never reached) # record the people" not in commented, commented[:500])
+    check("3.3.7 and a statement nothing reached says so",
+          '# (never reached) f = Person.new(full_name="Five")' in commented, commented[:600])
+
 
 def finding_3_1_6_a_separation_holds_through_a_third_party() -> None:
     """Told a and c are different: a rule match between b and c may not join them anyway."""
