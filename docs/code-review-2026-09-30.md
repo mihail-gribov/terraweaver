@@ -543,3 +543,54 @@ In order; the first four are each under a day and remove a class of bug rather t
    facade; delete the duplicates in 2.5 and the dead code in 2.11.
 8. **One test runner** (`pytest` or a `tests/run_all.py`) so the suite is one command, and tests
    for the eight modules that have none.
+
+---
+
+## 5. Checked against this session's problems (2026-09-30, after `af6c15a`)
+
+The review changed nothing in the repository, and it was written at `9045ab8` — after 22 of the
+session's 25 fixes. It cannot have induced any of them. The question worth answering is the other
+one: does it *explain* what is still wrong? Each high finding was put to the run it would have hurt
+(`var/run8/world`, 455 facts, 318 names, 442 links).
+
+**Live, confirmed on data, and costing us**
+
+- **3.4.1 — `look_at_types` is dead in every served world.** `outside.Nemotron` has `say` and
+  `json` and no `__call__`; `ask(account)` raises `TypeError` and the bare `except` eats it.
+  `var/run8`: 28 types defined, `looked_at IS NOT NULL` for **0** of them. A whole deferred check
+  has never run once. The benchmark number does not depend on it only because the reading was moved
+  out into its own phase.
+- **3.4.2 — `typed_between` reads every current typed link between the two ends**, not the ones this
+  reading wrote, so a pre-existing link is counted as `made`, the bare link is ended and the words
+  are lost. `var/run8`: 7 of 402 end-pairs carry two types (`CapitalOf`+`MayorOf`,
+  `AuthorOf`+`FamousFor`, `AssociatedWith`+`LocatedIn`, …), so ~2 % of the pairs the reading is
+  asked about can misfire this way.
+- **2.9 — the silence.** The give-ups are not mysterious once they are read back: of 90 failed
+  names, 14 are `X links two entities; got Person and str/list`, 10 are `no 'subject' in the image`,
+  9 are `NeedsResolution is not JSON serializable`, 6 a `SyntaxError`. Every one of them is a
+  `TypeError`/`AttributeError` that a `log.debug` would have surfaced on the first run.
+- **2.4 — derived tables rebuilt on read.** Not a wrong answer, a bill: $4.43 of writing and the
+  timeouts that killed two reading phases this week.
+
+**Real, but measured not to have touched the benchmark**
+
+- **3.1.3 — tie-break by string id.** `stated_at` is a microsecond integer (`1790729304472324`);
+  across every `facts_*` table in `var/run8` there are **0** ties on `(subject, slot, last_said)`.
+  Reachable under `set_now` replay, which the benchmark does not use. It is *not* the 36 % of
+  supersessions we miss.
+- **3.2.9 — `_check_roles` blocks an ended holder.** No spec in this world declares a role `max` —
+  not in `ontology/core/*.json`, not in `var/run8/world/grown/`. The check never fires here.
+- **3.4.9 — `went_wrong` not applied.** True of `run.py`, `run_blank.py`, `ask_world.py`; the two
+  scripts we measure with, `run_fc.py` and `reask.py`, both apply it (that was the 09-27 fix).
+- **3.3.1 `set_variable`, 3.3.2 `pin("agent")`, 3.1.2 repeats wiped, 3.2.7 bare-string tags** — none
+  is on the ingestion, reading or question path.
+
+**What the review does not cover**
+
+The 09-29 diagnosis stands: 81 % became 37 % through a one-letter name key on grown classes and an
+embedder that was never there. Neither is in this review. Nor are the four live give-up causes
+above; two of them (`no 'subject' in the image`, `is read, not assigned`) were fixed after `run8` in
+`cadc987`/`af6c15a`, and two are still open.
+
+Order to act, then, is section 4's list with two items promoted: the engineer contract (3.4.1) and
+`typed_between` (3.4.2) first, because both lose data silently today.
