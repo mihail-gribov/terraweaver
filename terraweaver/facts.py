@@ -349,7 +349,18 @@ class Facts:
             rows = self.conn.execute(
                 f"SELECT {COLUMNS} FROM {table} WHERE {clause} ORDER BY id", args).fetchall()
             out += [_statement(table, row) for row in rows]
-        return sorted(out, key=lambda s: (s.last_said, s.id))
+        # The row as a number, not as text: `facts_Person:10` is after `facts_Person:9`, and
+        # everything downstream that breaks a tie on "the later one" reads this order.
+        return sorted(out, key=lambda s: (s.last_said, _row(s.id)))
+
+
+def _row(said: str) -> tuple:
+    """A statement id as (table, row) with the row as an integer."""
+    table, _, row = str(said or "").rpartition(":")
+    try:
+        return (table, int(row))
+    except ValueError:
+        return (table, 0)
 
 
 def _run(conn, script: str) -> None:

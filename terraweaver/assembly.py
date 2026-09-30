@@ -273,11 +273,19 @@ def resolve(statements: list, at: datetime | None = None):
     reported, and that is where an open question comes from. A slot nobody ever states directly,
     like someone's character, is filled by what the world worked out; a slot someone did state is
     filled by them, because a conclusion is the weakest thing in the world."""
-    at = at or datetime.utcnow()
+    from terraweaver import timeutil
+
+    at = at or timeutil.now()
     standing = [s for s in statements if s.holds_at(at)]
     if not standing:
         return None, []
-    standing.sort(key=lambda s: (facts_module.trust(s.source), s.last_said), reverse=True)
+    # Trust, then the latest, then the later row. The third key is not decoration: two statements
+    # made in the same moment used to be separated by the *string* id, where `facts_Person:10`
+    # sorts before `facts_Person:9`, and a reverse sort is stable, so the earlier of the two won.
+    # Under `set_now` — the replay the record exists for — every correction in a run has the same
+    # `last_said` and the first one written kept the slot (docs/code-review-2026-09-30.md 3.1.3).
+    standing.sort(key=lambda s: (facts_module.trust(s.source), s.last_said, _row_of(s)),
+                  reverse=True)
     best = standing[0]
     rivals = [s for s in standing[1:]
               if _text(s.value) != _text(best.value) and facts_module.trust(s.source) == facts_module.trust(best.source)]
@@ -293,10 +301,33 @@ def became(facts, subjects: list[str]) -> str | None:
     return _text(said[-1].value) or None
 
 
+def _row_of(statement) -> tuple:
+    """A statement's place in its table, as a number — `facts_Person:9` is before `facts_Person:10`.
+
+    An id is `<table>:<row>`, and the row is an autoincrementing integer, so this is the order the
+    statements were written in. Compared as text, ten sorts before nine.
+    """
+    said = str(getattr(statement, "id", "") or "")
+    table, _, row = said.rpartition(":")
+    try:
+        return (table, int(row))
+    except ValueError:
+        return (table, 0)
+
+
 def assemble(facts, rule: Callable[[list, list], bool] = same_name, at: datetime | None = None,
              specs: dict | None = None) -> dict[str, Image]:
     """Build every image from every fact. Cheap enough to do from scratch; the same code path
-    serves "rebuild the world" and "rebuild the one entity this run touched"."""
+    serves "rebuild the world" and "rebuild the one entity this run touched".
+
+    The moment is settled once, here, and on the world's clock. Read three times from
+    `datetime.utcnow()` further down, the images resolved at the wall clock while `happening()`
+    answered on the world's `now`, so the two disagreed under `set_now` — which is the mode the
+    record was built to be replayed in (docs/code-review-2026-09-30.md 3.1.4).
+    """
+    from terraweaver import timeutil
+
+    at = at or timeutil.now()
     belongs = clusters(facts, rule)
     images: dict[str, Image] = {}
     for subject, image_id in belongs.items():
@@ -323,7 +354,7 @@ def assemble(facts, rule: Callable[[list, list], bool] = same_name, at: datetime
                 by_slot.setdefault(name_slot, []).extend(statements)
         for slot, statements in by_slot.items():
             if slot == name_slot:
-                image.names, image.proposed_names = name_forms(statements, at or datetime.utcnow())
+                image.names, image.proposed_names = name_forms(statements, at)
                 if image.names:
                     image.values[slot] = image.names[0]
                     image.sources[slot] = next(s.source for s in reversed(statements)
@@ -331,7 +362,7 @@ def assemble(facts, rule: Callable[[list, list], bool] = same_name, at: datetime
                 continue
             if holds_many(specs, class_name, slot):
                 # Everything still standing, newest first. Nothing here is a rival to anything.
-                standing = [s for s in statements if s.holds_at(at or datetime.utcnow())]
+                standing = [s for s in statements if s.holds_at(at)]
                 if not standing:
                     continue
                 seen, many = set(), []

@@ -33,6 +33,7 @@ nothing about the world changes.
 """
 from datetime import datetime, timedelta
 
+from terraweaver import timeutil
 from terraweaver.store import run_script
 
 SCHEMA = """
@@ -128,7 +129,7 @@ def coalesce(stretches: list) -> list:
 def holding(world, subject: str, nature: str, at: datetime | None = None) -> list[str]:
     """What held for this subject at a moment — the values, without walking the statements."""
     _ready(world)
-    when = _moment(at, datetime.utcnow())
+    when = _moment(at, timeutil.now())
     moment = _stamp(when)
     rows = world.store.conn.execute(
         "SELECT value FROM periods WHERE subject = ? AND nature = ? AND every IS NULL "
@@ -144,7 +145,7 @@ def holding(world, subject: str, nature: str, at: datetime | None = None) -> lis
 def carrying(world, nature: str, value: str, at: datetime | None = None) -> list[str]:
     """Which subjects held this value at a moment — the question asked from the other end."""
     _ready(world)
-    when = _moment(at, datetime.utcnow())
+    when = _moment(at, timeutil.now())
     moment = _stamp(when)
     rows = world.store.conn.execute(
         "SELECT DISTINCT subject FROM periods WHERE nature = ? AND value = ? AND every IS NULL "
@@ -194,7 +195,7 @@ def next_time(world, subject: str, nature: str, value: str | None = None,
     _ready(world)
     where = "subject = ? AND nature = ?" + (" AND value = ?" if value is not None else "")
     args = [subject, nature] + ([value] if value is not None else [])
-    moment = _moment(after, datetime.utcnow())
+    moment = _moment(after, timeutil.now())
     coming = []
     for row in _repeating(world, where, args):
         when = recurrence.next_after(row["starts"], row["every"], moment, row["until"])
@@ -287,12 +288,14 @@ def _covers(row: dict, when: datetime) -> bool:
     return recurrence.covers(row["starts"], row["every"], row["lasting"], when, row["until"])
 
 
-def _repeat_rules(world) -> list[dict]:
+def _repeat_rules(world, only: str | None = None) -> list[dict]:
     """The repeat statements, as rules. One statement, one cyclic row."""
     from terraweaver import tags as tagging
 
     out = []
     for statement in world.facts.with_slot(REPEATS):
+        if only and statement.subject != only:
+            continue
         rule = statement.value
         if not isinstance(rule, dict) or not rule.get("every"):
             continue
@@ -326,6 +329,17 @@ def rebuild_for(world, subject: str, slot: str | None = None) -> int:
         for starts, until in coalesce(stretches):
             _insert(world, held, nature, value, starts, until)
             rows += 1
+    # The repeat rows too, because this delete took them out. `_from_statements` derives stretches
+    # and knows nothing about a cycle, so a one-subject rebuild used to leave that subject with no
+    # repeats at all until the next whole-table rebuild — and every tags write and every `spells`
+    # read goes through here. Measured 2026-09-30 (docs/code-review-2026-09-30.md 3.1.2):
+    # `cycles()` came back empty after one `rebuild_for`.
+    for rule in _repeat_rules(world, only=subject):
+        if slot and rule["nature"] != slot:
+            continue
+        _insert(world, rule["subject"], rule["nature"], rule.get("value"),
+                rule["anchor"], rule.get("ends"), rule["every"], rule.get("lasting"))
+        rows += 1
     world.store.conn.commit()
     return rows
 

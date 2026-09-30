@@ -7,6 +7,7 @@ sweep over these seams has something that fails when it is undone.
 Run: .venv/bin/python tests/test_review_fixes.py
 """
 import sys
+from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -139,7 +140,49 @@ def finding_2_3_only_the_transaction_commits() -> None:
           f"{people()} people, was {was}")
 
 
+def finding_3_1_3_the_later_statement_wins_under_a_moved_clock() -> None:
+    """Twelve corrections in one moment: the image must show the last, not the seventh.
+
+    Under `set_now` — the replay mode the record was built for — every statement in a run carries
+    the same `last_said`, and the tie was broken by the *string* id, where `facts_p:10` sorts
+    before `facts_p:9`. Measured before the fix: the twelfth correction showed as the eighth.
+    """
+    import sqlite3
+
+    from terraweaver import assembly, timeutil
+    from terraweaver.facts import Facts
+
+    timeutil.set_now(datetime(2020, 1, 1, 12, 0, 0))
+    try:
+        facts = Facts(sqlite3.connect(":memory:"))
+        facts.state("p1", "full_name", "Ada", source="agent")
+        for n in range(12):
+            facts.state("p1", "city", f"city {n}", source="agent")
+        shown = [image.values.get("city") for image in assembly.assemble(facts).values()]
+        check("3.1.3 the last correction of the moment is the one that stands",
+              shown == ["city 11"], f"the image shows {shown}")
+    finally:
+        timeutil.set_now(None)
+
+
+def finding_3_1_2_one_subject_rebuilt_keeps_its_repeats() -> None:
+    """A tags write must not wipe that entity's repeat rules — `rebuild_for` deleted them."""
+    from terraweaver import periods
+
+    rt = base.world()
+    ada = rt.world.new("Person", full_name="Ada")
+    ada.repeat(every="week", tag="on-call")
+    before = len(periods.cycles(rt.world, ada.id))
+    periods.rebuild_for(rt.world, ada.id)
+    after = periods.cycles(rt.world, ada.id)
+    check("3.1.2 the repeat rule was there", before == 1, f"{before} cycles before")
+    check("3.1.2 and it survives a one-subject rebuild", len(after) == 1,
+          f"{len(after)} cycles after rebuild_for")
+
+
 def main() -> None:
+    finding_3_1_2_one_subject_rebuilt_keeps_its_repeats()
+    finding_3_1_3_the_later_statement_wins_under_a_moved_clock()
     finding_2_3_only_the_transaction_commits()
     finding_3_4_1_the_engineer_is_not_a_function()
     finding_3_4_2_a_link_that_was_already_there_is_not_this_readings_work()
