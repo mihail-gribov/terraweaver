@@ -54,11 +54,15 @@ CREATE TABLE IF NOT EXISTS tag_reviews (
 # How much a tag must have grown since it was last looked at before it is worth looking again.
 GROWN_BY = 0.5
 
+_RUN_OF_DASHES = re.compile(r"-{2,}")
+
 
 def canonical(tag: str) -> str:
     """The form a tag is compared in — not the form it is stored in."""
     text = _TIDY.sub("-", str(tag).strip().lower())
-    return text.strip("-•,.;:!?").replace("--", "-")
+    # Every run of dashes to one, not one pass of "--" to "-": `"a - b"` came out `"a--b"` and
+    # then failed to match `"a-b"` (docs/code-review-2026-09-30.md 3.2.17).
+    return _RUN_OF_DASHES.sub("-", text.strip("-•,.;:!?"))
 
 
 def tidy(values) -> list[str]:

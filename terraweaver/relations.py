@@ -1433,15 +1433,26 @@ def related(world, entity, kind: str, history: bool = False) -> list:
 
 
 def _chain(world, name: str, start) -> list:
-    """Everything reached by following `name` forward from `start`, nearest first."""
-    out, node, seen = [], start, set()
-    while True:
-        nxt = [r.object for r in world.all(name, limit=None) if same(r.subject, node)]
-        if not nxt or (nxt[0].id in seen):
-            return out
-        node = nxt[0]
-        seen.add(node.id)
-        out.append(node)
+    """Everything reached by following `name` forward from `start`, nearest first.
+
+    Every branch, not the first one. A thing may be part of two wholes and a kind of two kinds —
+    the type says it is transitive, not that it is single-file — and following `nxt[0]` dropped
+    the second one and everything above it (docs/code-review-2026-09-30.md 3.2.13).
+    """
+    links = [r for r in world.all(name, limit=None)]
+    out, seen, queue = [], {getattr(start, "id", None)}, [start]
+    while queue:
+        node = queue.pop(0)
+        for r in links:
+            if not same(r.subject, node):
+                continue
+            nxt = r.object
+            if nxt is None or getattr(nxt, "id", None) in seen:
+                continue
+            seen.add(nxt.id)
+            out.append(nxt)
+            queue.append(nxt)
+    return out
 
 
 def _unique(items: list) -> list:

@@ -152,6 +152,11 @@ class Store:
             self._identity = {}
             for obj in self._tx_new_ids:
                 obj.id = None
+            # And out of what this run made, or a rolled-back statement's entities were still
+            # reported to the host as created (docs/code-review-2026-09-30.md 3.1.9). `made` is
+            # per run and the ids are gone, so they are matched by identity.
+            undone = {id(obj) for obj in self._tx_new_ids}
+            self.made = [obj for obj in self.made if id(obj) not in undone]
             raise
         finally:
             self._tx_depth = 0

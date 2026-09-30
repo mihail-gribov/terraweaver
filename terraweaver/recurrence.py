@@ -74,7 +74,12 @@ def read(every) -> Every | None:
             f"no repeat like {every!r}: say it as 'week', '2 weeks', 'month', 'quarter', 'year', "
             f"or a timedelta. Anything more particular is a note, not a rule.")
     size, unit = WORDS[match.group(2)]
-    return Every(size * int(match.group(1) or 1), unit)
+    how_many = int(match.group(1) or 1)
+    if how_many < 1:
+        # "0 weeks" is not a step. It parsed, and then `which()` and `covers()` divided by it
+        # (docs/code-review-2026-09-30.md 3.1.13).
+        raise ValueError(f"{every!r} steps by nothing: a repeat needs a step of one or more.")
+    return Every(size * how_many, unit)
 
 
 def add(moment: datetime, every: Every, times: int = 1) -> datetime:

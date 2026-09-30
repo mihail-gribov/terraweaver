@@ -99,7 +99,14 @@ class Url(Value):
             extracted = _SUFFIXES(host)
             return extracted.top_domain_under_public_suffix or host
         scheme = parts.scheme.lower()
-        port = parts.port
+        try:
+            port = parts.port
+        except ValueError:
+            # `urlsplit` parses lazily and `.port` raises on a port that is not a number. One
+            # malformed URL in the record then made every comparison through `canonical()` raise,
+            # not only the reads of that value (docs/code-review-2026-09-30.md 3.1.12). A URL
+            # nobody can make sense of is kept as it was written; that is what the record is for.
+            return text
         netloc = host if port in (None, _DEFAULT_PORTS.get(scheme)) else f"{host}:{port}"
         path = parts.path.rstrip("/")
         if level == "exact":
