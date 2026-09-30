@@ -4009,4 +4009,10 @@ change, and a schema change needs a gate. Both are named in the code where they 
 modules and tickets; bringing it back to the code is its own piece of work. The whole-file grown
 override of a preset class (2.10) is a design decision to argue, not a defect to patch. Splitting
 the three god modules and the five benchmark `main()`s is refactoring, and refactoring on the way
-into a measurement is how a measurement stops meaning anything.
+into a measurement is how a measurement stops meaning anything. And the big one: the current world
+is still bound per process (`ontology._WORLD`), and so is the clock. The sandbox's module namespace
+was the part of that which was actively corrupting one session from another, and it is fixed;
+binding the world per class or through a `contextvars.ContextVar` changes how every class in the
+package reaches its world, and the benchmark we are about to run depends on the clock staying put
+across tasks. So a task closing now *says* the clock is still moved, and the binding itself waits
+for a moment when nothing is being measured.
