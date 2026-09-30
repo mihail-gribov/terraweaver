@@ -239,7 +239,16 @@ class Facts:
         Expensive by nature — many statements, a model, sometimes a search — so it is kept rather
         than recomputed on every read. When the basis moves, `stale()` says so and the work is
         due again."""
-        guesses = [s for s in basis if getattr(s, "is_conclusion", False)]
+        # A basis given as an id is looked up, not taken on trust. Checked only on the objects
+        # passed in, "never from conclusions" was bypassed by passing the id string of one, which
+        # is the shape every caller that keeps ids uses (docs/code-review-2026-09-30.md 3.1.10).
+        given = list(basis)
+        for n, one in enumerate(given):
+            if not isinstance(one, Statement):
+                found = self.get(str(one))
+                if found is not None:
+                    given[n] = found
+        guesses = [s for s in given if getattr(s, "is_conclusion", False)]
         if guesses:
             raise ValueError("a conclusion is drawn from what was said, not from other conclusions "
                              f"({guesses[0].slot!r} is one) — otherwise the world ends up "
@@ -325,15 +334,48 @@ class Facts:
         wrong. What replaces it is work for the agenda."""
         if not statement.is_conclusion:
             return False
-        live = {s.id for s in self.about(statement.subject)}
-        return _digest(sorted(i for i in statement.basis if i in live)) != statement.basis_digest
+        # Every basis looked up where it is, not among the conclusion's own subject's statements:
+        # a basis about somebody else was never in that set, so it counted as retracted and the
+        # conclusion was stale the moment it was made (docs/code-review-2026-09-30.md 3.1.10).
+        live = {i for i in statement.basis if self._standing(i)}
+        return _digest(sorted(live)) != statement.basis_digest
+
+    def _standing(self, statement_id: str) -> bool:
+        """Whether this statement is still in the record and has not been taken back."""
+        table, _, row = str(statement_id or "").rpartition(":")
+        if not table or table not in set(self.tables()):
+            return False
+        try:
+            got = self.conn.execute(
+                f"SELECT retracted_by FROM {table} WHERE id = ?", (int(row),)).fetchone()
+        except ValueError:
+            return False
+        return bool(got) and got[0] is None
+
+    def get(self, statement_id: str) -> Statement | None:
+        """One statement by its id, whatever table and whatever subject it belongs to."""
+        table, _, row = str(statement_id or "").rpartition(":")
+        if not table or table not in set(self.tables()):
+            return None
+        try:
+            got = self.conn.execute(
+                f"SELECT {COLUMNS} FROM {table} WHERE id = ?", (int(row),)).fetchone()
+        except ValueError:
+            return None
+        return _statement(table, got) if got else None
 
     def basis_of(self, statement: Statement) -> list[Statement]:
-        """The statements a conclusion was drawn from — "why do you think that", answerable."""
+        """The statements a conclusion was drawn from — "why do you think that", answerable.
+
+        By id, across every table and every subject. Read off the conclusion's own subject, a
+        basis about somebody else was simply absent — and then `stale()` saw a basis it could not
+        find and called the conclusion stale from the moment it was made
+        (docs/code-review-2026-09-30.md 3.1.10).
+        """
         if not statement.is_conclusion or not statement.basis:
             return []
-        wanted = set(statement.basis)
-        return [s for s in self.about(statement.subject, include_retracted=True) if s.id in wanted]
+        found = [self.get(one) for one in statement.basis]
+        return [one for one in found if one is not None]
 
     def why(self, subject: str, slot: str) -> tuple[Statement, list[Statement]] | None:
         """The judgement standing on this slot and what it rests on, or None if nobody worked it
