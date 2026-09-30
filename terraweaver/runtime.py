@@ -11,6 +11,7 @@ import ast
 import contextlib
 import io
 import json
+import logging
 import time
 import traceback
 from datetime import date, datetime, timezone
@@ -27,6 +28,8 @@ from terraweaver.session import Session
 from terraweaver.store import Store
 from terraweaver.variables import VariableError, WorldVariables
 from terraweaver.world import NotInWorld, World
+
+log = logging.getLogger("terraweaver")
 
 ONTOLOGY_DIR = Path(__file__).resolve().parent.parent / "ontology" / "core"
 MAX_OUTPUT = 20_000
@@ -397,7 +400,18 @@ class WorldRuntime:
     def session(self, key: str) -> Session:
         existing = self.sessions.get(key)
         if existing is not None and time.time() - existing.last_used > IDLE_RESET_SECONDS:
-            del self.sessions[key]
+            # Gone idle is a session ending, and a session ending has two consequences besides
+            # the namespace: the names pinned for it go with it, and a task left open is closed
+            # as what it was. Deleting the dict entry did neither, so the variables stayed bound
+            # to a key nobody was using and the Task stood open forever
+            # (docs/code-review-2026-09-30.md 3.3.9).
+            if existing.task_id is not None:
+                try:
+                    self.finish_task(key, closing="left_idle")
+                except Exception as wrong:  # noqa: BLE001 - an idle session still has to go
+                    log.debug("idle close of %s failed: %r", key, wrong, exc_info=True)
+            self.sessions.pop(key, None)
+            self.variables.session_ended(key)
             self.idle_reset.add(key)
         if key not in self.sessions:
             session = Session(self.classes, world=self.world)
@@ -1076,8 +1090,18 @@ class WorldRuntime:
         """
         session = self.session(THE_WORLDS_OWN)
         session.namespace["it"] = entity
-        with ontology.stating("world"):
-            return self.run(code, THE_WORLDS_OWN)
+        try:
+            with ontology.stating("world"):
+                return self.run(code, THE_WORLDS_OWN)
+        finally:
+            # The world's own reading is not a task and does not accumulate one. It used to go
+            # through `run` like any host, so it opened an unnamed Task, and nothing ever reset
+            # that session: its `touched` set grew for the life of the process and every entity
+            # the world had ever read was still "what this piece of work touched"
+            # (docs/code-review-2026-09-30.md 3.3.5).
+            session.touched.clear()
+            session.namespace.pop("it", None)
+            session.runs = 0
 
     def _hand_back_what_moved(self, moved: list[str]) -> None:
         """A thing read under another class is a different instance; whoever holds it gets it.
@@ -1515,6 +1539,7 @@ class WorldRuntime:
         if recording is not None:
             session.readings.update(recording.readings)
         if (session.task_id is None and "Task" in self.classes
+                and key != THE_WORLDS_OWN
                 and (result.get("created") or result.get("updated"))):
             # Work began without anybody saying what it was. The boundary is opened anyway,
             # because facts landing outside every task is the state this was built to end — the

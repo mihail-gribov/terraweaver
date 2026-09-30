@@ -193,6 +193,35 @@ class Meanings:
         self.store.conn.commit()
         return len(due)
 
+    def vectors_for(self, refs_and_texts: list[tuple[str, str]]) -> dict[str, list]:
+        """Vectors for these (ref, text) pairs, embedding only what is new or has changed.
+
+        The index as a cache, which is what it is. `twins()` and `classes_like()` re-embedded
+        every class name and description on every `define` — a network call proportional to the
+        vocabulary, inside a host's ten-second run (docs/code-review-2026-09-30.md 3.4.3, 3.3.15).
+        Here the ones already known cost nothing and a new word costs one text.
+        """
+        known = {ref: (digest, model, raw) for ref, digest, model, raw in self.store.conn.execute(
+            "SELECT ref, digest, model, vector FROM meanings")}
+        out, due = {}, []
+        for ref, text in refs_and_texts:
+            held = known.get(ref)
+            if held and held[0] == _digest(text) and held[1] == self.model.name:
+                out[ref] = json.loads(held[2])
+            else:
+                due.append((ref, text))
+        for batch in range(0, len(due), 32):
+            chunk = due[batch:batch + 32]
+            for (ref, text), vector in zip(chunk, self.model.embed([t for _, t in chunk])):
+                out[ref] = vector
+                self.store.conn.execute(
+                    "INSERT OR REPLACE INTO meanings (ref, subject, kind, text, digest, model, "
+                    "vector) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    (ref, ref, "word", text, _digest(text), self.model.name, json.dumps(vector)))
+        if due:
+            self.store.conn.commit()
+        return out
+
     def forget(self) -> None:
         """Drop the index. It is a derivation; rebuilding costs time and nothing else."""
         self.store.conn.execute("DELETE FROM meanings")
@@ -219,6 +248,8 @@ class Meanings:
                 continue
             if holding is not None and ref.startswith("text:") and ref not in holding:
                 continue
+            if row_kind == "word":
+                continue      # a cached class or type word, not something said about an entity
             scored.append((_close(wanted, json.loads(raw)), subject, said))
         scored.sort(reverse=True)
         out = []

@@ -611,12 +611,15 @@ class Authoring:
         if guess:
             found.append((guess, known[guess]))
         try:
-            model = self.world.meanings.model
+            # Through the index: the known words are embedded once and kept, so a `define` inside
+            # the host's own run pays for the one text it is asking about
+            # (docs/code-review-2026-09-30.md 3.4.3).
+            meanings = self.world.meanings
             names = [n for n in known if n != (guess or "")]
-            vectors = model.embed([f"{n}: {known[n]}" for n in names] + [wanted])
-            asked = vectors[-1]
-            scored = sorted(((sum(a * b for a, b in zip(asked, vector)), name)
-                             for vector, name in zip(vectors, names)), reverse=True)
+            held = meanings.vectors_for([(f"word:{n}", f"{n}: {known[n]}") for n in names])
+            asked = meanings.model.embed([wanted])[0]
+            scored = sorted(((sum(a * b for a, b in zip(asked, held[f"word:{name}"])), name)
+                             for name in names if f"word:{name}" in held), reverse=True)
             for score, name in scored[:limit]:
                 if score >= 0.5 and all(name != had for had, _ in found):
                     found.append((name, known[name]))

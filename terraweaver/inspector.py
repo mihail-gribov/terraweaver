@@ -528,11 +528,17 @@ def twins(world, close: float = 0.82) -> list[tuple]:
             said.append((name, f"{rel.get('kind', name)}. {cls._spec.get('description', '')}"))
     if len(said) < 2:
         return []
-    vectors = world.meanings.model.embed([text for _, text in said])
+    # Through the index, so a word already seen costs nothing: this runs from `on_new_type`,
+    # inside the host's own run, and re-embedding the whole vocabulary there was a network call
+    # per `define_relation` (docs/code-review-2026-09-30.md 3.4.3).
+    held = world.meanings.vectors_for([(f"type:{name}", text) for name, text in said])
+    vectors = [held.get(f"type:{name}") for name, _ in said]
     pairs = []
     for i in range(len(said)):
         for j in range(i + 1, len(said)):
             a, b = vectors[i], vectors[j]
+            if a is None or b is None:
+                continue
             score = sum(x * y for x, y in zip(a, b))
             if score >= close:
                 pairs.append((said[i][0], said[j][0], round(score, 3)))

@@ -192,6 +192,14 @@ def _public(name) -> str:
 
 
 def _getattr(obj, name, *default):
+    # `format` on a string is checked when the code is read — the field of a format string can
+    # name attributes, and `"{0.__class__}".format(x)` walks past every other guard here. Fetched
+    # through `getattr` there is no literal to check, so the fetch itself is refused
+    # (docs/code-review-2026-09-30.md 3.3.14).
+    if isinstance(obj, str) and name in ("format", "format_map"):
+        raise SandboxViolation(
+            f"str.{name} taken through getattr cannot be checked — its fields can name "
+            f"attributes. Use an f-string.")
     return getattr(obj, _public(name), *default)
 
 
