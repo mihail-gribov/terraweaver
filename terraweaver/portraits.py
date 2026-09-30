@@ -295,7 +295,6 @@ MAKE_SHAPE = ('{{"name": "...", "brief": "...", "description": "one sentence say
 # The most general class of thing, and a real one: a book or a dish is a Thing and wants no
 # other word. It is shown last and said to be the widest, because an engineer that sees it first
 # among equals takes it every time — it fits everything — and then no class is ever made.
-WIDEST = "Thing"
 
 
 def words_about(world, entity) -> str:
@@ -479,34 +478,6 @@ def _asking(world, entity, words: str, at: str, make_new: bool) -> str:
         class_shape=MAKE_SHAPE if make_new else "null")
 
 
-def _a_word_it_has_not(world) -> str:
-    """What to do with a word for a link this record has no type for — as this world stands.
-
-    Whether an unknown word makes its own type is a switch (`initiative.MAKES_TYPES`), off by
-    default and turned on one at a time against a record somebody can already read. Telling the
-    engineer the wrong one costs a whole reading: promised that `relate` would make the type, it
-    wrote the line, watched it refused, and spent its three goes on `define_relation` calls the
-    world refused for a different reason.
-    """
-    from terraweaver import initiative
-
-    if initiative.MAKES_TYPES:
-        return ("A word this record has not got makes its own type the first time it is "
-                "said, so `it.relate(other, \"the_word\")` writes the link and makes the word "
-                "in one go. `set_` exists only for words that are already here.")
-    return ('A word this record has not got has to be declared before it can be used, on its '
-            'own line first:\n\n'
-            '    world.define_relation("capital_of", "a city that is the seat of a country\'s '
-            'government", nature="related_to", cardinality="many-to-one")\n'
-            '    it.set_capital_of(italy)\n\n'
-            'The second argument is a sentence saying what that kind of link is — about the '
-            'kind, not about these two — and a record refuses anything shorter than a few '
-            'words. `nature` is one of related_to / part_of / kind_of / same_as / derived_from. '
-            '`cardinality` is about one moment: "many-to-one" when this thing has one of those '
-            'at a time, "one-to-many" the other way, "many-to-many" when neither is limited. '
-            'One at a time means a new one ends the standing one where it begins, and both stay '
-            'in the record.')
-
 def _already_joined(world, entity) -> str:
     """What this thing is joined to now, so the same fact is not said a second time.
 
@@ -523,25 +494,6 @@ def _already_joined(world, entity) -> str:
         log.debug("%s", wrong, exc_info=True)
         return "    (nothing yet)"
     return "\n".join(sorted(set(lines))[:30]) or "    (nothing yet)"
-
-
-def _classes_here(world) -> str:
-    """Every class something can be looked up under, so a name that is not one is not written.
-
-    Shown rather than remembered: an engineer given an example that names a class this world has
-    not got copies the example. `Place.identify(...)` came back a NameError three times
-    running in a world whose widest classes were Thing and Event.
-    """
-    from terraweaver import matching
-
-    lines = []
-    for name, cls in sorted(world.classes.items()):
-        if cls._spec.get("relation") or cls._spec.get("own"):
-            continue
-        by = cls._spec.get("identified_by") or matching.NAME_KEYS.get(name) or "name"
-        lines.append(f"    {name}.identify({by}=\"...\") — "
-                     f"{(cls._spec.get('brief') or cls._spec.get('description') or '')[:70]}")
-    return "\n".join(lines[:40])
 
 
 def _as_attribute(said: dict) -> dict:

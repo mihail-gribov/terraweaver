@@ -114,17 +114,6 @@ def count(world) -> tuple[int, int]:
     return ever, len(unread(world, limit=10_000))
 
 
-def classes_here(world) -> str:
-    """The classes a role may name, so the engineer picks one rather than inventing a word.
-
-    Shown rather than remembered: an engineer told to name a class and not shown which exist will
-    write a reasonable word that is nobody's class, and the world then holds a condition it
-    cannot check against anything.
-    """
-    names = sorted(n for n, c in world.classes.items() if not c._spec.get("relation"))
-    return "    " + ", ".join(names) + ", or \"any\""
-
-
 def held(world, subject=None, obj=None) -> str:
     """What the world already holds, so a reading joins rather than invents.
 

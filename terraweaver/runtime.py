@@ -1802,25 +1802,6 @@ def _waiting_on_answers(session) -> list[str]:
     return out
 
 
-def _entity_ids(values) -> set:
-    """The entities a host is holding — in a variable, in a list, in a result it kept.
-
-    Working with one of the candidates is not always a call the world sees: `Person.find(...)`
-    hands back a result and the host keeps the one it wanted in a variable. That is the choice,
-    made as plainly as `get()` makes it, and it is visible right here in the namespace.
-    """
-    found = set()
-    for value in values:
-        for item in (value if isinstance(value, (list, tuple)) else [value]):
-            if isinstance(item, Entity) and getattr(item, "id", None):
-                found.add(item.id)
-            else:
-                main = getattr(item, "matches", None)
-                if isinstance(main, (list, tuple)):
-                    found |= {e.id for e in main if isinstance(e, Entity) and getattr(e, "id", None)}
-    return found
-
-
 def _entities_of(recording) -> list:
     """Everything a run actually worked with — including both ends of a relation it wrote. A
     relation is about two people; recording one is working with them, and a doubt about either
@@ -1835,18 +1816,6 @@ def _entities_of(recording) -> list:
             if isinstance(other, Entity) and other.id is not None:
                 out.append(other)
     return out
-
-
-def _merge_questions(raised: list[str], standing: list[str]) -> list[str]:
-    """One line per open question: what this run raised, plus what was already open about the
-    entities it worked with."""
-    out, seen = [], set()
-    for line in list(raised) + list(standing):
-        key = line.split(": ", 1)[-1][:60]
-        if key not in seen:
-            seen.add(key)
-            out.append(line)
-    return out[:5]
 
 
 MAX_ECHO = 18    # lines of a failed block worth handing back; beyond that, say how many

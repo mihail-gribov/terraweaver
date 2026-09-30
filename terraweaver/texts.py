@@ -104,11 +104,6 @@ def _has_table(conn, name: str) -> bool:
         "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?", (name,)).fetchone())
 
 
-def holding(world, subject: str, slot: str | None = None, at=None) -> list[str]:
-    """The texts that hold for this one at a moment."""
-    return [row["text"] for row in search(world, subject=subject, slot=slot, at=at)]
-
-
 def search(world, words: str | None = None, *, subject: str | None = None, slot: str | None = None,
            at=None, any_time: bool = False, limit: int = 200) -> list[dict]:
     """Texts matching every word given — the plain, literal search, with no model in it.
@@ -150,6 +145,3 @@ def mentioning(world, words: str, *, at=None, any_time: bool = False) -> set[str
     return {row["subject"] for row in search(world, words, at=at, any_time=any_time, limit=5000)}
 
 
-def about(world, entity, at=None) -> list[dict]:
-    """Everything said about this one, in words, whatever slot it went into."""
-    return search(world, subject=getattr(entity, "subject_id", None) or entity.id, at=at)
