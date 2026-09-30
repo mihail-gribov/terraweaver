@@ -3967,6 +3967,33 @@ the class and the key that class is found by.
 prints `FAIL` and exits 0 counts as failed — which is how a loop over four of them used to read as
 a passing suite.
 
+**And the rest of the clear ones, in one sweep.** A parent that is not a class was dropped in
+silence, so the class was made at the top of the tree and nothing said so. `AS_WRITTEN` existed for
+the paper's words and `define_relation` refused them anyway. A remark's `when` — the day the thing
+happened — was used as the moment its text started holding, so a remark about next month was hidden
+from `descriptions` and `like()` while `described()` showed it, and a `ttl` measured from last year
+had run out before the remark was made. A type acyclic *by nature* was not checked as acyclic,
+because the check read the spec key and not `relations.rule`. Reopening a link the world had ended
+left `until_is = BEFORE` behind, a side to a bound that was no longer there. `_like` ran its
+spelling check on `wanted.split(".")[-1]`, which is the description, so it compared a sentence
+against a list of class names. `name_the_ends` was willing to name the ends of the free type. Two
+notes went out through `print` instead of the world's own channel. `world.now = "2020-01-20"` — what
+its own docstring invites — raised `AttributeError` four frames down. A conclusion's basis was
+looked for among its own subject's statements only, so one about somebody else was invisible to
+`basis_of` and counted as retracted by `stale`, which made such a conclusion stale at birth; and
+"never from conclusions" was bypassed by passing the id of one rather than the object. In the
+benchmarks: a fact numbered with a tab — `"12.\tfact"` — matched the numbered-line pattern and then
+raised `IndexError` on the split, and `KEY="..."` in `.env` was passed on with its quotes, which
+authenticates nowhere and looks exactly like having no key.
+
+**Left as it was, on purpose.** `judge.declined()` matches decline phrases as substrings and can
+credit a confident answer that happens to contain one — changing how a measurement is graded
+without a labelled set to grade the change against would make the next number harder to trust, not
+easier. The restatement dedup still ignores `run_id`, so `retract_run("A")` can take back a fact run
+B also stated; keying on the run would make one row per run for every repeated fact, which is what
+the dedup exists to prevent, and doing it properly needs a column that holds the runs — a schema
+change, and a schema change needs a gate. Both are named in the code where they live.
+
 **Not done, and deliberately.** `docs/architecture.md` still describes two databases, fifteen
 modules and tickets; bringing it back to the code is its own piece of work. The whole-file grown
 override of a preset class (2.10) is a design decision to argue, not a defect to patch. Splitting
