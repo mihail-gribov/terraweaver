@@ -82,9 +82,15 @@ The session header names the namespace; without it all windows of one client sha
 
 ## Tests
 
-No model needed; they need the venv (tldextract):
+No model needed; they need the venv (tldextract). All of them, one command, one process each:
 
-    for t in find world_state values runtime relations; do .venv/bin/python tests/test_$t.py | tail -1; done
+    .venv/bin/python tests/run_all.py            # 27 scripts, about 20 seconds
+    .venv/bin/python tests/run_all.py -q         # one line per script
+    .venv/bin/python tests/run_all.py --only relations
+
+A script counts as failed if it exits non-zero **or** prints a line beginning `FAIL` — several of
+them report a failed check and still exit 0, which is how a loop over four of them used to read as
+a passing suite. One script on its own is still just `.venv/bin/python tests/test_relations.py`.
 
 ## Host scenarios
 
