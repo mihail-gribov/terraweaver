@@ -116,7 +116,31 @@ def finding_3_4_2_a_link_that_was_already_there_is_not_this_readings_work() -> N
           f"was_typed={trace.get('was_typed')}")
 
 
+def finding_2_3_only_the_transaction_commits() -> None:
+    """A statement that wrote tags and then raised must leave nothing — the host's own promise."""
+    rt = base.world()
+
+    def people() -> int:
+        return rt.world.store.conn.execute(
+            "SELECT count(*) FROM instances WHERE class_name = 'Person'").fetchone()[0]
+
+    was = people()
+    got = rt.run('x = [Person.new(full_name="Ann", tags=["friend"]), 1/0]', "host")
+    check("2.3 the run says it failed", not got.get("ok"), str(got)[:160])
+    check("2.3 and nothing it wrote is there", people() == was,
+          "Ann survived a statement that raised, because a tags write committed under her")
+
+    plain = rt.run('y = [Person.new(full_name="Bob"), 1/0]', "host")
+    check("2.3 the case that always worked still works", not plain.get("ok") and people() == was)
+
+    # And outside a transaction a commit is still a commit, or nothing would ever be durable.
+    kept = rt.run('z = Person.new(full_name="Cleo")', "host")
+    check("2.3 an ordinary write is still committed", kept.get("ok") and people() == was + 1,
+          f"{people()} people, was {was}")
+
+
 def main() -> None:
+    finding_2_3_only_the_transaction_commits()
     finding_3_4_1_the_engineer_is_not_a_function()
     finding_3_4_2_a_link_that_was_already_there_is_not_this_readings_work()
     print()

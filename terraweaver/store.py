@@ -76,9 +76,33 @@ def run_script(conn, script: str) -> None:
             conn.execute(statement)
 
 
+class Connection(sqlite3.Connection):
+    """A connection whose `commit` belongs to whoever opened the transaction.
+
+    The host's promise is "a run that raises keeps nothing it wrote", and `Store.transaction`
+    implements it with commit-on-success and rollback-on-failure. There is one connection, so any
+    module that commits on its own ends the transaction it happens to be inside and the promise is
+    void. Measured 2026-09-30 (docs/code-review-2026-09-30.md 2.3): thirty such calls in seventeen
+    modules, and `x = [Person.new(full_name="Ann", tags=["friend"]), 1/0]` kept Ann, because the
+    tags write goes through `periods.rebuild_for`, which committed.
+
+    Mending each caller is the wrong shape of fix — the next module to want durability will write
+    `commit()` again, and rightly, because outside a transaction that is the correct thing to
+    write. So the rule lives here: a commit outside a transaction is a commit, and one inside it is
+    the transaction's to make. `held` is the depth, kept by `Store.transaction`.
+    """
+
+    held = 0
+
+    def commit(self) -> None:
+        if self.held:
+            return
+        super().commit()
+
+
 class Store:
     def __init__(self, path: str = "terraweaver.db"):
-        self.conn = sqlite3.connect(path)
+        self.conn = sqlite3.connect(path, factory=Connection)
         self.conn.executescript(SCHEMA)
         self.conn.commit()
         # One row, one object. Without this the same entity can exist twice in memory, and
@@ -108,17 +132,22 @@ class Store:
         """
         if self._tx_depth:
             self._tx_depth += 1
+            self.conn.held += 1
             try:
                 yield
             finally:
                 self._tx_depth -= 1
+                self.conn.held -= 1
             return
         self._tx_depth = 1
+        self.conn.held = 1
         self._tx_new_ids = []
         try:
             yield
+            self.conn.held = 0
             self.conn.commit()
         except BaseException:
+            self.conn.held = 0
             self.conn.rollback()
             self._identity = {}
             for obj in self._tx_new_ids:
@@ -126,6 +155,7 @@ class Store:
             raise
         finally:
             self._tx_depth = 0
+            self.conn.held = 0
             self._tx_new_ids = []
 
     def _assign_id(self, instance) -> None:
