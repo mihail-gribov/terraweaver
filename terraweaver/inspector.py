@@ -30,9 +30,16 @@ Neither is required — a world with neither simply does not run this.
 import hashlib
 from terraweaver import prompts
 import json
+import logging
 from datetime import datetime, timezone
 
 from terraweaver.store import run_script
+
+# One failure must not stop the world, and that is not the same thing as nobody ever hearing
+# about it. Measured 2026-09-30: an engineer that answers `.json(...)` was called as a function,
+# the TypeError went into a bare `except`, and `look_at_types` read 0 of 28 types in every world
+# ever served. The policy stays; the silence goes.
+log = logging.getLogger("terraweaver")
 
 # How long an outside party is given before the world stops waiting for it. Measured on the
 # naming question: most answers come back in four or five seconds and one in several takes
@@ -199,6 +206,8 @@ def look(world, ask, looked_by: str = "outside", limit: int = 200,
         try:
             verdict, said = ask(account)
         except Exception as wrong:  # noqa: BLE001 - one that fails is not a world that fails
+            log.debug("look: %s could not be read: %r", getattr(link, "id", link), wrong,
+                      exc_info=True)
             tally["failed"] += 1
             continue
         if verdict not in tally:
@@ -250,7 +259,8 @@ def naming(world, ask, only: set | None = None) -> list[dict]:
             continue
         try:
             said = ask(account)
-        except Exception:  # noqa: BLE001 - one that fails is not a world that fails
+        except Exception as wrong:  # noqa: BLE001 - one that fails is not a world that fails
+            log.debug("naming: %s could not be read: %r", name, wrong, exc_info=True)
             continue
         if said and not said.get("clear", True):
             out.append({**said, "class": name, "kind": account["kind"]})
@@ -268,8 +278,34 @@ CREATE TABLE IF NOT EXISTS type_checks (
 
 
 def engineer_of(world):
-    """The engineer this world was given, or None. A world without one simply skips."""
+    """The engineer this world was given, or None. A world without one simply skips.
+
+    What comes back answers `.say(system, asked)` and `.json(system, asked)` — an
+    `outside.Open`. It is not a function, and anything here that wants a question asked wraps it
+    in the asker for that question (`outside.namer` for the ends of a type). Calling it directly
+    raises `TypeError`, which is how this whole pass was dead in the served world until
+    2026-09-30 — see docs/code-review-2026-09-30.md, finding 3.4.1.
+    """
     return getattr(world, "engineer", None)
+
+
+def names_asker(world, ask=None):
+    """The thing that answers `ask(account) -> dict` about the ends of a type.
+
+    Given one, it is used as it is — that is how the tests and the experiments pass a stub in.
+    Otherwise the world's engineer is wrapped in `outside.namer`, which is the adapter from
+    `.json(system, asked)` to this question.
+    """
+    if ask is not None:
+        return ask
+    engineer = engineer_of(world)
+    if engineer is None:
+        return None
+    if callable(engineer) and not hasattr(engineer, "json"):
+        return engineer
+    from terraweaver import outside
+
+    return outside.namer(engineer)
 
 
 def on_new_type(world, name: str) -> list[str]:
@@ -316,7 +352,7 @@ def look_at_types(world, limit: int = 20, can_ask: bool = True) -> dict[str, lis
     everything else this world asks for is asked. One open question per type, asked once.
     """
     run_script(world.store.conn, TYPE_CHECKS)
-    ask = engineer_of(world)
+    ask = names_asker(world)
     if ask is None:
         return {}
     out: dict[str, list[str]] = {}
@@ -326,7 +362,8 @@ def look_at_types(world, limit: int = 20, can_ask: bool = True) -> dict[str, lis
             continue
         try:
             said = ask(account)
-        except Exception:  # noqa: BLE001 - one that fails is not a world that fails
+        except Exception as wrong:  # noqa: BLE001 - one that fails is not a world that fails
+            log.debug("look_at_types: %s could not be read: %r", name, wrong, exc_info=True)
             continue
         # Written in either way: a blank filled is not a question, and a pass with
         # nobody listening still leaves the type checkable for the next one.
@@ -446,7 +483,8 @@ def turn_the_odd_ones(world, least_run: int = A_RUN) -> list[str]:
     turned = []
     try:
         found = relations.verify(world, least=2)
-    except Exception:  # noqa: BLE001 - a check must never be what stops the world
+    except Exception as wrong:  # noqa: BLE001 - a check must never be what stops the world
+        log.debug("put_the_clear_ones_round: verify failed: %r", wrong, exc_info=True)
         return []
     for one in found:
         if one.get("about") != "against the run of its type" or one.get("tied"):
@@ -456,7 +494,9 @@ def turn_the_odd_ones(world, least_run: int = A_RUN) -> list[str]:
         for link_id in one.get("links", []):
             try:
                 link = world.store.load(link_id, world.classes)
-            except Exception:  # noqa: BLE001
+            except Exception as wrong:  # noqa: BLE001
+                log.debug("put_the_clear_ones_round: %s would not load: %r", link_id, wrong,
+                          exc_info=True)
                 continue
             if link is None:
                 continue

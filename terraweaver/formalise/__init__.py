@@ -115,6 +115,11 @@ def formalise_one(runtime, link, engineer, picker) -> dict:
     word, looked = look(world, subject, obj, words, picker)
     trace["look"], trace["found"] = looked, word
     before = {name for name, _, _ in words_for(world)}
+    # What already joined these two before this reading wrote anything. Everything below asks
+    # "what did *this* go write", and the only way to answer that is to know what was there.
+    already = {one.id for one in write.typed_between(world, subject, obj)}
+    if already:
+        trace["was_typed"] = len(already)
     asked = make.question(world, subject, obj, words, word)
     code, trouble = make.lines(engineer, asked)
     for go in range(GOES):
@@ -124,7 +129,7 @@ def formalise_one(runtime, link, engineer, picker) -> dict:
         trace["wrote"].append(code)
         got = write.run(runtime, code, a=subject, b=obj)
         answer = format_result(got)
-        made = write.typed_between(world, subject, obj)
+        made = write.typed_between(world, subject, obj, apart_from=already)
         # Judged on what the record now holds, not on the shape of the lines that wrote it. A claim
         # can be written four ways and a parser of the source saw it in one of them, so an invented
         # date went in whenever the engineer phrased the write differently. What the world holds is
@@ -142,7 +147,7 @@ def formalise_one(runtime, link, engineer, picker) -> dict:
                 # gave up, each one a link the engineer had written and the record then lost.
                 settled = write.settle_by_verdict(world, made, about)
                 trace["settled"] = settled
-                still = write.typed_between(world, subject, obj)
+                still = write.typed_between(world, subject, obj, apart_from=already)
                 if still:
                     trace["went"] = "settled on the picker's verdict"
                     trace["typed"] = [one.display_name() for one in still]

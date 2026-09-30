@@ -22,16 +22,26 @@ def run(runtime, code: str, **bound) -> dict:
         return runtime.run(code, THE_WORLDS_OWN)
 
 
-def typed_between(world, subject, obj) -> list:
-    """Links of a real type joining these two now, either way round.
+def typed_between(world, subject, obj, apart_from=()) -> list:
+    """Links of a real type joining these two now, either way round, minus the ones already there.
 
     How the writing is known to have worked, and it is read from the record rather than from what
     the code appeared to do: a line that ran without an error may still have written nothing.
+
+    `apart_from` is what was standing before this reading started, and it is not optional in
+    practice. Without it this answers "what joins these two", which is not the question asked:
+    2026-09-30, docs/code-review-2026-09-30.md 3.4.2 — 7 of 402 end-pairs in a 455-fact world
+    carry two types (`CapitalOf` beside `MayorOf`, `AuthorOf` beside `FamousFor`), and for those
+    a link about another fact entirely was counted as this reading's work, judged against words
+    it has nothing to do with, and the bare link holding the real words was ended as done.
     """
+    apart = set(apart_from or ())
     out = []
     for name, _, _ in words_for(world):
         for link in world.all(name, limit=None):
             if getattr(link, "valid_until", None) is not None:
+                continue
+            if link.id in apart:
                 continue
             ends = {getattr(getattr(link, "subject", None), "id", None),
                     getattr(getattr(link, "object", None), "id", None)}
