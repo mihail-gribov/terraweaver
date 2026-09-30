@@ -124,7 +124,13 @@ class Comments:
             raise ValueError("a comment needs text")
         if when is not None and not isinstance(when, (date, datetime)):
             raise TypeError("when must be a date or datetime — the day the thing happened or holds")
-        explicit = timeutil.period_end(until, ttl, permanent, base=_as_datetime(when) if when is not None else _now())
+        # Both from now, not from `when`. `when` is the day the thing happened, and it went in as
+        # the moment the *text* started holding: a remark about something next month was hidden
+        # from `descriptions` and `like()` while `described()` showed it, and a `ttl` measured from
+        # a date last year had run out before the remark was made
+        # (docs/code-review-2026-09-30.md 3.4.10). The day it happened is kept where it belongs,
+        # in `happened_at`.
+        explicit = timeutil.period_end(until, ttl, permanent, base=_now())
         default = explicit is timeutil.NO_END_GIVEN
         ends = (_now() + (TENTATIVE_TTL if tentative else DEFAULT_TTL)) if default else explicit
         recorded = datetime.now(timezone.utc)
@@ -132,8 +138,7 @@ class Comments:
         with self.store.transaction():
             # The text goes where every text goes: one more description, stated in the record
             # with the period this remark holds for.
-            entity.add("descriptions", text.strip(),
-                       starts=when if when is not None else None, until=ends)
+            entity.add("descriptions", text.strip(), until=ends)
             cursor = self.store.conn.execute(
                 "INSERT INTO comments (entity_id, text, text_ref, happened_at, recorded_at, "
                 "tentative, valid_until, default_ttl) VALUES (?, NULL, ?, ?, ?, ?, ?, ?)",

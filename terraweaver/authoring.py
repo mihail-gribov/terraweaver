@@ -165,8 +165,18 @@ class Authoring:
             "attributes": [self._attribute_spec(**a) for a in (attributes or [])],
             "methods": [],
         }
-        for key, value in (("parent", parent if parent in self.world.classes else None),
-                           ("brief", brief), ("what_to_say", what_to_say)):
+        if parent and str(parent).strip() and str(parent).strip() not in self.world.classes:
+            # Dropped in silence, the class was made at the top of the tree and nothing said so —
+            # and where a class sits is what every later walk down the tree reads
+            # (docs/code-review-2026-09-30.md 3.4.13).
+            from terraweaver.ontology import did_you_mean
+
+            near = did_you_mean(str(parent).strip(), list(self.world.classes))
+            raise Refused(
+                f"there is no class {str(parent).strip()!r} for {class_name} to be a kind of"
+                + (f" — did you mean {near!r}? " if near else ". ")
+                + f"Define it first, or leave `parent` out and {class_name} is a kind of Thing.")
+        for key, value in (("parent", parent), ("brief", brief), ("what_to_say", what_to_say)):
             if value and str(value).strip():
                 spec[key] = str(value).strip()
         # A class is described the way anything in this world is described: in prose, by
@@ -190,8 +200,11 @@ class Authoring:
         self._register_identity(spec)
         self._save(spec)
         if near:
-            print(f"[note] {class_name} reads like {near[0][0]} ({near[0][1]}) — "
-                  "merge them if they are the same idea")
+            # Through the world's own channel, not `print`: a hint reaches the host in the result
+            # under [note], and printed it only reaches whatever happened to be capturing stdout.
+            ontology.note_hint(
+                f"{class_name} reads like {near[0][0]} ({near[0][1]}) — merge them if they are "
+                f"the same idea: world.take_in({near[0][0]}, \"{class_name}\").")
         return built
 
     def describe_class(self, cls, text: str, source: str = "agent") -> list:
@@ -403,6 +416,11 @@ class Authoring:
         # behaviour and it carried a set of rules instead, which one word cannot hold; the door
         # stopped asking for it on 2026-09-24 and then passed a stand-in to get past this refusal.
         # Given, it is still read; not given, the type claims nothing beyond the link itself.
+        # The paper's word for a nature is the same nature. `AS_WRITTEN` exists for exactly this
+        # and `Type.nature = "composition"` already goes through it, while this door refused it
+        # (docs/code-review-2026-09-30.md 3.4.13).
+        if nature is not None:
+            nature = AS_WRITTEN.get(str(nature).strip().lower(), nature)
         if nature is not None and nature not in NATURES:
             raise Refused(f"nature is one of {', '.join(NATURES)}, or leave it out")
         if cardinality is None:
@@ -437,9 +455,9 @@ class Authoring:
             name_of, description_of, _ = already[0]
             from terraweaver import initiative, ontology as _ontology
             if initiative.MERGES_MEANING:
-                print(f"[note] {kind} reads as {name_of} ({description_of}) — that type, not a "
-                      f"second one. If they differ, say how and define it under a name that "
-                      f"says so.")
+                _ontology.note_hint(
+                    f"{kind} reads as {name_of} ({description_of}) — that type, not a second "
+                    f"one. If they differ, say how and define it under a name that says so.")
                 return self.world.classes[name_of]
             _ontology.note_hint(
                 f"'{kind.replace('_', ' ')}' reads a lot like {name_of} ({description_of}). I "
@@ -607,7 +625,11 @@ class Authoring:
         if not wanted or not known:
             return []
         found: list[tuple[str, str]] = []
-        guess = did_you_mean(wanted.split(".")[-1], list(known))
+        # The name, which is what the keys are, and not the description that follows it. Callers
+        # pass "<name>. <description>", and `[-1]` took everything after the last full stop — so
+        # the spelling check compared a sentence against a list of class names and never matched
+        # (docs/code-review-2026-09-30.md 3.4.13).
+        guess = did_you_mean(wanted.split(". ", 1)[0], list(known))
         if guess:
             found.append((guess, known[guess]))
         try:

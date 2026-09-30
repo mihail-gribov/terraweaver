@@ -398,7 +398,10 @@ def name_the_ends(world, name: str, subject_is: str, object_is: str,
     """
     cls = world.classes.get(name)
     rel = cls._spec.get("relation") if cls else None
-    if not rel or rel.get("roles") or not (subject_is and object_is):
+    # Not the free type. It is what a bare link is an instance of — anything to anything, by
+    # construction — so names for its two ends say nothing and would be read as a rule for
+    # checking every untyped link in the world (docs/code-review-2026-09-30.md 3.4.12).
+    if not rel or rel.get("free") or rel.get("roles") or not (subject_is and object_is):
         return False
     # Who said it, kept beside it. Not so the class can be treated as a lesser kind — a class
     # is a class here and where it came from changes nothing about how it works — but because

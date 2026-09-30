@@ -1740,6 +1740,11 @@ def _reopen_what_the_world_ended(cls, side: str) -> None:
             continue
         with trusted_writes(), stating("world"):
             link.valid_until = None
+            # And how that bound was meant. `_hand_over` writes `until_is = BEFORE` when nothing
+            # said the day, and left behind it says a link with no end ends "some time before" —
+            # a side to a bound that is not there (docs/code-review-2026-09-30.md 3.2.14).
+            if getattr(link, "until_is", None) is not None:
+                link.until_is = None
             world.save(link)
         brought += 1
     if brought:

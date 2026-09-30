@@ -72,7 +72,7 @@ class Observed:
         if self.objects_with_several >= self.ENOUGH and self.most_per_object == 1 \
                 and spec.get("inverse_functional") != "at_any_time":
             out.append(f"inverse_functional — {self.objects_with_several} chances, never two at once")
-        if self.chains >= self.ENOUGH and not self.cycles and not spec.get("acyclic"):
+        if self.chains >= self.ENOUGH and not self.cycles and not relations.rule(spec, "acyclic"):
             out.append(f"acyclic — {self.chains} chains, none came back")
         if self.both_directions >= self.ENOUGH and not relations.rule(spec, "symmetric"):
             out.append(f"symmetric — {self.both_directions} pairs recorded both ways")
@@ -93,7 +93,10 @@ class Observed:
             out.append(f"declared one at a time per object, but {self.most_per_object} were held at once")
         if spec.get("irreflexive", True) and self.self_links:
             out.append(f"declared irreflexive, but {self.self_links} point at themselves")
-        if spec.get("acyclic") and self.cycles:
+        # Through `rule`, not off the spec: a `part_of` or `kind_of` nature is acyclic by what it
+        # means, and read from the key alone a part that contains its own whole went unremarked
+        # (docs/code-review-2026-09-30.md 3.2.16).
+        if relations.rule(spec, "acyclic") and self.cycles:
             out.append(f"declared acyclic, but {self.cycles} cycle(s) exist")
         for role, most in sorted(self.per_role.items()):
             limit = next((r.get("max") for r in spec.get("roles", []) if r["name"] == role), None)
