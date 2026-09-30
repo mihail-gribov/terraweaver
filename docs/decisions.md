@@ -4058,3 +4058,25 @@ first, and a write only records") broken at the host's end. Also visible on that
 
 None of the four is a defect in the world. They are what the world cannot stop a host doing yet,
 and that is a different piece of work from this one.
+
+## 2026-09-30 — `set_<word>` is a link being written, and a comment is not a line nothing reached
+
+The second gate on the fixed code recorded the same twenty-five facts in **24 turns against the
+first gate's 3**, for the same money. What it spent them on is in its log: `Person has no
+'set_born_in'. It has: full_name, aliases, descriptions, tags, notes. If this is a value worth
+asking about later, give the class the attribute…` — and the host went and looked for an attribute,
+for a fact about two things.
+
+`set_<word>` for a word this world has no type for is not a missing attribute. Which of the two it
+is was never a guess: `set_` says a link. So the refusal now names the door that writes one —
+`this.relate(other, "born in")`, after which `set_born_in` exists — and mentions `world.attribute`
+second, for the case where it really is a value this one holds. The general refusal for an unknown
+attribute is unchanged.
+
+**And a regression of my own, found by the same log.** The block handed back after a failure is
+written line by line from what happened to each statement (above). A line belonging to no statement
+— a comment, a blank — fell into neither set and was labelled `# (never reached)`, so the host was
+shown a comment marked "never reached" directly above a line that had just run. The exception now
+carries the spans of *every* top-level statement, attempted or not: a comment is handed back as it
+was written, and "never reached" is said only of a statement the executor never got to, which
+happens when it gives up after three failures.
