@@ -272,10 +272,17 @@ def main() -> int:
     check("and the world says it took it that way",
           any("taken as" in one for one in took.get("hints") or []),
           str(took.get("hints"))[:120])
-    empty = rt.run('p.citizen_of = None', "c")
-    check("while assigning nothing is still refused, with what to do instead",
-          empty.get("error") is not None and "keep(until" in str(empty["error"]),
-          str(empty.get("error"))[:110])
+    # And `= None` says there is no such link, which is an answer and not a mistake. Refusing it
+    # cost five of 41 names in one reading: the engineer wrote `it.located_in = None` where the words
+    # gave no place, and everything under that line went unwritten.
+    empty = rt.run('p.citizen_of = None\np.notes = "the lines after it still run"\n'
+                   'print(p.notes)', "c")
+    check("while assigning nothing writes nothing and stops nothing",
+          "still run" in (empty.get("output") or ""),
+          str(empty.get("error") or empty.get("output"))[:110])
+    check("and the world says so, naming the door for ending one that is there",
+          any("keep(until" in one for one in empty.get("hints") or []),
+          str(empty.get("hints"))[:120])
 
     print("all relation tests passed")
     return 0

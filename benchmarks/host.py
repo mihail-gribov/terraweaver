@@ -239,7 +239,10 @@ def went_wrong(got: dict) -> dict | None:
         return {"what": f"the world was unreachable: {', '.join(got['unreachable'])}",
                 "kind": "technical", "turns": got.get("turns"), "said": got.get("text", "")[:300]}
     if got.get("trouble"):
-        return {"what": got["trouble"], "kind": "technical", "turns": got.get("turns")}
+        said = str(got["trouble"])
+        if any(one in said for one in NO_USAGE_LEFT):
+            return {"what": said[:200], "kind": "no usage left", "turns": got.get("turns")}
+        return {"what": said, "kind": "technical", "turns": got.get("turns")}
     ours = [one for one in got.get("tool_errors") or [] if not _the_hosts_own(one)]
     if ours:
         return {"what": f"the world failed {len(ours)} call(s): {ours[0]}", "kind": "technical",
@@ -255,6 +258,12 @@ def went_wrong(got: dict) -> dict | None:
 # door is answering badly, and that is the thing being measured. It is counted and reported.
 HOSTS_OWN = ("No such tool available", "Invalid tool name", "validation error",
              "Unknown skill", "Cannot create agent worktree")
+
+# Not a failure of the world and not of the host either: the account simply has no usage left.
+# Measured 2026-09-30, it took 95 of 100 questions in one run — "You're out of extra usage · resets
+# 4:10am" — and was reported as "the world was unreachable", which sent me looking at the server.
+# A run that hits this has not measured anything and should say so in those words.
+NO_USAGE_LEFT = ("out of extra usage", "usage limit reached", "rate limit exceeded")
 
 
 def _the_hosts_own(said: str) -> bool:

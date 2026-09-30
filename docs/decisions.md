@@ -3817,3 +3817,40 @@ pass (`portraits._the_loop`).
 made the world tolerate the two commonest slips in its code (`true`, a stray indent) — two changes
 at once, so a better number would have said nothing about which. Now the junior writes the first go
 as before, and what the tolerance is worth can be read on its own.
+
+## 2026-09-30 — the chain from scratch: the reading at its best, and a number the account could not pay for
+
+455 facts written and read on `d1d5872`, then a hundred questions that never happened.
+
+**The writing**: 19 batches, **$4.43** — against $4.98 and $6.87 for the same slice earlier in the
+week — and no trouble logged.
+
+**The reading, the best yet on every axis** (the previous reading of the previous world beside it):
+
+| | before | now |
+|---|---|---|
+| links typed | 125 of 136 — 92% | **193 of 200 — 96.5%** |
+| median seconds | 15.2 | **4.9** |
+| all of it | 3269s | **2032s** |
+| joined a word already there | 115 | **168** |
+| from an account of one word | 66 | 46 of 200 |
+
+**The questions measured nothing.** 95 of 100 came back
+`You're out of extra usage · resets 4:10am` — the account, not the world, and not the host. It was
+reported as "the world was unreachable", which sent me looking at the server; `hosting.went_wrong`
+now has `no usage left` as its own kind, because a run that hits this has not measured anything and
+should say so in those words.
+
+**Two more doors, both found by the reading's own record.**
+
+- The names pass died after 41 of 349 on `AttributeError: this DirectorOf has no 'subject'` —
+  **one link with a missing end, raising out of a comparison** (`relations._between`) and taking the
+  pass with it. It skips such a link now. The same lesson as `store._fill` yesterday and as the ends
+  of a retyped link in September: what cannot be read is missing from the answer, not fatal to it.
+- Five of those 41 ended on a refusal I had written an hour before: `located_in is read, not
+  assigned, and there is nothing to write from None`. The engineer writes `it.located_in = None`
+  where the words gave no place — which is an answer, not a mistake. It writes nothing, says so, and
+  the lines under it run.
+
+The world is kept (`var/run8/world`), so the hundred questions cost nothing to ask again once the
+account resets.

@@ -919,9 +919,23 @@ def note_gap_on_ending(world, relation) -> None:
 
 
 def _between(rel, subject, obj, symmetric: bool) -> bool:
-    if same(rel.subject, subject) and same(rel.object, obj):
+    """Whether this link joins those two. A link missing an end joins nobody.
+
+    One row with no `subject` used to raise out of here and take the whole pass with it: measured
+    2026-09-30, a `DirectorOf` with no subject ended the names pass of a 455-fact run after 41 of
+    349, from inside a comparison. The same lesson as `store._fill` — what cannot be read is missing
+    from the answer, not fatal to it — and the same one the ends of a retyped link taught in
+    September.
+    """
+    try:
+        near, far = rel.subject, rel.object
+    except AttributeError:
+        return False
+    if near is None or far is None:
+        return False
+    if same(near, subject) and same(far, obj):
         return True
-    return bool(symmetric) and same(rel.subject, obj) and same(rel.object, subject)
+    return bool(symmetric) and same(near, obj) and same(far, subject)
 
 
 def _not_ours_to_end(link, start=None) -> bool:

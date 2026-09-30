@@ -1925,9 +1925,14 @@ def _relation_role(type_name: str, rel: dict, backwards: bool):
         syntax's. Nothing is guessed — `set_` does exactly this — and nothing is lost.
         """
         if value is None:
-            raise TypeError(
-                f"{word} is read, not assigned, and there is nothing to write from None. To end a "
-                f"link, end it: rel.keep(until=...) or rel.expire().")
+            # Nothing to write, and nothing to complain about either. The engineer writes
+            # `it.located_in = None` where the words gave no place — measured 2026-09-30, five of
+            # 41 names ended on this refusal of mine, and everything under that line went with it.
+            # Saying "there is no value" is not a mistake; it is an answer, and the lines after it
+            # are somebody's work.
+            note_hint(f"{_name_of_me(self)}.{word} = None says there is no such link to write, so "
+                      f"nothing was written. To end one that is there: rel.keep(until=...).")
+            return None
         note_hint(f"{_name_of_me(self)}.{word} = … was taken as "
                   f"{_name_of_me(self)}.set_{word}(…) — a link is written one at a time, and an "
                   f"assignment adds this one rather than replacing what is there. Whether a second "
