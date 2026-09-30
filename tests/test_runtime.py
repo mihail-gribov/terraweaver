@@ -99,16 +99,19 @@ def main() -> int:
     cut = rt.run('a = 1\nb = 2\nraise RuntimeError("stop")\nc = 3\nd = 4', "host")
     check("the failure names the line it broke on, with its text",
           'line 3: raise RuntimeError("stop")' in cut["error"], cut["error"])
-    check("and says how much is done and how much never ran",
-          "2 line(s) before it are done" in cut["error"] and "2 after it never ran" in cut["error"],
-          cut["error"])
+    # Four lines of five ran: a statement that raises does not end the block, so what the error
+    # says about the rest has to be what happened. "2 after it never ran" was the old wording and
+    # it was false — the host read it and sent those lines again.
+    check("and says how many lines ran and are in the world",
+          "4 line(s) elsewhere in the block ran" in cut["error"]
+          and "never ran" not in cut["error"], cut["error"])
 
     shown_still = format_result(still)
     check("and a failed run hands the block back as it stands",
-          "# --- done and kept, do not send again ---" in shown_still
-          and "# !! stopped here" in shown_still, shown_still)
-    check("with what never ran commented out",
-          "# note = \"for later\"" in shown_still or "# raise RuntimeError" in shown_still,
+          "# --- what the world did with this block, line by line ---" in shown_still
+          and "# !! raise RuntimeError" in shown_still, shown_still)
+    check("with the lines that ran given back as code, not commented",
+          'note = "for later"' in shown_still and '# note = "for later"' not in shown_still,
           shown_still)
     undone = rt.run('print(len([p for p in Person.all(limit=None) if p.full_name == "Never Made"]))', "host")
     check("and the statement that raised left nothing of its own", undone["output"].strip() == "0",

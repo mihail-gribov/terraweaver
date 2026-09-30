@@ -254,7 +254,26 @@ def finding_3_3_4_one_sessions_modules_are_its_own() -> None:
           f"ok={got.get('ok')} output={got.get('output')!r} error={got.get('error')!r}")
 
 
+def finding_3_3_7_the_echo_says_what_actually_ran() -> None:
+    """A statement that raises does not end the block, so the echo must not say it did."""
+    from terraweaver.runtime import format_result
+
+    rt = base.world()
+    got = rt.run('a = Person.new(full_name="One")\nb = 1/0\nc = Person.new(full_name="Two")',
+                 "host")
+    shown = format_result(got)
+    made = rt.world.store.conn.execute(
+        "SELECT count(*) FROM instances WHERE class_name = 'Person'").fetchone()[0]
+    check("3.3.7 both people the block made are in the world", made == 3, f"{made} people")
+    check("3.3.7 the error does not claim the rest never ran",
+          "never ran" not in (got.get("error") or ""), got.get("error"))
+    check("3.3.7 and the echo gives the lines that ran back as code",
+          'c = Person.new(full_name="Two")' in shown
+          and '# c = Person.new(full_name="Two")' not in shown, shown[:400])
+
+
 def main() -> None:
+    finding_3_3_7_the_echo_says_what_actually_ran()
     finding_3_3_3_a_task_that_cannot_close_is_still_dropped()
     finding_3_3_4_one_sessions_modules_are_its_own()
     finding_3_3_1_and_3_3_2_the_variable_tools()

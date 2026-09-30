@@ -37,7 +37,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from terraweaver.describe import HOST_GUIDE
-from terraweaver.runtime import WorldRuntime, format_result
+from terraweaver.runtime import NotClosed, WorldRuntime, format_result
 
 log = logging.getLogger("terraweaver")
 
@@ -227,6 +227,10 @@ async def finish_task(ctx: Context, abandon: str = "") -> str:
     if left_open is None:
         return ("There was no task open, so nothing was closed. What you recorded is in the "
                 "world; nothing checked it. Open one with start_task before the work, not after.")
+    if isinstance(left_open, NotClosed):
+        # It said why, and the task is still open. Saying "Task closed" over the top of that is
+        # how a host reported work as finished that the world had just refused to close.
+        return str(left_open)
     done = "Task closed: the namespace is clean. The world itself keeps everything it was told."
     return f"{done}\n\n{left_open}" if left_open else done
 
@@ -237,6 +241,10 @@ async def reset_session(ctx: Context) -> str:
     key = _session_key(ctx)
     left_open = runtime.finish_task(key)
     log.info("session %s reset by the host", key)
+    if left_open is None:
+        return ("There was no task open, so nothing was reset. The world itself is unchanged.")
+    if isinstance(left_open, NotClosed):
+        return str(left_open)
     done = "Session reset: the namespace is clean. The world itself is unchanged."
     return f"{done}\n\n{left_open}" if left_open else done
 

@@ -351,6 +351,17 @@ class WorldView:
         return f"<world: {core}" + (f" | this world also: {extra}>" if extra else ">")
 
 
+class NotClosed(str):
+    """What `finish_task` hands back when the task is still open: a refusal, in words.
+
+    It is a string and reads like one, so every caller that only prints it is unchanged. What it
+    adds is that a caller can tell a refusal from the note that follows a close — the MCP tool
+    could not, and prefixed "Task closed: the namespace is clean" to every one of these, so the
+    host was told in one breath that the task was closed and that it was not
+    (docs/code-review-2026-09-30.md 3.3.10).
+    """
+
+
 class WorldRuntime:
     def __init__(self, db_path: str, *, specs: dict | None = None, selves: bool = True,
                  ontology_dir: Path | None = None, home: Path | None = None):
@@ -714,7 +725,7 @@ class WorldRuntime:
         if standing and not abandon and closing is None:
             lines = "\n".join(f"    {q.line()}" for q in standing[:8])
             more = f"\n    … and {len(standing) - 8} more" if len(standing) > 8 else ""
-            return (
+            return NotClosed(
                 f"Not closed: {len(standing)} thing(s) this task raised are still nobody's "
                 f"decision. They came up as you worked and each one is about a fact you "
                 f"recorded, so they are the task, not leftovers from it:\n"
@@ -750,7 +761,7 @@ class WorldRuntime:
             if unread:
                 shown = "\n".join(f"    {line}" for line in unread.values())
                 session.read_back |= set(unread) | {"*"}
-                return (
+                return NotClosed(
                     f"Not closed yet — read these back first. Each is the first link of a type "
                     f"this task made, as the world reads it:\n{shown}\n\n"
                     f"`a.relate(b, kind)` reads \"a is b's kind\", so the holder of the role "
@@ -763,7 +774,7 @@ class WorldRuntime:
             if crossed:
                 shown = "\n".join(f"    {name}" for name, _, _ in crossed)
                 why = crossed[0][1]
-                return (
+                return NotClosed(
                     f"Not closed: {why}\n{shown}\n\n"
                     f"A link written from the wrong end is a different fact, not an untidy one: "
                     f"a.relate(b, kind) reads \"a is b's kind\", so the author is the subject "
@@ -779,7 +790,7 @@ class WorldRuntime:
                     f"type=\"{kind}\", changes=True)"
                     for cls, attr, kind in unsaid[:8])
                 more = f"\n    … and {len(unsaid) - 8} more" if len(unsaid) > 8 else ""
-                return (
+                return NotClosed(
                     f"Not closed: {len(unsaid)} attribute(s) you wrote to were taken on your "
                     f"word and nobody has said what they mean. The values are recorded and "
                     f"stay recorded; what is missing is the two things no value can tell me.\n"
@@ -801,7 +812,7 @@ class WorldRuntime:
                     for one, other, text in prose[:8])
                 more = f"\n    … and {len(prose) - 8} more" if len(prose) > 8 else ""
                 first, other, _ = prose[0]
-                return (
+                return NotClosed(
                     f"Not closed: {len(prose)} description(s) are facts about two things, "
                     f"written about one:\n{shown}{more}\n\n"
                     f"A sentence that names something else in this world is a link, and a link "
@@ -820,7 +831,7 @@ class WorldRuntime:
             if bare and self._anything_said(session):
                 shown = "\n".join(f"    {one}" for one in bare[:10])
                 more = f"\n    … and {len(bare) - 10} more" if len(bare) > 10 else ""
-                return (
+                return NotClosed(
                     f"Not closed: {len(bare)} thing(s) this task put in the world have a name "
                     f"and nothing else said about them:\n{shown}{more}\n\n"
                     f"Say what each one is here, in one line: "
@@ -835,7 +846,7 @@ class WorldRuntime:
                     f"invisible to a world that knows nothing about any of them but a name."
                 )
             if not self._anything_said(session):
-                return (
+                return NotClosed(
                     "Not closed: this is a recording task and nothing about anything was "
                     "recorded. There are entities, and lines describing them, and no links "
                     "between them and nothing else said — a name and an account of it are not "
@@ -909,7 +920,11 @@ class WorldRuntime:
         if unnamed:
             shown = ", ".join(k for k, _ in unnamed[:6])
             more = f" and {len(unnamed) - 6} more" if len(unnamed) > 6 else ""
-            asked = (f"\n\nOne thing to come back to when you can: {len(unnamed)} link type(s) "
+            # `+=`, not `=`. Written as an assignment this threw away everything the close had
+            # assembled above it — the reading, the links turned round, what was read from
+            # outside — and a base world always has a type with no named ends, so it threw it
+            # away on every close (docs/code-review-2026-09-30.md 3.3.6).
+            asked += (f"\n\nOne thing to come back to when you can: {len(unnamed)} link type(s) "
                      f"here have no names for their two ends — {shown}{more}. Without them "
                      f"nothing can later tell a link written backwards from one written right, "
                      f"and a backwards link is a wrong fact, not an untidy one. Naming them is "
@@ -1818,6 +1833,29 @@ def _block_as_it_stands(code: str, exc: BaseException, reason: str) -> str:
     if not 0 < where <= len(lines) or len(lines) > MAX_BLOCK:
         return ""
     why = reason.strip().splitlines()[-1][:160]
+    by = getattr(exc, "by_statement", None)
+    if by:
+        # Line by line, from what actually happened to each statement. A line the world ran is
+        # given back as code to read; a line that raised is commented with why; a line nothing
+        # ever reached is commented as never run.
+        failed_at = {start for start, _, ran in by if not ran}
+        ran_lines, broke_lines = set(), set()
+        for start, end, ran in by:
+            (ran_lines if ran else broke_lines).update(range(start, end + 1))
+        out = ["# --- what the world did with this block, line by line ---"]
+        for n, line in enumerate(lines, start=1):
+            if n in ran_lines:
+                out.append(line)
+            elif n in broke_lines:
+                out.append(f"# !! {line}" + (f"      # {why}" if n == where else ""))
+                if n in failed_at and n != where:
+                    out[-1] = f"# !! {line}      # failed too"
+            else:
+                out.append(f"# (never reached) {line}" if line.strip() else line)
+        done = len(ran_lines)
+        out.append(f"# --- {done} line(s) above ran and are in the world: do not send them "
+                   f"again. Send the commented ones, fixed. ---")
+        return "\n".join(out)
     out = ["# --- done and kept, do not send again ---"] + lines[:where - 1]
     out.append(f"# !! stopped here — {why}")
     out += [("# " + line) if line.strip() else line for line in lines[where - 1:]]
@@ -1871,16 +1909,25 @@ def _exec_by_statement(tree, namespace: dict, store) -> None:
 
     broke: list[BaseException] = []
     ran_after = 0
+    # What happened to each top-level statement, by the lines it occupies: (from, to, ran).
+    # Carried out on the exception, because the whole block is echoed back to the host afterwards
+    # and the echo used to say "from here on, nothing ran" over lines that had run and written
+    # — so the host sent them again and the world recorded them twice
+    # (docs/code-review-2026-09-30.md 3.3.7).
+    outcome: list[tuple[int, int, bool]] = []
     for statement in tree.body:
         piece = ast.Module(body=[statement], type_ignores=[])
+        spans = (statement.lineno, getattr(statement, "end_lineno", None) or statement.lineno)
         try:
             with store.transaction():
                 exec(compile(piece, "<run>", "exec"), namespace)
+            outcome.append((*spans, True))
             if broke:
                 ran_after += 1
         except (Exception, sandbox.RunTimeout) as failed:  # noqa: BLE001 - carrying on is the point
             if isinstance(failed, sandbox.RunTimeout):
                 raise                      # out of time is out of time; the rest would not run
+            outcome.append((*spans, False))
             broke.append(failed)
             if len(broke) >= _GIVE_UP_AFTER:
                 break
@@ -1903,6 +1950,8 @@ def _exec_by_statement(tree, namespace: dict, store) -> None:
                 f"in the world. The first failure is reported below"
                 + (f"; the others: {others}." if others else ".") + fallout
             )
+        broke[0].by_statement = outcome
+        broke[0].of_statements = len(tree.body)
         raise broke[0]
 
 
@@ -2082,7 +2131,21 @@ def _host_traceback(exc: BaseException, code: str = "") -> str:
     if frames and code:
         where = frames[-1].lineno or 0
         source = code.splitlines()
-        if 0 < where <= len(source):
+        by = getattr(exc, "by_statement", None)
+        if 0 < where <= len(source) and by:
+            # A statement that raises does not end the block, so "after it never ran" was a lie
+            # about lines that had run and written. Counted from what happened, not from where
+            # the first failure was (docs/code-review-2026-09-30.md 3.3.7).
+            ran = sum(len([l for l in source[start - 1:end] if l.strip()])
+                      for start, end, ok in by if ok)
+            failed = sum(1 for _, _, ok in by if not ok)
+            never = getattr(exc, "of_statements", len(by)) - len(by)
+            lines.append(f"line {where}: {source[where - 1].strip()}")
+            lines.append(
+                f"({ran} line(s) elsewhere in the block ran and are in the world"
+                + (f"; {failed} statement(s) failed" if failed > 1 else "")
+                + (f"; {never} were never reached" if never else "") + ")")
+        elif 0 < where <= len(source):
             ran = len([l for l in source[:where - 1] if l.strip()])
             left = len([l for l in source[where:] if l.strip()])
             lines.append(f"line {where}: {source[where - 1].strip()}")
