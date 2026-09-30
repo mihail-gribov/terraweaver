@@ -105,6 +105,36 @@ class _ImportsAlreadyHere(ast.NodeTransformer):
         return None
 
 
+def _as_written(code: str) -> str:
+    """The code as it would run, where what was meant is not in doubt.
+
+    One thing only: a block whose lines are indented for no reason. Measured 2026-09-30 — the
+    reading's engineer wrote `brazil = Thing.get(...)` and then indented every line under it, and
+    `IndentationError: unexpected indent` threw the whole block away, four good lines with it. There
+    is nothing to guess: no line opens a block, so the indentation means nothing and taking it off
+    changes nothing but whether the code runs.
+
+    Left alone the moment any line opens one (`if`, `for`, `def`, a trailing `:`), because then the
+    indentation is the code.
+    """
+    try:
+        ast.parse(code, "<run>")
+        return code
+    except IndentationError:
+        pass
+    except SyntaxError:
+        return code
+    lines = code.splitlines()
+    if any(line.rstrip().endswith(":") for line in lines):
+        return code                       # the indentation is somebody's block, not a stray
+    flat = "\n".join(line.lstrip() for line in lines)
+    try:
+        ast.parse(flat, "<run>")
+        return flat
+    except SyntaxError:
+        return code
+
+
 def check(code: str, protected: set[str] = frozenset(), always: set[str] = frozenset(),
           skipped: list | None = None) -> ast.AST:
     """Parse and vet host code. Raises SandboxViolation, or SyntaxError for broken code.
@@ -116,7 +146,7 @@ def check(code: str, protected: set[str] = frozenset(), always: set[str] = froze
     `protected` names can be read but not rebound — world variables change only via world.pin.
     """
     imports = _ImportsAlreadyHere(lenient=skipped is not None)
-    tree = ast.fix_missing_locations(imports.visit(ast.parse(code, "<run>")))
+    tree = ast.fix_missing_locations(imports.visit(ast.parse(_as_written(code), "<run>")))
     if skipped is not None:
         # Named here, told to the host by whoever is recording — this runs before there is
         # anywhere to note it.
@@ -187,6 +217,12 @@ _ALLOWED_BUILTINS = [
 
 BUILTINS = {name: getattr(builtins, name) for name in _ALLOWED_BUILTINS}
 BUILTINS.update(getattr=_getattr, hasattr=_hasattr, setattr=_setattr)
+
+# The three words a model writes when it has been writing JSON all day. Nothing in Python is called
+# `true`, so binding them takes nothing away and saves the block: measured 2026-09-30, one reading
+# of a name died on `it.performer = true` — `NameError: name 'true'` — and everything under that
+# line went unwritten. The world takes what it is given where what was meant is not in doubt.
+BUILTINS.update(true=True, false=False, null=None)
 
 
 class _Dt(_datetime.datetime):

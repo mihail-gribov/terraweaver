@@ -31,7 +31,14 @@ TTL = 10.0                      # how long the world waits; see inspector.TTL fo
 
 JEV_ENDPOINT = "https://api.typesafe.ai/v1/systemone"
 JEV_MODEL = "jev-1.13.0"        # pinned, not an alias: an alias moves and the answers move with it
-NEMOTRON = "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B"
+# The engineer, one step up from the Nano. Three sizes are on offer — Nano-30B-A3B (3B active),
+# super-120b-a12b (12B) and Ultra-550b-a55b (55B) — and the engineer is the one party here doing
+# open work: it writes the lines that declare a word and fill a thing in. Measured 2026-09-30 on the
+# Nano, the failures of the names pass were its code and not its judgement: `it.performer = true`,
+# an indented block, a `get` for a thing nobody had recorded. Two of those the world now takes as
+# written; the third is the kind of care a larger model is better at. The closed questions are not
+# affected — they go to the decision model, which is a different party entirely.
+NEMOTRON = os.environ.get("TERRAWEAVER_ENGINEER", "nvidia/nemotron-3-super-120b-a12b")
 NEBIUS = "https://api.tokenfactory.nebius.com/v1/"
 
 

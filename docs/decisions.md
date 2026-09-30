@@ -3770,3 +3770,29 @@ ending one has its own door (`rel.keep(until=...)`).
 This is the same lesson as `set_*` from the other side of the same door, and as `start_task` before
 it: **a door refuses in words that say what to write, or it takes what it is given.** Three of
 today's four remaining problems were one door each.
+
+## 2026-09-30 — what the engineer writes is taken as written, and the engineer moves up a size
+
+The names pass gave up on 56 of 285, and once it said why (`said_back`, added an hour ago) the
+reasons were three, all of them the engineer writing imperfect Python and the block dying at that
+line:
+
+    NameError: name 'true'                 it.performer = true
+    IndentationError: unexpected indent    the first line flush, every line under it indented
+    NotInWorld: no Thing with …            Thing.get(name="Spanish Tragedy"), which nobody recorded
+
+**The first two are ours and are taken as written.** `true`, `false` and `null` are bound in the
+sandbox — nothing in Python is called `true`, so this takes nothing away and saves the lines under
+it. And a block indented for no reason is flattened (`sandbox._as_written`), but only where **no
+line opens one**: if anything ends in `:` the indentation is the code and is left alone. Measured on
+three cases: a stray indent now runs, a real `for` block is untouched, and broken code is still an
+error.
+
+The third stays a refusal. A `get` for a thing nobody recorded is a fact about the record, not a
+mistake in the syntax.
+
+**And the engineer goes up a size**, on the author's call: `nvidia/nemotron-3-super-120b-a12b`
+(12B active) in place of the Nano's 3B, overridable with `TERRAWEAVER_ENGINEER`. The engineer is the
+one party doing open work — it writes the lines — and the failures above were its code rather than
+its judgement, which is the kind of care a larger model is better at. The closed questions are
+untouched: they go to the decision model, which is a different party.
