@@ -6,7 +6,7 @@ No files, no processes, no network, no imports. Enforced three ways:
   attributes that lead into the interpreter's internals;
 - it runs with a reduced set of builtins (`BUILTINS`): no `open`, `eval`, `exec`,
   `__import__`, `input` — and `getattr`/`setattr` that refuse private names;
-- useful modules are handed over as whitelists of functions (`MODULES`), never as modules:
+- useful modules are handed over as whitelists of functions (`modules()`), never as modules:
   a real module drags in others (`statistics.sys`, `re.enum.sys`), and `sys` reaches `os`.
 
 This is a guard against sloppy or misled host code, not a security boundary against a
@@ -64,19 +64,19 @@ class _ImportsAlreadyHere(ast.NodeTransformer):
 
     def visit_Import(self, node):
         wanted = [alias.asname or alias.name.split(".")[0] for alias in node.names]
-        if all(name in MODULES for name in wanted):
+        if all(name in _OFFERED for name in wanted):
             return None
-        return self._skip(node, [a.name for a in node.names if a.name.split(".")[0] not in MODULES])
+        return self._skip(node, [a.name for a in node.names if a.name.split(".")[0] not in _OFFERED])
 
     def visit_ImportFrom(self, node):
-        holder = MODULES.get(node.module)
+        holder = _OFFERED.get(node.module)
         if holder is None:
             return self._skip(node, [node.module or "?"])
         binds = []
         for alias in node.names:
-            if not hasattr(holder, alias.name) and alias.name not in MODULES:
+            if not hasattr(holder, alias.name) and alias.name not in _OFFERED:
                 return self._skip(node, [f"{node.module}.{alias.name}"])
-            if (alias.asname or alias.name) in MODULES and not alias.asname:
+            if (alias.asname or alias.name) in _OFFERED and not alias.asname:
                 continue         # already bound under that very name
             # `from datetime import time` asks for something real that simply isn't bound yet:
             # bind it rather than refuse the line.
@@ -225,46 +225,69 @@ BUILTINS.update(getattr=_getattr, hasattr=_hasattr, setattr=_setattr)
 BUILTINS.update(true=True, false=False, null=None)
 
 
-class _Dt(_datetime.datetime):
+def _dt():
     """`datetime` as hosts reach for it: the class, and also the module they expect around it.
 
     `datetime(2026, 10, 1)` is what the world's own examples use, and `datetime.datetime(...)`
     is what a host writes out of habit after `import datetime`. Both work here, so neither
-    costs a statement."""
+    costs a statement. One class per session, because a class's attributes are writable and one
+    shared class is one session writing into another's.
+    """
 
-    datetime = _datetime.datetime
-    date = _datetime.date
-    time = _datetime.time
-    timedelta = _datetime.timedelta
-    timezone = _datetime.timezone
+    class _Dt(_datetime.datetime):
+        datetime = _datetime.datetime
+        date = _datetime.date
+        time = _datetime.time
+        timedelta = _datetime.timedelta
+        timezone = _datetime.timezone
+
+    return _Dt
 
 
 def _only(module, *names) -> SimpleNamespace:
     return SimpleNamespace(**{name: getattr(module, name) for name in names})
 
 
-MODULES = {
-    "math": _only(math, "ceil", "floor", "sqrt", "log", "log10", "exp", "pow", "fabs", "isclose",
-                  "inf", "nan", "pi", "e", "fsum", "prod", "isnan", "isinf"),
-    "statistics": _only(statistics, "mean", "median", "mode", "stdev", "pstdev", "variance",
-                        "quantiles", "fmean"),
-    "re": _only(re, "search", "match", "fullmatch", "findall", "finditer", "sub", "split",
-                "compile", "escape", "IGNORECASE", "I", "MULTILINE", "M", "DOTALL", "S"),
-    "json": _only(json, "dumps", "loads"),
-    "collections": _only(collections, "Counter", "defaultdict", "OrderedDict", "namedtuple", "deque"),
-    "itertools": _only(itertools, "chain", "groupby", "islice", "combinations", "permutations",
-                       "product", "accumulate", "count"),
-    "datetime": _Dt,
-    "date": _datetime.date,
-    "timedelta": _datetime.timedelta,
-    "timezone": _datetime.timezone,
-    "after": conditions.after,
-    "before": conditions.before,
-    "between": conditions.between,
-    "now": conditions.now,
-    "long_ago": conditions.long_ago,
-    "today": conditions.today,
-}
+def modules() -> dict:
+    """The modules a session gets, built fresh for that session.
+
+    Built, not shared. A `SimpleNamespace` is an ordinary object and the sandbox allows attribute
+    assignment, so one dict handed to every namespace made `math.sqrt = 7` in one session
+    `math.sqrt = 7` in every session and every world in the process — reproduced
+    (docs/code-review-2026-09-30.md 3.3.4). The immutable ones (`date`, `timedelta`, `timezone`)
+    cannot be touched and could be shared; they are rebuilt here anyway so there is one rule.
+    """
+    return {
+        "math": _only(math, "ceil", "floor", "sqrt", "log", "log10", "exp", "pow", "fabs", "isclose",
+                      "inf", "nan", "pi", "e", "fsum", "prod", "isnan", "isinf"),
+        "statistics": _only(statistics, "mean", "median", "mode", "stdev", "pstdev", "variance",
+                            "quantiles", "fmean"),
+        "re": _only(re, "search", "match", "fullmatch", "findall", "finditer", "sub", "split",
+                    "compile", "escape", "IGNORECASE", "I", "MULTILINE", "M", "DOTALL", "S"),
+        "json": _only(json, "dumps", "loads"),
+        "collections": _only(collections, "Counter", "defaultdict", "OrderedDict", "namedtuple", "deque"),
+        "itertools": _only(itertools, "chain", "groupby", "islice", "combinations", "permutations",
+                           "product", "accumulate", "count"),
+        "datetime": _dt(),
+        "date": _datetime.date,
+        "timedelta": _datetime.timedelta,
+        "timezone": _datetime.timezone,
+        "after": conditions.after,
+        "before": conditions.before,
+        "between": conditions.between,
+        "now": conditions.now,
+        "long_ago": conditions.long_ago,
+        "today": conditions.today,
+    }
+
+
+# The names alone, for the reserved set and for what a session came with. A name set does not need
+# rebuilding, and nothing can write through it.
+MODULE_NAMES = frozenset(modules())
+
+# One set for the import checker to read: it asks whether a name is offered and whether a module
+# has an attribute, and it never hands these objects to anybody. Nothing may write through it.
+_OFFERED = modules()
 
 AVAILABLE = (
     "Available without importing: math, statistics, re, json, collections, itertools (common "

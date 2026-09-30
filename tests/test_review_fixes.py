@@ -209,7 +209,55 @@ def finding_3_2_1_a_clean_handover_is_not_two_at_once() -> None:
           f"_at_once said {properties._at_once([first, second])}")
 
 
+def finding_3_3_1_and_3_3_2_the_variable_tools() -> None:
+    """`set_variable` must work at all, and no variable may take a name the world binds."""
+    from terraweaver.variables import VariableError
+
+    rt = base.world()
+    rt.run('ada = Person.new(full_name="Ada")', "host")
+    got = rt.set_variable("host", "ada", 'Person.find(full_name="Ada").matches[0]',
+                          "the person this task is about")
+    check("3.3.1 set_variable works", got.get("ok"), f"{got.get('error')}")
+    check("3.3.1 and the name is there", "ada" in rt.variables.names(),
+          f"names: {sorted(rt.variables.names())}")
+
+    for taken in ("agent", "user", "world", "Person"):
+        try:
+            rt.variables.pin(taken, 5, "shadowing something the world binds", keep=True)
+            check(f"3.3.2 {taken!r} cannot be pinned", False, "it was allowed")
+        except VariableError:
+            check(f"3.3.2 {taken!r} cannot be pinned", True)
+
+
+def finding_3_3_3_a_task_that_cannot_close_is_still_dropped() -> None:
+    """Opening a task over one that cannot close must drop the old one, not keep it open."""
+    rt = base.world()
+    rt.run('ada = Person.new(full_name="Ada")', "host")     # a recording task with a bare name
+    first = rt.sessions["host"].task_id
+    rt.start_task("host", "record what the user said about somebody else entirely", "recording")
+    was = rt.store.load(first, rt.classes)
+    check("3.3.3 the old task is closed", getattr(was, "closed_as", None) == "abandoned",
+          f"closed_as={getattr(was, 'closed_as', None)!r}")
+    check("3.3.3 and the new task is not the old one",
+          rt.sessions["host"].task_id not in (None, first))
+    check("3.3.3 nothing the old task touched came with it",
+          not rt.sessions["host"].touched, f"touched: {rt.sessions['host'].touched}")
+
+
+def finding_3_3_4_one_sessions_modules_are_its_own() -> None:
+    """`math.sqrt = 7` in one session must not be `7` in the next."""
+    rt = base.world()
+    rt.run("math.sqrt = 7", "one")
+    got = rt.run("out = math.sqrt(9)\nprint(out)", "two")
+    check("3.3.4 the other session's math is untouched",
+          got.get("ok") and "3.0" in (got.get("output") or ""),
+          f"ok={got.get('ok')} output={got.get('output')!r} error={got.get('error')!r}")
+
+
 def main() -> None:
+    finding_3_3_3_a_task_that_cannot_close_is_still_dropped()
+    finding_3_3_4_one_sessions_modules_are_its_own()
+    finding_3_3_1_and_3_3_2_the_variable_tools()
     finding_3_2_1_a_clean_handover_is_not_two_at_once()
     finding_3_2_2_one_question_per_thing_not_per_pair()
     finding_3_1_2_one_subject_rebuilt_keeps_its_repeats()

@@ -138,7 +138,7 @@ def _procedure_globals() -> dict:
     """What a procedure may reach: the same as host code, and nothing besides."""
     from terraweaver import ontology
 
-    out = dict(sandbox.MODULES)
+    out = sandbox.modules()
     out["__builtins__"] = sandbox.BUILTINS
     out["world"] = ontology.current_world()
     for name, cls in ontology.current_world().classes.items():

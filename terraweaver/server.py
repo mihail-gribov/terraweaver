@@ -153,13 +153,15 @@ async def variables(ctx: Context) -> str:
 
 
 @server.tool()
-async def set_variable(name: str, expression: str, description: str, ctx: Context) -> str:
+async def set_variable(name: str, expression: str, description: str, ctx: Context,
+                       keep: bool = False) -> str:
     """Set a world variable, shared by every session, to the value of a Python expression over
     the world — e.g. `Person.find(full_name="Ann Lee").matches[0]`, `Event.find(title="Dentist").matches`
     or `42`. An entity is kept by id, so it always reads as it is now; other values are snapshots.
-    The description must say what it is and why it is kept."""
+    The description must say what it is and why it is kept. `keep=True` for a name that should
+    still be here next week; left alone, it goes when this task does."""
     key = _session_key(ctx)
-    result = runtime.set_variable(key, name, expression, description)
+    result = runtime.set_variable(key, name, expression, description, keep=keep)
     log.info("set_variable %s ok=%s", name, result["ok"])
     return format_result(result)
 

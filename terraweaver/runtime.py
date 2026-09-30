@@ -370,7 +370,11 @@ class WorldRuntime:
         # Methods the world wrote for itself hang on the classes like any other (procedures.py).
         self.world.procedures.bind(self.classes)
         onboarding.onboard(self.world, self.home)
-        reserved = set(self.classes) | set(sandbox.MODULES) | {
+        # Every name the namespace binds is taken, `ALWAYS` included — `user` and `agent` were
+        # missing from it, so `world.pin("agent", 5, "...", keep=True)` was allowed and shadowed
+        # the assistant in every session that opened afterwards
+        # (docs/code-review-2026-09-30.md 3.3.2).
+        reserved = set(self.classes) | set(sandbox.MODULE_NAMES) | set(ALWAYS) | {
             "world", "owner", "me", "NeedsResolution", "NotInWorld", "print", "report", "run_skill"}
         self.variables = WorldVariables(self.store, self.classes, reserved | set(sandbox.BUILTINS))
         self.sessions: dict[str, Session] = {}
@@ -391,8 +395,8 @@ class WorldRuntime:
             namespace["NeedsResolution"] = NeedsResolution
             namespace["NotInWorld"] = NotInWorld
             namespace["__builtins__"] = sandbox.BUILTINS
-            namespace.update(sandbox.MODULES)
-            session.preset |= set(sandbox.MODULES) | {"__builtins__", "NotInWorld"}
+            namespace.update(sandbox.modules())
+            session.preset |= set(sandbox.MODULE_NAMES) | {"__builtins__", "NotInWorld"}
             self.sessions[key] = session
         session = self.sessions[key]
         self._bind_classes(session)
@@ -727,7 +731,13 @@ class WorldRuntime:
             )
         if abandon:
             closing = "abandoned"
-        elif task is not None and getattr(task, "mode", None) == "recording":
+        # `closing` is given by whoever is closing this task on the caller's behalf — `start_task`
+        # passes "abandoned" when the host opens a new task over an old one. The gates below can
+        # refuse to close, and a refusal there left the old task open with `closed_as` unset while
+        # the new one was opened anyway: its `touched` set and its namespace then leaked into the
+        # new task (docs/code-review-2026-09-30.md 3.3.3). A close that somebody else decided is
+        # not a close to argue with.
+        elif closing is None and task is not None and getattr(task, "mode", None) == "recording":
             # A recording task that recorded nothing is the failure that reports itself as a
             # success. One left a world holding eight bare names — no links, no attributes, no
             # remarks — and said "all ten facts have been recorded, the world kept everything".
@@ -1320,10 +1330,16 @@ class WorldRuntime:
         parts = [self.variables.describe() or "\nNo world variables yet.\n", own or "\nThis session has no variables of its own.\n"]
         return "".join(parts).strip()
 
-    def set_variable(self, key: str, name: str, expression: str, description: str) -> dict[str, Any]:
+    def set_variable(self, key: str, name: str, expression: str, description: str,
+                     keep: bool = False) -> dict[str, Any]:
         """Pin a world variable to the value of a Python expression evaluated against the world.
 
-        Goes through `run`, so it is sandboxed, atomic and logged like any other host code.
+        Goes through `run`, so it is sandboxed, atomic and logged like any other host code. The
+        name goes in as a string and `keep` goes in at all: written as `world.pin({name}, ...)`
+        this passed the *value* under the name's identifier and left `keep` out, and `pin` has no
+        default for it on purpose — so the tool raised `TypeError` every single time it was called
+        (docs/code-review-2026-09-30.md 3.3.1). `keep=False` is the default here because a name
+        set through a tool call is this piece of work's, unless the caller says otherwise.
         """
         import ast
 
@@ -1337,7 +1353,7 @@ class WorldRuntime:
             return {"ok": False, "output": "", "error": f"{name!r} can't be a variable name",
                     "access": {}, "created": [], "updated": [], "found": [], "comments": [], "assumed": [],
                     "hints": [], "questions": [], "ask_now": [], "new_variables": {}, "duration_ms": 0}
-        return self.run(f"world.pin({name}, ({expression}), {description!r})", key)
+        return self.run(f"world.pin({name!r}, ({expression}), {description!r}, keep={bool(keep)})", key)
 
     def unset_variables(self, key: str, names: str) -> dict[str, Any]:
         """Remove world variables named in one string: "anna, stats" or "anna stats"."""
