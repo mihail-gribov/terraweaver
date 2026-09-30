@@ -944,6 +944,17 @@ class WorldRuntime:
                      f"and a backwards link is a wrong fact, not an untidy one. Naming them is "
                      f"one argument each: world.define_relation(..., subject_is=\"…\", "
                      f"object_is=\"…\").")
+        # The world's clock is one clock for the process, so a moment set in this task is still
+        # set in the next one and in every other session — which is the design item in
+        # docs/code-review-2026-09-30.md 2.2, and not something to change under a measurement that
+        # depends on it. What can be done now is to stop it being silent: a task closing says what
+        # the world thinks the time is, so the next one is not stamping 2020 without knowing.
+        told = timeutil.shifted()
+        if told is not None:
+            asked += (f"\n\nThe world's now is still {timeutil.show(told)} — it was set, not "
+                      f"reached, and it stays set for every session until somebody moves it. "
+                      f"Everything recorded next is recorded as happening then; `world.now = None` "
+                      f"gives it back the clock.")
         if not left:
             return (("Nothing was left open about what that task touched." + asked)
                     if task is not None else "")

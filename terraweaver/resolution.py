@@ -136,7 +136,8 @@ class NeedsResolution:
 
 
 def _numbered(options: list[str]) -> str:
-    return "; ".join(f"{i}) {option}" for i, option in enumerate(options))
+    """Numbered from one. These are read out to a person, and nobody offers a nought'th option."""
+    return "; ".join(f"{i}) {option}" for i, option in enumerate(options, start=1))
 
 
 def _is_model(value) -> bool:

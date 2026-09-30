@@ -87,8 +87,22 @@ def real_now() -> datetime:
 
 
 def set_now(moment) -> datetime | None:
-    """Move the world's now, or give it back to the clock with None."""
+    """Move the world's now, or give it back to the clock with None.
+
+    A moment written as words is read as one. `as_datetime` wanted a date or a datetime and a
+    string went into it and raised `AttributeError: 'str' object has no attribute 'year'` four
+    frames down, although what the host had written — `world.now = "2020-01-20"` — is exactly
+    what the docstring on that door invites (docs/code-review-2026-09-30.md 3.3.8).
+    """
     global _MOMENT
+    if isinstance(moment, str):
+        read, _sure = told(moment)
+        if read is None or getattr(read, "moment", None) is None:
+            raise ValueError(
+                f"{moment!r} does not read as a moment. Say it as a date — \"2020-01-20\", "
+                f"date(2020, 1, 20) or datetime(2020, 1, 20) — or None to give the world back "
+                f"the clock.")
+        moment = read.moment
     _MOMENT = as_datetime(moment) if moment is not None else None
     return _MOMENT
 

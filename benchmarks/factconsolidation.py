@@ -65,8 +65,11 @@ def load(hops: str = "sh", context: str = "6k") -> Variant:
         ids = row["metadata"]["qa_pair_ids"]
         if not ids or not ids[0].startswith(wanted):
             continue
-        facts = [line.split(". ", 1)[1].strip() for line in row["context"].splitlines()
-                 if re.match(r"^\d+\.\s", line)]
+        # One expression for "numbered line" and for what follows the number. Matched with `\s`
+        # and split on ". ", a line numbered with a tab — "12.\tfact", which this file has —
+        # matched and then raised IndexError on the split (docs/code-review-2026-09-30.md 3.4.16).
+        numbered = (re.match(r"^\d+\.\s+(.+)$", line) for line in row["context"].splitlines())
+        facts = [m.group(1).strip() for m in numbered if m]
         questions = [Question(qid, text, list(gold))
                      for qid, text, gold in zip(ids, row["questions"], row["answers"])]
         return Variant(wanted, facts, questions)

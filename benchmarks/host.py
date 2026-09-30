@@ -170,8 +170,14 @@ def keys() -> dict:
             if not line or line.startswith("#") or "=" not in line:
                 continue
             name, value = line.split("=", 1)
-            if value.strip() and not found.get(name.strip()):
-                found[name.strip()] = value.strip()
+            # Quotes off. `KEY="sk-..."` is how half the world writes a .env, and passed on with
+            # the quotes the key authenticates nowhere — which looks exactly like not having one
+            # (docs/code-review-2026-09-30.md 3.4.16).
+            value = value.strip()
+            if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
+                value = value[1:-1]
+            if value and not found.get(name.strip()):
+                found[name.strip()] = value
     return found
 
 
