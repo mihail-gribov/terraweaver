@@ -200,6 +200,18 @@ is whichever pass the queue fell into — not what the user said last.
   of 12 000–15 000 on a run that takes under a second. **Above about load 20 the suite cannot be
   believed and a gate must not be started** — a gate at that load measures the other job. Check
   `uptime` first, every time.
+- **A test that depends on today's date.** `tests/test_periods.py` asked "what held on
+  2026-10-01" about a tag written `permanent=True` with no start — so the tag began at the moment
+  the test ran, and from **2026-10-01** the question fell before its start. It passed for months
+  and then failed twice in a row, which reads exactly like a regression in whatever was last
+  touched (it cost twenty minutes of looking at `now_utc`). Fixed by giving the tag a start it can
+  name. **Before blaming your own change: `git stash` it and run the test again.** Three instances so far,
+  all on 2026-10-01: `test_periods.py` (`permanent=True` with no start, asked about 2026-10-01),
+  `test_world_state.py` (`when=date(2026, 10, 1)` — a remark dated today sorts behind one recorded
+  today at 02:21, so "newest first" flips). Both now use a date relative to the run.
+  **Still armed:** `test_round_trip.py:127` `until=date(2026, 12, 31)` ("true until the year
+  turns") goes off on 2027-01-01, and `test_runtime.py:130` compares `starts=date(2026, 10, 1)`
+  against `today()`. Seventy fixed 2026 dates in the suite altogether.
 - **(the same thing, as first written)** `tests/test_round_trip.py` fails with
   `RunTimeout: the run took longer than 10 seconds` when the machine is busy (the user's own
   `gcg_prefix.py` / `fit_marks.py` / `ollama`, load 13–21) and passes alone. Seen twice on

@@ -190,12 +190,17 @@ def main() -> int:
           len(store.load_all("Person", classes)) == before)
 
     # --- dated remarks hold what the attributes have no place for ---
-    from datetime import date
+    from datetime import date, timedelta
     classes, store, world = fresh_world()
     Person = classes["Person"]
     ada = Person.find(email="ada@example.com").matches[0]
     ada.describe("allergic to nuts")
-    ada.describe("might move to Berlin", when=date(2026, 10, 1), tentative=True)
+    # A day in the future of whenever this runs, not a date somebody wrote down once. These come
+    # back newest first by the day the thing happened, falling back to the day it was recorded —
+    # so a `when` that has since *become* today sorts behind a remark recorded at 02:21 today, and
+    # the order flips. Written as 2026-10-01, this test passed for months and began failing on
+    # 2026-10-01 (docs/now.md, flickers).
+    ada.describe("might move to Berlin", when=date.today() + timedelta(days=30), tentative=True)
     texts = [c.text for c in ada.described()]
     check("remarks come back newest first", texts == ["might move to Berlin", "allergic to nuts"], str(texts))
     check("a tentative remark says so", ada.described(contains="Berlin")[0].tentative)

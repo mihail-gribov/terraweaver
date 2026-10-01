@@ -39,7 +39,12 @@ def main() -> int:
           'ana.tag("apartment-hunt", starts=date(2026, 3, 1), until=date(2026, 6, 1))\n'
           'ana.tag("apartment-hunt", starts=date(2026, 6, 1), until=date(2026, 9, 1))\n'
           'ana.tag("apartment-hunt", starts=date(2026, 4, 1), until=date(2026, 5, 1))\n'
-          'ana.tag("berlin", permanent=True)', "host")
+          # A fixed start, not "now". Written without one, this tag began at the moment the test
+          # ran and the question below — what held on 2026-10-01 — fell *before* it from
+          # 2026-10-01 onwards: a test that passes until the calendar turns. What it means to
+          # check is that a tag with no end still holds months later, and that needs a start it
+          # can name.
+          'ana.tag("berlin", starts=date(2026, 7, 1), permanent=True)', "host")
     ana = w.classes["Person"].get(full_name="Ana Borg")
     check("four statements about two tags come out as two stretches",
           periods.rebuild(w.world) == 2, str(periods.rebuild(w.world)))
