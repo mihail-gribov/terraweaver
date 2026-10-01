@@ -412,7 +412,51 @@ def a_row_that_will_not_load_costs_only_that_row() -> None:
           str(row))
 
 
+def a_lookup_sees_the_classes_beneath_it() -> None:
+    """A kind of a thing is a thing — when something is looked *for*. A listing stays exact.
+
+    Found 2026-10-01 by `experiments/why_it_failed.py`: six of ten duplicate-end facts in a
+    455-fact world were a bare `Thing` the world had made beside the right one under a class it
+    had grown. The names pass places things under grown classes, and from that moment
+    `Thing.get(name="Canada")` answered `NotInWorld` — so the honest move left to a host or an
+    engineer was to make a second Canada.
+
+    Listings stay exact on purpose: `[i.name for i in Thing.all()]` is a line a host writes all
+    the time and a Person is a kind of Thing with no `name`, so an inclusive listing turns it into
+    an AttributeError that costs the rest of the block.
+    """
+    from terraweaver import ontology
+
+    rt = base.world()
+    rt.world.extras["define"](
+        "Country", "a sovereign state with its own government and borders", "name",
+        [{"name": "population", "description": "how many people live there now", "type": "int"}],
+        parent="Thing", source="world")
+    thing = rt.world.new("Thing", name="Canada")
+    with ontology.stating("world"):
+        thing.become("Country")
+
+    found = rt.world.get("Thing", name="Canada")
+    check("a lookup on the parent finds the kind", type(found).__name__ == "Country", repr(found))
+    check("and so does find", bool(rt.world.find("Thing", name="Canada").matched),
+          repr(rt.world.find("Thing", name="Canada")))
+    check("the class and what is under it", "Country" in rt.world.kinds_of("Thing")
+          and rt.world.kinds_of("Country") == ["Country"], str(rt.world.kinds_of("Thing")))
+    check("a Task is not listed under Event, being the world's own",
+          "Task" not in rt.world.kinds_of("Event"), str(rt.world.kinds_of("Event")))
+
+    listed = rt.run('print([i.name for i in Thing.all(limit=None)])', "host")
+    check("a listing is exact, so the host's own idiom still runs", listed.get("ok"),
+          str(listed.get("error"))[:120])
+    check("and the world says what is a kind of it rather than answering nothing",
+          any("kind of it" in one for one in (listed.get("hints") or [])),
+          str(listed.get("hints"))[:160])
+    check("everything under it, for whoever asks",
+          len(rt.world.all("Thing", limit=None, kinds=True)) >= 1)
+
+
 def main() -> None:
+    a_lookup_sees_the_classes_beneath_it()
     a_row_that_will_not_load_costs_only_that_row()
     a_reading_may_not_rename_the_thing_it_is_reading()
     a_placing_is_stated_so_it_survives_a_rebuild()

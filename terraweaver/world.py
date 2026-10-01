@@ -76,6 +76,8 @@ class World:
         # Said once per class, not once per read: a link that lost an end is news, and the same
         # news forty times over is noise.
         self._said_about_ends: set[str] = set()
+        # Classes whose listing came back empty while something is a kind of them; said once each.
+        self._said_about_kinds: set[str] = set()
         # Host-facing calls a mode adds on top of the core — an experiment that lets the host
         # define its own classes needs `define(...)` where nothing in the core offers one. Kept
         # in a named place rather than bolted onto the facade, so what is ours and what a mode
@@ -203,7 +205,8 @@ class World:
 
     DEFAULT_LIMIT = 50
 
-    def all(self, cls, limit: int | None = DEFAULT_LIMIT, history: bool = False, any_time: bool = False) -> list:
+    def all(self, cls, limit: int | None = DEFAULT_LIMIT, history: bool = False,
+            any_time: bool = False, kinds: bool = False) -> list:
         """Entities of a class, most recently worked with first.
 
         Limited by default: a personal world grows without bound, and an unbounded dump is
@@ -213,16 +216,72 @@ class World:
         is built on.
 
         Only what holds now — any_time=True gives everything, ended and not yet started too.
+
+        `kinds=True` reads the classes beneath this one as well, and is what a *lookup* wants (see
+        `kinds_of`). A listing does not: `[i.name for i in Thing.all()]` is a line a host writes
+        all the time, and a Person is a kind of Thing with no `name` — so an inclusive listing
+        turns that line into an `AttributeError` and costs the rest of the block. Exact here,
+        inclusive where something is being looked for.
         """
         ontology.note_world_call("world_queries")
-        instances = self.store.load_all(self._name(cls), self.classes)
+        under = self.kinds_of(self._name(cls)) if kinds else None
+        instances = self.store.load_all(self._name(cls), self.classes, under)
         instances = self._whole_ones(self._name(cls), instances)
         if not (history or any_time):
             moment = timeutil.now()
             instances = [e for e in instances if timeutil.in_period(
                 getattr(e, "valid_from", None), getattr(e, "valid_until", None), moment)]
         instances.sort(key=lambda e: e.accessed_at, reverse=True)
+        if not instances and not kinds:
+            self._say_what_is_a_kind_of_it(self._name(cls))
         return instances[:limit] if limit else instances
+
+    def _say_what_is_a_kind_of_it(self, class_name: str) -> None:
+        """Nothing is this class itself, and something is a kind of it: say so rather than "none".
+
+        A listing is exact on purpose (see `all`), so a world holding three countries answers
+        nothing to `Thing.all()` — true, and read as "there is nothing here". The world knows
+        better and says which class to ask, once per class.
+        """
+        under = [name for name in self.kinds_of(class_name) if name != class_name]
+        if not under:
+            return
+        held = {name: len(self.store.load_all(name, self.classes)) for name in under}
+        held = {name: count for name, count in held.items() if count}
+        if not held or class_name in self._said_about_kinds:
+            return
+        self._said_about_kinds.add(class_name)
+        ontology.note_hint(
+            f"nothing is a {class_name} itself, and {sum(held.values())} thing(s) are a kind of "
+            f"it: " + ", ".join(f"{name} ({count})" for name, count in sorted(held.items()))
+            + f". A listing is of the one class — ask the kind, {sorted(held)[0]}.all(), or "
+            f"{class_name}.all(kinds=True) for everything under it. A lookup already reads them: "
+            f"{class_name}.get(...) finds a kind of {class_name}.")
+
+    def kinds_of(self, class_name: str) -> list[str]:
+        """This class and every class that is a kind of it, however far down.
+
+        A read of a class has to see the classes beneath it, because that is the whole of what
+        "is a kind of" means. It did not, and the world then denied having things it had: the
+        names pass places a thing under a class it grew (`Canada` becomes a `Country`), and from
+        that moment `Thing.get(name="Canada")` answered `NotInWorld` and `Thing.all()` came back
+        empty. A host or an engineer told that has one honest move left, which is to make a
+        second Canada — measured 2026-10-01, six of ten duplicate-end facts in a 455-fact world,
+        and an unknown share of the sixteen whose end "was never put in the world" at all.
+
+        Writing is untouched: `Thing.new(...)` makes a Thing, and `ensure` is a write. This is
+        about reading, where a kind of a thing is a thing.
+        """
+        below = {class_name}
+        while True:
+            # `own` classes are the world's own bookkeeping and are nobody's to list: a Task is a
+            # kind of Event, and `Event.all()` is a host asking what is in its calendar.
+            more = {name for name, cls in self.classes.items()
+                    if cls._spec.get("parent") in below and name not in below
+                    and not cls._spec.get("own")}
+            if not more:
+                return sorted(below)
+            below |= more
 
     def _whole_ones(self, class_name: str, instances: list) -> list:
         """Links missing an end, kept out of every read at once instead of at each reader.
@@ -264,8 +323,12 @@ class World:
         ontology.note_world_call("world_queries")
         class_name = self._name(cls)
         attrs = self._check_attrs(class_name, attrs)
-        scored = matching.score_candidates(self.all(cls, limit=None, history=history or any_time),
-                                           class_name, attrs, filter_others=True)
+        # Looking for something: the classes beneath this one count. `Thing.get(name="Canada")`
+        # answered `NotInWorld` about a Canada the world had placed under `Country`, and a host
+        # told that has one honest move left, which is to make a second Canada (`kinds_of`).
+        scored = matching.score_candidates(
+            self.all(cls, limit=None, history=history or any_time, kinds=True),
+            class_name, attrs, filter_others=True)
         # Relevance first; between equally good matches, whoever was dealt with most recently.
         scored.sort(key=lambda pair: (-pair[1], -pair[0].accessed_at.timestamp()))
         ontology.note_looked_up([inst for inst, _ in scored])

@@ -49,9 +49,15 @@ def where(world, cls=None, *, related=None, tagged=None, tagged_all=None, mentio
     from terraweaver import relations
 
     wanted_tags = ([tagged] if tagged else []) + list(tagged_all or [])
-    found = []
+    found, seen = [], set()
     for class_name in _classes(world, cls, attributes, wanted_tags):
-        found += _by_attributes(world, class_name, attributes, any_time)
+        for entity in _by_attributes(world, class_name, attributes, any_time):
+            # Once each. A read of a class sees the classes beneath it (`World.kinds_of`), so a
+            # sweep over every class meets the same entity under its own class and under each of
+            # its ancestors: measured 2026-10-01, `where(tagged=…)` came back with six of five.
+            if entity.id not in seen:
+                seen.add(entity.id)
+                found.append(entity)
 
     if wanted_tags:
         found = [e for e in found if _carries(world, e, wanted_tags, at, any_time)]

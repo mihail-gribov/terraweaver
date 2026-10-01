@@ -290,8 +290,12 @@ class Store:
         """One instance by id, through the identity map."""
         return self._load(instance_id, classes)
 
-    def load_all(self, class_name: str, classes: dict[str, type]) -> list:
-        ids = [r[0] for r in self.conn.execute("SELECT id FROM instances WHERE class_name = ?", (class_name,))]
+    def load_all(self, class_name: str, classes: dict[str, type], kinds=None) -> list:
+        """Every instance of this class — and, given `kinds`, of the classes beneath it."""
+        wanted = list(kinds) if kinds else [class_name]
+        holes = ", ".join("?" for _ in wanted)
+        ids = [r[0] for r in self.conn.execute(
+            f"SELECT id FROM instances WHERE class_name IN ({holes})", wanted)]
         return [self._load(instance_id, classes, self._identity) for instance_id in ids]
 
     def classes_here(self) -> set[str]:

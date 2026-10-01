@@ -233,7 +233,7 @@ def main() -> int:
     Thing, Event = classes["Thing"], classes["Event"]
     closed = Thing.ensure(name="Staff SRE opening", ttl=timedelta(days=-1))
     check("an ended record drops out of ordinary reads",
-          "Staff SRE opening" not in [t.name for t in Thing.all(limit=None)])
+          "Staff SRE opening" not in [t.display_name() for t in Thing.all(limit=None)])
     check("and stays reachable as history",
           "Staff SRE opening" in [t.name for t in Thing.find(name="Staff SRE opening", history=True)])
     check("identity is timeless: ensure finds the ended one instead of duplicating it",

@@ -4150,3 +4150,65 @@ the index — so what a slow run paid for, the next run has for nothing.
 
 This is the same shape as `READING_AT_THE_CLOSE`: one deadline for the whole close, not one per
 reading, which is a lesson this codebase had already learned and paid for once.
+
+## 2026-10-01 — the three causes the data named, and what each was worth
+
+`experiments/why_it_failed.py` is new and should have existed first: it reads the same expectations
+`check_expected` does and says, for each fact the world does not hold, which *shape* the failure
+is. On `var/run8/world` — 455 facts, 210 of 316 as owed, 66% — the other 105 came out as seven
+shapes, and three of them were the world's own. `docs/now.md` carries the table and the plan;
+`docs/decisions.md` carries why each fix is the shape it is.
+
+**29 facts — a failed load left a shell where the next lookup finds it.** `store._load` registers
+the object in the identity map *before* filling its values, because a cyclic reference has to find
+it there. A fill that raised therefore left a half-built object in the map — and the identity map
+is what makes one row one object. From then on `Person.get(full_name="Thomas Kyd")` answered
+`NotInWorld` about a name the record plainly held, which is worse than a wrong answer, and the next
+`save` of that shell wrote null over every value it had: 21 entities in that world. Only
+`TypeError` was caught per row, while the door refuses in whatever words fit the mistake, so one
+such row aborted the whole load. Now every refusal is caught per row and logged, and a fill that
+does not complete leaves nothing behind. Found in the `runs` table — run 569 is
+`thomas_kyd = Person.get(full_name="Thomas Kyd")` and the damaged row's `accessed_at` is 35 ms
+before it — not by reading the source.
+
+**6 of 10 duplicate-end facts — a lookup did not see the classes beneath it.** The names pass
+places a thing under a class the world grew, which is its whole job; from that moment
+`Thing.get(name="Canada")` said there was no such thing and `Thing.all()` came back empty, and the
+only honest move left to a host or an engineer is to make a second Canada. `Person` and `AIAgent`
+are declared `parent: Thing`, so a kind of a thing is a thing by the world's own word. Lookups
+(`find`, and `get`/`identify` through it) now read `World.kinds_of`, which is the class and
+everything under it with the world's `own` classes left out. **Listings stay exact**, and that
+asymmetry is the point: `[i.name for i in Thing.all()]` is a line a host writes constantly and a
+Person has no `name`, so an inclusive listing turns it into an `AttributeError` that costs the rest
+of the block — it broke two of our own tests that way, one of them inside a host run. An empty
+listing that has kinds now says so, with the count and which class to ask. And a sweep over every
+class de-duplicates by id, because the same entity was arriving under its own class and under each
+ancestor.
+
+**28 facts — the reading was handed a label, not the fact in words.** `readings.words` holds what
+`words_of` found on the bare link, and 124 of 442 are a single bare word: `created_in`,
+`has_capital`, `citizen_of`. The host wrote `label=` where the fact in words was wanted, and
+`relate` offers both. Everything downstream assumes the sentence, so the look guesses (`has_capital`
+about Iran and Tehran came back `mayor_of`, and so did `works_in` about Mahmoud Abbas and
+"politician"), the check correctly says `not_in_it` — 217 readings carry that verdict, up to 0.99 —
+the goes run out and the link is taken back. The picker and the engineer were doing their job and
+the fact was lost upstream of both. Half of this is the world's own business and went in: a label
+is not something the check can be asked about, so it is not asked. The other half — whether the
+door should hold the task open until the host says the fact in words — is a decision about the
+host's contract and is the user's to make.
+
+**27 facts — supersession decided by arrival order.** A one-at-a-time word ends the standing link
+where the new one begins, so the link written *last* stands; the reading is deferred and resumable
+by design, so what is written last is whichever pass the queue fell into. Traced on the link's own
+statements: `Hines Ward plays_position cornerback` (the telling that stands) was typed at 02:22:11
+and ended at 02:25:30 by `wide receiver` (the telling it replaced), typed at 02:25:31. Three
+changes went in — `when_said` falls back to every statement about the link and then to its birth
+and returns a moment rather than a string; the reading types a fact **as of when it was said**
+(`timeutil.as_of`); and `ontology.now_utc` reads the world's clock, so `created_at`, which is what
+"when did this link begin" falls back to, is no longer six years out under a moved clock. It is
+**not settled**: reading in telling order now stands the later fact, and reading reversed still
+stands the earlier one. A fourth change — guarding the undated branch of `_hand_over` the way the
+dated branch is guarded — **was reverted**, because it turns correct supersession off entirely:
+both tellings stand in both orders, and losing supersession is worse than losing the 27. What it
+needs first is an answer to which branch of `_check_functional` ends what; `docs/now.md` holds that
+as the open question.

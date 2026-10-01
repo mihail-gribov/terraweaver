@@ -57,7 +57,7 @@ Reproduce, free, no models:
 2. **The "no link" bucket — split, both halves diagnosed.** 27 are supersession deciding by
    arrival order; 28 are the reading being handed a label instead of the fact in words. Both have
    their own section below.
-3. **The 10 duplicates** — the link is written to a second copy of the right thing.
+3. **The 10 duplicates** — DONE for the six that were the world's own; see its section below.
 4. **The 17 prose-instead-of-a-link** — the host's, and the gate at the close
    (`_facts_hiding_in_prose`) only fires when the prose names something *already in the world*,
    which is why "wide receiver" slipped past. Widen that gate.
@@ -191,6 +191,39 @@ is whichever pass the queue fell into — not what the user said last.
   (correct) and reading reversed still stands the earlier one. So `as_of` alone does not settle
   it: the boundary still comes from `at`, and the *standing* link's own beginning is what has to
   decide. That is the next move on this item, and it needs the branch question answered first.
+
+## Item 3 — SETTLED 2026-10-01: a lookup did not see the classes beneath it
+
+Of the ten facts where one end is in the world twice, **six have a bare `Thing` copy made by the
+world itself** beside the right one under a grown class: `Thing English` beside `Language English`,
+`Thing Canada` beside `Country Canada`, `Thing Asia` beside `Continent Asia`. The other four are
+the host's own doing (two `Thing Soviet Union`, both `stated by ['agent']`).
+
+The six are explained by one line, reproduced without a model:
+
+    t = world.new("Thing", name="Canada");  t.become("Country")
+    Thing.get(name="Canada")   ->  NotInWorld: no Thing with name=Canada in the world
+    Thing.all()                ->  []
+
+The names pass places things under classes the world grew — that is its whole job — and from that
+moment every `Thing.get` for them failed. A host or an engineer told "there is no such thing" has
+one honest move left, which is to make a second one. `Person` and `AIAgent` are declared
+`parent: Thing` in the base specs, so a kind of a thing *is* a thing by the world's own word.
+
+**Fixed, and the asymmetry is deliberate** — do not "finish the job" by making listings inclusive
+too:
+
+- `World.kinds_of(class_name)` is the class and everything under it, `own` classes excluded (a
+  Task is a kind of Event, and `Event.all()` is a host asking about its calendar).
+- **Lookups read inclusively**: `find`, and `get`/`identify` through it.
+- **Listings stay exact.** `[i.name for i in Thing.all()]` is a line a host writes constantly and
+  a Person has no `name`, so an inclusive listing turns it into an `AttributeError` that costs the
+  rest of the block — it broke two of our own tests exactly that way, one of them *inside* a host
+  run. `all(kinds=True)` is there for whoever wants it.
+- An empty listing that *has* kinds says so once per class, with the count and which class to ask,
+  instead of answering "nothing".
+- A sweep over every class (`selecting.where`) de-duplicates by id: the same entity was coming
+  back under its own class and under each ancestor — six of five on one query.
 
 ## Flickers — things that look like a bug and are not, or are not always
 
