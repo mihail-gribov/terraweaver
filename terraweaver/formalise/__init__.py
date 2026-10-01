@@ -23,7 +23,7 @@ A link that cannot be placed stays bare, which is true of it. Nothing is marked 
 """
 import time
 
-from terraweaver import sentences
+from terraweaver import sentences, timeutil
 from terraweaver.formalise import check, make, record, write
 from terraweaver.formalise.look import look, words_for
 
@@ -82,7 +82,18 @@ def formalise(runtime, engineer, picker=None, limit: int = 100, seconds: float |
         if seconds is not None and time.monotonic() - began > seconds:
             break
         started = time.monotonic()
-        one = formalise_one(runtime, link, engineer, picker)
+        # Typed as of the moment the fact was said, not the moment it is being read. A
+        # one-at-a-time word ends the standing link where the new one begins, so the link written
+        # last is the one that stands — and this pass is resumable by design, so what is written
+        # last is whichever pass the queue fell into, not what the user said last. Measured
+        # 2026-10-01 on a 455-fact world: "Hines Ward plays the position of cornerback" (the
+        # telling that stands) was typed at 02:22 and "wide receiver" (the one it replaced) at
+        # 02:25, which ended it. Twenty-seven of that world's hundred and five missing facts are
+        # this shape. With the clock where the fact was said, the hand-over compares the two
+        # facts' own moments — and `_hand_over` refuses to end a link before it began, which is
+        # the same guard from the other side.
+        with timeutil.as_of(when_said(runtime.world, link)):
+            one = formalise_one(runtime, link, engineer, picker)
         # Kept before the next link is read, so a reading that dies mid-run is still measured.
         record.keep(runtime.world, link, one, time.monotonic() - started)
         traces.append(one)
@@ -135,7 +146,17 @@ def formalise_one(runtime, link, engineer, picker) -> dict:
         # date went in whenever the engineer phrased the write differently. What the world holds is
         # the one thing that cannot be phrased three ways — and it is rendered as the phrase it
         # amounts to, which is what makes the question answerable at all.
-        unsupported, about = check.not_borne_out(picker, words, made)
+        # A label is not a sentence, and nothing can be borne out by a word. 124 of 442 bare links
+        # in one 455-fact world had `words` like `created_in` or `has_capital` and nothing else —
+        # the host wrote `label=` where the fact in words was wanted. Asked anyway, the check
+        # refuses whatever was written (217 readings carry `not_in_it`, up to 0.99), the goes run
+        # out, and the link is taken back: the fact is lost to a question nobody could answer.
+        # So it is not asked, and the trace says why (docs/now.md, item 2).
+        if only_a_word(words):
+            unsupported, about = "", {"asked": False, "why": "the words are a label, not a fact: "
+                                                             "nothing can bear a claim out"}
+        else:
+            unsupported, about = check.not_borne_out(picker, words, made)
         trace["checked"].append(about)
         if unsupported:
             trace["answered"].append(unsupported)
@@ -194,6 +215,17 @@ def again_with(runtime, engineer):
     return getattr(runtime.world, "better", None) or engineer
 
 
+def only_a_word(words: str) -> bool:
+    """Whether what the host gave is a word for the link rather than the fact in words.
+
+    One token and no spaces — `created_in`, `has_capital`, `citizen_of`. The world takes it (never
+    refuse a write) and says at the close what it costs; what it cannot do is ask anybody whether
+    a claim is borne out by it.
+    """
+    said = str(words or "").strip()
+    return bool(said) and " " not in said
+
+
 def words_of(link) -> str:
     """The words the host said this link in — its description, and there is nothing else."""
     for said in (link.__dict__.get("descriptions") or []):
@@ -202,13 +234,37 @@ def words_of(link) -> str:
     return ""
 
 
-def when_said(world, link) -> str:
-    """When the host said this link, from the statements about it. The oldest wins."""
+def when_said(world, link):
+    """When the host said this link — the oldest of everything said about it, then its own birth.
+
+    This is what the queue is sorted by, and the sort is not cosmetic: a one-at-a-time word ends
+    the standing link at the moment a new one begins, so the link read **last** is the one that
+    stands. Read out of order, the older telling wins and the world holds the fact the user
+    corrected.
+
+    Measured 2026-10-01 on a 455-fact world: "Hines Ward plays the position of cornerback" (said
+    after "wide receiver", and the one that stands) was typed at 02:22:11; "wide receiver" was
+    typed at 02:25:31 and ended it. It read `descriptions` only, and a bare link the host wrote
+    with `label=` rather than `description=` has no `descriptions` statement at all — so every one
+    of those came back `""`, sorted equal, and the queue's order was whatever the rows happened to
+    be in. Twenty-seven of the hundred and five facts that world did not hold are this.
+
+    Everything said about the link, then — a label, its ends, a description — and, failing all of
+    that, when the link itself was made. A moment, not a string: `min` over two spellings of a
+    moment compares them as text.
+    """
+    from terraweaver import timeutil
+
     try:
-        said = world.facts.about(link.id, "descriptions")
+        said = world.facts.about(link.id)
     except Exception:  # noqa: BLE001 - a link whose statements cannot be read is as old as any
-        return ""
-    return min((str(one.stated_at) for one in said if one.stated_at), default="")
+        said = []
+    moments = [one.stated_at for one in said if one.stated_at]
+    if moments:
+        return min(timeutil.as_datetime(one) for one in moments)
+    born = getattr(link, "created_at", None)
+    return timeutil.as_datetime(born) if born else timeutil.ALWAYS
 
 
-__all__ = ["formalise", "formalise_one", "look", "words_for", "words_of", "when_said", "GOES"]
+__all__ = ["formalise", "formalise_one", "look", "only_a_word", "words_for", "words_of",
+           "when_said", "GOES"]

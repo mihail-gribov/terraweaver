@@ -54,10 +54,9 @@ Reproduce, free, no models:
 
 1. **The 21 entities whose name the image lost** — 29 facts, the largest single defect that is the
    world's own. In progress; hypotheses below.
-2. **The 33 "no link"** — diagnose before fixing. First thing to check: how many of them are facts
-   that contradict common knowledge (the slice has them on purpose — "Israel is located in the
-   continent of North America"), which would mean the engineer or the picker is refusing a fact for
-   being false rather than for not being said.
+2. **The "no link" bucket — split, both halves diagnosed.** 27 are supersession deciding by
+   arrival order; 28 are the reading being handed a label instead of the fact in words. Both have
+   their own section below.
 3. **The 10 duplicates** — the link is written to a second copy of the right thing.
 4. **The 17 prose-instead-of-a-link** — the host's, and the gate at the close
    (`_facts_hiding_in_prose`) only fires when the prose names something *already in the world*,
@@ -120,9 +119,88 @@ is null in *every* column, `created_at` included, except `accessed_at` — so so
 
 ---
 
+## Item 2 — the "no link" bucket, split (2026-10-01)
+
+Of the 105, the ones where both ends are in the world under single copies and nothing joins them
+split cleanly in two:
+
+- **27 — a link IS there between the right ends, and it is ended.** Both the bare `related` link
+  and the correctly typed one, both `valid_until` set.
+- **28 — no link between them at all, ever.** Diagnosed 2026-10-01, and it is not the picker
+  refusing true-but-strange facts. See below.
+
+### The 28: the reading was given a label, not the fact in words
+
+`readings.words` is what `words_of(link)` found on the bare link, and **124 of 442 (28%) hold a
+single bare word** — `created_in`, `citizen_of`, `affiliated_with`, `capital_is`, `has_capital` —
+with no sentence anywhere. The host wrote `label=` where the fact in words was wanted.
+
+Everything downstream is built around having the sentence, so with only `has_capital` to go on:
+
+- the **look** guesses, and guesses towards a magnet: `has_capital` (Iran/Tehran) and `works_in`
+  (Mahmoud Abbas/politician) were both answered **`mayor_of`**;
+- the **check** then correctly says `not_in_it` — 217 readings carry that verdict, at 0.51 to 0.99
+  — because the words really do not bear the claim out;
+- the goes run out, `settle_by_verdict` takes the link back, and the fact is gone.
+
+So the picker and the engineer are doing their job and the fact is lost upstream of both. **The
+world accepts this**: `relations.relate` offers the host a choice — "either a word for it
+(`label=…`) or the fact in the words it came in (`description=…`)" — and the label is the cheaper
+one to produce, so that is what a host produces.
+
+**What to do, and it is a decision, not a defect** (the rule it touches is "the host narrates, the
+world formalises", and the other rule it touches is "never refuse a write; accept it and hold the
+task open for what is missing"):
+
+- accept the label as now, and at the close tell the host which links have no sentence and what
+  that costs — the shape every other missing thing is handled in;
+- and, meanwhile, a label-only link is not something the check can be asked about: there are no
+  words for a claim to be borne out by, so asking is a call spent on a foregone refusal. The
+  reading should take the label as the word and skip the check. **That half is purely the world's
+  own business and goes in without asking.**
+
+### The 27: the reading types facts in arrival order, and supersession is by order
+
+Traced to the link's own statements (`var/run8/world`, `PlaysPosition`):
+
+    Hines Ward -> cornerback     typed 02:22:11, ended 02:25:30  (fact 37 — the telling that stands)
+    Hines Ward -> wide receiver  typed 02:25:31                  (fact  4 — the telling it replaced)
+
+A one-at-a-time word ends the standing link where the new one begins, so **the link written last
+is the one that stands**. The reading is deferred and resumable by design, so what is written last
+is whichever pass the queue fell into — not what the user said last.
+
+- **ruled out** — `when_said` returning `""` for links the host wrote with `label=` rather than
+  `description=`. Measured: 0 of 427 bare links in run8 had no moment. The queue's sort was fine;
+  it is the *pass boundary* that reorders, because each pass sorts only what is still unread.
+- **done** — `when_said` now falls back to every statement about the link and then to its birth,
+  and returns a moment rather than a string. Right in itself; it is not what fixes the 27.
+- **done** — the reading types a fact **as of when it was said** (`timeutil.as_of`, entered per
+  link in `formalise.formalise`). So the hand-over compares the two facts' own moments instead of
+  their arrival order.
+- **done** — `ontology.now_utc` reads the world's clock, not the wall clock. `created_at` is
+  written from it and `created_at` is what "when did this link begin" falls back to, so under
+  `as_of` every such comparison was against a moment six years later.
+- **REVERTED, and why** — guarding the "no date was said" branch of `_hand_over` the way the
+  dated branch is guarded (refuse to end a link that began after the boundary) **turns correct
+  supersession off**: with it, both tellings stand in both orders. Losing supersession is worse
+  than losing the 27. Do not re-add it without first establishing which branch of
+  `_check_functional` ends what — `AT_A_TIME == "at_any_time"`, so a `many-to-one` word takes the
+  `functional == "at_any_time"` branch and hands over there.
+- **open** — with the three changes above, reading in telling order stands the later fact
+  (correct) and reading reversed still stands the earlier one. So `as_of` alone does not settle
+  it: the boundary still comes from `at`, and the *standing* link's own beginning is what has to
+  decide. That is the next move on this item, and it needs the branch question answered first.
+
 ## Flickers — things that look like a bug and are not, or are not always
 
-- **Tests time out under machine load.** `tests/test_round_trip.py` fails with
+- **Tests time out under machine load, and the threshold is low.** Seen at load 13–21 on
+  2026-09-30 and at **load 38** on 2026-10-01 (`specialist.py --score`, a postgres DELETE, the
+  noosphere reading server — none of them ours). The tell is in the result itself: `duration_ms`
+  of 12 000–15 000 on a run that takes under a second. **Above about load 20 the suite cannot be
+  believed and a gate must not be started** — a gate at that load measures the other job. Check
+  `uptime` first, every time.
+- **(the same thing, as first written)** `tests/test_round_trip.py` fails with
   `RunTimeout: the run took longer than 10 seconds` when the machine is busy (the user's own
   `gcg_prefix.py` / `fit_marks.py` / `ollama`, load 13–21) and passes alone. Seen twice on
   2026-09-30 and diagnosed twice. Check `uptime` before believing a timeout. Partly *also* real:

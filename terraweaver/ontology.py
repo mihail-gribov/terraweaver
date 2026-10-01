@@ -63,7 +63,16 @@ def set_write_guard(guard) -> None:
 
 
 def now_utc() -> datetime:
-    return datetime.now(timezone.utc).replace(tzinfo=None)
+    """The world's now — the clock it has been told, or the one on the wall.
+
+    Not `datetime.now` any more. `created_at` is written from here, and `created_at` is what
+    "when did this link begin" falls back to when nobody said: read off the wall clock while the
+    world was recording a fact as of 2020, every such comparison was against a moment six years
+    later, so nothing could be ordered against it (docs/now.md, item 2).
+    """
+    from terraweaver import timeutil
+
+    return timeutil.now()
 
 
 def set_world(world) -> None:

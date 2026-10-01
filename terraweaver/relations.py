@@ -1118,8 +1118,9 @@ def _hand_over(world, standing, held, start, name: str, at=None) -> None:
     # changed today, when all that happened today is that somebody mentioned it; written as nothing
     # at all — which is what this did — two periods stayed open on a side that can hold one, so
     # "who is it now" had two answers and a read answered by the order things were said in.
+    boundary = at if at is not None else timeutil.now()
     with ontology.trusted_writes(), ontology.stating("world"):
-        standing.valid_until = at if at is not None else timeutil.now()
+        standing.valid_until = boundary
         standing.until_is = timeutil.BEFORE
         world.save(standing)
     # The missing date decided a boundary, so it is worth more than a hint that dies with the run.

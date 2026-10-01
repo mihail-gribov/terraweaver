@@ -6,6 +6,7 @@ UTC, and all of them become naive UTC so they compare without surprises.
 """
 import re
 from datetime import date, datetime, timedelta, timezone
+from contextlib import contextmanager
 
 
 class Moment(datetime):
@@ -105,6 +106,23 @@ def set_now(moment) -> datetime | None:
         moment = read.moment
     _MOMENT = as_datetime(moment) if moment is not None else None
     return _MOMENT
+
+
+@contextmanager
+def as_of(moment):
+    """Read and write as if it were `moment`, then put the clock back where it was.
+
+    What `set_now` does, scoped. The reading uses it: a fact typed a day after it was said has to
+    take its place in time where it was said, or a one-at-a-time word ends the wrong link. The
+    deferred reading is resumable by design, so links are typed in whatever order the passes fall
+    in — and arrival order is not telling order (docs/now.md, item 2).
+    """
+    was = _MOMENT
+    try:
+        set_now(moment)
+        yield
+    finally:
+        set_now(was)
 
 
 def shifted() -> datetime | None:
