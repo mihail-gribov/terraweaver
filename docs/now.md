@@ -70,7 +70,40 @@ demo. And `docs/architecture.md`, `contextvars`, the god modules — all argued 
 
 ---
 
-## Item 1 — SETTLED 2026-10-01: a failed load left a shell where the next lookup finds it
+## Item 1 — ONE mechanism closed, and the loss still happens: there is a second
+
+**Measured on the third gate (25 facts, all of today's fixes, free machine):** 45 images agree
+with the record, **0 renamed, 3 with the name lost** — `Person Thomas Kyd`, `City Berkeley`,
+`City Bengaluru`. In run8 it was 420 / 0 / 21. As a rate that is 6% against 4.8%: **no improvement
+measured.** The mechanism below is real, reproduced and tested, and it is not the only one.
+
+The three break into two shapes, which is itself new information:
+
+- `Person Thomas Kyd` — every column null but `accessed_at`, `aliases` and one `$ref`, and
+  **`created_at` null**: the shell shape, the one closed below.
+- `City Berkeley`, `City Bengaluru` — the row is **full** (`created_at`, `descriptions`,
+  `located_in`, `country` all set) and only `name` is null, with **no `value_history` row for
+  `name`**, so that row was never written non-null: the City row was created without the name.
+
+### What is eliminated for the City shape (do not re-walk these)
+
+Each was reproduced faithfully and came out clean — name intact, row otherwise identical to the
+damaged one:
+
+- `become("City")` on an in-memory Thing. Clean.
+- `become("City")` on a Thing **reloaded** after clearing the identity map. Clean.
+- the whole `portraits.formalise` pass with stub engineer and picker, growing `City` and placing
+  the thing under it (`comes_in` enqueues it; `world.new` alone does not). Clean.
+- the same, where the engineer's code also writes an attribute **and a link to another entity**
+  (`it.country = "England"`, `it.located_in = Thing.get(...)`) — which is what the gate's code did
+  and what its damaged row holds. Clean.
+
+**The next variable to try** is a *second* reading of the same thing: `unread` returns one row per
+prose-fact, not per thing ("a thing is described more than once"), so a thing with two accounts is
+read twice, and the second reading loads it again after the first has moved it to another class.
+That is the only difference left between the faithful reproduction and the gate.
+
+## Item 1a — SETTLED 2026-10-01: a failed load left a shell where the next lookup finds it
 
 **Found in `runs`, not in the source**, as usual: run 569 of run8 is
 `thomas_kyd = Person.get(full_name="Thomas Kyd")` / `thomas_kyd.born_in = it`, and the damaged
