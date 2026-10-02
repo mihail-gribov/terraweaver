@@ -60,8 +60,12 @@ def _read_it_all(work: Path, port: int) -> str:
     ran = subprocess.run([sys.executable, "experiments/catch_up.py", str(work / "world.db"),
                           "--grown", str(work / "grown")],
                          cwd=ROOT, env=hosting.keys(), capture_output=True, text=True)
-    return (ran.stdout or "") + (f"\n[the reading itself failed]\n{ran.stderr[-800:]}"
-                                 if ran.returncode else "")
+    # What the world logged while it read is kept whether or not the reading failed: the name
+    # guard says what it put back there, and on 2026-10-02 nothing it said reached the results.
+    warned = [line for line in (ran.stderr or "").splitlines() if "WARNING" in line or "put back" in line]
+    return ((ran.stdout or "")
+            + (f"\n[the world said, while reading]\n" + "\n".join(warned[-200:]) if warned else "")
+            + (f"\n[the reading itself failed]\n{ran.stderr[-800:]}" if ran.returncode else ""))
 
 
 def main() -> int:

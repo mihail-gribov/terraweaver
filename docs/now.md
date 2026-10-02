@@ -74,6 +74,22 @@ demo. And `docs/architecture.md`, `contextvars`, the god modules — all argued 
 
 ---
 
+## var/run10's 55 wrong answers, by stage (2026-10-03, `experiments/wrong_answers.py`, free)
+
+| stage | n | inside |
+|---|---|---|
+| **reading** | **36** | **30 beside a link the reading never reached**; 4 a lost name; 2 two typed values, neither giving way |
+| writing | 12 | 6 both things there and never linked; 6 one end never made a thing |
+| answering | 7 | 4 the gold on one of two copies; 3 the world held only the gold and the host said otherwise |
+
+**The 30 are the harness's.** `catch_up.py` read at most 200 (`--limit 200`) and `run_fc._read_it_all`
+passed no limit: the host said 445 links in words and 245 were never read. An unread link is bare —
+it takes no part in which telling holds, so it stands beside the typed gold and the host picks it
+(`goaltender associated_with pesäpallo` typed, `— associated_with — ice hockey` unread, answer
+"ice hockey"). run9 had 189, under the cap, which is why it never showed. **Fixed:** the reading
+reads everything by default and says what it left; run_fc keeps the reading's warnings.
+**PoF running:** the rest of run10's reading on a copy (`var/run10-read`), then this script again.
+
 ## var/run10 — 45%: the names pass took the names (2026-10-02, evening)
 
 `benchmarks/results/20261002-120310-…` — 455 facts, $11.11, 217 minutes, **45/100**. Free reads of

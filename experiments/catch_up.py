@@ -32,7 +32,10 @@ def main() -> int:
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("db", type=Path)
     parser.add_argument("--grown", type=Path, default=None)
-    parser.add_argument("--limit", type=int, default=200)
+    # Everything, unless asked otherwise. The default was 200 until 2026-10-02, and run_fc passes
+    # none: var/run10's host said 445 links in words, 245 were never read, and an unread link takes
+    # no part in which telling holds — 30 of that run's 55 wrong answers stood beside one.
+    parser.add_argument("--limit", type=int, default=100_000)
     parser.add_argument("--shape", action="store_true",
                         help="print the distribution of readings this world has had and stop — "
                              "no engineer, no calls, nothing spent")
@@ -83,6 +86,11 @@ def main() -> int:
         got = portraits.formalise(runtime.world, runtime.world.engineer, limit=args.limit)
         runtime._hand_back_what_moved(got.pop("moved", []))
         print("things that came in as names:", got, flush=True)
+
+    said, waiting = sentences.count(runtime.world)
+    asked, unread = portraits.count(runtime.world)
+    print(f"\nafter the reading: {waiting} of {said} facts said in words still unread; "
+          f"{unread} account(s) of {asked} bare name(s) still unread.", flush=True)
 
     print("\n--- every reading this world has had")
     print(record.readable(record.distribution(runtime.world)))
