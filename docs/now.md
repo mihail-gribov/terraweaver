@@ -98,6 +98,36 @@ and never had a chain long enough. A whole-world load needs a whole world to tes
 **Next:** run the names pass on var/run9 (`measure.sh read`, resumable, cheap), then the 100
 questions again over the same world — the number with all three phases, on one world, one code.
 
+## var/run9's 48 wrong answers, laid out (free, read-only, on the world the questions saw)
+
+13 said "not recorded"; **35 gave a value**. By what the world held, counting copies first:
+
+| | shape |
+|---|---|
+| **17** | the later telling **never landed** (12 — the world holds the earlier value; 5 — nothing) |
+| **7** | the later telling **landed and was ended** |
+| **6** | **the world held the gold and the host answered otherwise** (Klapisch: Malaysia held, "France" said) |
+| 4 | both holding — the word is many-to-many |
+| 1 | a duplicate subject (it was the biggest shape in run8 — `kinds_of` is doing its job) |
+
+The host **invents APIs**: `world.write(subject=…, relation=…, object="India")`, `Related(subject=…,
+object=…)` built by hand. "rugby union was created in India" was written in a `world.write` block,
+which has no such door.
+
+### The world's own reading timed out on define_relation — and that one was mine
+
+293 of 1151 runs failed (25%; run8: 439 of 1438, 30%). 35 were `RunTimeout`, **33 of them the
+world's own reading on `define_relation`** (run8: 23 of 25, the same shape — not new). One
+`define_relation` on var/run9's world costs 1.3 s on a free machine. By hour: the reading's first
+hour averaged **1.7 s a run with 18 timeouts**, its third **0.16 s and none** — same code, same
+world. The difference was a cold index, and **a claim I made on 2026-09-30 that had stopped being
+true**: "the worker that ran past the deadline still writes its vector into the index". After the
+SQLite write moved to the calling thread, a late worker computed the whole vocabulary and threw it
+away, so the index never warmed while the embedder was slower than the budget. Now a late worker's
+vectors land in a process-level dict (`meaning._LANDED`) and the next call on the owning thread
+writes them down. Measured: first call gives up at 0.3 s, second finds ten vectors in 0.00 s with
+no new call to the embedder.
+
 ## The answering side — first look, 2026-10-02 (20 questions over run8, $1.33)
 
 The question phase reached the end: 20 of 20, none failed to reach the world. 8 right. That world

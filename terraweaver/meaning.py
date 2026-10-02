@@ -142,6 +142,12 @@ def left_to_spend(asked: float | None) -> float | None:
     return max(0.0, _SPENDING_UNTIL - time.monotonic())
 
 
+# Vectors a worker finished after its caller stopped waiting, by (model, the text's digest). A
+# plain dict: a worker only ever sets a key and the calling thread only reads and then writes the
+# value down itself, so nothing here touches the database off its own thread.
+_LANDED: dict = {}
+
+
 def within_seconds(seconds: float | None, work):
     """Run `work()` and give up on it after `seconds`. None means it did not answer in time.
 
@@ -272,31 +278,56 @@ class Meanings:
         """
         known = {ref: (digest, model, raw) for ref, digest, model, raw in self.store.conn.execute(
             "SELECT ref, digest, model, vector FROM meanings")}
-        out, due = {}, []
+        out, due, landed = {}, [], []
         for ref, text in refs_and_texts:
             held = known.get(ref)
             if held and held[0] == _digest(text) and held[1] == self.model.name:
                 out[ref] = json.loads(held[2])
+                continue
+            # Embedded by a worker that ran past an earlier caller's deadline: it is here now, and
+            # this thread — which owns the connection — is the one to write it down.
+            arrived = _LANDED.get((self.model.name, _digest(text)))
+            if arrived is not None:
+                out[ref] = arrived
+                landed.append((ref, text, arrived))
             else:
                 due.append((ref, text))
+        for ref, text, vector in landed:
+            self._keep(ref, text, vector)
+        model = self.model
         for batch in range(0, len(due), 32):
             chunk = due[batch:batch + 32]
+
+            def embed(chunk=chunk):
+                # Runs on the worker. What it computes lands in `_LANDED` whether or not anybody is
+                # still waiting for it — so a slow embedder is paid for once, not on every run.
+                # Measured 2026-10-02: without this, a worker past the deadline computed the whole
+                # vocabulary and threw it away, the index never warmed while the embedder was
+                # slower than the budget, and the world's own reading spent its first hour at 1.7 s
+                # a run with eighteen timeouts against 0.16 s and none once it was warm.
+                got = model.embed([t for _, t in chunk])
+                for (_, text), vector in zip(chunk, got):
+                    _LANDED[(model.name, _digest(text))] = vector
+                return got
+
             # The embedding is a network call and is the only thing bounded. Everything below runs
             # on this thread: the connection belongs to it, and writing to SQLite from a worker is
             # not a saving, it is a different bug.
-            vectors = (within_seconds(within, lambda: self.model.embed([t for _, t in chunk]))
-                       if within else self.model.embed([t for _, t in chunk]))
+            vectors = within_seconds(within, embed) if within else embed()
             if vectors is None:
                 break                      # out of time: what is cached is what the caller gets
             for (ref, text), vector in zip(chunk, vectors):
                 out[ref] = vector
-                self.store.conn.execute(
-                    "INSERT OR REPLACE INTO meanings (ref, subject, kind, text, digest, model, "
-                    "vector) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                    (ref, ref, "word", text, _digest(text), self.model.name, json.dumps(vector)))
-        if due:
+                self._keep(ref, text, vector)
+        if due or landed:
             self.store.conn.commit()
         return out
+
+    def _keep(self, ref: str, text: str, vector: list) -> None:
+        self.store.conn.execute(
+            "INSERT OR REPLACE INTO meanings (ref, subject, kind, text, digest, model, "
+            "vector) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (ref, ref, "word", text, _digest(text), self.model.name, json.dumps(vector)))
 
     def vector_of(self, text: str, within: float | None = None) -> list | None:
         """One text's vector, not kept: what a caller is asking *about*. None if it timed out."""
