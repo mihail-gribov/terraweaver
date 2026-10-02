@@ -491,7 +491,59 @@ def an_image_never_goes_to_storage_without_the_name_its_record_holds() -> None:
           rt.world.get("Person", full_name="Ada Lovelace").full_name == "Ada Lovelace")
 
 
+def the_later_telling_stands_whichever_order_it_is_read_in() -> None:
+    """Two one-at-a-time facts, said a day apart, typed in either order: the later one stands.
+
+    Found 2026-10-01: 27 of 105 missing facts in a 455-fact world. The reading is resumable, so
+    "wide receiver" (said first) was typed after "cornerback" (said second) and ended it — the
+    world held the fact the user had corrected. It took three changes and one revert to settle:
+    the reading types each fact as of when it was said, `created_at` is on the world's clock (it
+    was on the wall's, so "when did this begin" was 2026 against a boundary in 2020), a link is
+    not ended before it began, and the older telling arriving second is closed where the newer
+    one began instead of being left open beside it.
+    """
+    from terraweaver import formalise, timeutil
+
+    class Picker:
+        def choose(self, state, question, options):
+            raise RuntimeError("this picker does not answer")
+
+        def ask(self, state, questions):
+            return {}
+
+    class Engineer:
+        def say(self, system, asked):
+            return "a.set_plays_position(b)"
+
+    for order in ("as told", "reversed"):
+        rt = base.world()
+        base.word(rt, "plays_position", "which position somebody plays", cardinality="many-to-one",
+                  subject_is="player", object_is="position")
+        ward = rt.world.new("Person", full_name="Hines Ward")
+        for name in ("wide receiver", "cornerback"):
+            rt.world.new("Thing", name=name)
+        with timeutil.as_of(datetime(2020, 1, 1)):
+            first = rt.world.relate(ward, rt.world.get("Thing", name="wide receiver"), "related",
+                                    description="Hines Ward plays the position of wide receiver")
+        with timeutil.as_of(datetime(2020, 1, 2)):
+            second = rt.world.relate(ward, rt.world.get("Thing", name="cornerback"), "related",
+                                     description="Hines Ward plays the position of cornerback")
+        for link in ((first, second) if order == "as told" else (second, first)):
+            with timeutil.as_of(formalise.when_said(rt.world, link)):
+                formalise.formalise_one(rt, link, Engineer(), Picker())
+        links = [one for name, cls in rt.world.classes.items()
+                 if (cls._spec.get("relation") or {}).get("kind") == "plays_position"
+                 for one in rt.world.all(name, limit=None, history=True)]
+        standing = [one.object.display_name() for one in links if one.valid_until is None]
+        before = [one for one in links if one.object.display_name() == "wide receiver"]
+        check(f"read {order}, the later telling stands", standing == ["cornerback"], str(standing))
+        check(f"read {order}, the earlier one held until the later began",
+              bool(before) and timeutil.as_datetime(before[0].valid_until) == datetime(2020, 1, 2),
+              str([(one.valid_from, one.valid_until) for one in before]))
+
+
 def main() -> None:
+    the_later_telling_stands_whichever_order_it_is_read_in()
     an_image_never_goes_to_storage_without_the_name_its_record_holds()
     a_lookup_sees_the_classes_beneath_it()
     a_row_that_will_not_load_costs_only_that_row()

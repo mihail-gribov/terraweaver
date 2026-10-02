@@ -4212,3 +4212,32 @@ dated branch is guarded — **was reverted**, because it turns correct supersess
 both tellings stand in both orders, and losing supersession is worse than losing the 27. What it
 needs first is an answer to which branch of `_check_functional` ends what; `docs/now.md` holds that
 as the open question.
+
+## 2026-10-02 — the later telling stands whichever order it is read in, and the guard that was reverted was right
+
+Yesterday's entry left the 27 supersession facts half done and one change reverted: guarding the
+undated branch of `_hand_over` (do not end a link before it began) switched supersession off in
+both orders. The guard was right. What it compared against was wrong: `Entity.__init__` set
+`created_at` from `datetime.now()` directly, past `ontology.now_utc`, so under `timeutil.as_of`
+a link made "as of 2020" had `created_at` 2026 — "when did this link begin" was the wall clock
+against a boundary on the world's clock, every hand-over was refused, and both tellings stood.
+
+Two clocks, then, and on purpose. `created_at` is when a thing entered the world, so it is on the
+world's clock: it is compared against `valid_from`, which is the world's time. `accessed_at` is
+when we last worked with it — attention, not history — and is only ever compared with itself, so
+it stays on the wall clock `touch` uses. `Entity._show` and `Spell.holds` ask "what holds now" and
+now ask the world.
+
+The guard is back, and with it the piece that was missing: an older telling arriving second was
+not ended (right) but was left open beside the newer one (wrong). `_hand_over` now says
+`_HeldBefore(moment)` when it refuses because the new link is the older one, and `relate` closes
+the new link where the later one began. Read as told or reversed, the same world comes out —
+`Hines Ward plays_position cornerback` standing, `wide receiver` held until the day the correction
+was said — which is what the user said, in the order they said it.
+
+And the lost names are guarded at the door rather than chased further. Five faithful
+reproductions of the second mechanism came out clean, so `World._with_its_name` now runs before
+every image write that is not a load — `save`, `_determined`, `retype` — and puts the record's
+name back when the image has none, logging the class and the id every time it does. The next run
+does not need another reproduction: its log names the entity and the moment, and `runs` at that
+moment names the code.

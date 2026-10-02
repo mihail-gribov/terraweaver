@@ -454,9 +454,16 @@ class Entity:
         # When it entered the world, and when it was last worked with. Together these are
         # what makes the world a context: who and what the conversation has been about
         # lately, rather than an undifferentiated pile of entities.
-        now = datetime.now(timezone.utc).replace(tzinfo=None)  # one form of time: see timeutil
-        self.created_at = kwargs.pop("created_at", None) or now
-        self.accessed_at = kwargs.pop("accessed_at", None) or now
+        # Two clocks, on purpose. `created_at` is when the thing entered the *world*, so it is on
+        # the world's clock: it is what "when did this begin" falls back to when nobody said, and
+        # that is compared against `valid_from`, which is the world's time. Read off the wall
+        # while the world recorded facts as of 2020, every such comparison was against 2026, and
+        # the hand-over could not tell an earlier telling from a later one (docs/now.md, item 2).
+        # `accessed_at` is when *we* last worked with it — attention, not history — and is only
+        # ever compared with itself, so it stays on the wall clock that `touch` uses.
+        self.created_at = kwargs.pop("created_at", None) or now_utc()
+        self.accessed_at = (kwargs.pop("accessed_at", None)
+                            or datetime.now(timezone.utc).replace(tzinfo=None))
         # When it holds in the world: [valid_from, valid_until). None on either side is open —
         # most things exist from when they're recorded and for good. Nothing is deleted when a
         # period ends; the entity becomes history.
@@ -975,7 +982,7 @@ class Entity:
     def _show(self, slot: str) -> None:
         """Put what holds now into the entity, which is where everything reads the slot from."""
         world = current_world()
-        moment = datetime.now(timezone.utc).replace(tzinfo=None)
+        moment = now_utc()            # "what holds now" is the world's now, as everywhere else
         holding = []
         for statement in world.facts.about(self.subject_id, slot):
             if not statement.holds_at(moment):
@@ -1428,7 +1435,7 @@ class Spell:
 
     @property
     def holds(self) -> bool:
-        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        now = now_utc()               # the world's now: a stretch holds or not in the world's time
         return self.starts <= now and (self.until is None or self.until > now)
 
     def __repr__(self):

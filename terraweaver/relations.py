@@ -646,6 +646,11 @@ def relate(world, a, b, kind: str, period: dict, attrs: dict):
     start = period.get("valid_from")
     end = period.get("valid_until")
     took_over = _check_functional(world, name, rel, subject, obj, start, end, attrs)
+    if isinstance(took_over, _HeldBefore):
+        # The older telling, arriving after the newer one: it held until the newer one began.
+        if end is None and period.get("valid_until") is None:
+            period["valid_until"] = took_over.moment
+        took_over = None
     if took_over is not None and start is None:
         # Something held and this holds instead, and nobody said since when — so it begins where
         # the other one ended, which is today, marked `before` because the change itself happened
@@ -1063,7 +1068,20 @@ def _too_many_handovers(world, name: str, rel: dict, end, side: str) -> None:
     )
 
 
-def _hand_over(world, standing, held, start, name: str, at=None) -> None:
+class _HeldBefore:
+    """What `_hand_over` says when the new link is the *older* telling: it held until `moment`.
+
+    The reading is resumable, so a fact said in January can be written after one said in
+    February. Then the standing link is not ended — it began later and it is what holds — and the
+    new one is not left open either, because the one-at-a-time rule says it stopped holding where
+    the later one began. `relate` reads this and closes the new link at that moment.
+    """
+
+    def __init__(self, moment):
+        self.moment = moment
+
+
+def _hand_over(world, standing, held, start, name: str, at=None):
     """A new holder of a one-at-a-time relation ends the last one, rather than being refused.
 
     This relation exists to be changed — that is what one-at-a-time says about it — and the
@@ -1102,7 +1120,7 @@ def _hand_over(world, standing, held, start, name: str, at=None) -> None:
                 f"{standing.display_name()} holds from {timeutil.show(began)} and this one starts "
                 f"{timeutil.show(ends)}, which is earlier — so that one is left standing rather "
                 f"than ended before it began. Both are in the world; the dates are asked about.")
-            return
+            return _HeldBefore(began)
         with ontology.trusted_writes(), ontology.stating("world"):
             standing.valid_until = ends
             world.save(standing)
@@ -1119,6 +1137,24 @@ def _hand_over(world, standing, held, start, name: str, at=None) -> None:
     # at all — which is what this did — two periods stayed open on a side that can hold one, so
     # "who is it now" had two answers and a read answered by the order things were said in.
     boundary = at if at is not None else timeutil.now()
+    # A link cannot end before it began — the same guard as the dated branch above, on this side
+    # of it. The reading types each fact as of when it was said and is resumable, so a fact said
+    # in January can arrive after one said in February; without this it ended February's link at
+    # January. Twenty-seven of a hundred and five missing facts in one world were this shape
+    # (`Hines Ward plays_position cornerback`, the telling that stands, ended by "wide receiver").
+    #
+    # Added once and reverted on 2026-10-01 because it switched supersession off in *both*
+    # orders. The guard was right; `created_at` was not — it came off the wall clock, so "when
+    # did this begin" was always 2026 against a boundary in 2020, and every hand-over was
+    # refused. With `created_at` on the world's clock (ontology `Entity.__init__`), it holds.
+    began = timeutil.as_datetime(getattr(standing, "valid_from", None)
+                                 or getattr(standing, "created_at", None))
+    if began is not None and timeutil.as_datetime(boundary) < began:
+        ontology.note_hint(
+            f"{held.display_name()} has {standing.display_name()} from {timeutil.show(began)}, and "
+            f"this one is said as of {timeutil.show(boundary)} — earlier. {name} holds one at a "
+            f"time, so the later telling stands and this one is recorded as what held before it.")
+        return _HeldBefore(began)
     with ontology.trusted_writes(), ontology.stating("world"):
         standing.valid_until = boundary
         standing.until_is = timeutil.BEFORE
@@ -1163,6 +1199,7 @@ def _check_functional(world, name, rel, subject, obj, start, end, attrs):
     # write on the standing link depends on whether anybody gave a date.
     at = start if start is not None else timeutil.now()
     handed_over = False
+    held_before = None
     candidates = [r for r in world.all(name, limit=None, history=True) if _overlaps(r, at, end)]
     if rel.get("functional") == "at_any_time":
         for r in candidates:
@@ -1179,8 +1216,11 @@ def _check_functional(world, name, rel, subject, obj, start, end, attrs):
                         f"{subject.display_name()} already has a {name} for that time: "
                         f"{r.display_name()}. {_why_not_to_assume(r, start)} {_how_to_make_room(start)}."
                     )
-                _hand_over(world, r, subject, start, name, at)
-                handed_over = True
+                said = _hand_over(world, r, subject, start, name, at)
+                if isinstance(said, _HeldBefore):
+                    held_before = said
+                else:
+                    handed_over = True
     if rel.get("functional") == ontology.AT_A_TIME and not rel.get("inverse_functional"):
         # One per subject says nothing about the object, and that is where half of what people say
         # lands: "the chairperson of Fatah is Mahmoud Abbas" makes the person the subject, so a
@@ -1214,9 +1254,14 @@ def _check_functional(world, name, rel, subject, obj, start, end, attrs):
                         f"{obj.display_name()} already has a {name} for that time: "
                         f"{r.display_name()}. {_why_not_to_assume(r, start)} {_how_to_make_room(start)}."
                     )
-                _hand_over(world, r, obj, start, name, at)
-                handed_over = True
+                said = _hand_over(world, r, obj, start, name, at)
+                if isinstance(said, _HeldBefore):
+                    held_before = said
+                else:
+                    handed_over = True
                 _too_many_handovers(world, name, rel, obj, "object")
+    if held_before is not None and not handed_over:
+        return held_before
     return at if handed_over else None
 
 

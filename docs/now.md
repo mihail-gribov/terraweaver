@@ -54,9 +54,9 @@ Reproduce, free, no models:
 
 1. **The 21 entities whose name the image lost** — 29 facts, the largest single defect that is the
    world's own. In progress; hypotheses below.
-2. **The "no link" bucket — split, both halves diagnosed.** 27 are supersession deciding by
-   arrival order; 28 are the reading being handed a label instead of the fact in words. Both have
-   their own section below.
+2. **The "no link" bucket.** 27 — supersession by arrival order: **settled 2026-10-02**. 28 — the
+   reading handed a label instead of the fact in words: diagnosed, half in, half is the user's
+   decision. Both have their own section below.
 3. **The 10 duplicates** — DONE for the six that were the world's own; see its section below.
 4. **The 17 prose-instead-of-a-link** — the host's, and the gate at the close
    (`_facts_hiding_in_prose`) only fires when the prose names something *already in the world*,
@@ -231,10 +231,18 @@ is whichever pass the queue fell into — not what the user said last.
   than losing the 27. Do not re-add it without first establishing which branch of
   `_check_functional` ends what — `AT_A_TIME == "at_any_time"`, so a `many-to-one` word takes the
   `functional == "at_any_time"` branch and hands over there.
-- **open** — with the three changes above, reading in telling order stands the later fact
-  (correct) and reading reversed still stands the earlier one. So `as_of` alone does not settle
-  it: the boundary still comes from `at`, and the *standing* link's own beginning is what has to
-  decide. That is the next move on this item, and it needs the branch question answered first.
+- **SETTLED 2026-10-02 — the revert was answered, and the guard is back.** The guard was right;
+  `created_at` was not. `Entity.__init__` took `datetime.now()` directly, past `now_utc`, so under
+  `as_of(2020-01-01)` a link's `created_at` was 2026-10-02 — "when did this begin" was always the
+  wall clock against a boundary in the world's 2020, and the guard refused every hand-over. Found
+  in one line: make a link under a moved clock, print `created_at`. Now `created_at` is on the
+  world's clock and `accessed_at` stays on the wall's (attention, compared only with itself);
+  `Entity._show` and `Spell.holds` read "now" from the world as well.
+- **and the last piece** — the older telling arriving second was left *open* beside the newer one.
+  `_hand_over` now returns `_HeldBefore(moment)` when it refuses because the new link is the
+  older one, and `relate` closes the new link where the later one began. Both orders now give the
+  same world: `cornerback` stands, `wide receiver` held until 2020-01-02. Test:
+  `the_later_telling_stands_whichever_order_it_is_read_in`.
 
 ## Item 3 — SETTLED 2026-10-01: a lookup did not see the classes beneath it
 
