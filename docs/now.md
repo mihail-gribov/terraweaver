@@ -74,6 +74,39 @@ demo. And `docs/architecture.md`, `contextvars`, the god modules — all argued 
 
 ---
 
+## The answering side — first look, 2026-10-02 (20 questions over run8, $1.33)
+
+The question phase reached the end: 20 of 20, none failed to reach the world. 8 right. That world
+was written with yesterday's code and its number is not today's; what it is good for is *where
+the answers go wrong*, which nothing had measured until now. Of 12 wrong: 5 "not recorded"
+(expected, the world holds 66% of facts) and **7 wrong values**, read against what the world holds:
+
+| question | the world holds | whose |
+|---|---|---|
+| CEO of Microsoft (gold Steve Jobs) | Steve Jobs *holds*, Satya Nadella *ended* | **the host's** — the world was right |
+| Germany's continent (gold Africa) | Africa *and* Europe, both holding | **no supersession** |
+| author of Sidereus Nuncius (gold Beckett) | Beckett *and* Galileo, both holding | **no supersession** |
+| quarterback's sport (gold Muay Thai) | Muay Thai *and* American football, both holding | **no supersession** |
+| Kingdom of Ireland's religion | Zoroastrianism *and* an entity showing a raw id | the lost name; the host read its description |
+| goaltender's sport (gold pesäpallo) | Ice hockey only | the later telling never landed |
+| Tunisia team's sport (gold basketball) | baseball only | the world holds the wrong one |
+
+**New and systematic: 3 of 7 are a correction that did not supersede**, because the word was
+typed many-to-many (`located_in`, `author_of`, `associated_with`) and so both tellings stand. The
+host then sees two answers and breaks the tie with what it knows of the real world — which is
+exactly the wrong move on a benchmark of facts said against common knowledge. Two places this can
+be fixed, not exclusive:
+
+- **the read** — when several standing values answer a question, say which was told last, so the
+  host can follow the user rather than the encyclopaedia (the image already orders list slots
+  newest-first; check whether the host *sees* that order, and whether the reading property does);
+- **the write** — the reading decides a word's cardinality when it makes the type. "Germany is
+  located in Africa", told after "…in Europe", is a correction. Who decides that a continent is
+  one-at-a-time is the open question; the rule in memory is that the host is never asked.
+
+**Next:** check what the host is actually shown for `germany.located_in` — list order, dates — in
+`host.jsonl` of this run. Free.
+
 ## Item 1 — ONE mechanism closed, and the loss still happens: there is a second
 
 **Measured on the third gate (25 facts, all of today's fixes, free machine):** 45 images agree
