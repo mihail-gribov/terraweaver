@@ -128,6 +128,37 @@ vectors land in a process-level dict (`meaning._LANDED`) and the next call on th
 writes them down. Measured: first call gives up at 0.3 s, second finds ten vectors in 0.00 s with
 no new call to the embedder.
 
+## Where the gold went, for every wrong answer whose gold does not hold (var/run9)
+
+- **14 — nothing between subject and gold, ever.** The host named them together in a list of
+  names to identify, and never wrote the fact as a link. The host's write side.
+- **8 — written only in runs that failed** (goaltender/pesäpallo, rugby union/India in a
+  `world.write` block, Microsoft/Steve Jobs). The host did not re-send. The host's recovery.
+- **7 — typed correctly and then ended.** The world's — and **mine**, see below.
+- 1 — bare, the reading gave up.
+
+### The 7: the hand-over compared a date the fact held from with a moment it was told
+
+Two real cases, read off the links' own statements:
+
+    Rozhdestvensky died_in Moscow  no start          created 02:21 (told first)
+    Rozhdestvensky died_in USA     starts 2020-01-19 created 02:40 (told second — the gold)
+                                   -> USA closed at 02:21: "held before Moscow began"
+
+    Watsuki famous_for Fairly OddParents  from 02:20 (the gold)
+            famous_for Rurouni Kenshin    re-typed by the reading at 03:57, ended the gold
+
+`_hand_over` asked "when did the standing link begin" as `valid_from or created_at` and set that
+against the new link's start. **Those are two different axes**: `valid_from` is when a fact held
+in the world (the host passed the benchmark's day, 2020), `created_at` is when it was told (2026).
+2020 < 2026, so the later telling was taken for the older and closed by `_HeldBefore` — the piece
+added this morning. Yesterday's bug was two clocks; today's is two axes, and it is the same
+mistake: **comparing things that are not the same kind of time.**
+
+The rule: **compare like with like.** Both links carry a date somebody *said* → order by those.
+Otherwise → order by when each was told. A date the world inferred at a hand-over
+(`from_is == BEFORE`) is not a said date. Tests first, from these two cases; then the change.
+
 ## The answering side — first look, 2026-10-02 (20 questions over run8, $1.33)
 
 The question phase reached the end: 20 of 20, none failed to reach the world. 8 right. That world
