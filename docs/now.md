@@ -84,28 +84,27 @@ the answers go wrong*, which nothing had measured until now. Of 12 wrong: 5 "not
 | question | the world holds | whose |
 |---|---|---|
 | CEO of Microsoft (gold Steve Jobs) | Steve Jobs *holds*, Satya Nadella *ended* | **the host's** — the world was right |
-| Germany's continent (gold Africa) | Africa *and* Europe, both holding | **no supersession** |
-| author of Sidereus Nuncius (gold Beckett) | Beckett *and* Galileo, both holding | **no supersession** |
-| quarterback's sport (gold Muay Thai) | Muay Thai *and* American football, both holding | **no supersession** |
+| Germany's continent (gold Africa) | **three Germanys**: Africa is on a `Thing` Germany the host made, Europe on the `Country` | **duplicate** — the host asked `Country.find` and got Europe |
+| author of Sidereus Nuncius (gold Beckett) | one book, Beckett *and* Galileo both holding | **no supersession** |
+| quarterback's sport (gold Muay Thai) | one thing, Muay Thai *and* American football both holding | **no supersession** |
 | Kingdom of Ireland's religion | Zoroastrianism *and* an entity showing a raw id | the lost name; the host read its description |
 | goaltender's sport (gold pesäpallo) | Ice hockey only | the later telling never landed |
-| Tunisia team's sport (gold basketball) | baseball only | the world holds the wrong one |
+| Tunisia team's sport (gold basketball) | baseball only | the later telling never landed |
 
-**New and systematic: 3 of 7 are a correction that did not supersede**, because the word was
-typed many-to-many (`located_in`, `author_of`, `associated_with`) and so both tellings stand. The
-host then sees two answers and breaks the tie with what it knows of the real world — which is
-exactly the wrong move on a benchmark of facts said against common knowledge. Two places this can
-be fixed, not exclusive:
+**Corrected the same day — the first version of this table was wrong.** It said three of seven
+were "both holding". The diagnostic behind it collected links of *every* entity whose name matched,
+so Germany's three copies looked like one Germany with two continents. Re-run by the link's own
+ends against each copy separately: two are genuinely both-holding, Germany is a duplicate. **Lesson
+for the next diagnostic: count the copies of a name before reading its links as one thing's.**
 
-- **the read** — when several standing values answer a question, say which was told last, so the
-  host can follow the user rather than the encyclopaedia (the image already orders list slots
-  newest-first; check whether the host *sees* that order, and whether the reading property does);
-- **the write** — the reading decides a word's cardinality when it makes the type. "Germany is
-  located in Africa", told after "…in Europe", is a correction. Who decides that a continent is
-  one-at-a-time is the open question; the rule in memory is that the host is never asked.
+So, of seven wrong values: **2 no supersession** (the word typed many-to-many, so both tellings
+stand and the host breaks the tie with what it knows of the real world); **1 duplicate** (made by
+the host, almost certainly because `Thing.get` did not see the `Country` — closed today by
+`kinds_of`); **1 lost name** (guarded today); **2 later tellings that never landed**; **1 the
+host's own** — the world held the right answer and the host gave the other one.
 
-**Next:** check what the host is actually shown for `germany.located_in` — list order, dates — in
-`host.jsonl` of this run. Free.
+What the host was actually shown, read from `host.jsonl`: for Germany, `located_in` returned
+`[Europe]` — one value, because it was asking the copy that had one.
 
 ## Item 1 — ONE mechanism closed, and the loss still happens: there is a second
 
