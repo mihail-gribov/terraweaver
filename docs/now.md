@@ -52,18 +52,22 @@ Reproduce, free, no models:
 
 ## The plan, in order
 
-1. **The 21 entities whose name the image lost** — 29 facts, the largest single defect that is the
-   world's own. In progress; hypotheses below.
-2. **The "no link" bucket.** 27 — supersession by arrival order: **settled 2026-10-02**. 28 — the
-   reading handed a label instead of the fact in words: diagnosed, half in, half is the user's
-   decision. Both have their own section below.
-3. **The 10 duplicates** — DONE for the six that were the world's own; see its section below.
-4. **The 17 prose-instead-of-a-link** — the host's, and the gate at the close
-   (`_facts_hiding_in_prose`) only fires when the prose names something *already in the world*,
-   which is why "wide receiver" slipped past. Widen that gate.
-5. **Then, and only then, one full chain on the fixed code** + the 100 questions. ~$10, 3–4 hours,
-   as a transient service. Before it, a 20-question smoke test over an existing world (~$1),
-   because the question phase has failed for harness reasons three times.
+State on 2026-10-02. Three of the world's own causes are closed, worth about 62 of the 105:
+
+1. ~~The lost names~~ — **one mechanism closed** (a failed load left a shell, 29 facts in run8);
+   the second survived five reproductions and is **guarded at the door** with a log line
+   (`was about to be written without its`). The next run's log says where it comes from.
+2. ~~Supersession by arrival order~~ — **closed** (27). Same world whichever order the facts are
+   read in. The label half (28) is diagnosed; the check is no longer asked about a label; whether
+   the door should hold the task open until the host says the fact in words **is the user's call**.
+3. ~~Duplicates from a lookup blind to the classes beneath it~~ — **closed** (6 of 10). The other
+   four are the host's own.
+4. **Prose instead of a link (17)** — the close's prose gate *did* fire, 93 times in run8's host
+   log. So the host was told and these are the host's; leave until measured.
+5. **Measure — now.** A 20-question smoke test over `var/run8/world` (~$1) to see the question
+   phase reach the end, then the full chain from scratch on today's code and the 100 questions
+   (~$10, 3–4 hours, as a service). Read the new world with `why_it_failed.py` before reading
+   its number, and grep its server log for the name guard.
 
 Not on this list until the number moves: the picker on Nemotron, research as "pick it for me", the
 demo. And `docs/architecture.md`, `contextvars`, the god modules — all argued in `decisions.md`.
