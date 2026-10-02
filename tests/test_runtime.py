@@ -3,6 +3,7 @@
 Run: .venv/bin/python tests/test_runtime.py
 """
 import sys
+from datetime import date, timedelta
 import tempfile
 from pathlib import Path
 
@@ -125,9 +126,16 @@ def main() -> int:
           str(ok["error"]) or ok["output"])
 
     # --- periods compare with plain dates ---
-    dates = rt.run('r = Person.new(full_name="Nina Patel").set_dentist_of(user, '
-                   'starts=date(2026, 10, 1))\n'
-                   'print(r.starts >= date(2026, 9, 1), r.starts == date(2026, 10, 1), r.starts < today())', "host")
+    # Dates relative to the run, not written down once: as `starts=date(2026, 10, 1)` with
+    # `r.starts < today()` expected False, this passed until 2026-10-01 and failed from the day
+    # after (docs/now.md, flickers — the second of the armed ones to go off).
+    ahead = date.today() + timedelta(days=30)
+    before = ahead - timedelta(days=30)
+    dates = rt.run(f'r = Person.new(full_name="Nina Patel").set_dentist_of(user, '
+                   f'starts=date({ahead.year}, {ahead.month}, {ahead.day}))\n'
+                   f'print(r.starts >= date({before.year}, {before.month}, {before.day}), '
+                   f'r.starts == date({ahead.year}, {ahead.month}, {ahead.day}), r.starts < today())',
+                   "host")
     check("a period bound compares with a date instead of raising",
           dates["output"].strip() == "True True False", str(dates["error"]) or dates["output"])
 

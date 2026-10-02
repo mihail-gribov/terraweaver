@@ -98,10 +98,21 @@ damaged one:
   (`it.country = "England"`, `it.located_in = Thing.get(...)`) — which is what the gate's code did
   and what its damaged row holds. Clean.
 
-**The next variable to try** is a *second* reading of the same thing: `unread` returns one row per
-prose-fact, not per thing ("a thing is described more than once"), so a thing with two accounts is
-read twice, and the second reading loads it again after the first has moved it to another class.
-That is the only difference left between the faithful reproduction and the gate.
+- **ruled out** — a *second* reading of the same thing. `portraits` in the gate world: each of the
+  three was read **once** (one query, free).
+- **ruled out** — `City` already existing, with the thing placed second under it (London first,
+  then Berkeley and Bengaluru, through the real pass). Clean.
+- **ruled out** — `Thing.identify(...)` as the creating door: the host made fourteen places and
+  organisations in one loop that way, all were placed under grown classes, and only two lost the
+  name.
+
+**Stopped reproducing after five clean ones, and guarded the door instead (2026-10-02).**
+`World._with_its_name(instance)` runs before every image write that does not go through a load —
+`World.save`, `_determined`, `retype` — and if the identifying attribute is empty while the record
+holds a value for it, the record's value is put back. It **logs a warning every time** with the
+class and the id. So the next run does not need a reproduction: grep its server log for
+`was about to be written without its` and the entity and the moment are there, and `runs` at that
+moment says which code handed it over. Both shapes are covered by a test.
 
 ## Item 1a — SETTLED 2026-10-01: a failed load left a shell where the next lookup finds it
 
@@ -275,9 +286,10 @@ too:
   all on 2026-10-01: `test_periods.py` (`permanent=True` with no start, asked about 2026-10-01),
   `test_world_state.py` (`when=date(2026, 10, 1)` — a remark dated today sorts behind one recorded
   today at 02:21, so "newest first" flips). Both now use a date relative to the run.
+  **Went off 2026-10-02, as predicted:** `test_runtime.py:130` compared `starts=date(2026, 10, 1)`
+  against `today()` and expected it in the future. Now relative to the run.
   **Still armed:** `test_round_trip.py:127` `until=date(2026, 12, 31)` ("true until the year
-  turns") goes off on 2027-01-01, and `test_runtime.py:130` compares `starts=date(2026, 10, 1)`
-  against `today()`. Seventy fixed 2026 dates in the suite altogether.
+  turns") goes off on 2027-01-01. Seventy-odd fixed 2026 dates in the suite altogether.
 - **(the same thing, as first written)** `tests/test_round_trip.py` fails with
   `RunTimeout: the run took longer than 10 seconds` when the machine is busy (the user's own
   `gcg_prefix.py` / `fit_marks.py` / `ollama`, load 13–21) and passes alone. Seen twice on

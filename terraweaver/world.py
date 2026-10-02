@@ -10,6 +10,7 @@ the middle of a block stops the run and settles nothing, and what two records ha
 is seen better later, over the record, with the whole world in view.
 """
 import json
+import logging
 from typing import Any
 
 from terraweaver import matching, ontology, resolution, timeutil, values
@@ -39,6 +40,9 @@ CREATE TABLE IF NOT EXISTS name_choices (
 );
 """
 
+
+
+log = logging.getLogger("terraweaver")
 
 class NotInWorld(LookupError):
     """get() found nothing: the entity the host meant isn't in the world."""
@@ -888,6 +892,7 @@ class World:
             now.accessed_at = ontology.now_utc()
             now.valid_from = getattr(entity, "valid_from", None)
             now.valid_until = getattr(entity, "valid_until", None)
+            self._with_its_name(now)
             self.store.save(now)
         return now
 
@@ -1101,7 +1106,48 @@ class World:
     def save(self, instance) -> None:
         ontology.note_world_call("world_writes")
         instance.touch()
+        self._with_its_name(instance)
         self.store.save_graph(instance)
+
+    def _with_its_name(self, instance) -> None:
+        """An image never goes to storage without the name its record holds.
+
+        The record is what was said and the image is a reading of it. Measured on 2026-10-01, in
+        two worlds: images holding `null` for the name while the record held it, unretracted —
+        21 entities in a 455-fact world, 3 of 48 in a 25-fact gate. Such a thing displays as a raw
+        id, `Thing.get(name=…)` says it is not there, and every fact about it reads as lost.
+
+        One cause was found and closed (a failed load left a shell in the identity map). The other
+        did not survive five faithful reproductions — the image came out right every time — so
+        instead of guarding each path that might hand storage a nameless object, the one door
+        they all come through is guarded: if the identifying attribute is empty here and the
+        record has a value for it, the record's value is put back before anything is written. It
+        is said in the log every time, with the class and the id, so the next run says where it
+        comes from instead of leaving it to be found from what it broke.
+        """
+        if getattr(instance, "id", None) is None:
+            return
+        cls = type(instance)
+        spec = getattr(cls, "_spec", {}) or {}
+        if spec.get("relation") or spec.get("own"):
+            return
+        key = spec.get("identified_by") or matching.NAME_KEYS.get(cls.__name__)
+        if not key or not any(a["name"] == key for a in spec.get("attributes", [])):
+            return
+        if getattr(instance, key, None):
+            return
+        try:
+            said = [one for one in self.facts.about(getattr(instance, "subject_id", None) or instance.id, key)
+                    if isinstance(one.value, str) and one.value.strip()]
+        except Exception:  # noqa: BLE001 - a record that cannot be read has nothing to put back
+            return
+        if not said:
+            return
+        latest = max(said, key=lambda one: one.last_said)
+        log.warning("%s %s was about to be written without its %s; the record says %r — put back",
+                    cls.__name__, instance.id, key, latest.value)
+        with ontology.trusted_writes(), ontology.not_recording():
+            setattr(instance, key, latest.value)
 
     def _determined(self, instance):
         """Mark an entity as one we are now working with, and persist that.
@@ -1114,6 +1160,7 @@ class World:
         ontology.note_world_call("world_writes")
         instance.touch()
         if instance.id is not None:
+            self._with_its_name(instance)
             self.store.save(instance)
         return instance
 

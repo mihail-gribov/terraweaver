@@ -455,7 +455,44 @@ def a_lookup_sees_the_classes_beneath_it() -> None:
           len(rt.world.all("Thing", limit=None, kinds=True)) >= 1)
 
 
+def an_image_never_goes_to_storage_without_the_name_its_record_holds() -> None:
+    """Whatever path hands storage a nameless object, the name in the record is put back.
+
+    Two worlds on 2026-10-01 held images with `null` for the name while the record held it. One
+    cause was found and closed; the other survived five faithful reproductions. So the door they
+    all come through is guarded, and both shapes seen are checked here: a full row that lost only
+    its name on being placed under a class, and a shell saved with nothing in it.
+    """
+    from terraweaver import ontology
+
+    rt = base.world()
+    rt.world.extras["define"]("City", "a place where many people live together, with its own government",
+                              "name", [], parent="Thing", source="world")
+    berkeley = rt.world.new("Thing", name="Berkeley", nature="place")
+    with ontology.trusted_writes(), ontology.not_recording():
+        object.__setattr__(berkeley, "name", None)
+    with ontology.stating("world"):
+        berkeley.become("City")
+    row = dict(rt.world.store.conn.execute(
+        "SELECT attr, value FROM City WHERE instance_id = ? AND attr = 'name'", (berkeley.id,)))
+    check("a placing does not write a nameless image", row.get("name") == '"Berkeley"', str(row))
+
+    kyd = rt.world.new("Person", full_name="Thomas Kyd")
+    with ontology.trusted_writes(), ontology.not_recording():
+        object.__setattr__(kyd, "full_name", None)
+    rt.world.save(kyd)
+    row = dict(rt.world.store.conn.execute(
+        "SELECT attr, value FROM Person WHERE instance_id = ? AND attr = 'full_name'", (kyd.id,)))
+    check("nor does a save", row.get("full_name") == '"Thomas Kyd"', str(row))
+
+    rt.world.new("Person", full_name="Ada")
+    rt.run('Person.get(full_name="Ada").full_name = "Ada Lovelace"', "host")
+    check("and a host's own rename still goes through",
+          rt.world.get("Person", full_name="Ada Lovelace").full_name == "Ada Lovelace")
+
+
 def main() -> None:
+    an_image_never_goes_to_storage_without_the_name_its_record_holds()
     a_lookup_sees_the_classes_beneath_it()
     a_row_that_will_not_load_costs_only_that_row()
     a_reading_may_not_rename_the_thing_it_is_reading()
