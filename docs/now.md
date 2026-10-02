@@ -74,6 +74,30 @@ demo. And `docs/architecture.md`, `contextvars`, the god modules — all argued 
 
 ---
 
+## The full run on 2026-10-02's code — var/run9: 52%, with the names pass lost
+
+`scripts/measure.sh full var/run9` — 455 facts, $5.47 to write, 1176 turns, 193 minutes.
+**Accuracy 0.52** on the 100 questions. The link reading did its job — 163 of 189 typed, 26 left —
+and then **the names pass died whole**: `RecursionError` inside a load, 241 bare names never read.
+So 52% is the number *without* one of the three phases, which is the first thing to know about it.
+
+**The crash, and my part in it.** `Entity.__setattr__` decides whether an assignment is an
+overwrite by reading the current value with `getattr` — and for a relation's word that is the
+reading property, which runs `related()`, which loads the entities at the far end, each of whose
+loads comes back through `__setattr__` for its own words. The depth is the length of a chain
+through the graph. That code is old; what made the chain the length of the *world* is today's
+`kinds_of`: a lookup on `Thing` now loads every kind of Thing. Fixed where it belongs — whether
+something is an overwrite is a question about the **stored** value, so it is read from `__dict__`
+and nothing is computed. Verified on var/run9 itself: all 241 waiting names load cold, and
+`Thing.find` across every kind takes 0.1 s.
+
+**Lesson, written so it is not relearned:** a change that widens what a read *loads* can turn a
+harmless recursion into a fatal one. `kinds_of` passed 27 of 27 and two gates; the gate is 25 facts
+and never had a chain long enough. A whole-world load needs a whole world to test it.
+
+**Next:** run the names pass on var/run9 (`measure.sh read`, resumable, cheap), then the 100
+questions again over the same world — the number with all three phases, on one world, one code.
+
 ## The answering side — first look, 2026-10-02 (20 questions over run8, $1.33)
 
 The question phase reached the end: 20 of 20, none failed to reach the world. 8 right. That world

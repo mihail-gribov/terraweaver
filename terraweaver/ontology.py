@@ -1393,15 +1393,22 @@ class Entity:
                     value = next(v for v in allowed if v.lower() == value.lower())
                 elif declared_type in ("email", "phone", "url", "domain"):
                     _ask_about_value(self, name, declared_type, value)
+        # What is *stored* under that name, read without running anything. `getattr` here ran the
+        # reading property of a relation's word — `related()`, which loads the entities at the far
+        # end, each of whose loads came back through here for its own words. On a 455-fact world
+        # the chain ran the length of the graph: `RecursionError` in the middle of a load, and the
+        # whole names pass lost with it (2026-10-02, var/run9). Whether this is an overwrite is a
+        # question about the stored value; a computed one is not an old value of anything.
+        stored = self.__dict__.get(name)
         overwrite = (
             _WRITE_GUARD is not None
             and not name.startswith("_")
             and name not in _MANAGED_ATTRS
             and getattr(self, "id", None) is not None  # only entities the world already knows
-            and getattr(self, name, None) is not None  # only overwrites, not first assignment
+            and stored is not None                     # only overwrites, not first assignment
         )
         if overwrite:
-            _WRITE_GUARD(self, name, getattr(self, name), value)  # keeps the old value in history
+            _WRITE_GUARD(self, name, stored, value)  # keeps the old value in history
         object.__setattr__(self, name, value)
         # When a record holds is data about it like any other, so it is stated too; only the
         # world's own bookkeeping (id, when we first saw it, when it was last touched) isn't.
