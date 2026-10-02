@@ -75,7 +75,10 @@ class World:
         self.classes = classes
         # What each class declares — how many of a thing a slot holds, and so on. Assembly needs
         # it to build images; without it every slot is treated as holding one thing.
-        self.specs = specs or {name: cls._spec for name, cls in classes.items()}
+        # As the classes read them: a spec that called its name `full_name` is read with `name`,
+        # or a lookup is checked against a word the class no longer has.
+        self.specs = ({name: ontology.one_name(spec) for name, spec in specs.items()} if specs
+                      else {name: cls._spec for name, cls in classes.items()})
         self.resolutions: list[dict] = []
         # Said once per class, not once per read: a link that lost an end is news, and the same
         # news forty times over is noise.

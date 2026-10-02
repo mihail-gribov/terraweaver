@@ -42,10 +42,17 @@ def main() -> int:
     parser.add_argument("--model", default="haiku")
     parser.add_argument("--port", type=int, default=7070)
     parser.add_argument("--label", default="reask")
+    parser.add_argument("--only", default=None,
+                        help="ask just these questions, by number in the slice (2,7,19) — the "
+                             "aimed re-ask of the ones that went wrong, at cents each")
     args = parser.parse_args()
 
     variant = fc.load(args.hops, args.context)
-    questions = variant.questions[:args.questions]
+    if args.only:
+        wanted = {int(n) for n in args.only.replace(" ", "").split(",") if n}
+        questions = [q for n, q in enumerate(variant.questions, 1) if n in wanted]
+    else:
+        questions = variant.questions[:args.questions]
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     out_dir = RESULTS / f"{stamp}-{args.label}-{variant.name}-{args.model}"
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -67,7 +74,10 @@ def main() -> int:
     try:
         for number, question in enumerate(questions, 1):
             hosting.answering(args.port)
-            got = hosting.ask(agent, ASK.format(when="2020-01-20", question=question.text),
+            # The world's own day (see run_fc.py): a fictional one before every correction was
+            # told is a question about what held before them.
+            got = hosting.ask(agent, ASK.format(when=datetime.now().date().isoformat(),
+                                                question=question.text),
                               agent.conversation(), None, log, args.model)
             spent["turns"] += got["turns"]
             spent["cost"] += got["cost"]

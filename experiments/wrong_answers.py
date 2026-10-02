@@ -36,6 +36,8 @@ def main() -> int:
     parser.add_argument("run", type=Path)
     parser.add_argument("results", type=Path)
     parser.add_argument("--show", type=int, default=50)
+    parser.add_argument("--numbers", action="store_true",
+                        help="print each shape's question numbers, for reask.py --only")
     parser.add_argument("--held", action="store_true",
                         help="print what the world holds about the thing each question asks of")
     args = parser.parse_args()
@@ -95,6 +97,8 @@ def main() -> int:
     stages: dict = collections.Counter()
     shapes: dict = collections.Counter()
     lines: dict = collections.defaultdict(list)
+    number_of = {one["id"]: n for n, one in enumerate(runs, 1)}
+    numbers: dict = collections.defaultdict(list)
     for one in wrong:
         gold = [g.strip().lower() for g in one["gold"]]
         question = one["question"].lower()
@@ -151,6 +155,7 @@ def main() -> int:
         said_none = any(word in one["answer"].lower() for word in NOT_RECORDED)
         stages[stage] += 1
         shapes[(stage, shape)] += 1
+        numbers[(stage, shape)].append(number_of[one["id"]])
         lines[(stage, shape)].append(
             f"{one['question'][:60]:<60}  gold {one['gold'][0][:24]!r}  said "
             f"{'(not recorded)' if said_none else repr(one['answer'][:40])}"
@@ -164,6 +169,10 @@ def main() -> int:
         for (s, shape), n in shapes.most_common():
             if s == stage:
                 print(f"   {n:>3}  {shape}")
+    if args.numbers:
+        print()
+        for (stage, shape), found in sorted(numbers.items()):
+            print(f"{stage}: {shape}\n    --only {','.join(map(str, found))}")
     print()
     for (stage, shape), found in sorted(lines.items()):
         print(f"--- {stage}: {shape}")

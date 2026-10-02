@@ -20,7 +20,7 @@ import subprocess
 import sys
 import tempfile
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -137,14 +137,12 @@ def main() -> int:
         agent = (hosting.World if args.mode == "world" else hosting.Baseline)(
             work, variant.name, args.port)
 
-        last_day = None
         for batch, (day, facts) in enumerate(variant.batches(args.chunk)):
             first = batch * args.chunk + 1              # the number of this batch's first fact
             due = [fact for number, fact in enumerate(facts, first)
                    if number >= args.begin and (only is None or number in only)]
             if not due:
                 continue
-            last_day = day
             listed = "\n".join(f"- {fact}" for fact in due)
             if server is not None and not hosting.answering(args.port):
                 raise RuntimeError(f"the world stopped answering before the batch of {day} — "
@@ -190,7 +188,12 @@ def main() -> int:
             server = hosting.start_server(work / "world.db", args.port)
             hosting.answering(args.port)
 
-        asked_on = (last_day + timedelta(days=1)).isoformat()
+        # Asked on the world's own day, not the day after the last batch's. The batches are told
+        # "it is 2020-01-05" and the world records on its clock, so a correction is dated where it
+        # was told — 2026. Asked "today is 2020-01-20", a careful host reads what held on that day,
+        # which is everything *before* every correction: measured 2026-10-03 on var/run10, Dave
+        # Filoni's BBC "starts 2026-10-02" and the host answered Lucasfilm, "valid on 2020-01-20".
+        asked_on = datetime.now().date().isoformat()
         results = []
         for number, question in enumerate(questions, 1):
             if server is not None:
