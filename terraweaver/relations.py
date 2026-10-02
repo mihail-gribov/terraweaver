@@ -1005,9 +1005,12 @@ def _not_ours_to_end(link, start=None) -> bool:
         # anything: the boundary is a date the host gave, on the link it gave it for. The rule
         # this replaces was written when ending a dated link meant inventing its end, and it
         # refused every handover the moment starts became required — which is every handover.
-        # A start *earlier* than the standing one is a different matter: it is a claim about a
-        # stretch already spoken for, and which of them is wrong is not ours to pick.
-        return timeutil.as_datetime(start) < timeutil.as_datetime(when)
+        # A start *earlier* than the standing one used to be refused here: a claim about a
+        # stretch already spoken for, and which of them is wrong is not ours to pick. Refusing it
+        # lost the fact — take all, then ask. Both dates were said, so neither is assumed: the
+        # hand-over records the new one as what held *until* the standing one began
+        # (`_HeldBefore`), leaves the standing one alone, and asks which came first.
+        return False
     return False
 
 
@@ -1068,6 +1071,32 @@ def _too_many_handovers(world, name: str, rel: dict, end, side: str) -> None:
     )
 
 
+def _which_is_later(standing, start):
+    """Whether the new link is the later of the two, decided on one axis — and where the standing one began on it.
+
+    Two kinds of time are about a link and they are not interchangeable. `valid_from` is when a
+    fact *held* in the world, if somebody said; `created_at` is when it was *told*. Setting one
+    against the other is what closed "Gennady Rozhdestvensky died in United States of America" —
+    told second, dated 2020 — as the older of two, against "…in Moscow", told first and undated,
+    whose only moment was 2026 (2026-10-02; docs/now.md). Like with like:
+
+    - both carry a date somebody said → the dates decide;
+    - otherwise → the order they were told in decides.
+
+    A `valid_from` the world inferred at an earlier hand-over (`from_is == BEFORE`) is not a date
+    anybody said, and does not count as one.
+    """
+    said_from = getattr(standing, "valid_from", None)
+    if said_from is not None and getattr(standing, "from_is", None) == timeutil.BEFORE:
+        said_from = None
+    if said_from is not None and start is not None:
+        began = timeutil.as_datetime(said_from)
+        return timeutil.as_datetime(start) >= began, began
+    told = getattr(standing, "created_at", None)
+    began = timeutil.as_datetime(told) if told is not None else None
+    return began is None or timeutil.now() >= began, began
+
+
 class _HeldBefore:
     """What `_hand_over` says when the new link is the *older* telling: it held until `moment`.
 
@@ -1105,9 +1134,8 @@ def _hand_over(world, standing, held, start, name: str, at=None):
         # (docs/code-review-2026-09-30.md 3.2.10). When the new one starts before the old one
         # began, the old one is left alone and the two dates are put to whoever knows.
         ends = timeutil.as_datetime(start)
-        began = timeutil.as_datetime(getattr(standing, "valid_from", None)
-                                     or getattr(standing, "created_at", None))
-        if began is not None and ends is not None and ends < began:
+        later, began = _which_is_later(standing, start)
+        if not later:
             world.questions.raise_(
                 standing, "which_came_first",
                 f"{held.display_name()} had {standing.display_name()} from "
@@ -1147,9 +1175,8 @@ def _hand_over(world, standing, held, start, name: str, at=None):
     # orders. The guard was right; `created_at` was not — it came off the wall clock, so "when
     # did this begin" was always 2026 against a boundary in 2020, and every hand-over was
     # refused. With `created_at` on the world's clock (ontology `Entity.__init__`), it holds.
-    began = timeutil.as_datetime(getattr(standing, "valid_from", None)
-                                 or getattr(standing, "created_at", None))
-    if began is not None and timeutil.as_datetime(boundary) < began:
+    later, began = _which_is_later(standing, None)
+    if not later:
         ontology.note_hint(
             f"{held.display_name()} has {standing.display_name()} from {timeutil.show(began)}, and "
             f"this one is said as of {timeutil.show(boundary)} — earlier. {name} holds one at a "

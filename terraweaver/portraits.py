@@ -26,6 +26,7 @@ import time
 from terraweaver import prompts
 from datetime import datetime, timezone
 
+from terraweaver import timeutil
 from terraweaver.store import run_script
 
 # One failure must not stop the world, and that is not the same as nobody hearing about it.
@@ -407,8 +408,16 @@ def formalise(world, engineer, limit: int = 50, jev=None, run=None,
             mark(world, one["statement_id"], one["entity_id"],
                  {**read_as, "refused": str(wrong)[:200]})
             continue
-        read_as["code"], read_as["went"], read_as["said_back"] = _the_loop(
-            engineer, run, entity, asked, said, tally, getattr(world, "better", None))
+        # Written as of when the words being read were said, not as of now. What a thing's
+        # account says is a telling from that moment, and a one-at-a-time word decides by the
+        # order of tellings — so a link drawn out of an old account and written *now* overruled
+        # the user's correction. Measured 2026-10-02 on a 455-fact world: "Nobuhiro Watsuki is
+        # famous for The Fairly OddParents" (the gold, told at 02:20) was ended at 03:57 by this
+        # pass writing `it.famous_for = "Rurouni Kenshin"` out of the account given at 01:58.
+        # The link reading has done this since 2026-10-01 (`formalise`); this is the same rule.
+        with timeutil.as_of(one.get("said_at")):
+            read_as["code"], read_as["went"], read_as["said_back"] = _the_loop(
+                engineer, run, entity, asked, said, tally, getattr(world, "better", None))
         mark(world, one["statement_id"], one["entity_id"], read_as, became)
     tally["moved"] = moved
     return tally

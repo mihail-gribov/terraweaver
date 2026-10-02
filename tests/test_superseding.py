@@ -133,12 +133,23 @@ def main() -> int:
           and "2022" in " ".join(got.get("hints", [])),
           " ".join(got.get("hints", []))[:140])
 
-    # --- a date given earlier than the standing one is a conflict, not a handover ---
+    # --- a date given earlier than the standing one is history, not a handover and not a refusal ---
+    # Refused until 2026-10-02: a claim about a stretch already spoken for, and which of the two is
+    # wrong is not the world's to pick. Refusing lost the fact outright, and both dates were said,
+    # so nothing has to be assumed to keep it — take all, then ask. The earlier one is recorded as
+    # what held until the standing one began, the standing one is left alone, and the question of
+    # which came first is put to whoever knows.
     rt = world(chairs="one-to-many")
     _, got = ran(rt, 'org = Thing.ensure(name="Fatah", nature="agent")\n'
                      'Person.new(full_name="Later").set_chairs(org,  starts=date(2024, 1, 1))\n'
                      'Person.new(full_name="Earlier").set_chairs(org,  starts=date(2020, 1, 1))')
-    check("a start before the standing one is refused", not got["ok"], str(got.get("error"))[:70])
+    check("a start before the standing one is kept, not refused", got["ok"], str(got.get("error"))[:70])
+    _, held = ran(rt, 'org = Thing.get(name="Fatah")\n'
+                      'print(sorted((r.subject.full_name, str(r.valid_from)[:10], str(r.valid_until)[:10]) '
+                      'for r in org.relations("chairs", any_time=True)))')
+    check("as what held until the standing one began, the standing one untouched",
+          "('Earlier', '2020-01-01', '2024-01-01')" in held["output"]
+          and "('Later', '2024-01-01', 'None')" in held["output"], held["output"][:160])
 
     # --- the same moment, taken once, is a handover and not an overlap ---
     rt = world(chairs="one-to-many")

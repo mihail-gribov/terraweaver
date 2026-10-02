@@ -542,7 +542,108 @@ def the_later_telling_stands_whichever_order_it_is_read_in() -> None:
               str([(one.valid_from, one.valid_until) for one in before]))
 
 
+def a_hand_over_compares_like_with_like() -> None:
+    """Which of two tellings is the later one, decided on one axis at a time.
+
+    Found 2026-10-02 in a 455-fact world: "Gennady Rozhdestvensky died in Moscow" told first with
+    no date, "…died in United States of America" told second with `starts=` the day — and the
+    second, the gold, was closed as the *older* one, because the hand-over set a date the fact held
+    from (2020) against the moment the other was told (2026). Two axes, one comparison.
+    """
+    from terraweaver import timeutil
+
+    def world_with_died_in():
+        rt = base.world()
+        base.word(rt, "died_in", "where somebody died", cardinality="many-to-one",
+                  subject_is="person", object_is="place")
+        who = rt.world.new("Person", full_name="Gennady Rozhdestvensky")
+        for place in ("Moscow", "United States of America"):
+            rt.world.new("Thing", name=place)
+        return rt, who
+
+    def standing(rt):
+        return [one.object.display_name() for name, cls in rt.world.classes.items()
+                if (cls._spec.get("relation") or {}).get("kind") == "died_in"
+                for one in rt.world.all(name, limit=None) if one.valid_until is None]
+
+    # undated first, dated second — told in that order: the second stands
+    rt, who = world_with_died_in()
+    with timeutil.as_of(datetime(2026, 10, 2, 2, 21)):
+        rt.world.relate(who, rt.world.get("Thing", name="Moscow"), "died_in")
+    with timeutil.as_of(datetime(2026, 10, 2, 2, 40)):
+        rt.world.relate(who, rt.world.get("Thing", name="United States of America"), "died_in",
+                        starts=datetime(2020, 1, 19))
+    check("undated then dated: the later telling stands",
+          standing(rt) == ["United States of America"], str(standing(rt)))
+
+    # dated first, undated second — told in that order: the second stands
+    rt, who = world_with_died_in()
+    with timeutil.as_of(datetime(2026, 10, 2, 2, 21)):
+        rt.world.relate(who, rt.world.get("Thing", name="Moscow"), "died_in",
+                        starts=datetime(2020, 1, 19))
+    with timeutil.as_of(datetime(2026, 10, 2, 2, 40)):
+        rt.world.relate(who, rt.world.get("Thing", name="United States of America"), "died_in")
+    check("dated then undated: the later telling stands",
+          standing(rt) == ["United States of America"], str(standing(rt)))
+
+    # both dated, the second told with an EARLIER date: by the dates, the first is the later fact
+    rt, who = world_with_died_in()
+    with timeutil.as_of(datetime(2026, 10, 2, 2, 21)):
+        rt.world.relate(who, rt.world.get("Thing", name="Moscow"), "died_in",
+                        starts=datetime(2020, 3, 1))
+    with timeutil.as_of(datetime(2026, 10, 2, 2, 40)):
+        rt.world.relate(who, rt.world.get("Thing", name="United States of America"), "died_in",
+                        starts=datetime(2020, 1, 1))
+    check("both dated: the dates decide, not the order they were told in",
+          standing(rt) == ["Moscow"], str(standing(rt)))
+
+
+def the_names_pass_writes_as_of_when_the_words_were_said() -> None:
+    """A link drawn out of an old account must not overrule a correction told after it.
+
+    Found 2026-10-02: the names pass read "Nobuhiro Watsuki — famous for Rurouni Kenshin" (said at
+    the first telling) and wrote `it.famous_for = …` *now*, which by the order of tellings ended
+    "The Fairly OddParents" — the user's correction, and the gold answer.
+    """
+    import json
+
+    from terraweaver import portraits, timeutil
+
+    class Jev:
+        def choose(self, state, question, options):
+            return {}
+
+        def ask(self, state, questions):
+            return {}
+
+    class Engineer:
+        def json(self, system, asked):
+            return {"class": None, "code": 'it.set_famous_for(Thing.get(name="Rurouni Kenshin"))'}
+
+        def say(self, system, asked):
+            return json.dumps(self.json(system, asked))
+
+    rt = base.world()
+    base.word(rt, "famous_for", "what somebody is famous for", cardinality="many-to-one",
+              subject_is="the famous one", object_is="what they are famous for")
+    for name in ("Rurouni Kenshin", "The Fairly OddParents"):
+        rt.world.new("Thing", name=name)
+    with timeutil.as_of(datetime(2026, 10, 2, 1, 58)):
+        watsuki = rt.world.new("Person", full_name="Nobuhiro Watsuki")
+        watsuki.describe("Manga artist, famous for Rurouni Kenshin")
+        portraits.comes_in(rt.world, watsuki)
+        rt.world.relate(watsuki, rt.world.get("Thing", name="Rurouni Kenshin"), "famous_for")
+    with timeutil.as_of(datetime(2026, 10, 2, 2, 20)):
+        rt.world.relate(watsuki, rt.world.get("Thing", name="The Fairly OddParents"), "famous_for")
+    portraits.formalise(rt.world, Engineer(), jev=Jev(), run=rt._the_world_writes)
+    now = [one.object.display_name()
+           for one in rt.world.get("Person", full_name="Nobuhiro Watsuki").relations("famous_for")]
+    check("the correction still stands after the names pass", now == ["The Fairly OddParents"], str(now))
+
+
 def main() -> None:
+    the_names_pass_writes_as_of_when_the_words_were_said()
+    a_hand_over_compares_like_with_like()
     the_later_telling_stands_whichever_order_it_is_read_in()
     an_image_never_goes_to_storage_without_the_name_its_record_holds()
     a_lookup_sees_the_classes_beneath_it()

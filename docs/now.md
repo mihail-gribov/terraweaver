@@ -157,7 +157,21 @@ mistake: **comparing things that are not the same kind of time.**
 
 The rule: **compare like with like.** Both links carry a date somebody *said* → order by those.
 Otherwise → order by when each was told. A date the world inferred at a hand-over
-(`from_is == BEFORE`) is not a said date. Tests first, from these two cases; then the change.
+(`from_is == BEFORE`) is not a said date.
+
+**SETTLED 2026-10-02**, tests first from the real cases, all three now green:
+`_which_is_later(standing, start)` is the one decision both branches of `_hand_over` ask. And an
+earlier *said* date is no longer refused (`_not_ours_to_end`): both dates were said, so nothing is
+assumed — the new link is kept as what held until the standing one began, the standing one is left
+alone, and the question is raised. `test_superseding` held the old refusal as a check; rewritten to
+the new behaviour, on purpose.
+
+**Watsuki was NOT the host re-telling** — I nearly "fixed" correct behaviour by assuming it. Read
+off `runs`: at 03:57 it was the **names pass** (`session = the world's own reading`) writing
+`it.famous_for = "Rurouni Kenshin"` out of the account given at 01:58, *now* — so by the order of
+tellings it overruled the user's correction. The names pass now writes `as_of(said_at)` like the
+link reading does. Reproduced both ways: without the change the correction is lost, with it it
+stands. Test: `the_names_pass_writes_as_of_when_the_words_were_said`.
 
 ## The answering side — first look, 2026-10-02 (20 questions over run8, $1.33)
 
