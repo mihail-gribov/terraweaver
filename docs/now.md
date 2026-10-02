@@ -74,6 +74,25 @@ demo. And `docs/architecture.md`, `contextvars`, the god modules — all argued 
 
 ---
 
+## var/run10 — 45%: the names pass took the names (2026-10-02, evening)
+
+`benchmarks/results/20261002-120310-…` — 455 facts, $11.11, 217 minutes, **45/100**. Free reads of
+the world, before and after the names pass (a copy taken mid-reading, then the finished world):
+
+| | mid-reading | finished |
+|---|---|---|
+| standing facts as owed | 82% | 74% |
+| missing | 15 | 43 |
+| lost to a name missing from the image | 1 | **31** |
+| superseding pairs holding the later | 58% | 54% |
+
+The shell shape again (every column null, `created_at` null), plus a backwards `authored_by`
+written by the pass's code. The guard logged nothing: the pass's writes went through
+`runtime.run`, whose end-of-run `save_graph` is unguarded, and `_read_it_all` drops stderr on
+success anyway. **Done:** the names pass now only places (see `decisions.md`, same date). **Open:**
+the guard belongs in `store.save`, the one door every image write goes through; where the shell
+itself comes from is still not found.
+
 ## The full run on 2026-10-02's code — var/run9: 52%, with the names pass lost
 
 `scripts/measure.sh full var/run9` — 455 facts, $5.47 to write, 1176 turns, 193 minutes.

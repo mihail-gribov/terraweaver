@@ -44,13 +44,13 @@ def fresh_world():
                      "description": "Where the user is with it."}])
     classes = rt.world.classes
     P, T, V = classes["Person"], classes["Thing"], classes["Vacancy"]
-    P.new(full_name="Alan Turing")
-    P.new(full_name="Barbara Liskov", aliases=["Barb"])
-    P.new(full_name="Ada Lovelace", email="ada@example.com", city="London")
-    P.new(full_name="Anna Sullivan", aliases=["Annie", "Ann"])
-    P.new(full_name="Anna Peterson", aliases=["Annie"])
-    P.new(full_name="Robert Wolfe", email="robert@wolfe.example")
-    P.new(full_name="Wilma Chen")
+    P.new(name="Alan Turing")
+    P.new(name="Barbara Liskov", aliases=["Barb"])
+    P.new(name="Ada Lovelace", email="ada@example.com", city="London")
+    P.new(name="Anna Sullivan", aliases=["Annie", "Ann"])
+    P.new(name="Anna Peterson", aliases=["Annie"])
+    P.new(name="Robert Wolfe", email="robert@wolfe.example")
+    P.new(name="Wilma Chen")
     T.new(name="TechCorp")
     T.new(name="DataWorks", aliases=["Data Works", "DW"])
     V.new(title="Backend engineer", remote=True, status="not_applied")
@@ -68,14 +68,14 @@ def main() -> int:
     Person, Thing, Vacancy = classes["Person"], classes["Thing"], classes["Vacancy"]
 
     # --- a name that identifies exactly one person ---
-    result = Person.find(full_name="Alan Turing")
+    result = Person.find(name="Alan Turing")
     check("exact full name matches", not isinstance(result, NeedsResolution) and names(result.matches) == ["Alan Turing"])
 
-    result = Person.find(full_name="Barb")
+    result = Person.find(name="Barb")
     check("recorded alias matches", not isinstance(result, NeedsResolution) and names(result.matches) == ["Barbara Liskov"],
           f"got {result!r}")
 
-    result = Person.find(full_name="Barb Liskov")
+    result = Person.find(name="Barb Liskov")
     check("nickname with surname matches", not isinstance(result, NeedsResolution)
           and names(result.matches) == ["Barbara Liskov"], f"got {result!r}")
 
@@ -84,29 +84,29 @@ def main() -> int:
           and names(result.matches) == ["Ada Lovelace"])
 
     # --- a name that doesn't settle it: the user has to ---
-    result = Person.find(full_name="Annie")
+    result = Person.find(name="Annie")
     check("shared alias asks", isinstance(result, NeedsResolution) and len(result.candidates) == 2, f"got {result!r}")
     check("shared alias says several match", isinstance(result, NeedsResolution) and "equally well" in result.reason)
 
     # A name the entity answers to — part of its name — with nothing that disagrees, is them:
     # "Robert" is his first name, and he is the only person in this world it can mean.
-    result = Person.find(full_name="Robert")
+    result = Person.find(name="Robert")
     check("a bare first name with one candidate is them",
           not isinstance(result, NeedsResolution) and names(result.matches) == ["Robert Wolfe"], f"got {result!r}")
 
     # A name that merely resembles is not a name they answer to: a misspelling still asks,
     # because the same leniency would swallow "William Chen" into "Wilma Chen".
-    result = Person.find(full_name="Ada Lovelase")
+    result = Person.find(name="Ada Lovelase")
     check("a misspelling still asks", isinstance(result, NeedsResolution), f"got {result!r}")
     check("and says nothing matches exactly",
           isinstance(result, NeedsResolution) and "merely resemble" in result.reason)
 
     # Something that disagrees brings the question back: then the world really doesn't know.
-    result = Person.get(full_name="Robert", email="someone.else@example.com")
+    result = Person.get(name="Robert", email="someone.else@example.com")
     check("a value that disagrees makes it a question again", isinstance(result, NeedsResolution), f"got {result!r}")
 
     # --- match and resemblance are kept apart ---
-    result = Person.find(full_name="Ann")
+    result = Person.find(name="Ann")
     check("one certain match wins", not isinstance(result, NeedsResolution) and names(result.matches) == ["Anna Sullivan"],
           f"got {result!r}")
     check("resemblances are set aside, not dropped",
@@ -115,7 +115,7 @@ def main() -> int:
           not isinstance(result, NeedsResolution) and len(result) == 2)
 
     # --- nobody at all ---
-    result = Person.find(full_name="Zoe")
+    result = Person.find(name="Zoe")
     check("no candidates is an empty result, not a question",
           not isinstance(result, NeedsResolution) and not result.matched and len(result) == 0, f"got {result!r}")
 
@@ -144,7 +144,7 @@ def main() -> int:
     # --- searching is not working with anything ---
     ada = Person.find(email="ada@example.com").matches[0]
     before = ada.accessed_at
-    Person.find(full_name="Alan Turing")
+    Person.find(name="Alan Turing")
     Person.find(city="London")
     check("a search leaves access times alone",
           Person.find(email="ada@example.com").matches[0].accessed_at == before)
@@ -163,32 +163,32 @@ def main() -> int:
     # --- a merely similar name must not stop a new person from being recorded ---
     # "Wilma Chen" blocked "William Chen" from ever entering the world: new() returned a
     # question, nobody answered it, and the person simply wasn't there.
-    made = Person.new(full_name="William Chen", email="william.chen@stripe.com")
+    made = Person.new(name="William Chen", email="william.chen@stripe.com")
     check("a name that merely resembles doesn't block a new record",
-          not isinstance(made, NeedsResolution) and made.full_name == "William Chen", f"got {made!r}")
+          not isinstance(made, NeedsResolution) and made.name == "William Chen", f"got {made!r}")
     # Settling who the task is about is a search: it hands back who could be meant and the
     # host, who has the conversation, reads them. "William" is a name William Chen answers to.
-    could_be = Person.identify(full_name="William")
+    could_be = Person.identify(name="William")
     check("settling who the task is about hands back the candidates to read, the one it names first",
-          [p.full_name for p in could_be][:1] == ["William Chen"], str(could_be))
+          [p.name for p in could_be][:1] == ["William Chen"], str(could_be))
     check("and what merely resembles is there too, for the host to rule out",
-          "Wilma Chen" in [p.full_name for p in could_be], str(could_be))
-    made = Person.identify(full_name="Hokusai")
+          "Wilma Chen" in [p.name for p in could_be], str(could_be))
+    made = Person.identify(name="Hokusai")
     check("and a name nobody here has is recorded rather than handed back empty",
-          [p.full_name for p in made] == ["Hokusai"], str(made))
+          [p.name for p in made] == ["Hokusai"], str(made))
     check("while a search narrowed until nothing is left makes nothing — the name is here, "
           "the narrowing was too tight",
-          Person.identify(full_name="William", city="Reykjavik") == [])
+          Person.identify(name="William", city="Reykjavik") == [])
     # The same write outside that, mid-recording, takes what it is given: a run is not stopped
     # over a resemblance, and what turns out to be one thing is merged over the record later.
-    written = Person.new(full_name="William", email="other.william@example.com")
+    written = Person.new(name="William", email="other.william@example.com")
     check("a write takes the name it is given rather than asking",
           not isinstance(written, NeedsResolution), f"got {written!r}")
 
     # --- an unsettled question reads like an unsettled result ---
     # Host code checks a result the same way every time; when the question raised AttributeError
     # on .matched the run was rolled back and the question came back from scratch, four times.
-    asked = Person.find(full_name="Annie")
+    asked = Person.find(name="Annie")
     check("a question answers .matched with False", asked.matched is False)
     check("its candidates are there as .similar",
           sorted(names(asked.similar)) == ["Anna Peterson", "Anna Sullivan"], str(names(asked.similar)))
@@ -232,17 +232,17 @@ def main() -> int:
 
     # --- a result with exactly one match answers as that one, and says so ---
     with ontology.record_changes() as one_match:
-        got = Person.find(full_name="Ada Lovelace")
-        check("a search result with one match reads as that one", got.full_name == "Ada Lovelace",
+        got = Person.find(name="Ada Lovelace")
+        check("a search result with one match reads as that one", got.name == "Ada Lovelace",
               str(got))
         check("through .matches as well", got.matches.email == "ada@example.com")
     check("and says where the answer came from",
           any("read from the one match" in line for line in one_match.assumed), str(one_match.assumed))
 
-    several = Person.find(full_name="Annie")
+    several = Person.find(name="Annie")
     told = ""
     try:
-        several.similar.full_name
+        several.similar.name
     except AttributeError as exc:
         told = str(exc)
     check("with several it refuses and says which one to name",
@@ -256,13 +256,13 @@ def main() -> int:
         except AttributeError as exc:
             return str(exc)
 
-    check("one match: .main is that one", Person.find(full_name="Ada Lovelace").main.email
+    check("one match: .main is that one", Person.find(name="Ada Lovelace").main.email
           == "ada@example.com")
-    crowded = why_not(lambda: Person.find(full_name="Anna").main)
+    crowded = why_not(lambda: Person.find(name="Anna").main)
     check("several: it says the search wasn't unambiguous and what would narrow it",
           "didn't settle" in crowded or "wasn't unambiguous" in crowded, crowded or "(no refusal)")
     check("and points at where to look", "similar" in crowded or "result.matches" in crowded, crowded)
-    empty = why_not(lambda: Person.find(full_name="Nobody At All").main)
+    empty = why_not(lambda: Person.find(name="Nobody At All").main)
     check("none: it says nothing matched rather than serving the closest",
           "nothing in the world matches" in empty, empty or "(no refusal)")
     check("and names all three ways on: ask differently, or record it as new",
@@ -272,25 +272,29 @@ def main() -> int:
     dated = classes["Event"].new(title="Meetup", start_time=date(2026, 9, 24))
     check("a date where a datetime is wanted is that day's midnight",
           dated.start_time.hour == 0 and dated.start_time.day == 24, str(dated.start_time))
+    # A class that called its name `title` calls it `name` like everything else, and the old
+    # word still reads it.
     job = Vacancy.find(title="Backend engineer").matches[0]
+    check("a title is the name", job.name == "Backend engineer" and job.title == "Backend engineer",
+          f"{job.name!r} {job.title!r}")
     misread = ""
     try:
-        job.name
+        job.statu
     except AttributeError as exc:
         misread = str(exc)
     check("reading an attribute that isn't there says which one was meant",
-          "did you mean 'title'" in misread, misread or "(no refusal)")
+          "did you mean" in misread, misread or "(no refusal)")
 
     # --- the small accommodations, each one seen costing a live host a statement ---
     base.word(rt, "works_at", "a person working for an employer", "many-to-one",
               "a person who works", "their employer")
-    ivo = Person.new(full_name="Ivo Sand", email="ivo@sand.example")
+    ivo = Person.new(name="Ivo Sand", email="ivo@sand.example")
     link = ivo.set_works_at(Thing.get(name="TechCorp"))
     check("a relation says what kind of link it is", link.kind == "works_at", str(link.kind))
     check("and whether its period has run out", link.expired is False)
     listing = ""
     try:
-        Person.find(full_name="Anna", limit=1)
+        Person.find(name="Anna", limit=1)
     except TypeError as exc:
         listing = str(exc)
     check("find says it identifies rather than lists, instead of ignoring limit=",

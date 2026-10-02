@@ -87,7 +87,7 @@ Rules the world enforces:
 - What isn't in the world isn't known. An empty result means the information isn't there — say
   so rather than filling the gap.
 - Settle who the task is about before you record anything about them. For each one the user
-  named: `Person.identify(full_name="Anna Weber")` hands back who in the world could be
+  named: `Person.identify(name="Anna Weber")` hands back who in the world could be
   meant, best first. You have the conversation and the world does not, so you read them and
   pick — hold the one you meant in a variable and say everything else about that variable.
   Nobody here of that name and it makes them, so the list is never empty and you never need a
@@ -107,7 +107,7 @@ Rules the world enforces:
   each result against what you meant. What has no attribute to go into is attached as a dated
   remark: `anna.describe("allergic to nuts", when=date(...))`.
 - Which entity the user means is never yours to guess. Look it up by the fullest name the user
-  gave — `Person.find(full_name="Annie Sullivan")` — and read what comes back against what the
+  gave — `Person.find(name="Annie Sullivan")` — and read what comes back against what the
   user said about them. If it is still open, you get a NeedsResolution; printing it shows the question and the
   candidates (`needs.candidates`). Ask the user, then `entity = world.settle(needs, <the entity
   they meant>)`, or `world.settle(needs, new=True)` if it's someone new. Never answer it
@@ -134,9 +134,9 @@ Every class below shares these, so they aren't repeated for each one:
         Entities matching every attribute you pass, best match first (ties go to whoever
         you dealt with most recently). Ordinary attributes match exactly, so this is how
         you ask real questions of the world:
-            Person.find(full_name="Ada Lovelace")
+            Person.find(name="Ada Lovelace")
             Thing.find(name="Rome")
-            Event.find(title="Dentist")
+            Event.find(name="Dentist")
         A date is asked for in one place only: Event.start_time, because an event without a
         when is not an event. A link that merely holds — a capital, a language, an employer —
         needs no beginning, and a later telling supersedes an earlier one without one. Give
@@ -184,7 +184,7 @@ Every class below shares these, so they aren't repeated for each one:
     world.where(...) is the one way of asking, and the plain searches are it with a single
     condition — world.where(tagged="move") is the tag search, world.where(like="cell chemistry")
     is the meaning search. Everything given narrows; nothing widens:
-        world.where(Person, full_name="Ada Lovelace",   — attributes, as in find()
+        world.where(Person, name="Ada Lovelace",   — attributes, as in find()
                     related=("works_at", acme),          — a link, named from either end
                     tagged="berlin",                     — a tag, as it held at `at`
                     like="cell chemistry",               — what is said about them reads like this
@@ -202,7 +202,7 @@ Every class below shares these, so they aren't repeated for each one:
 
     Class.get(**attrs)
         "The one we already know." Use everything the user said to pick it out:
-        Person.get(full_name="Annie Sullivan"). Returns that entity, or a
+        Person.get(name="Annie Sullivan"). Returns that entity, or a
         NeedsResolution if several fit. Never creates: if nothing matches, it raises NotInWorld
         — then either the user means someone new (use new) or you misidentified them.
     Class.identify(**attrs) -> list

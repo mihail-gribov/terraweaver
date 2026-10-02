@@ -87,7 +87,7 @@ class Connection(sqlite3.Connection):
     implements it with commit-on-success and rollback-on-failure. There is one connection, so any
     module that commits on its own ends the transaction it happens to be inside and the promise is
     void. Measured 2026-09-30 (docs/code-review-2026-09-30.md 2.3): thirty such calls in seventeen
-    modules, and `x = [Person.new(full_name="Ann", tags=["friend"]), 1/0]` kept Ann, because the
+    modules, and `x = [Person.new(name="Ann", tags=["friend"]), 1/0]` kept Ann, because the
     tags write goes through `periods.rebuild_for`, which committed.
 
     Mending each caller is the wrong shape of fix — the next module to want durability will write
@@ -348,7 +348,7 @@ class Store:
                     # identity map is what makes one row one object, and `memo[id] = obj` happens
                     # before the fill because a cyclic reference has to find it there — so a fill
                     # that raises used to leave a shell behind, and from then on the world was
-                    # worse than wrong about that thing: `Person.get(full_name="Thomas Kyd")`
+                    # worse than wrong about that thing: `Person.get(name="Thomas Kyd")`
                     # answered `NotInWorld` while the record held the name, and the next `save`
                     # of the shell wrote null over every value it had. Measured 2026-09-30 on a
                     # 455-fact world: 21 entities, 29 of the 105 facts the world did not hold.

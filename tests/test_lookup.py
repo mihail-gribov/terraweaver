@@ -29,7 +29,7 @@ def refused(action) -> str | None:
 def main() -> int:
     w = open_world()
     world = w.world
-    w.run('Person.new(full_name="Ada Lovelace")', "host")   # somebody this world knows
+    w.run('Person.new(name="Ada Lovelace")', "host")   # somebody this world knows
 
     # --- the checks we named in advance ---
     check("a kind of thing may be looked up",

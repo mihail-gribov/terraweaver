@@ -49,8 +49,8 @@ def main() -> int:
     owner = world.owner
 
     # --- the same role at both ends: seen from either ---
-    darren = Person.new(full_name="Darren Liu", email="darren@example.com")
-    kevin = Person.new(full_name="Kevin Liu", email="kevin.liu@example.com")
+    darren = Person.new(name="Darren Liu", email="darren@example.com")
+    kevin = Person.new(name="Kevin Liu", email="kevin.liu@example.com")
     kevin.set_knows(darren)
     check("a link with the same role at both ends is seen from both",
           darren.related("knows") == [kevin] and kevin.related("knows") == [darren])
@@ -62,8 +62,8 @@ def main() -> int:
     check("a link can't join something to itself", refused(lambda: kevin.set_knows(kevin)) is not None)
 
     # --- one at a time, and a state two people share is theirs to end ---
-    naomi = Person.new(full_name="Naomi Park", email="naomi@example.com")
-    lena = Person.new(full_name="Lena Ross", email="lena@example.com")
+    naomi = Person.new(name="Naomi Park", email="naomi@example.com")
+    lena = Person.new(name="Lena Ross", email="lena@example.com")
     first = darren.set_married_to(naomi, starts=date(2024, 9, 1))
     check("a second current spouse is refused rather than ending the first on its own",
           refused(lambda: darren.set_married_to(lena)) is not None)
@@ -77,9 +77,9 @@ def main() -> int:
     company = Thing.new(name="Meridian Corp")
     b04 = Thing.new(name="Supply Chain Operations", aliases=["B04"])
     b04.set_part_of(company)
-    chen = Person.new(full_name="Kevin Chen", email="kchen@meridian.example")
+    chen = Person.new(name="Kevin Chen", email="kchen@meridian.example")
     job = chen.set_works_at(b04, starts=date(2026, 1, 15))
-    linda = Person.new(full_name="Linda Zhao", email="lzhao@meridian.example")
+    linda = Person.new(name="Linda Zhao", email="lzhao@meridian.example")
     linda.set_manages(b04, starts=date(2025, 6, 1))
     check("read from the object's end by the reverse name", b04.works_at_of == [chen], str(b04.works_at_of))
     check("one at the far end reads as that one", b04.manages_of is linda, str(b04.manages_of))
@@ -91,7 +91,7 @@ def main() -> int:
           == chen.relations("manages")[0].valid_from)
 
     # --- no date: the change happened before today, and the record says only that ---
-    rita = Person.new(full_name="Rita Vale")
+    rita = Person.new(name="Rita Vale")
     north, south = Thing.new(name="Northwind Freight"), Thing.new(name="Southwind Freight")
     old = rita.set_works_at(north)
     new = rita.set_works_at(south)
@@ -107,7 +107,7 @@ def main() -> int:
           any(q.kind == "when_it_changed" for q in world.questions.open_(limit=50)))
 
     # --- a move announced ahead of time ends the old one where the new begins ---
-    holder = Person.new(full_name="Ruth Adler")
+    holder = Person.new(name="Ruth Adler")
     holder.set_works_at(north)
     ahead = holder.set_works_at(south, starts=date(2027, 3, 1))
     before = [r for r in holder.relations("works_at", history=True) if r.object is north][0]
@@ -150,16 +150,16 @@ def main() -> int:
     check("its period reads under the names it's written with", job.starts is not None and job.until is None)
 
     # --- the free type ---
-    godfather = Person.new(full_name="Victor Hale", email="victor@example.com")
-    priya = Person.new(full_name="Priya Shah", email="priya@example.com")
+    godfather = Person.new(name="Victor Hale", email="victor@example.com")
+    priya = Person.new(name="Priya Shah", email="priya@example.com")
     check("Related needs a label or a description", refused(lambda: godfather.relate(priya, "related")) is not None)
     check("with them it goes through", refused(lambda: godfather.relate(
         priya, "related", label="godfather", description="Priya's godfather")) is None)
 
     # --- settling the task's context is a search, and hands back who could be meant ---
-    maybe = Person.identify(full_name="Darren")
+    maybe = Person.identify(name="Darren")
     check("settling who the task is about hands back the candidates",
-          [p.full_name for p in maybe] == ["Darren Liu"], str(maybe))
+          [p.name for p in maybe] == ["Darren Liu"], str(maybe))
 
     # --- find compares entities by identity, not name ---
     Thing.new(name="Supply Chain Operations (Boston)")
@@ -181,29 +181,29 @@ def main() -> int:
     # "Tech" fits two of them and is the name of neither, so settling it is a question — and
     # the link written against the answer waits for it rather than taking the run down.
     unsettled = Thing.get(name="Tech")
-    linked = Person.new(full_name="Vera Holt", email="vera@holt.example")
+    linked = Person.new(name="Vera Holt", email="vera@holt.example")
     linked.set_works_at(unsettled)
-    alongside = Person.new(full_name="Wes Holt", email="wes@holt.example")
+    alongside = Person.new(name="Wes Holt", email="wes@holt.example")
     check("the rest of the block survives a question at the far end", isinstance(alongside, Person))
     world.settle(unsettled, Thing.get(name="TechCorp"))
     check("and the held link is made pointing the way it was written",
           Person.get(email="vera@holt.example").works_at.name == "TechCorp")
 
     # --- an unanswered question is not an entity to link, so the link waits for the answer ---
-    Person.new(full_name="Darren Okafor", email="darren.o@example.org")
-    asked = Person.get(full_name="Darren")  # fits two of them: a question, not a person
+    Person.new(name="Darren Okafor", email="darren.o@example.org")
+    asked = Person.get(name="Darren")  # fits two of them: a question, not a person
     with ontology.record_changes() as waiting:
         owner.set_knows(asked)
     check("linking to an unsettled question is held, not refused",
           any("held until that is settled" in line for line in waiting.hints), str(waiting.hints))
-    friend = world.settle(asked, Person.get(full_name="Darren Liu"))
+    friend = world.settle(asked, Person.get(name="Darren Liu"))
     check("and is made, the way it was written, once the question is answered",
           any(r.other(friend) is owner for r in friend.relations("knows")),
           str([r.display_name() for r in friend.relations("knows")]))
 
     # A link is what somebody said, and nothing here makes one out of anything else: the
     # world does not conclude links. What was said stays, so it cannot be taken back either.
-    ana = Person.new(full_name="Ana Borg", email="ana@borg.example")
+    ana = Person.new(name="Ana Borg", email="ana@borg.example")
     stated = world.relate(ana, Thing.new(name="Shahnameh"), "related", label="wrote",
                           description="the user said so")
     refused_retract = ""
@@ -249,7 +249,7 @@ def main() -> int:
     # first, and the world used to answer "no relation type Thing(id=…)" — the entity printed where
     # the word should be, on the first line of a block, three goes in a row.
     rt = base.world()
-    rt.run('a = Person.new(full_name="Coco")\nb = Thing.new(name="Chanel")', "w")
+    rt.run('a = Person.new(name="Coco")\nb = Thing.new(name="Chanel")', "w")
     said = rt.run('one = a.relate(b, "founded the house of")\n'
                   'two = a.relate("founded the house of", b)\nprint(one.id == two.id)', "w")
     check("the words and the thing are taken in either order",
@@ -264,7 +264,7 @@ def main() -> int:
     rt.run('world.define_relation("citizen_of", "a person and the country they belong to",'
            ' nature="related_to", cardinality="many-to-one", subject_is="the citizen",'
            ' object_is="the country")', "c")
-    rt.run('p = Person.new(full_name="Ada")\nc = Thing.new(name="France")', "c")
+    rt.run('p = Person.new(name="Ada")\nc = Thing.new(name="France")', "c")
     took = rt.run('p.citizen_of = c\nprint(p.citizen_of.name)', "c")
     check("an assignment to a word is taken as the call it means",
           "France" in (took.get("output") or ""),

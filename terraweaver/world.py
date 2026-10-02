@@ -95,6 +95,7 @@ class World:
         # Every overwrite of a known entity's attribute leaves the old value in history.
         self.history = ValueHistory(store, classes)
         self.facts = Facts(store.conn)
+        self._one_name()
         self.usage = Usage(store)
         self.procedures = Procedures(store)
         self.meanings = Meanings(store)
@@ -106,6 +107,48 @@ class World:
         # not broken, it is empty: whoever fills it names those two itself.
         if selves:
             self.ensure_selves()
+
+    def _one_name(self) -> None:
+        """A world written while a person had a `full_name` and an event a `title` is brought over.
+
+        Once, on the way in, the way `migrate_times` brings over a moment written as text: the
+        record's statements and the images say `name` from now on. Nothing is dropped — where an
+        image has both, the one with a value is kept. Opening the world again finds nothing to do.
+        """
+        conn = self.store.conn
+        tables = {n for (n,) in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
+        moved = 0
+        for class_name, old in ontology.NAMED_OTHERWISE.items():
+            if class_name not in self.classes:
+                continue
+            ids = [i for (i,) in conn.execute(
+                "SELECT id FROM instances WHERE class_name = ?", (class_name,))] \
+                if "instances" in tables else []
+            if not ids:
+                continue
+            marks = ",".join("?" * len(ids))
+            for table in self.facts.tables():
+                moved += conn.execute(
+                    f'UPDATE "{table}" SET slot = ? WHERE slot = ? AND subject IN ({marks})',
+                    (matching.NAME, old, *ids)).rowcount
+            if "value_history" in tables:
+                conn.execute(f"UPDATE value_history SET attr = ? WHERE attr = ? "
+                             f"AND instance_id IN ({marks})", (matching.NAME, old, *ids))
+            if class_name in tables:
+                rows = conn.execute(f'SELECT instance_id, value FROM "{class_name}" WHERE attr = ?',
+                                    (old,)).fetchall()
+                for instance_id, value in rows:
+                    held = conn.execute(
+                        f'SELECT value FROM "{class_name}" WHERE instance_id = ? AND attr = ?',
+                        (instance_id, matching.NAME)).fetchone()
+                    if held is None or held[0] in (None, "null"):
+                        conn.execute(f'INSERT OR REPLACE INTO "{class_name}" (instance_id, attr, value) '
+                                     f'VALUES (?, ?, ?)', (instance_id, matching.NAME, value))
+                    moved += 1
+                conn.execute(f'DELETE FROM "{class_name}" WHERE attr = ?', (old,))
+        if moved:
+            conn.commit()
+            log.info("brought %d name(s) over to `name` from the words an older world used", moved)
 
     # Fixed ids, so the two of them are the same rows in every world and can be found without
     # searching by name — and so nothing else can quietly take their place.
@@ -123,7 +166,7 @@ class World:
             if agent is None and person is None and self.store.load_all("AIAgent", self.classes):
                 return  # a fixture made its own pair; leave them be
             if person is None:
-                person = self.classes["Person"](full_name="you")
+                person = self.classes["Person"](name="you")
                 person.id = self.USER_ID
                 self.store.save(person)
             if agent is None:
@@ -221,11 +264,12 @@ class World:
 
         Only what holds now — any_time=True gives everything, ended and not yet started too.
 
-        `kinds=True` reads the classes beneath this one as well, and is what a *lookup* wants (see
-        `kinds_of`). A listing does not: `[i.name for i in Thing.all()]` is a line a host writes
-        all the time, and a Person is a kind of Thing with no `name` — so an inclusive listing
-        turns that line into an `AttributeError` and costs the rest of the block. Exact here,
-        inclusive where something is being looked for.
+        `kinds=True` reads the classes beneath this one as well (`kinds_of`). The world's own
+        sweeps go class by class and want each one exact, or an entity is met once per ancestor.
+        What a host calls — `Thing.all()` — is inclusive (`Entity.all`): a kind of a thing is a
+        thing, for a listing as for a lookup. It was exact until 2026-10-02 for one reason — a
+        Person had no `name`, so `[i.name for i in Thing.all()]` raised on the first one and cost
+        the rest of the block. Everything is called by its `name` now.
         """
         ontology.note_world_call("world_queries")
         under = self.kinds_of(self._name(cls)) if kinds else None
@@ -243,9 +287,9 @@ class World:
     def _say_what_is_a_kind_of_it(self, class_name: str) -> None:
         """Nothing is this class itself, and something is a kind of it: say so rather than "none".
 
-        A listing is exact on purpose (see `all`), so a world holding three countries answers
-        nothing to `Thing.all()` — true, and read as "there is nothing here". The world knows
-        better and says which class to ask, once per class.
+        An exact listing (`kinds=False`, see `all`) of a world holding three countries answers
+        nothing to `Thing` — true, and read as "there is nothing here". The world knows better and
+        says which class to ask, once per class.
         """
         under = [name for name in self.kinds_of(class_name) if name != class_name]
         if not under:
@@ -258,8 +302,8 @@ class World:
         ontology.note_hint(
             f"nothing is a {class_name} itself, and {sum(held.values())} thing(s) are a kind of "
             f"it: " + ", ".join(f"{name} ({count})" for name, count in sorted(held.items()))
-            + f". A listing is of the one class — ask the kind, {sorted(held)[0]}.all(), or "
-            f"{class_name}.all(kinds=True) for everything under it. A lookup already reads them: "
+            + f". This listing was of the one class — ask the kind, {sorted(held)[0]}.all(), or "
+            f"{class_name}.all() for everything under it. A lookup already reads them: "
             f"{class_name}.get(...) finds a kind of {class_name}.")
 
     def kinds_of(self, class_name: str) -> list[str]:
@@ -321,7 +365,7 @@ class World:
         A lookup *by name* that isn't settled returns a NeedsResolution instead: several
         people answer to that name, or nothing matches it and only resemblances turned up.
         Handing back ranked candidates there would reopen the door this design closes —
-        `Person.find(full_name="Annie")[0]` silently picks a fuzzy match, which is exactly the
+        `Person.find(name="Annie")[0]` silently picks a fuzzy match, which is exactly the
         guess the user is supposed to make.
         """
         ontology.note_world_call("world_queries")
@@ -482,7 +526,7 @@ class World:
     def _same_by_strong_key(self, class_name: str, attrs: dict, twins: list):
         """An address nobody else has is not a resemblance — it is them.
 
-        `Person.new(full_name="Kate Johnson", email="KJohnson@NASA.gov")` next to a recorded
+        `Person.new(name="Kate Johnson", email="KJohnson@NASA.gov")` next to a recorded
         Katherine Johnson at kjohnson@nasa.gov is one person written two ways, and asking about
         it spends the user's attention on something the data already answers. The rule is the
         same one identification uses everywhere here (`_only_match`): one candidate, nothing
@@ -541,7 +585,7 @@ class World:
         A task settles who it is about before it records anything about them, and this is how.
         It does not choose: it hands back what resembles what the user said and you pick, because
         you have the conversation and the world does not. Two or five of them are read by eye;
-        twenty means say more — `Person.identify(full_name="Anna", location="Berlin")` —
+        twenty means say more — `Person.identify(name="Anna", location="Berlin")` —
         and look again.
 
         **Nobody here of that name, and it makes them.** There is no second branch for the host
@@ -928,7 +972,7 @@ class World:
     def _check_attrs(self, class_name: str, attrs: dict) -> None:
         """Looking something up by an attribute the class hasn't got is not a miss, it's a typo.
 
-        Answering "nothing matched" to `Event.find(full_name="Dentist")` is true and
+        Answering "nothing matched" to `Event.find(name="Dentist")` is true and
         useless: the host reads it as "CloudNine isn't in the world" and goes looking elsewhere,
         which is exactly what it did. Say what is wrong with the question instead, and name the
         word it probably wanted — the same answer `Class(...)` gives for the same mistake.

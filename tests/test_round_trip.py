@@ -83,9 +83,9 @@ t = now()
 world.attribute(Person, "email", "The address this person reads their mail at.", type="email")
 world.attribute(Person, "phone", "The number this person answers.", type="phone")
 world.attribute(Thing, "website", "Where this thing is on the web.", type="domain")
-anna = Person.new(full_name="Anna Weber", aliases=["Anna W."], email="anna@example.org",
+anna = Person.new(name="Anna Weber", aliases=["Anna W."], email="anna@example.org",
                   phone="+49 30 000001")
-mila = Person.new(full_name="Mila Toft", email="mila@example.org")
+mila = Person.new(name="Mila Toft", email="mila@example.org")
 town = Thing.new(name="Bremen", nature="place")
 firm = Thing.new(name="Brightwork", aliases=["BW"], website="https://brightwork.example",
                  nature="agent")
@@ -105,8 +105,8 @@ print("entities in")
 
 SECOND = """
 t = now()
-anna = Person.get(full_name="Anna Weber")
-mila = Person.get(full_name="Mila Toft")
+anna = Person.get(name="Anna Weber")
+mila = Person.get(name="Mila Toft")
 firm = Thing.get(name="Brightwork")
 town = Thing.get(name="Bremen")
 meeting = Event.get(title="First interview")
@@ -167,7 +167,7 @@ print("links in")
 THIRD = """
 one = Specimen.get(name="One")
 world.pin("one", one, "the specimen this task is about", keep=False)
-world.pin("anna", Person.get(full_name="Anna Weber"), "the person the task is about", keep=True)
+world.pin("anna", Person.get(name="Anna Weber"), "the person the task is about", keep=True)
 one.count = 4
 one.shape = "square"
 print("pinned")
@@ -204,12 +204,12 @@ def fill(rt: WorldRuntime, work: Path) -> None:
 
     world = rt.world
     # A name two people answer to, settled by hand — which is what writes a name choice down.
-    rt.run('Person.new(full_name="Sam Lee", email="sam1@example.org")\n'
-           'Person.new(full_name="Sam Lee", email="sam2@example.org")\n'
+    rt.run('Person.new(name="Sam Lee", email="sam1@example.org")\n'
+           'Person.new(name="Sam Lee", email="sam2@example.org")\n'
            'print("two of them")', KEY)
-    asking = rt.run('Person.ensure(full_name="Sam Lee")\nprint("which one?")', KEY)
+    asking = rt.run('Person.ensure(name="Sam Lee")\nprint("which one?")', KEY)
     if world.pending is not None:
-        world.settle(world.pending, world.find(world.classes["Person"], full_name="Sam Lee")[0])
+        world.settle(world.pending, world.find(world.classes["Person"], name="Sam Lee")[0])
 
     # A task dropped part-way, which is the one kind that leaves a statement behind: the note
     # saying why. A rebuild that read a Task out of the record got that note and nothing else.
@@ -217,7 +217,7 @@ def fill(rt: WorldRuntime, work: Path) -> None:
     rt.start_task(KEY, "carry on filling this world with one of everything", "recording")
 
     # What the files say about the two parties, and the note that they have been read.
-    (work / "USER.md").write_text("---\nfull_name: Nadia Ivanov\n---\nThe person this world is for.\n")
+    (work / "USER.md").write_text("---\nname: Nadia Ivanov\n---\nThe person this world is for.\n")
     (work / "soul.md").write_text("---\nname: Weaver\n---\nThe assistant that keeps it.\n")
     selves.refresh(world, work)
 
@@ -328,13 +328,13 @@ def check_the_user_is_not_merged_away() -> None:
     work = Path(tempfile.mkdtemp(prefix="tw-parties-"))
     rt = open_world(work)
     rt.start_task(KEY, "record what the user said about her own week", "recording")
-    rt.run('anna = Person.new(full_name="Anna Weber")\n'
+    rt.run('anna = Person.new(name="Anna Weber")\n'
            'anna.describe("the person this is all about")\n'
            'print("in")', KEY)
     # The file comes second on purpose. The other way round the world sees the duplicate as it
     # is written and asks which one is meant, and there is nothing left to merge — so the only
     # order in which two subjects ever reach a rebuild under one name is this one.
-    (work / "USER.md").write_text("---\nfull_name: Anna Weber\n---\nThe person this world is for.\n")
+    (work / "USER.md").write_text("---\nname: Anna Weber\n---\nThe person this world is for.\n")
     selves.refresh(rt.world, work)
     rt.world.rebuild()
     owner = rt.world.owner
@@ -342,9 +342,9 @@ def check_the_user_is_not_merged_away() -> None:
           getattr(owner, "id", None) == rt.world.USER_ID,
           f"owner is {owner!r}")
     check("and the one person left answers to what both said",
-          owner is not None and owner.full_name == "Anna Weber"
+          owner is not None and owner.name == "Anna Weber"
           and len(owner.descriptions or []) == 2,
-          f"{getattr(owner, 'full_name', None)!r}, {getattr(owner, 'descriptions', None)!r}")
+          f"{getattr(owner, 'name', None)!r}, {getattr(owner, 'descriptions', None)!r}")
     check("and the assistant still belongs to them",
           getattr(getattr(rt.world.me, "owner", None), "id", None) == rt.world.USER_ID)
     rt.world.store.conn.close()

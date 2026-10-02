@@ -3,10 +3,10 @@
   "description": "A scheduled happening — meeting, interview, trip leg, appointment.",
   "attributes": [
     {
-      "name": "title",
+      "name": "name",
       "type": "str",
       "required": true,
-      "description": "Short label for the event."
+      "description": "What it is called: a short label for the event."
     },
     {
       "name": "about",

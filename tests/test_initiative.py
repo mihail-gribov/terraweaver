@@ -44,7 +44,7 @@ def landed_in(rt, word: str) -> str:
     """
     from terraweaver import relations
 
-    p = rt.world.classes["Person"].new(full_name=f"P {word}")
+    p = rt.world.classes["Person"].new(name=f"P {word}")
     x = rt.world.classes["Thing"].new(name=f"X {word}")
     try:
         return type(relations.relate(rt.world, p, x, word, {}, {})).__name__
@@ -77,7 +77,7 @@ def main() -> int:
     check("MAKES_TYPES off: an unknown word is refused", refusal == "refused", refusal)
     from terraweaver import relations as _relations
 
-    p = rt.world.classes["Person"].new(full_name="Q")
+    p = rt.world.classes["Person"].new(name="Q")
     y = rt.world.classes["Thing"].new(name="Y")
     said = ""
     try:

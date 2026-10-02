@@ -35,7 +35,7 @@ def main() -> int:
 
     # --- and the same, derived from what was said ---
     w = open_world()
-    w.run('ana = Person.new(full_name="Ana Borg")\n'
+    w.run('ana = Person.new(name="Ana Borg")\n'
           'ana.tag("apartment-hunt", starts=date(2026, 3, 1), until=date(2026, 6, 1))\n'
           'ana.tag("apartment-hunt", starts=date(2026, 6, 1), until=date(2026, 9, 1))\n'
           'ana.tag("apartment-hunt", starts=date(2026, 4, 1), until=date(2026, 5, 1))\n'
@@ -45,7 +45,7 @@ def main() -> int:
           # check is that a tag with no end still holds months later, and that needs a start it
           # can name.
           'ana.tag("berlin", starts=date(2026, 7, 1), permanent=True)', "host")
-    ana = w.classes["Person"].get(full_name="Ana Borg")
+    ana = w.classes["Person"].get(name="Ana Borg")
     check("four statements about two tags come out as two stretches",
           periods.rebuild(w.world) == 2, str(periods.rebuild(w.world)))
     hunt = [s for s in ana.spells("tags") if s.value == "apartment-hunt"]

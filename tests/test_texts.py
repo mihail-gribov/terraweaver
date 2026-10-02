@@ -30,13 +30,13 @@ def refused(action) -> str | None:
 def main() -> int:
     w = open_world()
     out = w.run('''
-ana = Person.new(full_name="Ana Borg")
+ana = Person.new(name="Ana Borg")
 ana.add("descriptions", "does cell chemistry at a battery startup")
 ana.add("descriptions", "on parental leave", starts=date(2026, 3, 1), until=date(2026, 9, 1))
 ''', "host")
     assert not out["error"], out["error"]
     world, Person = w.world, w.classes["Person"]
-    ana = Person.get(full_name="Ana Borg")
+    ana = Person.get(name="Ana Borg")
 
     check("what holds now is what the entity carries",
           ana.descriptions == ["does cell chemistry at a battery startup"], str(ana.descriptions))
@@ -56,14 +56,14 @@ ana.add("descriptions", "on parental leave", starts=date(2026, 3, 1), until=date
 
     w.run('ana.drop("descriptions", "does cell chemistry at a battery startup")\n'
           'ana.add("descriptions", "back at work")', "host")
-    ana = Person.get(full_name="Ana Borg")
+    ana = Person.get(name="Ana Borg")
     check("dropping one ends it without deleting anything",
           ana.descriptions == ["back at work"], str(ana.descriptions))
     check("the record still has all three",
           len(ana.spells("descriptions")) == 3, str(ana.spells("descriptions")))
 
     w.run('ana.descriptions = ["back at work", "learning Portuguese"]', "host")
-    ana = Person.get(full_name="Ana Borg")
+    ana = Person.get(name="Ana Borg")
     check("assigning the whole list says 'these are the ones now'",
           ana.descriptions == ["back at work", "learning Portuguese"], str(ana.descriptions))
 
@@ -73,7 +73,7 @@ ana.add("descriptions", "on parental leave", starts=date(2026, 3, 1), until=date
         {"name": "temper", "type": "list[enum[calm, quick, stubborn]]", "description": "test only"}]}
     try:
         out = w.run('ana.temper = ["calm", "stubborn"]', "host")
-        ana = Person.get(full_name="Ana Borg")
+        ana = Person.get(name="Ana Borg")
         check("a vocabulary list takes several of its own words",
               sorted(ana.temper or []) == ["calm", "stubborn"], str(getattr(ana, "temper", None)))
         said = w.run('ana.temper = ["grumpy"]', "host")

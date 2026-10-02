@@ -41,9 +41,9 @@ acme = Thing.new(name="Acme Cells", industry="Energy", tags=["move"])
 school = Thing.new(name="Escola Beatriz", industry="Education", tags=["move"])
 flat = Thing.new(name="Rua Anjos 12", nature="place", tags=["move"])
 day = Event.new(title="Moving day", start_time=datetime(2026, 5, 2, 9, 0), tags=["move"])
-rita = Person.new(full_name="Rita Chen", descriptions=["does battery cell chemistry"],
+rita = Person.new(name="Rita Chen", descriptions=["does battery cell chemistry"],
                   tags=["move", "berlin"])
-lars = Person.new(full_name="Lars Ek", descriptions=["writes payroll software"], tags=["berlin"])
+lars = Person.new(name="Lars Ek", descriptions=["writes payroll software"], tags=["berlin"])
 rita.set_works_at(acme)
 lars.set_works_at(acme)
 rita.tag("apartment-hunt", starts=date(2026, 3, 1), until=date(2026, 6, 1))

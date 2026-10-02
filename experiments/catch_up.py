@@ -80,8 +80,7 @@ def main() -> int:
         got = formalise.formalise(runtime, runtime.world.engineer, limit=args.limit)
         print("facts said in words:", {k: v for k, v in got.items() if k != "read"}, flush=True)
     if unread:
-        got = portraits.formalise(runtime.world, runtime.world.engineer, limit=args.limit,
-                                  run=runtime._the_world_writes)
+        got = portraits.formalise(runtime.world, runtime.world.engineer, limit=args.limit)
         runtime._hand_back_what_moved(got.pop("moved", []))
         print("things that came in as names:", got, flush=True)
 

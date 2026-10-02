@@ -42,9 +42,9 @@ def fresh_world():
     Person, Thing, Event = classes["Person"], classes["Thing"], classes["Event"]
     techcorp, dataworks = Thing.new(name="TechCorp"), Thing.new(name="DataWorks")
     Thing.new(name="CloudNine")
-    Person.new(full_name="Ada Lovelace", email="ada@example.com", city="London").set_works_at(techcorp)
-    Person.new(full_name="Anna Sullivan", aliases=["Annie"], email="anna.sullivan@example.com", city="Leeds")
-    Person.new(full_name="Anna Peterson", aliases=["Annie"], city="York")
+    Person.new(name="Ada Lovelace", email="ada@example.com", city="London").set_works_at(techcorp)
+    Person.new(name="Anna Sullivan", aliases=["Annie"], email="anna.sullivan@example.com", city="Leeds")
+    Person.new(name="Anna Peterson", aliases=["Annie"], city="York")
     soon = datetime.now().replace(microsecond=0)
     Event.new(title="Interview at DataWorks", about=dataworks, start_time=soon + timedelta(days=3))
     Event.new(title="Call with TechCorp", about=techcorp, start_time=soon - timedelta(days=3))
@@ -71,13 +71,13 @@ def main() -> int:
     # --- a link holds on both sides ---
     classes, store, world = fresh_world()
     Person, Thing = classes["Person"], classes["Thing"]
-    steve = Person.new(full_name="Steve", email="steve@acme.com")
+    steve = Person.new(name="Steve", email="steve@acme.com")
     acme = Thing.new(name="Acme")
     steve.set_works_at(acme)
-    check("linking one side links the other", [p.full_name for p in acme.works_at_of] == ["Steve"],
+    check("linking one side links the other", [p.name for p in acme.works_at_of] == ["Steve"],
           str(acme.works_at_of))
     steve.set_works_at(acme)
-    check("linking again doesn't list them twice", [p.full_name for p in acme.works_at_of] == ["Steve"],
+    check("linking again doesn't list them twice", [p.name for p in acme.works_at_of] == ["Steve"],
           str(acme.works_at_of))
     check("and it survives storage", Person.get(email="steve@acme.com").works_at.name == "Acme")
 
@@ -94,7 +94,7 @@ def main() -> int:
     ada.city = "London"
 
     # --- a disagreement while identifying is a question, with "a different one" among the answers ---
-    needs = world.ensure(Person, full_name="Ada Lovelace", email="ada@example.com", city="Paris")
+    needs = world.ensure(Person, name="Ada Lovelace", email="ada@example.com", city="Paris")
     check("ensure with a conflicting value asks", getattr(needs, "skill", None) == "resolve_contradiction")
     check("and offers that it's a different person", len(getattr(needs, "options", [])) == 3)
     check("the world is untouched until the user decides",
@@ -182,7 +182,7 @@ def main() -> int:
     before = len(store.load_all("Person", classes))
     try:
         with store.transaction():
-            store.save_graph(Person(full_name="Dave", email="dave@example.com"))
+            store.save_graph(Person(name="Dave", email="dave@example.com"))
             raise RuntimeError("the script failed after its first write")
     except RuntimeError:
         pass
@@ -249,30 +249,30 @@ def main() -> int:
     # --- the host says whether it means an existing entity or a new one ---
     from terraweaver.world import NotInWorld
     check("get picks out the one meant, using context",
-          Person.get(full_name="Annie", city="Leeds").full_name == "Anna Sullivan")
+          Person.get(name="Annie", city="Leeds").name == "Anna Sullivan")
     try:
-        Person.get(full_name="Pete Ivanson")
+        Person.get(name="Pete Ivanson")
         missing_raises = False
     except NotInWorld:
         missing_raises = True
     check("get never creates: someone absent is a loud error", missing_raises)
     check("and a name only sharing a part with someone doesn't resemble them",
-          missing_raises and not Person.find(full_name="Pete Ivanson", history=True))
-    petr = Person.new(full_name="Pete Ivanson", email="pete@x.org")
+          missing_raises and not Person.find(name="Pete Ivanson", history=True))
+    petr = Person.new(name="Pete Ivanson", email="pete@x.org")
     check("new creates", isinstance(petr, Person) and petr.id is not None)
-    twin = Person.new(full_name="Pete Ivanson", email="pete@x.org")
+    twin = Person.new(name="Pete Ivanson", email="pete@x.org")
     check("the same address is the same person, without asking", twin is petr)
-    second = Person.new(full_name="Pete Ivanson")
+    second = Person.new(name="Pete Ivanson")
     check("but a write with nothing to go on records rather than asking, and is merged later",
           isinstance(second, Person) and second is not petr)
 
     # --- a question in the middle of a batch holds its link instead of killing the run ---
-    held = Person.get(full_name="Pete Ivanson")           # two of them now, nothing to tell them apart
+    held = Person.get(name="Pete Ivanson")           # two of them now, nothing to tell them apart
     acme = Thing.ensure(name="Held Links Ltd")
     held.set_works_at(acme)                               # would have raised and discarded it all
     held.tag("conference")
     held.describe("met at the conference")
-    alongside = Person.new(full_name="Quinn Ivers", email="quinn@x.org")
+    alongside = Person.new(name="Quinn Ivers", email="quinn@x.org")
     check("the rest of the batch survives a question", isinstance(alongside, Person))
     settled = world.settle(held, petr)
     check("and everything held is done once the question is answered",
@@ -306,15 +306,15 @@ def main() -> int:
           not any("already here" in line for line in apart.questions), str(apart.questions))
 
     # --- who the user meant by a name is remembered ---
-    annie = Person.find(full_name="Annie")
+    annie = Person.find(name="Annie")
     sullivan = Person.get(email="anna.sullivan@example.com")
     world.settle(annie, sullivan)
-    check("once settled, the name picks that person", Person.get(full_name="Annie") is sullivan)
+    check("once settled, the name picks that person", Person.get(name="Annie") is sullivan)
     check("and ensure by that name doesn't call the nickname a contradiction",
-          Person.ensure(full_name="Annie", phone="555") is sullivan)
+          Person.ensure(name="Annie", phone="555") is sullivan)
     world.remember_choice(annie, None)  # what answering "someone new" to that question records
     check("someone new under the name makes it a question again",
-          getattr(Person.find(full_name="Annie"), "skill", None) == "resolve_ambiguity")
+          getattr(Person.find(name="Annie"), "skill", None) == "resolve_ambiguity")
 
     # --- a list attribute that only grows is not a contradiction ---
     tv = Thing.new(name="Living room TV")

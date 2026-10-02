@@ -45,7 +45,7 @@ def main() -> int:
     acme = Thing.new(name="Acme Dental")
 
     # --- a relation that starts later is not a current one ---
-    nina = Person.new(full_name="Nina Patel")
+    nina = Person.new(name="Nina Patel")
     later = michael.set_patient_of(nina, starts=date(2100, 1, 1))
     with ontology.record_changes() as run:
         current = michael.related("patient_of")
@@ -55,7 +55,7 @@ def main() -> int:
     check("any_time=True brings the future one back", nina in michael.related("patient_of", any_time=True))
 
     # --- a relation that ended is history, not a deletion ---
-    olga = Person.new(full_name="Olga Gribova")
+    olga = Person.new(name="Olga Gribova")
     # The marriages below are a sequence and have to read as one: Nadia 2010-2015, Olga
     # 2016-2018, Vera from 2019. Overlapping them is the conflict this section is about, so
     # they must not overlap by accident. Ended on a date rather than with `expire()`, which
@@ -69,13 +69,13 @@ def main() -> int:
     check("any_time=True shows the ended one", olga in michael.related("spouse_of", any_time=True))
 
     # --- overlapping periods, not "now", make a conflict ---
-    vera = Person.new(full_name="Vera Ilyina")
+    vera = Person.new(name="Vera Ilyina")
     vera.set_spouse_of(michael, starts=date(2019, 7, 6))
     check("a new partner after the old one ended goes through", vera in michael.related("spouse_of"))
-    another = Person.new(full_name="Zoya Belova")
+    another = Person.new(name="Zoya Belova")
     refusal = refused(lambda: another.set_spouse_of(michael, starts=date(2019, 7, 6)))
     check("a second partner at the same time is refused", refusal is not None, str(refusal))
-    past = Person.new(full_name="Nadia Orlova")
+    past = Person.new(name="Nadia Orlova")
     past.set_spouse_of(michael, starts=date(2010, 1, 1), until=date(2015, 1, 1))
     check("a marriage that ended before this one is no conflict",
           past in michael.related("spouse_of", any_time=True))
@@ -91,7 +91,7 @@ def main() -> int:
           [c for c in michael.described(any_time=True) if "vacation" in c.text] != [])
 
     # --- timeline: everything dated about one thing ---
-    ada = Person.new(full_name="Ada Lovelace")
+    ada = Person.new(name="Ada Lovelace")
     ada.set_works_at(Thing.new(name="TechCorp"), starts=date(2020, 1, 1))
     was = ada.works_at
     ada.set_works_at(acme, starts=date(2026, 8, 1))
@@ -139,8 +139,8 @@ def main() -> int:
             # one end silently limited the other.
             "chairs", "who leads an organisation, one at a time", cardinality="one-to-many")
         org = own["Thing"].new(name="Fatah")
-        first = own["Person"].new(full_name="Mahmoud Abbas")
-        second = own["Person"].new(full_name="Someone Else")
+        first = own["Person"].new(name="Mahmoud Abbas")
+        second = own["Person"].new(name="Someone Else")
         from terraweaver import timeutil as _t
         held = _t.now()          # taken once, as a host should: two now() calls are not one moment
         # Recorded without a start rather than refused. The date may be in the agent's own
@@ -149,7 +149,7 @@ def main() -> int:
         # every fact written after it. What has a time is an event, and Event.start_time is
         # required. Checked on a pair of its own so the dated pair below is not disturbed.
         spare = own["Thing"].new(name="Spare Body")
-        undated = refused(lambda: own["Person"].new(full_name="Undated One").set_chairs(spare))
+        undated = refused(lambda: own["Person"].new(name="Undated One").set_chairs(spare))
         check("a type that changes takes a link with no start",
               undated is None, str(undated)[:110])
         exec(f'first.set_chairs(org{said})', {"first": first, "org": org, "held": held})

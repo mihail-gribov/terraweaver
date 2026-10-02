@@ -473,7 +473,7 @@ class WorldRuntime:
         lines = [f"Task {task.id} open: {stated} ({mode})."]
         if left:
             lines.append("The task before it was dropped. " + left)
-        lines.append("Settle who this is about first: Person.identify(full_name=\"...\") "
+        lines.append("Settle who this is about first: Person.identify(name=\"...\") "
                      "for each one the user named hands back who could be meant. Read them, "
                      "pick the one, hold it in a variable. A name nobody here has is recorded "
                      "as you ask, so that is one call, not two. Do it before anything else.")
@@ -1078,43 +1078,11 @@ class WorldRuntime:
             silent = len(portraits.still_only_a_name(self.world))
             if not waiting:
                 return {}, silent
-            tally = portraits.formalise(self.world, engineer, run=self._the_world_writes,
-                                        seconds=_left_of(until))
+            tally = portraits.formalise(self.world, engineer, seconds=_left_of(until))
             self._hand_back_what_moved(tally.pop("moved", []))
             return tally, silent
         except Exception:  # noqa: BLE001 - reading is never what stops a task closing
             return {}, 0
-
-    def _the_world_writes(self, entity, code: str) -> dict:
-        """Run code the world wrote itself, by exactly the door a host's code goes through.
-
-        Not a second interpreter, and that is the point of asking for code at all. What the
-        engineer may say is what a host may say, the sandbox is the same sandbox, the statements
-        are committed one at a time the same way, and every refusal the world makes of a host
-        it makes of itself. A reading that can express only what a hand-written translator
-        thought of is a reading that quietly drops the rest.
-
-        `it` is the thing being filled in, bound before the code runs so the engineer never has
-        to name it — identity is handed over here as it is everywhere else in this world, never
-        recovered from words. The writes are the world's own (`stating("world")`), which is the
-        lowest standing there is and comes off in one move.
-        """
-        session = self.session(THE_WORLDS_OWN)
-        session.namespace["it"] = entity
-        try:
-            # `it` is handed over as the thing it is, and which thing that is is not the reading's
-            # to change: `reading_one` holds its name for the duration (ontology.py).
-            with ontology.stating("world"), ontology.reading_one(entity):
-                return self.run(code, THE_WORLDS_OWN)
-        finally:
-            # The world's own reading is not a task and does not accumulate one. It used to go
-            # through `run` like any host, so it opened an unnamed Task, and nothing ever reset
-            # that session: its `touched` set grew for the life of the process and every entity
-            # the world had ever read was still "what this piece of work touched"
-            # (docs/code-review-2026-09-30.md 3.3.5).
-            session.touched.clear()
-            session.namespace.pop("it", None)
-            session.runs = 0
 
     def _hand_back_what_moved(self, moved: list[str]) -> None:
         """A thing read under another class is a different instance; whoever holds it gets it.

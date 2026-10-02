@@ -8,9 +8,9 @@ thing, the world records it as a bare `Thing`, and the host says what it is in t
     rome = Thing.identify(name="Rome")[0]     # nobody here of that name — recorded
     rome.describe("Rome is the capital of Italy, where the user lived until 2019")
 
-What class that is, which attributes it fills, whether a class for it has to be made at all —
-read afterwards, at the close of the task, by an engineer of knowledge whose whole
-attention is that one question.
+What class that is, and whether a class for it has to be made at all — read afterwards, at the
+close of the task, over everything known about the thing by then: its account, its links, its
+values. Only the class: what the thing holds is the host's to say and the link reading's to type.
 
 **Which thing it is, is never read.** The entity is handed over as an entity and its id is what
 the reading is written against. An engineer that had to find "Rome" in its own answer could name
@@ -23,10 +23,9 @@ France" describes it exactly as it would the truth. This is a record of what som
 import json
 import logging
 import time
-from terraweaver import prompts
+from terraweaver import matching, prompts
 from datetime import datetime, timezone
 
-from terraweaver import timeutil
 from terraweaver.store import run_script
 
 # One failure must not stop the world, and that is not the same as nobody hearing about it.
@@ -194,12 +193,13 @@ def shape(world) -> str:
         except Exception as wrong:  # noqa: BLE001
             log.debug("%s", wrong, exc_info=True)
             continue
-        went[one.get("went") or ("refused" if "refused" in one else "(nothing said)")] += 1
+        went[("refused" if "refused" in one else "placed" if became
+              else "stayed where it was")] += 1
         walked[one.get("walked_to") or "(nowhere)"] += 1
         if became:
             placed += 1
-        if one.get("went") in ("gave up", "nothing to run") or "refused" in one:
-            trouble = one.get("refused") or one.get("said_back") or ""
+        if "refused" in one:
+            trouble = one.get("refused") or ""
             said[" ".join(str(trouble).split())[:100] or "(nothing recorded)"] += 1
     out = [f"{len(rows)} name(s) read, {placed} of them placed under another class"]
     out.append("  ended:     " + "; ".join(f"{k} {n}" for k, n in went.most_common()))
@@ -282,11 +282,9 @@ def walk_down(world, entity, words: str, jev) -> tuple[str, str | None]:
 
 SYSTEM = prompts.PLACING_A_THING
 
-FORMALISE = prompts.FORMALISE
+CLASS_FOR_A_THING = prompts.CLASS_FOR_A_THING
 
 MAKE_ONE = prompts.MAKE_ONE
-
-KEEP_ONE = prompts.KEEP_ONE
 
 MAKE_SHAPE = ('{{"name": "...", "brief": "...", "description": "one sentence saying what this '
               'kind of thing is", "attributes": [{{"name": "...", "description": "...", '
@@ -299,7 +297,13 @@ MAKE_SHAPE = ('{{"name": "...", "brief": "...", "description": "one sentence say
 
 
 def words_about(world, entity) -> str:
-    """Everything said about this thing, in the words it was said in."""
+    """Everything known about this thing: what was said of it, what it is joined to, what it holds.
+
+    Not only the descriptions. What a thing is shows at least as much in its links as in its
+    account — "died in Camden Town" says Camden Town is a place even where nobody described it —
+    and a link nobody has typed yet is still the words it came in. The walk is a closed question,
+    and a closed question answered on half of what is known is a guess.
+    """
     said = []
     try:
         remarks = entity.described() if hasattr(entity, "described") else []
@@ -315,27 +319,57 @@ def words_about(world, entity) -> str:
         # same thing and is not always there.
         said = [line.strip() for line in (getattr(entity, "descriptions", None) or [])
                 if isinstance(line, str) and line.strip()]
-    return "\n".join(f"    {line}" for line in said[:20])
+    lines = [f"    {line}" for line in said[:20]]
+    joined = _joined(entity)
+    if joined:
+        lines += ["    It is joined to:"] + [f"      {line}" for line in joined]
+    held = _held(entity)
+    if held:
+        lines += ["    It holds:"] + [f"      {line}" for line in held]
+    return "\n".join(lines)
 
 
-# How many times the world will hand its own failure back and ask for the next lines. The same
-# loop a host is in, and bounded for the same reason: past a few goes the writer is writing
-# against a record it has misunderstood, and going on spends the budget on forty copies of one
-# error. Three is a mistake repeated.
-GOES = 3
+def _joined(entity) -> list[str]:
+    """Its links, from either end, as the record reads them out."""
+    try:
+        return sorted({link.display_name()[:120] for link in entity.relations()})[:30]
+    except Exception as wrong:  # noqa: BLE001 - a thing whose links cannot be read is joined to nothing
+        log.debug("%s", wrong, exc_info=True)
+        return []
 
 
-def formalise(world, engineer, limit: int = 50, jev=None, run=None,
+def _held(entity) -> list[str]:
+    """The plain values it holds — not its name, its words or the record's own bookkeeping."""
+    from terraweaver import ontology
+
+    skip = {"descriptions", "tags", "facts", "notes", "aliases"} | set(ontology.MANAGED_VALUE_ATTRS)
+    out = []
+    for attr in type(entity)._spec.get("attributes", []):
+        name = attr["name"]
+        if "derived" in attr or name in skip or attr.get("relation"):
+            continue
+        value = getattr(entity, name, None)
+        if isinstance(value, (str, int, float)) and not isinstance(value, bool) and str(value).strip():
+            if str(value) != str(entity.display_name()):
+                out.append(f"{name}: {str(value)[:100]}")
+    return out[:20]
+
+
+def formalise(world, engineer, limit: int = 50, jev=None,
               seconds: float | None = None) -> dict:
-    """Read the prose-facts nobody has read, and put each into the record's own terms.
+    """Put each thing that came in as a bare name under the class it belongs to — and nothing else.
 
-    Two steps, and the split between them is where the cost is. Finding the class is a walk down
-    the tree — which child of Thing is this, then which child of that — and every step is a
-    closed question, a list of named options, answered by a model built for exactly that. Then
-    one open call: the class if none of them fitted, and the code that fills this thing in.
+    A walk down the tree — which child of Thing is this, then which child of that — every step a
+    closed question answered over everything known about the thing. One open call only when
+    nothing fitted: the class to make. Then the thing is moved under it, through the door that
+    states the placing.
 
-    The code runs the way a host's code runs, through the same door, and what comes back goes
-    to whoever wrote it — the same loop, with Nemotron where the agent usually stands.
+    **What the thing holds is never written here.** Until 2026-10-02 this pass also asked the
+    engineer for code that filled the thing in and ran it through the host's door. Measured on a
+    455-fact world (var/run10): before that pass 1 fact was lost to a name missing from its image,
+    after it 31 — and the links it drew ran backwards (`Le Guin authored_by A Wizard of Earthsea`).
+    The links are the link reading's work, the values are the host's; what this pass alone can
+    say is what kind of thing this is.
 
     `seconds` bounds it, because this runs inside the host's `finish_task` too. Measured
     2026-09-28: the sentence reading was given a budget and this one was not, and a batch with
@@ -345,7 +379,7 @@ def formalise(world, engineer, limit: int = 50, jev=None, run=None,
     from terraweaver import ontology, outside
 
     jev = jev or getattr(world, "jev", None) or outside.AsChoices(engineer)
-    tally = {"read": 0, "placed": 0, "defined": 0, "ran": 0, "failed": 0, "gave_up": 0}
+    tally = {"read": 0, "placed": 0, "defined": 0, "failed": 0}
     # Things that changed class. Whoever is holding one of these is holding the instance it was
     # before, and the next thing they save writes that back — the reading undone by the very
     # next line the agent runs, quietly, with nothing to show it happened.
@@ -363,7 +397,7 @@ def formalise(world, engineer, limit: int = 50, jev=None, run=None,
         if entity is None:
             mark(world, one["statement_id"], one["entity_id"], {"gone": True})
             continue
-        # This prose-fact is what set the reading off; the reading itself sees everything said
+        # This prose-fact is what set the reading off; the reading itself sees everything known
         # about the thing. A second account arriving later says what the first did not, and
         # placing the thing on half of what is known about it is worse than waiting.
         words = words_about(world, entity) or f"    {one['words']}"
@@ -376,19 +410,21 @@ def formalise(world, engineer, limit: int = 50, jev=None, run=None,
             words = (f"{words}\n    Somebody looked for this under "
                      f"{' and '.join(sorted(set(expected)))} and did not find it there.")
         at, wanting = walk_down(world, entity, words, jev)
-        asked = _asking(world, entity, words, at, make_new=bool(wanting))
-        said = _say(engineer, asked)
-        if said is None:
-            tally["failed"] += 1
-            continue
-        tally["read"] += 1
         read_as = {"words": one["words"], "source": one["source"], "walked_to": at,
-                   "new_under": wanting, "class": said.get("class")}
+                   "new_under": wanting}
+        if wanting:
+            said = _say(engineer, _asking(world, entity, words, at))
+            if said is None:
+                # Nothing to make the class from: the words stay unread for a later pass.
+                tally["failed"] += 1
+                continue
+            read_as["class"] = said.get("class")
+        tally["read"] += 1
         became = None
         try:
             with ontology.stating("world"):
                 if wanting:
-                    made = _make_one(world, said.get("class"), wanting, tally)
+                    made = _make_one(world, read_as.get("class"), wanting, tally)
                     if made:
                         at, read_as["defined"] = made, made
                 if at and at != type(entity).__name__ and at in world.classes:
@@ -408,61 +444,9 @@ def formalise(world, engineer, limit: int = 50, jev=None, run=None,
             mark(world, one["statement_id"], one["entity_id"],
                  {**read_as, "refused": str(wrong)[:200]})
             continue
-        # Written as of when the words being read were said, not as of now. What a thing's
-        # account says is a telling from that moment, and a one-at-a-time word decides by the
-        # order of tellings — so a link drawn out of an old account and written *now* overruled
-        # the user's correction. Measured 2026-10-02 on a 455-fact world: "Nobuhiro Watsuki is
-        # famous for The Fairly OddParents" (the gold, told at 02:20) was ended at 03:57 by this
-        # pass writing `it.famous_for = "Rurouni Kenshin"` out of the account given at 01:58.
-        # The link reading has done this since 2026-10-01 (`formalise`); this is the same rule.
-        with timeutil.as_of(one.get("said_at")):
-            read_as["code"], read_as["went"], read_as["said_back"] = _the_loop(
-                engineer, run, entity, asked, said, tally, getattr(world, "better", None))
         mark(world, one["statement_id"], one["entity_id"], read_as, became)
     tally["moved"] = moved
     return tally
-
-
-def _the_loop(engineer, run, entity, asked: str, said: dict, tally: dict,
-              senior=None) -> tuple[list, str, str]:
-    """Run what the engineer wrote, and hand back whatever the world says until it is done.
-
-    Exactly the loop a host is in: write, read what the world says back, answer that. The only
-    difference is who is on the other end. A host that is told its line failed writes the
-    continuation under it, and so does this — which is the whole reason the reading is asked
-    for as code rather than as a shape somebody here has to interpret.
-    """
-    from terraweaver.runtime import format_result
-
-    written = []
-    code = str(said.get("code") or "").strip()
-    if run is None or not code:
-        return written, "nothing to run" if run is not None else "nowhere to run it", ""
-    said_back = ""
-    for go in range(GOES):
-        written.append(code)
-        got = run(entity, code)
-        # Kept, because a count of give-ups says a reading failed and not why — and why is a
-        # sentence the world has already written. Measured 2026-09-29 on the link side: the same
-        # column named the cause of 24 failures at a glance, where an hour had gone on guessing.
-        # 56 of 285 names ended here with nothing anywhere to say on what.
-        said_back = format_result(got)[:600]
-        if got.get("ok"):
-            tally["ran"] += 1
-            return written, "done", said_back
-        if go == GOES - 1:
-            break
-        back = (f"{asked}\n\nYou wrote this, and the record answered:\n\n{code}\n\n"
-                f"{format_result(got)[:1500]}\n\nWrite the lines that still have to run — the "
-                f"ones that finished are done and must not be sent again. `class` is null now; "
-                f"the class is made. Nothing new is invented: only what the words above say.")
-        # The senior engineer writes the go that follows a refusal, where the world can reach one.
-        again = _say(getattr(entity, "_better", None) or senior or engineer, back)
-        code = str((again or {}).get("code") or "").strip()
-        if not code:
-            break
-    tally["gave_up"] += 1
-    return written, "gave up", said_back
 
 
 def _say(engineer, asked: str) -> dict | None:
@@ -474,41 +458,14 @@ def _say(engineer, asked: str) -> dict | None:
     return said if isinstance(said, dict) else None
 
 
-def _asking(world, entity, words: str, at: str, make_new: bool) -> str:
-    """The one open question: describe the class, and write the code that fills this one in."""
-    from terraweaver import sentences
-
+def _asking(world, entity, words: str, at: str) -> str:
+    """The one open question, asked only when no class fits: describe the one this belongs to."""
     parent = world.classes.get(at)
     parent_is = (parent._spec.get("brief") or parent._spec.get("description") or at)[:150] \
         if parent is not None else at
-    standing = ""
-    if not make_new and parent is not None:
-        named = [a["name"] for a in parent._spec["attributes"]
-                 if "derived" not in a and a["name"] not in ("descriptions", "tags", "facts", "notes")]
-        standing = f"The attributes it has: {', '.join(named)}"
-    return FORMALISE.format(
-        name=entity.display_name(), parent=at, parent_is=parent_is, standing=standing,
-        words=words, joined=_already_joined(world, entity), held=sentences.held(world),
-        class_ask=(MAKE_ONE if make_new else KEEP_ONE).format(parent=at),
-        class_shape=MAKE_SHAPE if make_new else "null")
-
-
-def _already_joined(world, entity) -> str:
-    """What this thing is joined to now, so the same fact is not said a second time.
-
-    Not shown, it was said again from the other end under another word: London, described as
-    the city somebody was born in, came back as `London.set_birthplace_of(...)` beside the
-    `born_in` that already held. Two words for one birth, and nothing afterwards can tell that
-    they are one fact.
-    """
-    lines = []
-    try:
-        for link in entity.relations():
-            lines.append(f"    {link.display_name()[:100]}")
-    except Exception as wrong:  # noqa: BLE001 - a thing whose links cannot be read is joined to nothing
-        log.debug("%s", wrong, exc_info=True)
-        return "    (nothing yet)"
-    return "\n".join(sorted(set(lines))[:30]) or "    (nothing yet)"
+    return CLASS_FOR_A_THING.format(
+        name=entity.display_name(), parent=at, parent_is=parent_is, words=words,
+        class_ask=MAKE_ONE.format(parent=at), class_shape=MAKE_SHAPE)
 
 
 def _as_attribute(said: dict) -> dict:
@@ -549,18 +506,12 @@ def _make_one(world, spec, under: str, tally: dict) -> str | None:
     # descriptions as labels — "Land area" — and `define` wants a sentence; losing City over
     # `area_sqkm` left the thing a bare Thing and every later city with nowhere to go.
     attributes = [_as_attribute(a) for a in (spec.get("attributes") or []) if isinstance(a, dict)
-                  and a.get("name") and a["name"] not in ("name", "full_name")
+                  and a.get("name") and a["name"] not in matching.NAME_WORDS
                   and len(str(a.get("description") or "").strip()) >= DESCRIBED_ENOUGH]
-    # What tells two of these apart is what tells two of the parent apart: a kind of Person is
-    # known by a full name, not by a `name` nobody writes. Identity is declared per class here,
-    # so a child that says nothing starts from what is above it.
-    from terraweaver import matching
-
-    above = world.classes.get(under)
-    known_by = ((above._spec.get("identified_by") if above is not None else None)
-                or matching.NAME_KEYS.get(under) or "name")
+    # Known by its name, like everything here; how a kind of Person is told apart beyond that
+    # comes from Person (`authoring._register_identity`).
     try:
-        made = grow(spec["name"], spec.get("description") or spec["name"], known_by, attributes,
+        made = grow(spec["name"], spec.get("description") or spec["name"], None, attributes,
                     parent=under, brief=spec.get("brief"), source="world")
     except Exception as wrong:  # noqa: BLE001 - a name already taken is a class to join, not to force
         log.debug("%s", wrong, exc_info=True)

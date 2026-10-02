@@ -27,12 +27,12 @@ def main() -> int:
     base.word(rt, "patient_of", "a person and the dentist who treats them", "many-to-one",
               "a patient", "their dentist")
     base.attribute(rt, "Person", "phone", "The number this person answers.", type="phone")
-    rt.run('Person.new(full_name="Ada Lovelace")\nPerson.new(full_name="Anna Peterson")\n'
-           'Person.new(full_name="Anna Sullivan")\nPerson.new(full_name="Annie Moore")\n'
-           'Person.new(full_name="Annie Lee")', "host")
+    rt.run('Person.new(name="Ada Lovelace")\nPerson.new(name="Anna Peterson")\n'
+           'Person.new(name="Anna Sullivan")\nPerson.new(name="Annie Moore")\n'
+           'Person.new(name="Annie Lee")', "host")
 
     # --- a doubt about a link: taken, and remembered ---
-    first = rt.run('rao = Person.new(full_name="Arun Rao")\n'
+    first = rt.run('rao = Person.new(name="Arun Rao")\n'
                    'user.set_patient_of(rao)\n'
                    'user.question("two dentists? the user also named Nina Patel", '
                    'options=["Nina replaced Arun", "both stand"], about="patient_of")', "host")
@@ -44,7 +44,7 @@ def main() -> int:
     quiet_touch = rt.run('m = user', "another-host")
     check("merely touching the entity is not interrupted with it",
           not quiet_touch["ask_now"], str(quiet_touch["ask_now"]))
-    later = rt.run('print([p.full_name for p in user.related("patient_of")])', "another-host")
+    later = rt.run('print([p.name for p in user.related("patient_of")])', "another-host")
     check("a read that depends on it is told, in another session",
           any("two dentists" in line for line in later["ask_now"]), str(later["ask_now"]))
     check("the answers that would settle it come with it",
@@ -63,8 +63,8 @@ def main() -> int:
 
     # --- settling who the task is about, when the name fits two people ---
     rt2 = base.world("host")
-    rt2.run('Person.new(full_name="Olga Gribova")\nPerson.new(full_name="Olga Pavlova")', "host")
-    made_new = rt2.run('q = Person.get(full_name="Olga")\nolga = world.settle(q, new=True)', "host")
+    rt2.run('Person.new(name="Olga Gribova")\nPerson.new(name="Olga Pavlova")', "host")
+    made_new = rt2.run('q = Person.get(name="Olga")\nolga = world.settle(q, new=True)', "host")
     check("settling as new goes through", made_new["ok"], str(made_new["error"]))
     check("and leaves the doubt about the twin",
           any("the same one?" in q for q in made_new["questions"]), str(made_new["questions"]))
@@ -73,7 +73,7 @@ def main() -> int:
     answered = rt2.run('q = olga.questions()[0]\nq.answer("a different Olga — the user said so")\n'
                        'print(olga.questions())', "host")
     check("answering closes it", answered["output"].strip() == "[]", answered["output"])
-    again = rt2.run('other = Person.get(full_name="Olga")\nworld.settle(other, new=True)', "host")
+    again = rt2.run('other = Person.get(name="Olga")\nworld.settle(other, new=True)', "host")
     check("the same doubt about the same pair isn't raised twice",
           not any("Olga Gribova" in q and "the same one?" in q for q in again["questions"]),
           str(again["questions"]))
@@ -84,7 +84,7 @@ def main() -> int:
 
     # --- one the host noticed itself ---
     own = rt.run('before = len(world.questions())\n'
-                 'anna = Person.get(full_name="Anna Peterson")\n'
+                 'anna = Person.get(name="Anna Peterson")\n'
                  'anna.question("two numbers on file, which is current?", options=["the mobile", "the old one"])\n'
                  'print(len(world.questions()) - before)', "host")
     check("the host can record a question of its own", own["output"].strip() == "1", own["output"])
@@ -96,12 +96,12 @@ def main() -> int:
     check("an unanswered question says what stands meanwhile", "latest" in rule["output"], rule["output"])
 
     # --- a read that depends on the doubt is told before it answers ---
-    depends = rt.run('print([p.full_name for p in user.related("patient_of")])', "reader")
+    depends = rt.run('print([p.name for p in user.related("patient_of")])', "reader")
     check("a read of the questioned relation is told to ask first",
           any("two dentists" in line for line in depends["ask_now"]), str(depends["ask_now"]))
     check("and isn't repeated in the passive list",
           not any("two dentists" in q for q in depends["questions"]), str(depends["questions"]))
-    quiet = rt.run('print(user.full_name)', "reader")
+    quiet = rt.run('print(user.name)', "reader")
     check("an unrelated read is left alone", not quiet["ask_now"], str(quiet["ask_now"]))
 
     # --- what this task touched, offered when the task ends ---
@@ -113,19 +113,19 @@ def main() -> int:
     check("ending a task hands the leftovers over", "two dentists" in left, left)
 
     # --- the ones worth asking come first ---
-    rt.run('anna = Person.get(full_name="Anna Peterson")\n'
+    rt.run('anna = Person.get(name="Anna Peterson")\n'
            'anna.question("two numbers on file, which is current?", about="phone")', "host")
     for _ in range(4):
-        rt.run('Person.get(full_name="Anna Peterson")', "host")
-    order = rt.run('print([getattr(q.about, "full_name", None) for q in world.questions()])', "host")
+        rt.run('Person.get(name="Anna Peterson")', "host")
+    order = rt.run('print([getattr(q.about, "name", None) for q in world.questions()])', "host")
     check("the entity that comes up most often is asked about first",
           order["output"].strip().startswith("['Anna Peterson'"), order["output"])
-    attr = rt.run('a = Person.get(full_name="Anna Peterson")\nprint(a.phone)', "reader")
+    attr = rt.run('a = Person.get(name="Anna Peterson")\nprint(a.phone)', "reader")
     check("a read of the questioned attribute is told to ask first",
           any("two numbers" in line for line in attr["ask_now"]), str(attr["ask_now"]))
 
     # --- an answer keeps where it came from ---
-    sourced = rt.run('a = Person.get(full_name="Anna Peterson")\n'
+    sourced = rt.run('a = Person.get(name="Anna Peterson")\n'
                      'a.question("is DataWorks its registered name?", about="works_at")\n'
                      'q = [one for one in a.questions() if "DataWorks" in one.text][0]\n'
                      'q.answer("DataWorks Ltd", by="companies-house.gov.uk")\n'
@@ -160,15 +160,15 @@ def main() -> int:
           and "not defined" in str(unbound["error"]), str(unbound["error"]))
 
     # --- a world structure misused answers where it can, teaches where it can't ---
-    misused = rt.run('print(Person.find(full_name="Ada").full_name)', "host")
+    misused = rt.run('print(Person.find(name="Ada").name)', "host")
     check("a search result with one match answers as that one",
           misused["ok"] and "Ada Lovelace" in misused["output"], str(misused["error"]))
     check("and says the answer came from the one match",
           any("read from the one match" in line for line in misused["assumed"]), str(misused["assumed"]))
-    crowd = rt.run('print(Person.find(full_name="Anna").similar.full_name)', "host")
+    crowd = rt.run('print(Person.find(name="Anna").similar.name)', "host")
     check("with several it says which one to name",
-          "result.similar[0].full_name" in str(crowd["error"]), str(crowd["error"]))
-    asked = rt.run('print(Person.find(full_name="Annie").full_name)', "host")
+          "result.similar[0].name" in str(crowd["error"]), str(crowd["error"]))
+    asked = rt.run('print(Person.find(name="Annie").name)', "host")
     check("a question mistaken for the entity says what settles it",
           "world.settle" in str(asked["error"]), str(asked["error"]))
 

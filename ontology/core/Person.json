@@ -3,10 +3,10 @@
   "description": "A human being known to the user — themself, family, friends, colleagues, contacts.",
   "attributes": [
     {
-      "name": "full_name",
+      "name": "name",
       "type": "str",
       "required": true,
-      "description": "Display name."
+      "description": "What they are called: the full name, as the user says it."
     },
     {
       "name": "aliases",

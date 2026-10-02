@@ -37,8 +37,8 @@ def main() -> int:
 
         # --- the files describe them, the way personal agents are configured ---
         w = open_world(str(home / "world.db"))
-        check("the user is read from their file", w.world.owner.full_name == "Michael Gribov",
-              str(w.world.owner.full_name))
+        check("the user is read from their file", w.world.owner.name == "Michael Gribov",
+              str(w.world.owner.name))
         check("the assistant too", w.world.me.name == "Tera", str(w.world.me.name))
         check("and a soul file says who it is, not what to do",
               w.world.me.character.startswith("Keeps the world"), str(w.world.me.character))
@@ -59,7 +59,7 @@ def main() -> int:
         check("a line taken out takes its value", again.world.owner.aliases is None,
               str(again.world.owner.aliases))
         live = again.world.facts.about("person:user")
-        check("the statement it used to make is retracted", {s.slot for s in live} == {"full_name", "descriptions"},
+        check("the statement it used to make is retracted", {s.slot for s in live} == {"name", "descriptions"},
               str(live))
         check("and is still in the record",
               len(again.world.facts.about("person:user", include_retracted=True)) == 5,
@@ -74,14 +74,14 @@ def main() -> int:
 
     # --- both are in every namespace, under names that can't be taken ---
     w = open_world()
-    seen = w.run('print(user.full_name, agent.name, owner is user, me is agent)', "host")
+    seen = w.run('print(user.name, agent.name, owner is user, me is agent)', "host")
     check("both are in the namespace under permanent names",
           seen["output"].strip() == "you assistant True True", seen["output"] or str(seen["error"]))
     taken = w.run('user = 5', "host")
     check("and neither can be rebound", not taken["ok"] and "pick another name" in str(taken["error"]),
           str(taken["error"]))
     w.reset_session("host")
-    after = w.run('print(user.full_name)', "host")
+    after = w.run('print(user.name)', "host")
     check("a new task still has them", after["output"].strip() == "you", after["output"])
 
     print()

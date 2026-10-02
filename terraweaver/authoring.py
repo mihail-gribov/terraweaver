@@ -135,7 +135,7 @@ class Authoring:
 
     # --- defining ---
 
-    def define(self, name: str, description: str, identified_by: str,
+    def define(self, name: str, description: str, identified_by: str | None = None,
                attributes: list[dict] | None = None, parent: str | None = None,
                what_to_say: str | None = None, brief: str | None = None,
                source: str = "agent"):
@@ -148,8 +148,12 @@ class Authoring:
         that records one of these and says nothing about it — per class, because describing a
         person and describing a place are not the same request; left out, it comes from the
         parent, which is what having a parent means.
+
+        What one of these is called is its `name`, as for everything here. `identified_by` is
+        only for something else that tells two apart on its own — a code, an ISBN — and may be
+        left out; a word that is the name said differently (`title`, `full_name`) is the name.
         """
-        from terraweaver import ontology
+        from terraweaver import matching, ontology
 
         class_name = _clean(name)
         if not class_name:
@@ -161,7 +165,7 @@ class Authoring:
         spec = {
             "name": class_name,
             "description": _described(f"the class {class_name}", description),
-            "identified_by": _clean(identified_by),
+            "identified_by": matching.NAME,
             "attributes": [self._attribute_spec(**a) for a in (attributes or [])],
             "methods": [],
         }
@@ -188,13 +192,19 @@ class Authoring:
         # started with, and the maker for one made since. Never a rule: nothing reads it to decide
         # what may be done with the class.
         spec["source"] = source
-        if not spec["identified_by"]:
-            raise Refused("say what identifies one of these — the attribute that tells two "
-                          "of them apart (a name, a title, a code)")
-        if not any(a["name"] == spec["identified_by"] for a in spec["attributes"]):
-            spec["attributes"].insert(0, self._attribute_spec(
-                spec["identified_by"], f"what this {class_name} is called", type="str",
-                required=True))
+        # Every class is known by its name. Something else said to identify one — a code, an
+        # ISBN — tells two apart on its own when both have it, which is what a strong key is.
+        own_key = _clean(identified_by or "")
+        if own_key and own_key not in matching.NAME_WORDS:
+            spec["strong_keys"] = [own_key]
+            if not any(a["name"] == own_key for a in spec["attributes"]):
+                spec["attributes"].append(self._attribute_spec(
+                    own_key, f"what tells one {class_name} from another on its own",
+                    type="str"))
+        spec["attributes"] = [a for a in spec["attributes"]
+                              if a["name"] not in matching.NAME_WORDS]
+        spec["attributes"].insert(0, self._attribute_spec(
+            matching.NAME, f"what this {class_name} is called", type="str", required=True))
         built = ontology.define_class(self.world.classes, spec)
         self._register(spec)
         self._register_identity(spec)
@@ -739,8 +749,9 @@ class Authoring:
         above = self.world.classes.get(parent)._spec if parent in self.world.classes else {}
         inherited = above.get("name") or ""
         register(spec["name"], name_keys=[spec["identified_by"]],
-                 strong_keys=[k for k in matching.STRONG_KEYS.get(inherited, [])
-                              if any(a["name"] == k for a in spec["attributes"])],
+                 strong_keys=list(spec.get("strong_keys") or [])
+                 + [k for k in matching.STRONG_KEYS.get(inherited, [])
+                    if any(a["name"] == k for a in spec["attributes"])],
                  part_match=inherited in matching.PART_MATCH_CLASSES,
                  distinguishing=[k for k in matching.DISTINGUISHING_KEYS.get(inherited, [])
                                  if any(a["name"] == k for a in spec["attributes"])])

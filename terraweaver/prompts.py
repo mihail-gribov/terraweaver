@@ -217,60 +217,23 @@ PLACING_A_THING = ("You read an account of one thing and say what sort of thing 
           "hold it under a class. You never say which thing it is — that is given. You never "
           "judge whether what is said is true.")
 
-FORMALISE = """A record holds a thing and an account of it in words. Put the account into the
-record's own terms: describe the class it belongs to, and write the code that fills this one in.
+CLASS_FOR_A_THING = """A record holds a thing and everything known about it. None of the classes
+it has fits, so describe the one this thing belongs to.
 
-The thing: {name}   (bound in the code as `it`)
+The thing: {name}
 It is a kind of: {parent} — {parent_is}
-{standing}
 
-What was said about it:
+What is known about it:
 {words}
 
-**Everything comes out of those words and nothing else.** You know a great deal about the world
-and none of it belongs here: a city is in a country, a sport has a ball, a person has a birthday
-— and if the words did not say so, it is not here. An empty answer to either part is a common
-and correct one, and the shortest account is often the whole of it: "Rome is a city" gives a
-class and no code at all.
-
-**Whether any of it is true is not part of this task and must not affect any answer.** A record
-that holds "Rome is the capital of France" is written exactly as one holding the truth would be,
-with France in the country's place. Correcting it would be inventing too — it would put in the
-record something nobody said.
+**Whether any of it is true is not part of this task and must not affect the answer.** A record
+that holds "Rome is the capital of France" is a record of what somebody said, and the class of
+Rome is the same either way.
 
 **class** — {class_ask}
 
-**code** — the lines that fill this thing in, in the same language a person writing to this
-record uses. `it` is already bound to the thing; never make it again, never rename it.
-
-    it.population = 2800000                      a value the words gave
-    it.describe("...")                           something no attribute can hold
-    italy = Thing.get(name="Italy")              another thing, if this record has it
-    it.set_capital_of(italy)                     what the words say this one is to that one
-
-**The other end is looked up, never made.** `get` finds what is here and raises when it is not,
-and that is the right end of it: which Italy is meant is the business of whoever said the words,
-not yours. A record that held "British Broadcasting Corporation" got a second thing called "BBC"
-this way, and nothing afterwards could tell them apart. If the line raises, the thing is not
-here — say the rest and leave that out.
-
-**Do not say again what is already said.** What this thing is already joined to:
-
-{joined}
-
-A link here for any of those is the same fact a second time, from the other end and under
-another word — one record held `born_in` and `birthplace_of` for one birth. The words this
-record has for links, to use rather than invent a second for the same idea:
-
-{held}
-
-**Only what these words say.** An account of a city knows its country and its famous dead; if
-these words did not say it, it is not here.
-
-Dates as `date(2019, 6, 1)`, and only where the words gave one; do not work one out.
-
-JSON only, these two keys and no others:
-{{"class": {class_shape}, "code": "..."}}"""
+JSON only, this one key and no other:
+{{"class": {class_shape}}}"""
 
 MAKE_ONE = """the record has no class for this thing, so describe one. Name the kind, not this
 example: "Language", not "LanguageTheUserSpeaks"; "Sport", not "FinnishBatAndBallGame". The
@@ -280,10 +243,6 @@ would have, not everything this one happens to have, each described in a sentenc
 a label: "how many people live there", not "Population". One of these is known by its name and
 the record adds that itself, so give no `name` attribute. `brief` is how the class appears in
 the list every host reads before it writes: a clause, not a sentence."""
-
-KEEP_ONE = """this thing is a {parent} and the record has the class already, so `class` is
-null."""
-
 
 # --- the offline passes: what the world writes for itself when nothing waits ---
 

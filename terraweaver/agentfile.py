@@ -17,8 +17,8 @@ the same requirement to say why. Two authors, one mechanism.
 
     ```procedure Person.namesakes(self)
     because: asked three times this week — who else here goes by the same first name
-    first = self.full_name.split()[0]
-    return [p for p in Person.find(full_name=first).matches if p != self]
+    first = self.name.split()[0]
+    return [p for p in Person.find(name=first).matches if p != self]
     ```
 
 What the file declares is re-read when the file changes, and what it declared before is taken

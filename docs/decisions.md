@@ -4241,3 +4241,55 @@ every image write that is not a load — `save`, `_determined`, `retype` — and
 name back when the image has none, logging the class and the id every time it does. The next run
 does not need another reproduction: its log names the entity and the moment, and `runs` at that
 moment names the code.
+
+## 2026-10-02 — the names pass says what kind of thing this is, and nothing else
+
+**What run10 measured.** `var/run10` — 455 facts on this morning's code, **45%** on the hundred
+questions, against 52% for run9. A copy of its world taken while the reading was still on the
+links held 82% of the standing facts and **1** fact lost to a name missing from its image. The
+finished world, after the names pass, held 74% and **31**. The record was intact throughout:
+`Ursula K. Le Guin` holds her `full_name` in `facts_Person`, and her image is `null` in every
+column but an `authored_by` the pass wrote — backwards, from her to the book. The guard put on the
+image door this morning never fired: it sits in `World.save` on the root, and the pass wrote
+through `runtime.run`, whose end-of-run `save_graph` reaches no guard at all.
+
+**Why the change is to the pass and not to the guard.** The pass asked the engineer two things:
+which class, as closed questions down the tree, and then code that filled the thing in, run
+through the host's door. The second is where every defect of this pass has come from — a
+position renamed to the player (2026-09-30), a correction overruled by an old account
+(this morning), names lost and links reversed (now). And it duplicates work owned elsewhere: the
+links are the link reading's, the values are the host's. So the open call is gone. What remains
+(the author's proposal): the same walk, over **everything known** about the thing — its account,
+its links from either end in the words they came in, the values it holds — and an open call only
+when no class fits, for the description of the class to make. Then `become`, which states the
+placing. `runtime._the_world_writes` and `ontology.reading_one` had no other caller and went with it.
+
+What this gives up: an attribute a host never wrote but an account implied (`population`) is no
+longer drawn out of the words. Nothing in the benchmark asks for one, and the host can always
+write it.
+
+## 2026-10-02 — everything is called by its `name`
+
+The author's call, asked as "why did we split them?". Nothing in this file says why a person had a
+`full_name` and an event a `title`: it was the shape of the first hand-written specs. What the
+split cost is in the logs. The host wrote `Thing.identify(full_name=...)` and `Person.get(name=...)`
+and was refused; a placing from `Thing` to `Person` had to carry the name from one word to
+another, which is one more place for a name to be lost; listings stayed exact over the kinds of a
+class only because `[i.name for i in Thing.all()]` raised on the first Person; and the name guard
+and every checker had to work out per class what the name was called.
+
+- `Person.name`, `Event.name`. `matching.NAME_KEYS` says `name` for all three base classes;
+  whether a person is found by part of the name ("Annie") is the class's (`PART_MATCH_CLASSES`),
+  not the word's.
+- `define(name, description)` — `identified_by` may be left out. A class is always known by its
+  `name`; `title`/`full_name`/`label` given there *are* the name; anything else (a DOI, a code)
+  is an attribute of its own and a strong key, which is what "identifies one" meant.
+- `ontology.one_name` does the same to every spec on the way in, grown ones included — a world
+  grown before today keeps its own copy of `Person` with `full_name` in it.
+- The old words still read and write the name (`person.full_name`, `Event(title=...)`), on a class
+  that has no attribute of that word of its own: a host's habit is not a refusal.
+- A world written before is brought over once on opening (`World._one_name`): statements,
+  history and images move to `name`. Checked on a copy of var/run10: the checkers read it exactly
+  as before — 74% as owed, the same buckets to the fact.
+- `Thing.all()` now lists the kinds of Thing as well. The world's own sweeps go class by class
+  through `world.all`, which stays exact, or an entity would be met once per ancestor.

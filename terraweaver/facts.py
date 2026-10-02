@@ -17,7 +17,7 @@ and "what was I actually told" needs no filter at all. `subjects` says which cla
 belongs to, so a statement can be found without knowing where to look.
 
     subject      whom it is about        7db1463e…
-    slot         what about them         full_name | email | kin:mother | same_as
+    slot         what about them         name | email | kin:mother | same_as
     value        the value, or a reference to another subject
     valid_from   when it holds from      2026-08-01
     valid_until  when it stops holding   null

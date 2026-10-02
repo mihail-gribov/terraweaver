@@ -19,11 +19,20 @@ STRONG_KEYS = {
 # already recorded is exactly how they'll refer to someone.
 ALIAS_KEY = "aliases"
 
-# Compared fuzzily to spot "probably the same thing, written differently".
+# Compared fuzzily to spot "probably the same thing, written differently". One word for every
+# class: what anything is called is its `name`. A person once had `full_name` and an event
+# `title`, and the host kept writing `Thing.identify(name=...)` and `Person.get(name=...)`,
+# a placing from Thing to Person had to carry the name across from one word to another, and a
+# listing over the kinds of Thing broke on the first Person (decisions.md, 2026-10-02).
+NAME = "name"
+
+# The words a host or an older world uses for the name. They are the name, said differently.
+NAME_WORDS = ("name", "full_name", "title", "label")
+
 NAME_KEYS = {
-    "Person": "full_name",
-    "Event": "title",
-    "Thing": "name",
+    "Person": NAME,
+    "Event": NAME,
+    "Thing": NAME,
 }
 
 # Names compared word by word as well as whole: a person is called by one part of their name
@@ -96,7 +105,7 @@ def _ratio(a: str, b: str) -> float:
         return ratio
     # Two spellings of one name differ at the end; two names differ at the start. "Sasha" and
     # "Masha" share four letters of five and score .80 — higher than "Anna" against "Anne",
-    # which is the same name — so a world holding one Masha answered `identify(full_name="Sasha")`
+    # which is the same name — so a world holding one Masha answered `identify(name="Sasha")`
     # with her, and the host, told to take the first candidate, bound the wrong person. The
     # first letter of a name is the one nobody misspells.
     if a[:1] != b[:1]:
@@ -147,7 +156,7 @@ def known_names(instance, name_key: str | None) -> list:
     aliases = [a for a in (getattr(instance, ALIAS_KEY, None) or []) if isinstance(a, str)]
     names += aliases
     # A person goes by a nickname with their surname too: "Barb Liskov" is Barbara Liskov.
-    if name_key == "full_name" and names and len(names[0].split()) > 1:
+    if type(instance).__name__ in PART_MATCH_CLASSES and names and len(names[0].split()) > 1:
         surname = names[0].split()[-1]
         names += [f"{a} {surname}" for a in aliases if len(a.split()) == 1]
     return names
@@ -185,7 +194,7 @@ def score_candidates(existing_instances: list, class_name: str, attrs: dict, fil
     """Return [(instance, score)] sorted best-first, keeping only plausible ones.
 
     `filter_others` distinguishes the two jobs this serves. A *query* means every attribute
-    given constrains the result, so `find(Person, full_name="Ada")` must actually filter by
+    given constrains the result, so `find(Person, name="Ada")` must actually filter by
     name. *Identifying* an entity is different: attributes beyond the identifying ones are
     new information, not conditions — filtering on them would make "Ada now works at DataWorks"
     fail to find the Ada who is still recorded at TechCorp, and quietly create a second one.
@@ -216,7 +225,7 @@ def score_candidates(existing_instances: list, class_name: str, attrs: dict, fil
 
 
 class Matches(list):
-    """The matches themselves. A list — but `result.matches.full_name` is the shape hosts reach
+    """The matches themselves. A list — but `result.matches.name` is the shape hosts reach
     for, and a bare 'list has no attribute' tells them nothing.
 
     With exactly one match there is nothing to choose between, so the attribute is read from it
@@ -281,7 +290,7 @@ class FindResult(list):
         return bool(self.matches)
 
     def __getattr__(self, name: str):
-        # `Person.find(...).full_name` — the host took the search for the person it found. A bare
+        # `Person.find(...).name` — the host took the search for the person it found. A bare
         # AttributeError on 'list' says nothing; this says which entity it meant to reach.
         # (A property would be unreachable here: one that raises AttributeError falls through
         # to __getattr__, so the rule for `main` lives in it rather than beside it.)

@@ -45,7 +45,7 @@ def main() -> int:
     # word for the fact — which is a live doubt with no switch turned on. It used to come from
     # the world inventing a type out of an unknown word, and a word the world has no type for is
     # words now, so nothing reaches that path from a host call.
-    result = rt.run('anna = Person.new(full_name="Anna Reid")\n'
+    result = rt.run('anna = Person.new(name="Anna Reid")\n'
                     'acme = Thing.new(name="Acme")\n'
                     'world.relate(anna, acme, "related", description="Anna works at Acme")', key)
     check("the world says what it assumed", bool(result.get("hints")), str(result.get("hints"))[:120])
@@ -101,7 +101,7 @@ def main() -> int:
     # Giving up is allowed, and it is on the record — an agent with no way out of the check
     # would answer the doubts at random, which is worse than saying it could not do the task.
     rt.start_task(key, "record the user's address from the message", "recording")
-    rt.run('p = Person.new(full_name="Nobody Atall")\np.relate(Thing.new(name="Somewhere"), "squats_at")\n'
+    rt.run('p = Person.new(name="Nobody Atall")\np.relate(Thing.new(name="Somewhere"), "squats_at")\n'
            'p.describe("somebody the message mentioned")', key)
     gave_up = rt.finish_task(key, abandon="the message never said whose address it was")
     check("a task can be abandoned, with the reason kept",

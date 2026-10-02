@@ -49,8 +49,8 @@ def main() -> int:
                    type="enum[interview, call, meeting, appointment, other]")
     classes = rt.world.classes
     Person, Thing = classes["Person"], classes["Thing"]
-    Person.new(full_name="Ada Lovelace", email="ada@example.com")
-    check("find by email ignores case and spaces", Person.get(email="  ADA@example.com ").full_name == "Ada Lovelace")
+    Person.new(name="Ada Lovelace", email="ada@example.com")
+    check("find by email ignores case and spaces", Person.get(email="  ADA@example.com ").name == "Ada Lovelace")
     ada = Person.get(email="ada@example.com")
     ada.phone = " +1 (555) 010-2030 "
     check("a stored value keeps its own format, only stripped", ada.phone == "+1 (555) 010-2030")
@@ -59,7 +59,7 @@ def main() -> int:
     techcorp.website = "https://www.techcorp.com/"
     check("a website matches on its domain, however the address was written",
           Thing.find(website="techcorp.com/jobs").matches == [techcorp])
-    twin = Person.new(full_name="Ada L", email="Ada@Example.com")
+    twin = Person.new(name="Ada L", email="Ada@Example.com")
     # An address nobody else has is not a resemblance. The same rule identification uses
     # everywhere here: one candidate, nothing that disagrees, no question — and what the host
     # called them is kept as another name they answer to.
@@ -97,7 +97,7 @@ def main() -> int:
     rt.run('world.define_relation("speaks", "a person and a language they speak", '
            'nature="related_to", cardinality="many-to-many", subject_is="the speaker", '
            'object_is="the language")', "k")
-    rt.run('p = Person.new(full_name="Kukai")\nl = Thing.new(name="Japanese")', "k")
+    rt.run('p = Person.new(name="Kukai")\nl = Thing.new(name="Japanese")', "k")
     said = str(rt.run('p.set_speaks = l', "k").get("error") or "")
     check("an assignment to a word for a link is refused with the call to write",
           "set_speaks(other)" in said and "not an assignment" in said, said[-160:])

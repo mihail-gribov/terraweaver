@@ -514,8 +514,7 @@ def relate(world, a, b, kind: str, period: dict, attrs: dict):
                f" of {len(end)}" if isinstance(end, (list, tuple, set)) else "")
             for word, end in wrong)
         example = next((repr(end) for _, end in wrong if isinstance(end, str)), '"<its name>"')
-        # The class that end has been seen between, and the word it is found by — `Person` is
-        # found by `full_name`, and advice that says `name` is advice that fails.
+        # The class that end has been seen between, and the word it is found by.
         sides = rel["from"] if wrong[0][0] == "first" else rel["to"]
         where = sides[0] if len(sides) == 1 and sides[0] != "any" else "Thing"
         found_by = matching.NAME_KEYS.get(where, "name")

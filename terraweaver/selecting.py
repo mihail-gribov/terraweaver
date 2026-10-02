@@ -15,7 +15,7 @@ class. So the class is optional, and leaving it out means "whatever kind of thin
     world.where(tagged="move")                      — the move, all of it, whatever kind
     world.where(mentions="lisbon flat")             — those words, exactly, in anything said
     world.where(related=("born_in", london))         — everything linked to one thing
-    world.where(Person, full_name="Ada Lovelace",    — attributes, as in find()
+    world.where(Person, name="Ada Lovelace",    — attributes, as in find()
                 related=("works_at", acme),          — a link, in either direction
                 tagged="berlin", like="cell chemistry",
                 at=date(2026, 6, 1), limit=20)

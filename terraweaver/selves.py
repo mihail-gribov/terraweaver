@@ -21,7 +21,7 @@ Either may have a front matter block of plain `key: value` lines for what belong
 everything after it is kept as the entity's notes.
 
     ---
-    full_name: Michael Gribov
+    name: Michael Gribov
     email: mike@example.com
     ---
     Works on TerraWeaver. Prefers being asked before anything is recorded about his family.
@@ -136,7 +136,7 @@ def refresh(world, home: Path) -> list[str]:
 
 def _read_into(world, files: "SelfFiles", role: str, entity, path: Path) -> str:
     """Retract what this file said before, state what it says now, and remember its shape."""
-    from terraweaver import ontology
+    from terraweaver import matching, ontology
 
     fields, body = parse(path.read_text())
     source = path.name
@@ -146,6 +146,9 @@ def _read_into(world, files: "SelfFiles", role: str, entity, path: Path) -> str:
             said_before.add(statement.slot)
             world.facts.retract(statement.id)
     declared = {a["name"] for a in type(entity)._spec["attributes"] if "derived" not in a}
+    # `full_name:` in a file written before everything was called by its `name` is the name.
+    fields = {(matching.NAME if name in matching.NAME_WORDS and name not in declared else name): value
+              for name, value in fields.items()}
     stated = {name: value for name, value in fields.items() if name in declared}
     body_slot = BODY_GOES_TO.get(role, "descriptions")
     if body and body_slot in declared:

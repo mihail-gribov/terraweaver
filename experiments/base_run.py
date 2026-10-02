@@ -50,7 +50,7 @@ it belongs to, and `world.me`, you.
 anything about it:
 
     paris = Thing.identify(name="Paris")[0]
-    anna  = Person.identify(full_name="Anna Weber")[0]
+    anna  = Person.identify(name="Anna Weber")[0]
 
 It hands back who in this world could be meant, best first, and you choose — you have the \
 conversation and it does not: read them against what the user said about who they mean. \
@@ -176,7 +176,7 @@ them. Two entities are already here: world.owner, the person it belongs to, and 
 
 **A fact about two things goes through link, and you say it plainly:**
 
-    anna = Person.new(full_name="Anna Weber")
+    anna = Person.new(name="Anna Weber")
     acme = Thing.ensure(name="Acme", nature="agent")
     anna.relate(acme, "Anna has been an employee of Acme since 2019")
 

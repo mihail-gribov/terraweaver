@@ -46,7 +46,7 @@ def finding_3_4_1_the_engineer_is_not_a_function() -> None:
     rt = base.world()
     base.word(rt, "wrote", "who wrote what", cardinality="many-to-many",
               subject_is="", object_is="")
-    person = rt.world.new("Person", full_name="Ann")
+    person = rt.world.new("Person", name="Ann")
     book = rt.world.new("Thing", name="a book")
     rt.world.relate(person, book, "wrote")
 
@@ -94,7 +94,7 @@ def finding_3_4_2_a_link_that_was_already_there_is_not_this_readings_work() -> N
     rt = base.world()
     base.word(rt, "mayor_of", "who is the mayor of what", cardinality="one-to-one",
               subject_is="mayor", object_is="city")
-    person = rt.world.new("Person", full_name="Anne Hidalgo")
+    person = rt.world.new("Person", name="Anne Hidalgo")
     city = rt.world.new("Thing", name="Paris")
     standing = rt.world.relate(person, city, "mayor_of")
 
@@ -126,16 +126,16 @@ def finding_2_3_only_the_transaction_commits() -> None:
             "SELECT count(*) FROM instances WHERE class_name = 'Person'").fetchone()[0]
 
     was = people()
-    got = rt.run('x = [Person.new(full_name="Ann", tags=["friend"]), 1/0]', "host")
+    got = rt.run('x = [Person.new(name="Ann", tags=["friend"]), 1/0]', "host")
     check("2.3 the run says it failed", not got.get("ok"), str(got)[:160])
     check("2.3 and nothing it wrote is there", people() == was,
           "Ann survived a statement that raised, because a tags write committed under her")
 
-    plain = rt.run('y = [Person.new(full_name="Bob"), 1/0]', "host")
+    plain = rt.run('y = [Person.new(name="Bob"), 1/0]', "host")
     check("2.3 the case that always worked still works", not plain.get("ok") and people() == was)
 
     # And outside a transaction a commit is still a commit, or nothing would ever be durable.
-    kept = rt.run('z = Person.new(full_name="Cleo")', "host")
+    kept = rt.run('z = Person.new(name="Cleo")', "host")
     check("2.3 an ordinary write is still committed", kept.get("ok") and people() == was + 1,
           f"{people()} people, was {was}")
 
@@ -155,7 +155,7 @@ def finding_3_1_3_the_later_statement_wins_under_a_moved_clock() -> None:
     timeutil.set_now(datetime(2020, 1, 1, 12, 0, 0))
     try:
         facts = Facts(sqlite3.connect(":memory:"))
-        facts.state("p1", "full_name", "Ada", source="agent")
+        facts.state("p1", "name", "Ada", source="agent")
         for n in range(12):
             facts.state("p1", "city", f"city {n}", source="agent")
         shown = [image.values.get("city") for image in assembly.assemble(facts).values()]
@@ -170,7 +170,7 @@ def finding_3_1_2_one_subject_rebuilt_keeps_its_repeats() -> None:
     from terraweaver import periods
 
     rt = base.world()
-    ada = rt.world.new("Person", full_name="Ada")
+    ada = rt.world.new("Person", name="Ada")
     ada.repeat(every="week", tag="on-call")
     before = len(periods.cycles(rt.world, ada.id))
     periods.rebuild_for(rt.world, ada.id)
@@ -187,7 +187,7 @@ def finding_3_2_2_one_question_per_thing_not_per_pair() -> None:
               subject_is="employee", object_is="employer")
     firm = rt.world.new("Thing", name="DataWorks")
     for n in range(10):
-        rt.world.relate(rt.world.new("Person", full_name=f"P{n}"), firm, "works_at")
+        rt.world.relate(rt.world.new("Person", name=f"P{n}"), firm, "works_at")
     asked = [q for q in rt.world.questions.open_() if q.kind == "one_works_at_per_object"]
     check("3.2.2 one question about the organisation", len(asked) == 1,
           f"{len(asked)} questions: {[q.text[:40] for q in asked]}")
@@ -201,9 +201,9 @@ def finding_3_2_1_a_clean_handover_is_not_two_at_once() -> None:
     base.word(rt, "mayor_of", "who is the mayor of what", cardinality="many-to-many",
               subject_is="mayor", object_is="city")
     city = rt.world.new("Thing", name="Paris")
-    first = rt.world.relate(rt.world.new("Person", full_name="A"), city, "mayor_of",
+    first = rt.world.relate(rt.world.new("Person", name="A"), city, "mayor_of",
                             starts=datetime(2010, 1, 1), until=datetime(2020, 1, 1))
-    second = rt.world.relate(rt.world.new("Person", full_name="B"), city, "mayor_of",
+    second = rt.world.relate(rt.world.new("Person", name="B"), city, "mayor_of",
                              starts=datetime(2020, 1, 1))
     check("3.2.1 a handover is one at a time", properties._at_once([first, second]) == 1,
           f"_at_once said {properties._at_once([first, second])}")
@@ -214,8 +214,8 @@ def finding_3_3_1_and_3_3_2_the_variable_tools() -> None:
     from terraweaver.variables import VariableError
 
     rt = base.world()
-    rt.run('ada = Person.new(full_name="Ada")', "host")
-    got = rt.set_variable("host", "ada", 'Person.find(full_name="Ada").matches[0]',
+    rt.run('ada = Person.new(name="Ada")', "host")
+    got = rt.set_variable("host", "ada", 'Person.find(name="Ada").matches[0]',
                           "the person this task is about")
     check("3.3.1 set_variable works", got.get("ok"), f"{got.get('error')}")
     check("3.3.1 and the name is there", "ada" in rt.variables.names(),
@@ -232,7 +232,7 @@ def finding_3_3_1_and_3_3_2_the_variable_tools() -> None:
 def finding_3_3_3_a_task_that_cannot_close_is_still_dropped() -> None:
     """Opening a task over one that cannot close must drop the old one, not keep it open."""
     rt = base.world()
-    rt.run('ada = Person.new(full_name="Ada")', "host")     # a recording task with a bare name
+    rt.run('ada = Person.new(name="Ada")', "host")     # a recording task with a bare name
     first = rt.sessions["host"].task_id
     rt.start_task("host", "record what the user said about somebody else entirely", "recording")
     was = rt.store.load(first, rt.classes)
@@ -259,7 +259,7 @@ def finding_3_3_7_the_echo_says_what_actually_ran() -> None:
     from terraweaver.runtime import format_result
 
     rt = base.world()
-    got = rt.run('a = Person.new(full_name="One")\nb = 1/0\nc = Person.new(full_name="Two")',
+    got = rt.run('a = Person.new(name="One")\nb = 1/0\nc = Person.new(name="Two")',
                  "host")
     shown = format_result(got)
     made = rt.world.store.conn.execute(
@@ -268,20 +268,20 @@ def finding_3_3_7_the_echo_says_what_actually_ran() -> None:
     check("3.3.7 the error does not claim the rest never ran",
           "never ran" not in (got.get("error") or ""), got.get("error"))
     check("3.3.7 and the echo gives the lines that ran back as code",
-          'c = Person.new(full_name="Two")' in shown
-          and '# c = Person.new(full_name="Two")' not in shown, shown[:400])
+          'c = Person.new(name="Two")' in shown
+          and '# c = Person.new(name="Two")' not in shown, shown[:400])
 
     # A line that is not code at all is not a line anything reached or failed on. Marked as
     # "never reached" it said so of a comment above a line that had just run.
     commented = format_result(rt.run(
-        '# record the people\na = Person.new(full_name="Three")\n\n# and one that fails\n'
-        'b = 1/0\nc = Person.new(full_name="Four")\nd = 1/0\ne = 1/0\n'
-        'f = Person.new(full_name="Five")', "host"))
+        '# record the people\na = Person.new(name="Three")\n\n# and one that fails\n'
+        'b = 1/0\nc = Person.new(name="Four")\nd = 1/0\ne = 1/0\n'
+        'f = Person.new(name="Five")', "host"))
     check("3.3.7 a comment is handed back as written",
           "# record the people" in commented
           and "(never reached) # record the people" not in commented, commented[:500])
     check("3.3.7 and a statement nothing reached says so",
-          '# (never reached) f = Person.new(full_name="Five")' in commented, commented[:600])
+          '# (never reached) f = Person.new(name="Five")' in commented, commented[:600])
 
 
 def finding_3_1_6_a_separation_holds_through_a_third_party() -> None:
@@ -293,9 +293,9 @@ def finding_3_1_6_a_separation_holds_through_a_third_party() -> None:
 
     def groups(separated: bool):
         facts = Facts(sqlite3.connect(":memory:"))
-        facts.state("a", "full_name", "Ann Lee", source="user")
-        facts.state("b", "full_name", "Anna Sullivan", source="user")
-        facts.state("c", "full_name", "Anna Sullivan", source="user")
+        facts.state("a", "name", "Ann Lee", source="user")
+        facts.state("b", "name", "Anna Sullivan", source="user")
+        facts.state("c", "name", "Anna Sullivan", source="user")
         facts.state("a", assembly.SAME_AS, reference("b"), source="user")
         if separated:
             facts.state("a", assembly.NOT_SAME_AS, reference("c"), source="user")
@@ -336,33 +336,63 @@ def a_placing_is_stated_so_it_survives_a_rebuild() -> None:
     check("with its name", again.display_name() == "Chang'an", repr(again.display_name()))
 
 
-def a_reading_may_not_rename_the_thing_it_is_reading() -> None:
-    """The world says what a thing is; which thing it is was settled before it was asked.
+def the_names_pass_changes_the_class_and_nothing_else() -> None:
+    """Placing a bare name moves it under a class; its name, values and links are not the pass's.
 
-    Not from the review — found on 2026-09-30 on a gate of 25 facts. The engineer reading the
-    position called "center" wrote `it.name = "Lisa Leslie"`, the name of the person who plays it,
-    and the position was renamed: the fact "Lisa Leslie plays the position of center" then read as
-    a fact the world had lost, and the world held two things called Lisa Leslie. The rule was in
-    portraits.py's own docstring and nothing enforced it.
+    Measured 2026-10-02 on a 455-fact world (var/run10): before the names pass 1 fact was lost to
+    a name missing from its image, after it 31. The pass asked the engineer for code that filled
+    the thing in and ran it, and what that code wrote came back as `Person` rows null in every
+    column but a backwards `authored_by`. Earlier, on a gate, the same code renamed the position
+    "center" to "Lisa Leslie". What the pass alone can say is what kind of thing this is — so
+    that is all it says, over everything known about the thing.
     """
+    from terraweaver import portraits
+
+    class Jev:
+        def __init__(self):
+            self.states = []
+
+        def choose(self, state, question, options):
+            self.states.append(state)
+            return {portraits.NEW_ONE: 1.0}
+
+    class Engineer:
+        def __init__(self):
+            self.asked = []
+
+        def json(self, system, asked):
+            self.asked.append(asked)
+            # What the old pass would have run, and the new one must not.
+            return {"class": {"name": "City", "brief": "a city or town",
+                              "description": "A place where many people live together.",
+                              "attributes": []},
+                    "code": 'it.name = "Amy Winehouse"\nit.describe("written by the reading")'}
+
     rt = base.world()
-    position = rt.world.new("Thing", name="center")
-    rt.world.new("Person", full_name="Lisa Leslie")
+    camden = rt.world.new("Thing", name="Camden Town")
+    camden.describe("A district of north London")
+    portraits.comes_in(rt.world, camden)
+    amy = rt.world.new("Person", name="Amy Winehouse")
+    rt.world.relate(amy, camden, "related", label="died in", description="Amy Winehouse died in Camden Town")
+    jev, engineer = Jev(), Engineer()
+    tally = portraits.formalise(rt.world, engineer, jev=jev)
+    rt._hand_back_what_moved(tally.pop("moved", []))
 
-    renamed = rt._the_world_writes(position, 'it.name = "Lisa Leslie"')
-    check("a reading cannot rename the thing", not renamed.get("ok"), str(renamed)[:160])
-    again = rt.world.store.load(position.id, rt.world.classes)
-    check("and the thing keeps its name", again.display_name() == "center",
-          repr(again.display_name()))
-
-    # The same name said again is not a change, and a reading that repeats it is not refused.
-    same = rt._the_world_writes(position, 'it.name = "center"\nit.describe("a basketball position")')
-    check("saying the same name again goes through", same.get("ok"), str(same.get("error"))[:160])
-
-    # And outside a reading the name is the host's to correct, as it always was.
-    position.name = "centre"
-    rt.world.save(position)
-    check("the host can still correct a name", position.name == "centre")
+    check("the walk was shown the links, not only the account",
+          any("died in" in state for state in jev.states), jev.states[-1][-300:] if jev.states else "")
+    check("and so was the engineer describing the class",
+          bool(engineer.asked) and "died in" in engineer.asked[0])
+    again = rt.world.store.load(camden.id, rt.world.classes)
+    check("the thing is placed", type(again).__name__ == "City", type(again).__name__)
+    check("with its name", again.display_name() == "Camden Town", repr(again.display_name()))
+    check("and nothing the engineer wrote as code was run",
+          not any("written by the reading" in str(d) for d in (again.descriptions or [])),
+          str(again.descriptions))
+    check("its link is the one the host wrote, and only that",
+          [link.display_name() for link in again.relations()]
+          == [link.display_name() for link in amy.relations()]
+          and len(amy.relations()) == 1,
+          str([link.display_name() for link in again.relations()]))
 
 
 def a_row_that_will_not_load_costs_only_that_row() -> None:
@@ -372,13 +402,13 @@ def a_row_that_will_not_load_costs_only_that_row() -> None:
     21 entities held a name in the record and nothing in the image, and it was 29 of the 105 facts
     that world did not hold. The identity map registers an object before its values are filled,
     because a cyclic reference has to find it there; a fill that raised left the half-built object
-    in the map, and from then on `Person.get(full_name=…)` answered `NotInWorld` about something
+    in the map, and from then on `Person.get(name=…)` answered `NotInWorld` about something
     the record plainly held, while the next `save` wrote null over every value it had.
     """
     from terraweaver import store as store_module
 
     rt = base.world()
-    kyd = rt.world.new("Person", full_name="Thomas Kyd")
+    kyd = rt.world.new("Person", name="Thomas Kyd")
     kyd.describe("English dramatist")
     held = kyd.id
     rt.world.store._identity.clear()
@@ -396,19 +426,19 @@ def a_row_that_will_not_load_costs_only_that_row() -> None:
     finally:
         store_module.Store._fill = real
 
-    check("the load keeps everything else", getattr(loaded, "full_name", None) == "Thomas Kyd",
-          repr(getattr(loaded, "full_name", None)))
+    check("the load keeps everything else", getattr(loaded, "name", None) == "Thomas Kyd",
+          repr(getattr(loaded, "name", None)))
     check("and the one row that would not read is the one thing missing",
           getattr(loaded, "descriptions", None) in (None, []),
           repr(getattr(loaded, "descriptions", None)))
 
-    found = rt.world.get("Person", full_name="Thomas Kyd")
-    check("the world still knows it is there", getattr(found, "full_name", None) == "Thomas Kyd",
+    found = rt.world.get("Person", name="Thomas Kyd")
+    check("the world still knows it is there", getattr(found, "name", None) == "Thomas Kyd",
           repr(found))
     rt.world.save(found)
     row = dict(rt.world.store.conn.execute(
-        "SELECT attr, value FROM Person WHERE instance_id = ? AND attr = 'full_name'", (held,)))
-    check("and saving it does not write null over the name", row.get("full_name") == '"Thomas Kyd"',
+        "SELECT attr, value FROM Person WHERE instance_id = ? AND attr = 'name'", (held,)))
+    check("and saving it does not write null over the name", row.get("name") == '"Thomas Kyd"',
           str(row))
 
 
@@ -445,14 +475,16 @@ def a_lookup_sees_the_classes_beneath_it() -> None:
     check("a Task is not listed under Event, being the world's own",
           "Task" not in rt.world.kinds_of("Event"), str(rt.world.kinds_of("Event")))
 
+    # Everything is called by its `name`, so a listing can be inclusive too and the host's own
+    # idiom runs over a Person as over a Country.
     listed = rt.run('print([i.name for i in Thing.all(limit=None)])', "host")
-    check("a listing is exact, so the host's own idiom still runs", listed.get("ok"),
-          str(listed.get("error"))[:120])
-    check("and the world says what is a kind of it rather than answering nothing",
-          any("kind of it" in one for one in (listed.get("hints") or [])),
-          str(listed.get("hints"))[:160])
-    check("everything under it, for whoever asks",
-          len(rt.world.all("Thing", limit=None, kinds=True)) >= 1)
+    check("a listing reads the kinds, and the host's own idiom still runs",
+          listed.get("ok") and "Canada" in (listed.get("output") or ""),
+          str(listed.get("output") or listed.get("error"))[:160])
+    exact = rt.run('print(Thing.all(limit=None, kinds=False))', "host")
+    check("and an exact one says what is a kind of it rather than answering nothing",
+          any("kind of it" in one for one in (exact.get("hints") or [])),
+          str(exact.get("hints"))[:160])
 
 
 def an_image_never_goes_to_storage_without_the_name_its_record_holds() -> None:
@@ -477,18 +509,18 @@ def an_image_never_goes_to_storage_without_the_name_its_record_holds() -> None:
         "SELECT attr, value FROM City WHERE instance_id = ? AND attr = 'name'", (berkeley.id,)))
     check("a placing does not write a nameless image", row.get("name") == '"Berkeley"', str(row))
 
-    kyd = rt.world.new("Person", full_name="Thomas Kyd")
+    kyd = rt.world.new("Person", name="Thomas Kyd")
     with ontology.trusted_writes(), ontology.not_recording():
-        object.__setattr__(kyd, "full_name", None)
+        object.__setattr__(kyd, "name", None)
     rt.world.save(kyd)
     row = dict(rt.world.store.conn.execute(
-        "SELECT attr, value FROM Person WHERE instance_id = ? AND attr = 'full_name'", (kyd.id,)))
-    check("nor does a save", row.get("full_name") == '"Thomas Kyd"', str(row))
+        "SELECT attr, value FROM Person WHERE instance_id = ? AND attr = 'name'", (kyd.id,)))
+    check("nor does a save", row.get("name") == '"Thomas Kyd"', str(row))
 
-    rt.world.new("Person", full_name="Ada")
-    rt.run('Person.get(full_name="Ada").full_name = "Ada Lovelace"', "host")
+    rt.world.new("Person", name="Ada")
+    rt.run('Person.get(name="Ada").name = "Ada Lovelace"', "host")
     check("and a host's own rename still goes through",
-          rt.world.get("Person", full_name="Ada Lovelace").full_name == "Ada Lovelace")
+          rt.world.get("Person", name="Ada Lovelace").name == "Ada Lovelace")
 
 
 def the_later_telling_stands_whichever_order_it_is_read_in() -> None:
@@ -519,7 +551,7 @@ def the_later_telling_stands_whichever_order_it_is_read_in() -> None:
         rt = base.world()
         base.word(rt, "plays_position", "which position somebody plays", cardinality="many-to-one",
                   subject_is="player", object_is="position")
-        ward = rt.world.new("Person", full_name="Hines Ward")
+        ward = rt.world.new("Person", name="Hines Ward")
         for name in ("wide receiver", "cornerback"):
             rt.world.new("Thing", name=name)
         with timeutil.as_of(datetime(2020, 1, 1)):
@@ -556,7 +588,7 @@ def a_hand_over_compares_like_with_like() -> None:
         rt = base.world()
         base.word(rt, "died_in", "where somebody died", cardinality="many-to-one",
                   subject_is="person", object_is="place")
-        who = rt.world.new("Person", full_name="Gennady Rozhdestvensky")
+        who = rt.world.new("Person", name="Gennady Rozhdestvensky")
         for place in ("Moscow", "United States of America"):
             rt.world.new("Thing", name=place)
         return rt, who
@@ -629,26 +661,78 @@ def the_names_pass_writes_as_of_when_the_words_were_said() -> None:
     for name in ("Rurouni Kenshin", "The Fairly OddParents"):
         rt.world.new("Thing", name=name)
     with timeutil.as_of(datetime(2026, 10, 2, 1, 58)):
-        watsuki = rt.world.new("Person", full_name="Nobuhiro Watsuki")
+        watsuki = rt.world.new("Person", name="Nobuhiro Watsuki")
         watsuki.describe("Manga artist, famous for Rurouni Kenshin")
         portraits.comes_in(rt.world, watsuki)
         rt.world.relate(watsuki, rt.world.get("Thing", name="Rurouni Kenshin"), "famous_for")
     with timeutil.as_of(datetime(2026, 10, 2, 2, 20)):
         rt.world.relate(watsuki, rt.world.get("Thing", name="The Fairly OddParents"), "famous_for")
-    portraits.formalise(rt.world, Engineer(), jev=Jev(), run=rt._the_world_writes)
+    portraits.formalise(rt.world, Engineer(), jev=Jev())
     now = [one.object.display_name()
-           for one in rt.world.get("Person", full_name="Nobuhiro Watsuki").relations("famous_for")]
+           for one in rt.world.get("Person", name="Nobuhiro Watsuki").relations("famous_for")]
     check("the correction still stands after the names pass", now == ["The Fairly OddParents"], str(now))
 
 
+def everything_is_called_by_its_name() -> None:
+    """A person, an event, a class a host defines: what each is called is its `name`.
+
+    Decided 2026-10-02. A person had `full_name` and an event `title`: the host wrote
+    `Thing.identify(full_name=...)` and `Person.get(name=...)` and was refused, a placing from Thing
+    to Person had to carry the name from one word to another, and a listing over the kinds of
+    Thing broke on the first Person. A world written before that is brought over on opening.
+    """
+    from terraweaver import matching, open_world
+
+    rt = base.world()
+    define = rt.world.extras["define"]
+    book = define("Book", "a written work published as a volume")
+    check("a class defined with nothing said about its identity is known by its name",
+          [a["name"] for a in book._spec["attributes"]][0] == "name"
+          and matching.NAME_KEYS.get("Book") == "name", str(book._spec["attributes"]))
+    film = define("Film", "a motion picture made to be shown", "title")
+    check("a title is the name", "title" not in [a["name"] for a in film._spec["attributes"]]
+          and film(title="Alien").name == "Alien")
+    paper = define("Paper", "a published scientific article", "doi")
+    names = [a["name"] for a in paper._spec["attributes"]]
+    check("another key is its own attribute beside the name, and tells two apart on its own",
+          names[0] == "name" and "doi" in names and matching.STRONG_KEYS.get("Paper") == ["doi"],
+          f"{names} {matching.STRONG_KEYS.get('Paper')}")
+
+    ann = rt.world.new("Person", name="Ann Lee")
+    check("the old word still reads and writes the name",
+          ann.full_name == "Ann Lee" and rt.world.get("Person", full_name="Ann Lee").id == ann.id)
+
+    # --- a world written while a person had a full_name ---
+    old = base.world(kept=True)
+    kyd = old.world.new("Person", name="Thomas Kyd")
+    conn = old.world.store.conn
+    for (table,) in conn.execute("SELECT name FROM sqlite_master WHERE name LIKE 'facts_%'").fetchall():
+        conn.execute(f'UPDATE "{table}" SET slot = \'full_name\' WHERE slot = \'name\' AND subject = ?',
+                     (kyd.id,))
+    conn.execute("UPDATE Person SET attr = 'full_name' WHERE attr = 'name' AND instance_id = ?",
+                 (kyd.id,))
+    conn.commit()
+    path = conn.execute("PRAGMA database_list").fetchone()[2]
+    conn.close()
+    again = open_world(path)
+    back = again.world.store.load(kyd.id, again.world.classes)
+    check("a world written with full_name opens with the name where it belongs",
+          back is not None and back.name == "Thomas Kyd",
+          repr(getattr(back, "name", None)))
+    check("in the record as well", any(one.slot == "name" and one.value == "Thomas Kyd"
+                                       for one in again.world.facts.about(kyd.id)),
+          str([(one.slot, one.value) for one in again.world.facts.about(kyd.id)]))
+
+
 def main() -> None:
+    everything_is_called_by_its_name()
     the_names_pass_writes_as_of_when_the_words_were_said()
     a_hand_over_compares_like_with_like()
     the_later_telling_stands_whichever_order_it_is_read_in()
     an_image_never_goes_to_storage_without_the_name_its_record_holds()
     a_lookup_sees_the_classes_beneath_it()
     a_row_that_will_not_load_costs_only_that_row()
-    a_reading_may_not_rename_the_thing_it_is_reading()
+    the_names_pass_changes_the_class_and_nothing_else()
     a_placing_is_stated_so_it_survives_a_rebuild()
     finding_3_1_6_a_separation_holds_through_a_third_party()
     finding_3_3_7_the_echo_says_what_actually_ran()

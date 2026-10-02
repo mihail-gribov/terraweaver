@@ -1,8 +1,8 @@
 """A thing that came in as a bare name, described in words, read into a class.
 
-The whole circuit with the outside models stood in for: the walk down the tree of classes, the
-one open call that gives a class and the code to fill the thing in, that code running by the
-door a host's code runs through, and the loop that hands a failure back and asks again.
+The whole circuit with the outside models stood in for: the walk down the tree of classes over
+everything known about the thing, the one open call that describes a class when none fits, and
+the move under it. Nothing else: what the thing holds is not this pass's to write.
 
 The stand-ins are the point. Every defect this file was written after took a five-minute live
 run to find, and not one of them was a logic error a test could catch by walking the same path
@@ -88,25 +88,28 @@ def main() -> int:
     check("and the question that asked for it has closed itself",
           not [q for q in rt.world.questions.open_(limit=9) if q.kind == "what_is_it"])
 
-    # --- the walk, the class, the code, the links ---
+    # --- the walk, the class, and nothing written on the thing ---
     jev = AJev([portraits.NEW_ONE])
     engineer = Engineer([{
         "class": {"name": "City", "brief": "a city, town or village",
                   "description": "A populated place with a permanent community.",
                   "attributes": [{"name": "population",
                                   "description": "how many people live there", "type": "int"}]},
+        # What the pass once ran. It is not run now, whatever the engineer says.
         "code": 'it.population = 2800000\nit.describe("where the user lived until 2019")',
     }])
-    tally = portraits.formalise(rt.world, engineer, jev=jev, run=rt._the_world_writes)
+    tally = portraits.formalise(rt.world, engineer, jev=jev)
     rt._hand_back_what_moved(tally.pop("moved", []))
-    check("the prose-fact is read, the class made, the code run",
-          tally == {"read": 1, "placed": 1, "defined": 1, "ran": 1, "failed": 0, "gave_up": 0},
-          str(tally))
+    check("the prose-fact is read, the class made, the thing placed",
+          tally == {"read": 1, "placed": 1, "defined": 1, "failed": 0}, str(tally))
     rome = rt.world.find(rt.world.classes["City"], name="Rome").matches[0]
     check("the thing is read under the class that was made", type(rome).__name__ == "City")
-    check("what the words gave is on it", rome.population == 2800000, str(rome.population))
-    check("and it joined nothing, because these words joined nothing",
-          rome.relations() == [], str([r.display_name() for r in rome.relations()]))
+    check("and nothing the engineer wrote as code was run",
+          rome.population is None
+          and not any("where the user lived" in str(d) for d in (rome.descriptions or [])),
+          f"{rome.population} {rome.descriptions}")
+    check("and it joined nothing", rome.relations() == [],
+          str([r.display_name() for r in rome.relations()]))
 
     # --- the new class sits under the one the walk stopped at, and inherits its question ---
     city = rt.world.classes["City"]
@@ -127,37 +130,19 @@ def main() -> int:
     # of Thing the walk comes down through.
     check("the walk offers the kinds of Thing and a way out",
           set(asked) == {"AIAgent", "Person", portraits.NEW_ONE}, str(asked))
-    # An account of a thing says what it is to other things — "the capital of Italy" — and that
-    # is a fact worth having. What went wrong was never that the engineer wrote links; it was
-    # how. Two guards, and both are in what it is shown.
     asked_for = engineer.asked[0]
-    check("the engineer may join this thing to another, and is shown the word for it",
-          "it.set_capital_of(italy)" in asked_for, asked_for[-900:])
-    check("the other end is looked up by a call that cannot create one",
-          'Thing.get(name="Italy")' in asked_for and ".identify(" not in asked_for,
+    check("the engineer is asked for a class and shown what was said",
+          "capital of Italy" in asked_for and '"class"' in asked_for and "code" not in asked_for,
           asked_for[-900:])
-    check("and it is shown what this thing is already joined to, so it does not say it twice",
-          "already joined to" in asked_for, asked_for[-900:])
 
-    # There is no case here for a thing the world named itself: this door names nothing. That
-    # it once did — reaching for "Italy" out of an account of Rome — is the defect the check
-    # above guards against. `runtime._reachable` still words a question about such a thing by
-    # a lookup anybody can run, for whenever the world does make one.
-
-    # --- the loop: a line the world refuses comes back, and the next answer is run ---
+    # --- a class that is already here costs no open call at all ---
     rt.run('turin = Thing.identify(name="Turin")[0]\n'
            'turin.describe("Turin is a city in the north of Italy")', "k")
-    loop_jev = AJev(["City"])
-    loop_engineer = Engineer([
-        {"class": None, "code": 'it.population = 900_000\nit.set_near(nowhere)'},
-        {"class": None, "code": 'it.describe("in the north")'},
-    ])
-    tally = portraits.formalise(rt.world, loop_engineer, jev=loop_jev, run=rt._the_world_writes)
+    quiet = Engineer([])
+    tally = portraits.formalise(rt.world, quiet, jev=AJev(["City"]))
     rt._hand_back_what_moved(tally.pop("moved", []))
-    check("a refused line is handed back and the next answer runs",
-          tally["ran"] == 1 and tally["gave_up"] == 0 and len(loop_engineer.asked) == 2, str(tally))
-    check("and what came back carried the world's own answer to it",
-          "the record answered" in loop_engineer.asked[1], loop_engineer.asked[1][-300:])
+    check("a thing the walk places under an existing class asks the engineer nothing",
+          tally["placed"] == 1 and quiet.asked == [], str(tally))
     check("the walk put it under the class that was already here",
           type(rt.world.find(rt.world.classes["City"], name="Turin").matches[0]).__name__ == "City")
     after = rt.run('print(type(turin).__name__)', "k")
@@ -176,17 +161,17 @@ def main() -> int:
           len(portraits.unread(rt.world)) == 1, str(portraits.unread(rt.world)))
 
     # --- a reader that says nothing usable costs the reading, never the thing ---
-    silent = portraits.formalise(rt.world, Engineer([]), jev=AJev(["City"]),
-                                 run=rt._the_world_writes)
+    rt.run('milan = Thing.identify(name="Milan")[0]\nmilan.describe("a fashion house")', "k")
+    silent = portraits.formalise(rt.world, Engineer([]), jev=AJev([portraits.NEW_ONE]))
     silent.pop("moved", None)
     check("an engineer that answers nothing leaves the words for a later pass",
-          silent["failed"] == 1 and silent["read"] == 0, str(silent))
-    turin = [e for e in rt.world.all("City", limit=None, history=True)
-             if str(e.display_name()) == "Turin"]
+          silent["failed"] == 1 and silent["read"] == 1, str(silent))
+    milan = rt.world.find(rt.world.classes["Thing"], name="Milan").matches
     check("and the thing is exactly where it was",
-          len(turin) == 1 and type(turin[0]).__name__ == "City",
-          str([(str(e.display_name()), type(e).__name__)
-               for e in rt.world.all("City", limit=None, history=True)]))
+          len(milan) == 1 and type(milan[0]).__name__ == "Thing",
+          str([(str(e.display_name()), type(e).__name__) for e in milan]))
+    check("still waiting to be read", any(one["words"] == "a fashion house"
+                                          for one in portraits.unread(rt.world)))
 
     print()
     if failures:

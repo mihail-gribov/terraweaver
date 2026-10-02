@@ -80,8 +80,8 @@ def main() -> int:
     # --- a handover: one at a time, and the new one's start is where the last ends ---
     rt = world(chairs="one-to-many")
     out, _ = ran(rt, 'org = Thing.ensure(name="Fatah", nature="agent")\n'
-                     'Person.new(full_name="Yasser Arafat").set_chairs(org,  starts=date(1969, 2, 3))\n'
-                     'Person.new(full_name="Mahmoud Abbas").set_chairs(org,  starts=date(2004, 11, 11))\n'
+                     'Person.new(name="Yasser Arafat").set_chairs(org,  starts=date(1969, 2, 3))\n'
+                     'Person.new(name="Mahmoud Abbas").set_chairs(org,  starts=date(2004, 11, 11))\n'
                      'for l in sorted(org.relations("chairs_of", any_time=True), key=lambda x: x.starts):\n'
                      '    print(f"{l.subject.display_name()} {l.starts.date()} -> {l.until.date() if l.until else None}")')
     check("a handover ends the first where the second begins",
@@ -90,7 +90,7 @@ def main() -> int:
 
     # --- a link that holds needs no start ---
     rt = world(manages="one-to-many", part_of="many-to-one")
-    _, got = ran(rt, 'a = Person.new(full_name="A One")\nb = Thing.new(name="B Two")\n'
+    _, got = ran(rt, 'a = Person.new(name="A One")\nb = Thing.new(name="B Two")\n'
                      'a.set_manages(b)')
     # Recorded, not refused, and that is the settled end of three attempts. Refusing turned away
     # sixty facts in a 455-fact run; taking now() by itself dated a fact nobody dated; refusing
@@ -108,7 +108,7 @@ def main() -> int:
     # holds is read from the periods like everything else. It used to rest on the order, because a
     # type could say "one ever", which has no periods to decide with.
     rt = world(led_by="many-to-one")
-    out, got = ran(rt, 'boss = Person.new(full_name="The Boss")\n'
+    out, got = ran(rt, 'boss = Person.new(name="The Boss")\n'
                        'boss.set_led_by(Thing.new(name="Told First"))\n'
                        'boss.set_led_by(Thing.new(name="Told Second"))\n'
                        'print([r.object.name for r in boss.relations("led_by")])')
@@ -122,7 +122,7 @@ def main() -> int:
               for q in (got.get("questions") or []) + (got.get("ask_now") or [])),
           str(got.get("questions"))[:140])
     dated = world(led_by="many-to-one")
-    _, got = ran(dated, 'boss = Person.new(full_name="The Boss")\n'
+    _, got = ran(dated, 'boss = Person.new(name="The Boss")\n'
                         'boss.set_led_by(Thing.new(name="Told First"),  '
                         'starts=date(2019, 1, 1))\n'
                         'boss.set_led_by(Thing.new(name="Told Second"),  '
@@ -141,11 +141,11 @@ def main() -> int:
     # which came first is put to whoever knows.
     rt = world(chairs="one-to-many")
     _, got = ran(rt, 'org = Thing.ensure(name="Fatah", nature="agent")\n'
-                     'Person.new(full_name="Later").set_chairs(org,  starts=date(2024, 1, 1))\n'
-                     'Person.new(full_name="Earlier").set_chairs(org,  starts=date(2020, 1, 1))')
+                     'Person.new(name="Later").set_chairs(org,  starts=date(2024, 1, 1))\n'
+                     'Person.new(name="Earlier").set_chairs(org,  starts=date(2020, 1, 1))')
     check("a start before the standing one is kept, not refused", got["ok"], str(got.get("error"))[:70])
     _, held = ran(rt, 'org = Thing.get(name="Fatah")\n'
-                      'print(sorted((r.subject.full_name, str(r.valid_from)[:10], str(r.valid_until)[:10]) '
+                      'print(sorted((r.subject.name, str(r.valid_from)[:10], str(r.valid_until)[:10]) '
                       'for r in org.relations("chairs", any_time=True)))')
     check("as what held until the standing one began, the standing one untouched",
           "('Earlier', '2020-01-01', '2024-01-01')" in held["output"]
@@ -154,23 +154,23 @@ def main() -> int:
     # --- the same moment, taken once, is a handover and not an overlap ---
     rt = world(chairs="one-to-many")
     out, got = ran(rt, 'org = Thing.ensure(name="Fatah", nature="agent")\nt = now()\n'
-                       'Person.new(full_name="First").set_chairs(org,  starts=t)\n'
-                       'Person.new(full_name="Second").set_chairs(org,  starts=t)\n'
+                       'Person.new(name="First").set_chairs(org,  starts=t)\n'
+                       'Person.new(name="Second").set_chairs(org,  starts=t)\n'
                        'print([p.display_name() for p in org.related("chairs_of")])')
     check("one moment passed to both hands over", out == "['Second']", out or str(got.get("error"))[:70])
 
     # --- the other shape: the subject changes, and the world can only count ---
     rt = world(led_by="many-to-one")
     out, got = ran(rt, 'org = Thing.ensure(name="Fatah", nature="agent")\n'
-                       'Person.new(full_name="One").set_led_by(org)\n'
-                       'Person.new(full_name="Two").set_led_by(org)\n'
+                       'Person.new(name="One").set_led_by(org)\n'
+                       'Person.new(name="Two").set_led_by(org)\n'
                        'print(len(org.related("led")))')
     check("two subjects on one object both stand, since nothing said otherwise", out == "2", out)
     check("and the world asks about it once, naming the fix",
           any("one_per_object" in q for q in (got.get("questions") or [])),
           str(got.get("questions"))[:110])
     out, _ = ran(rt, 'led_by.one_per_object = True\n'
-                     'Person.new(full_name="Three").set_led_by(org)\n'
+                     'Person.new(name="Three").set_led_by(org)\n'
                      'print([p.display_name() for p in org.related("led")])')
     check("and once it is said, the later one supersedes", out == "['Three']", out)
 
@@ -178,11 +178,11 @@ def main() -> int:
     # `relations.verify` worked this out from the day it was written and nothing called it, so
     # the world noticed a type running both ways and told nobody.
     rt = world(author_of="many-to-one")
-    ran(rt, 'p1 = Person.new(full_name="Ursula K. Le Guin")\n'
+    ran(rt, 'p1 = Person.new(name="Ursula K. Le Guin")\n'
             'b1 = Thing.ensure(name="A Wizard of Earthsea", nature="object")\n'
             'p1.set_author_of(b1)\n'
             'b2 = Thing.ensure(name="Starship Troopers", nature="object")\n'
-            'p2 = Person.new(full_name="Robert A. Heinlein")\n'
+            'p2 = Person.new(name="Robert A. Heinlein")\n'
             'b2.set_author_of(p2)\n'
             'for x in (p1, b1, b2, p2): x.describe("mentioned while recording")\n'
             'for l in AuthorOf.all(limit=None): l.describe("as the user stated it")')
@@ -200,7 +200,7 @@ def main() -> int:
     # of the first. It read as "the fact is not in the world" while asking for it by name
     # returned it with its period still open.
     rt = world(born_in="many-to-one", wrote="many-to-one")
-    out, _ = ran(rt, 'p = Person.new(full_name="Ursula K. Le Guin")\n'
+    out, _ = ran(rt, 'p = Person.new(name="Ursula K. Le Guin")\n'
                      'p.set_born_in(Thing.ensure(name="Portland", nature="place"))\n'
                      'p.set_wrote(Thing.ensure(name="Earthsea", nature="object"))\n'
                      'print(sorted(type(l).__name__ for l in p.relations()))')
@@ -213,7 +213,7 @@ def main() -> int:
     rt = world(citizen_of="one-to-many")
     out, got = ran(rt, 'usa = Thing.ensure(name="United States", nature="place")\nt = now()\n'
                        'for n in ("A One", "B Two", "C Three", "D Four", "E Five"):\n'
-                       '    Person.new(full_name=n).set_citizen_of(usa,  starts=t)\n'
+                       '    Person.new(name=n).set_citizen_of(usa,  starts=t)\n'
                        'print(len(usa.related("citizen")))')
     check("one per object leaves only the last", out == "1", out)
     check("and the world asks whether it can have several at once",
@@ -235,7 +235,7 @@ def main() -> int:
     rt = world(chairs="one-to-many")
     out, _ = ran(rt, 'org = Thing.ensure(name="Fatah", nature="agent")\nt = now()\n'
                      'for n in ("First", "Second", "Third"):\n'
-                     '    Person.new(full_name=n).set_chairs(org,  starts=t)\n'
+                     '    Person.new(name=n).set_chairs(org,  starts=t)\n'
                      'print([p.display_name() for p in org.related("chairs_of")])\n'
                      'print([p.display_name() for p in org.related("chairs_of", any_time=True)])')
     holds, ever = out.splitlines() if "\n" in out else (out, "")

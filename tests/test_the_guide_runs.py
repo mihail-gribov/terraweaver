@@ -87,21 +87,21 @@ def main() -> int:
              "a city that serves as a capital", "the country whose capital it is")):
         rt.world.extras["define_relation"](word, what, cardinality=cardinality,
                                            subject_is=near, object_is=far)
-    rt.run('anna = Person.new(full_name="Anna Reid")\n'
+    rt.run('anna = Person.new(name="Anna Reid")\n'
            'london = Thing.ensure(name="London", nature="place")\n'
            'b = Thing.ensure(name="B Two", nature="object")\n'
            'a = anna\nx = london\ny = b\nentity = anna\n'
-           'kevin = Person.new(full_name="Kevin Chen")\n'
-           'darren = Person.new(full_name="Darren Liu")\n'
-           'nina = Person.new(full_name="Nina Patel")\n'
-           'greg = Person.new(full_name="Greg Hunt")\nmaria = Person.new(full_name="Maria Vos")\n'
+           'kevin = Person.new(name="Kevin Chen")\n'
+           'darren = Person.new(name="Darren Liu")\n'
+           'nina = Person.new(name="Nina Patel")\n'
+           'greg = Person.new(name="Greg Hunt")\nmaria = Person.new(name="Maria Vos")\n'
            'thing = Thing.ensure(name="pesapallo", nature="abstraction")\n'
-           'linda = Person.new(full_name="Linda Zhao")\n'
+           'linda = Person.new(name="Linda Zhao")\n'
            'paris = Thing.identify(name="Paris")[0]\n'
            'france = Thing.identify(name="France")[0]\n'
            'acme = Thing.identify(name="Acme")[0]\n'
-           'kyd = Person.identify(full_name="Thomas Kyd")[0]\n'
-           'boris = Person.identify(full_name="Boris Weber")[0]', "k")
+           'kyd = Person.identify(name="Thomas Kyd")[0]\n'
+           'boris = Person.identify(name="Boris Weber")[0]', "k")
 
     total = broke = 0
     for where, text in shown.items():

@@ -19,9 +19,6 @@ from typing import Any
 _WRITE_GUARD = None
 _FILLING = False
 _TRUSTED = False
-# The one thing the world is reading, and the attribute that says which thing it is: while a
-# reading runs, that attribute is not the reading's to change. See `reading_one`.
-_IDENTITY_HELD: tuple | None = None
 # The world the classes currently belong to, so `Person.find(...)` can reach it without
 # every class having to be handed a store.
 _WORLD = None
@@ -347,41 +344,6 @@ def trusted_writes():
         _TRUSTED = previous
 
 
-@contextmanager
-def reading_one(entity):
-    """While the world reads one thing, that thing's name is not the reading's to change.
-
-    The rule was written down and not enforced: "the engineer says what this is; it never says
-    which this is" (portraits.py). Measured 2026-09-30 on a gate of 25 facts — the engineer
-    reading the `Position` called "center" wrote `it.name = "Lisa Leslie"`, the name of the person
-    who plays it, and the position was renamed. Two of forty-nine names in one pass: the fact
-    "Lisa Leslie plays the position of center" then reads as a fact the world has lost, and the
-    world holds two things called Lisa Leslie. The same happened to "goalkeeper".
-
-    Identity is settled before a write and a write only records — so a reading may say anything
-    about what a thing *is* and nothing about *which* thing it is. Saying the same name again is
-    not a change and passes.
-    """
-    global _IDENTITY_HELD
-    previous = _IDENTITY_HELD
-    held = None
-    if entity is not None and getattr(entity, "id", None):
-        from terraweaver import matching
-
-        cls = type(entity)
-        key = (cls._spec.get("identified_by")
-               or matching.NAME_KEYS.get(cls.__name__) or "name")
-        if any(a["name"] == key for a in cls._spec.get("attributes", [])):
-            held = (entity.id, key, getattr(entity, key, None))
-    _IDENTITY_HELD = held
-    try:
-        yield
-    finally:
-        _IDENTITY_HELD = previous
-
-
-
-
 # The preset: what a new world starts with, and the least a world can be. A Thing is somewhere to put anything at all, so nothing waits for a
 # class to exist; a Related is a link with no type yet, so no fact waits for a relation type. And
 # every world is between two parties who are in it as entities — without a Person and an Agent
@@ -523,10 +485,12 @@ class Entity:
     # --- what every class in the world can do ---
 
     @classmethod
-    def all(cls, limit: int | None = 50, *, any_time: bool = False, history: bool = False) -> list:
-        """Entities of this class, most recently worked with first — the ones that hold now;
-        any_time=True adds those whose period has ended or hasn't started."""
-        return current_world().all(cls, limit=limit, history=history or any_time)
+    def all(cls, limit: int | None = 50, *, any_time: bool = False, history: bool = False,
+            kinds: bool = True) -> list:
+        """Entities of this class and of every kind of it, most recently worked with first — the
+        ones that hold now; any_time=True adds those whose period has ended or hasn't started,
+        kinds=False leaves out the classes beneath this one."""
+        return current_world().all(cls, limit=limit, history=history or any_time, kinds=kinds)
 
     @classmethod
     def where(cls, **conditions) -> list:
@@ -1121,7 +1085,7 @@ class Entity:
     def __getattribute__(self, name):
         value = object.__getattribute__(self, name)
         # Reading an entity's attribute is contact with the world just as much as querying it
-        # is: `report(owner.full_name)` makes no calls yet is perfectly grounded.
+        # is: `report(owner.name)` makes no calls yet is perfectly grounded.
         if _TRACK and not name.startswith("_") and not callable(value):
             ACCESS["entity_reads"] += 1
             if _OPEN_TOKENS and name not in _MANAGED_ATTRS:
@@ -1178,6 +1142,9 @@ class Entity:
         """
         if name.startswith("_"):
             raise AttributeError(name)
+        if _called_its_name(type(self), name):
+            # `person.full_name`, `event.title`: the name, said the way it once was.
+            return self.__dict__.get("name")
         if name.startswith("set_"):
             # A word this world holds, reached on a class it was not declared between. The call
             # lives on the ends the type names (`_lend_relations`) and nowhere else, so this is
@@ -1247,18 +1214,10 @@ class Entity:
             + "thing is here, not a fact somebody will want to look up.")
 
     def __setattr__(self, name, value):
+        if _called_its_name(type(self), name):
+            name = "name"
         spec = type(self)._spec
         class_name = type(self).__name__
-        if (_IDENTITY_HELD is not None and not _TRUSTED
-                and getattr(self, "id", None) == _IDENTITY_HELD[0] and name == _IDENTITY_HELD[1]
-                and value != _IDENTITY_HELD[2]):
-            raise AttributeError(
-                f"{name} says which thing this is, and which thing this is was settled before "
-                f"you were asked about it — it is {_IDENTITY_HELD[2]!r}, and it stays that. What "
-                f"you were asked is what it *is*: its class, what it has, a line about it. If "
-                f"{value!r} is another thing entirely, it is another thing: nothing here is "
-                f"renamed into it. If it is another name for this same one, it is an alias: "
-                f"it.aliases = (it.aliases or []) + [{value!r}] keeps both.")
         if not name.startswith("_") and _is_a_question(value):
             # A lookup that came back a question, written in as if it were a thing. It reached
             # `json.dumps` and raised `Object of type NeedsResolution is not JSON serializable`
@@ -2263,6 +2222,60 @@ def what_to_say(cls, classes: dict | None = None) -> str:
 _BASE_FOR = {"related_to": "Related", "related": "Related"}
 
 
+def _called_its_name(cls, word: str) -> bool:
+    """Is `word` this class's name said another way — `full_name` on a Person, `title` on an Event?
+
+    Only where the class has no attribute of that name of its own: a link's `label` is its label.
+    """
+    from terraweaver import matching
+
+    if word == matching.NAME or word not in matching.NAME_WORDS:
+        return False
+    names = {a["name"] for a in getattr(cls, "_spec", {}).get("attributes", [])}
+    return matching.NAME in names and word not in names
+
+
+# Classes whose name was once kept under another word, and that word: what a world written
+# before 2026-10-02 holds in its record and its images, for `store.one_name` to carry over.
+NAMED_OTHERWISE: dict[str, str] = {"Person": "full_name", "Event": "title"}
+
+
+def one_name(spec: dict) -> dict:
+    """What a thing is called is its `name`, whatever the spec called it.
+
+    A spec written as `identified_by: "title"` (a host's, or one grown in an older world) keeps
+    its class and its attributes; the attribute that names the thing is `name`. What else it
+    said identifies one — a code, an ISBN — stays an attribute of its own and is not the name.
+    """
+    from terraweaver import matching
+
+    if spec.get("relation"):
+        return spec
+    attributes = [dict(a) for a in spec.get("attributes", [])]
+    declared = [a.get("name") for a in attributes]
+    wanted = spec.get("identified_by")
+    if not isinstance(wanted, str) or wanted not in matching.NAME_WORDS:
+        # Said nothing, or named something else: the name is whichever of the name's words the
+        # class has, when it has no `name` — `Person` in a world grown before 2026-10-02 carries
+        # its own copy of the spec, with `full_name` in it.
+        wanted = next((w for w in matching.NAME_WORDS if w in declared), None) \
+            if matching.NAME not in declared else None
+        if wanted is None:
+            return spec
+    if wanted == matching.NAME:
+        return spec
+    if not any(a.get("name") == matching.NAME for a in attributes):
+        for one in attributes:
+            if one.get("name") == wanted:
+                one["name"] = matching.NAME
+                break
+    NAMED_OTHERWISE.setdefault(spec["name"], wanted)
+    out = {**spec, "attributes": attributes}
+    if spec.get("identified_by") in (None, wanted) or spec.get("identified_by") in matching.NAME_WORDS:
+        out["identified_by"] = matching.NAME
+    return out
+
+
 def define_class(classes: dict[str, type], spec: dict[str, Any], name: str | None = None,
                  impls: dict[tuple[str, str], Any] | None = None) -> type:
     """Build one class from its spec and register it in `classes`. Returns the class.
@@ -2280,7 +2293,7 @@ def define_class(classes: dict[str, type], spec: dict[str, Any], name: str | Non
 
     impls = impls or {}
     name = name or spec["name"]
-    spec = with_common_slots({**spec, "name": name})
+    spec = with_common_slots(one_name({**spec, "name": name}))
     if spec.get("identified_by"):
         wanted = spec["identified_by"]
         if isinstance(wanted, str):
@@ -2294,6 +2307,8 @@ def define_class(classes: dict[str, type], spec: dict[str, Any], name: str | Non
             wanted = {"name_keys": [wanted]}
         elif not isinstance(wanted, dict):
             wanted = {"name_keys": list(wanted)}
+        if spec.get("strong_keys") and "strong_keys" not in wanted:
+            wanted = {**wanted, "strong_keys": list(spec["strong_keys"])}
         matching.register_identity(name, **wanted)
     namespace = {
         "__doc__": spec.get("description", ""),

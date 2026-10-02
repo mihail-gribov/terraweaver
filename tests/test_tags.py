@@ -24,15 +24,15 @@ def main() -> int:
     w.run('for name, tags in [("Ana Borg", ["job-search", "berlin"]), ("Ben Cruz", ["job search"]),\n'
           '                   ("Cara Dahl", ["Job-Search", "berlin"]), ("Dee Ek", ["to-read"]),\n'
           '                   ("Eve Faber", ["berlin"])]:\n'
-          '    Person.new(full_name=name, tags=tags)', "host")
+          '    Person.new(name=name, tags=tags)', "host")
 
     # --- one shape, so a tag typed three ways is one tag ---
     vocabulary = w.world.tags()
     check("three ways of writing one tag are one tag", vocabulary["job-search"]["count"] == 3,
           str({t: e["count"] for t, e in vocabulary.items()}))
     check("and the entity holds it in that one form",
-          w.classes["Person"].get(full_name="Cara Dahl").tags == ["job-search", "berlin"],
-          str(w.classes["Person"].get(full_name="Cara Dahl").tags))
+          w.classes["Person"].get(name="Cara Dahl").tags == ["job-search", "berlin"],
+          str(w.classes["Person"].get(name="Cara Dahl").tags))
     typed = [s.value for s in w.world.facts.all() if s.slot == "tags"]
     check("while the record keeps them as they were given",
           any("Job-Search" in written for written in typed), str(typed))
@@ -48,13 +48,13 @@ def main() -> int:
     after = dict((tag, (now, before)) for tag, now, before in tagging.due_for_review(w.world))
     check("once looked at, it stays off the list", "berlin" not in after, str(after))
     w.run('for name in ["Finn Gray", "Gus Holt"]:\n'
-          '    Person.new(full_name=name, tags=["berlin"])', "host")
+          '    Person.new(name=name, tags=["berlin"])', "host")
     grown = dict((tag, (now, before)) for tag, now, before in tagging.due_for_review(w.world))
     check("until enough new things arrive under it", "berlin" in grown, str(grown))
     check("and the list says how much it moved", grown.get("berlin") == (5, 3), str(grown.get("berlin")))
 
     # --- two words for one idea: merged because somebody said so ---
-    w.run('Person.new(full_name="Hal Ibsen", tags=["jobsearch"])', "host")
+    w.run('Person.new(name="Hal Ibsen", tags=["jobsearch"])', "host")
     moved = tagging.merge(w.world, "job-search", "jobsearch")
     check("merging carries everything over", moved == 1, str(moved))
     check("and the losing tag is gone", "jobsearch" not in w.world.tags(), str(list(w.world.tags())))
@@ -62,26 +62,26 @@ def main() -> int:
           w.world.tags()["job-search"]["count"] == 4, str(w.world.tags()["job-search"]["count"]))
 
     # --- and tags worth considering, from whatever reads alike ---
-    w.run('Person.new(full_name="Rita Chen", tags=["batteries"]).describe("cell chemistry at a battery startup")\n'
-          'Person.new(full_name="Lars Ek").describe("works on lithium anodes at a small firm")', "host")
-    lars = w.classes["Person"].get(full_name="Lars Ek")
+    w.run('Person.new(name="Rita Chen", tags=["batteries"]).describe("cell chemistry at a battery startup")\n'
+          'Person.new(name="Lars Ek").describe("works on lithium anodes at a small firm")', "host")
+    lars = w.classes["Person"].get(name="Lars Ek")
     suggested = [tag for tag, _ in tagging.suggest(w.world, lars)]
     check("a tag is suggested from what reads like it", "batteries" in suggested, str(suggested))
     check("suggesting applies nothing", not lars.tags, str(lars.tags))
 
     # --- one tag gathers, two pick out, and taking one off is the other half ---
     w2 = open_world()
-    w2.run('Person.new(full_name="Ana Borg", tags=["berlin", "conference-2026"])\n'
-           'Person.new(full_name="Ben Cruz", tags=["berlin"])\n'
-           'Person.new(full_name="Cara Dahl", tags=["conference-2026"])', "host")
+    w2.run('Person.new(name="Ana Borg", tags=["berlin", "conference-2026"])\n'
+           'Person.new(name="Ben Cruz", tags=["berlin"])\n'
+           'Person.new(name="Cara Dahl", tags=["conference-2026"])', "host")
     check("two tags narrow to what carries both",
-          [p.full_name for p in w2.world.tagged_all("Berlin", "conference-2026")] == ["Ana Borg"],
+          [p.name for p in w2.world.tagged_all("Berlin", "conference-2026")] == ["Ana Borg"],
           str(w2.world.tagged_all("Berlin", "conference-2026")))
     check("a tag can be taken off everything", w2.world.untag("berlin") == 2)
     check("and then it is gone", "berlin" not in w2.world.tags(), str(list(w2.world.tags())))
     check("while what it was on is otherwise untouched",
-          [p.full_name for p in w2.world.tagged("conference-2026")] == ["Cara Dahl", "Ana Borg"] or
-          sorted(p.full_name for p in w2.world.tagged("conference-2026")) == ["Ana Borg", "Cara Dahl"],
+          [p.name for p in w2.world.tagged("conference-2026")] == ["Cara Dahl", "Ana Borg"] or
+          sorted(p.name for p in w2.world.tagged("conference-2026")) == ["Ana Borg", "Cara Dahl"],
           str(w2.world.tagged("conference-2026")))
     check("and the record still knows it was there",
           any("berlin" in (s.value or []) for s in w2.world.facts.all() if s.slot == "tags"))

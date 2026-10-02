@@ -53,7 +53,7 @@ def main() -> int:
 
     # --- growth adds; it never rewrites ---
     clash = dict(addition, name="PersonEmail",
-                 attributes=[{"name": "full_name", "type": "str", "description": "another name"}])
+                 attributes=[{"name": "name", "type": "str", "description": "another name"}])
     check("redefining a core attribute is refused",
           "can't be redefined" in (refused(lambda: growth.apply_growth(core, [clash])) or ""),
           str(refused(lambda: growth.apply_growth(core, [clash]))))
@@ -66,15 +66,15 @@ def main() -> int:
 
     # --- a procedure the world wrote for itself ---
     rt = open_world()
-    rt.run('Person.new(full_name="Ada Lovelace")\nPerson.new(full_name="Ada King")', "host")
+    rt.run('Person.new(name="Ada Lovelace")\nPerson.new(name="Ada King")', "host")
     rt.world.procedures.define(
         "namesakes", "namesakes(self)",
-        "first = self.full_name.split()[0]\n"
-        "return [p for p in Person.find(full_name=first).matches if p != self]",
+        "first = self.name.split()[0]\n"
+        "return [p for p in Person.find(name=first).matches if p != self]",
         because="asked three times this week: who else here goes by the same first name",
         attaches_to="Person")
     rt.world.procedures.bind(rt.classes)
-    called = rt.run('ada = Person.get(full_name="Ada Lovelace")\nprint(ada.namesakes())', "host")
+    called = rt.run('ada = Person.get(name="Ada Lovelace")\nprint(ada.namesakes())', "host")
     check("host code calls it like any method", called["ok"], str(called["error"]))
     check("and the call is counted", rt.world.procedures.get("namesakes").uses == 1,
           str(rt.world.procedures.get("namesakes")))
@@ -116,7 +116,8 @@ def main() -> int:
           became["output"].strip() == "Sport pesäpallo ['created in Finland'] ['sport']",
           became["output"])
     check("the same entity, not a copy", rt.classes["Sport"].get(name="pesäpallo").id == was.id)
-    check("and Thing no longer holds it", rt.classes["Thing"].all(limit=None) == [])
+    check("and Thing no longer holds it as a Thing itself",
+          rt.classes["Thing"].all(limit=None, kinds=False) == [])
     said = [(s.slot, s.value) for s in rt.world.facts.about(was.subject_id)]
     check("becoming is a statement like any other", ("is_a", "Sport") in said, str(said))
     check("and nothing had to move to make it true",
@@ -228,13 +229,13 @@ def main() -> int:
     rt = open_world()
     authoring.install(rt.world, None)
     rt.start_task("k3", "record what the user said about somebody's pay", "recording")
-    taken = rt.run('p = Person.new(full_name="Ada Byron")\np.salary = 120000\n'
-                   'print(Person.get(full_name="Ada Byron").salary)', "k3")
+    taken = rt.run('p = Person.new(name="Ada Byron")\np.salary = 120000\n'
+                   'print(Person.get(name="Ada Byron").salary)', "k3")
     check("an attribute the class has not got is taken, with its type guessed",
           taken["ok"] and "120000" in (taken["output"] or ""),
           str(taken.get("error"))[:110])
     done = rt.run('world.attribute(Person, "salary", "what they are paid a year", type="int")\n'
-                  'p = Person.get(full_name="Ada Byron")\np.salary = 120000\nprint(p.salary)', "k3")
+                  'p = Person.get(name="Ada Byron")\np.salary = 120000\nprint(p.salary)', "k3")
     check("and saying what it means works in the same run",
           done["ok"] and "120000" in (done["output"] or ""),
           str(done.get("error") or done.get("output"))[:140])
@@ -242,7 +243,7 @@ def main() -> int:
     # `world.specs` — the dictionary the world opened with — to the class, and so does the
     # assembler when it asks whether a slot holds one value or many. A grown spec has to land
     # in both, or the attribute works until somebody looks for it.
-    found = rt.run('print([p.full_name for p in Person.find(salary=120000)])', "k3")
+    found = rt.run('print([p.name for p in Person.find(salary=120000)])', "k3")
     check("and the grown attribute can be searched by, not only written",
           found["ok"] and "Ada Byron" in (found["output"] or ""),
           str(found.get("error") or found.get("output"))[:140])
@@ -267,10 +268,10 @@ def main() -> int:
                       specs=ont_base(ROOT / "ontology" / "core"), selves=True)
     authoring.install(rt.world, work / "grown")
     rt.start_task("k4", "record what the user said about Ada and her pay", "recording")
-    wrote = rt.run('ada = Person.new(full_name="Ada Byron")\n'
+    wrote = rt.run('ada = Person.new(name="Ada Byron")\n'
                    'ada.describe("the person the user is telling me about")\n'
                    'ada.salary = 120000\nada.phone = "+7 (900) 000-00-01"\n'
-                   'print(Person.get(full_name="Ada Byron").salary)', "k4")
+                   'print(Person.get(name="Ada Byron").salary)', "k4")
     check("a word nobody declared is taken, not refused",
           wrote["ok"] and "120000" in (wrote["output"] or ""),
           str(wrote.get("error"))[:120])
@@ -284,8 +285,8 @@ def main() -> int:
                   'world.attribute(Person, "phone", "the number she is called on", type="phone")\n'
                   'print("said")', "k4")
     check("saying what it means is not redeclaring it", said["ok"], str(said.get("error"))[:120])
-    kept = rt.run('print(Person.get(full_name="Ada Byron").salary)\n'
-                  'print([p.full_name for p in Person.find(phone="+79000000001")])', "k4")
+    kept = rt.run('print(Person.get(name="Ada Byron").salary)\n'
+                  'print([p.name for p in Person.find(phone="+79000000001")])', "k4")
     check("what was written under the word is still there, and the type now holds",
           "120000" in (kept["output"] or "") and "Ada Byron" in (kept["output"] or ""),
           str(kept.get("error") or kept.get("output"))[:140])
