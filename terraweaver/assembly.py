@@ -355,6 +355,13 @@ def assemble(facts, rule: Callable[[list, list], bool] = same_name, at: datetime
                 # statements under the other two. They are read as what they always were.
                 slot = ONE_WORD_FOR_TEXT.get(statement.slot, statement.slot)
                 by_slot.setdefault(slot, []).append(statement)
+        if not by_slot and not any(facts.about(s, IS_A) for s in image.subjects):
+            # Everything ever said about it has been taken back — the reading's own link, written
+            # and then not borne out by the words. A subject is registered when it is first spoken
+            # of, so it is still listed; an image of it would be a link with no ends, built from
+            # nothing (measured 2026-10-03: ten of them on rebuilding a 125-fact world).
+            image.subjects = []
+            continue
         class_name = became(facts, image.subjects) or next(
             (facts.class_of(s) for s in image.subjects if facts.class_of(s)), None)
         name_slot = matching.NAME_KEYS.get(class_name or "")
@@ -407,7 +414,7 @@ def assemble(facts, rule: Callable[[list, list], bool] = same_name, at: datetime
                     image.stale.add(slot)
             if rivals:
                 image.conflicts[slot] = rivals
-    return images
+    return {image_id: image for image_id, image in images.items() if image.subjects}
 
 
 def _is_ref(value) -> bool:

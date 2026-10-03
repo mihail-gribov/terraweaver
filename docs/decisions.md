@@ -4337,3 +4337,24 @@ the image being stale, and the next step (one door into the image) is for that. 
 glues same-name copies into one — 28 in run11, and the stage breakdown of a rebuilt run11 had 2
 answers lost to copies instead of 10. That is the identity rule doing what architecture.md says
 it does; it simply never ran while the world was in use.
+
+## 2026-10-03 — at the close of recording work, the images are assembled from the record
+
+Step 3a of rule 4. A full rebuild costs 3.5 s on a world of a thousand things (var/run11), which is
+too much after every run — a run has ten seconds and a full write has over a thousand of them — and
+nothing against the reading a close already does. So the image is the cache the author described:
+between closes a run still writes what it changed, so the images stay warm; at every close of a
+recording task (`runtime._assemble_from_the_record`) and at the end of the offline reading
+(`catch_up.py`) they are assembled from the statements. What the identity rule glues is glued then —
+the second Microsoft a host made beside the first — instead of only on a rebuild nobody ran.
+
+Found on the way: `assembly.assemble` built an image for every registered subject, including one
+whose every statement had been retracted — the reading's own link, not borne out by the words —
+and the rebuild made ten links with no ends out of them on a 125-fact world. A subject with nothing
+left in the record has no image now.
+
+Measured on a fresh 125-fact world written with this: the images and the record agree to the
+value (`image_vs_record.py`: nothing lost, merged, new or different); 92% of the standing facts as
+owed; the 12 questions whose facts are all in those 125 answered 11 of 12, as on the world written
+the hour before without it. What is left of rule 4 is step 3b: assembling only what a run touched,
+after every run, so that intake writes no image at all.

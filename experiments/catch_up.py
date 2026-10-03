@@ -87,6 +87,10 @@ def main() -> int:
         runtime._hand_back_what_moved(got.pop("moved", []))
         print("things that came in as names:", got, flush=True)
 
+    # The images built from the record once the reading is done, as at every close: what the
+    # reading placed and ended is said, so this is where a world's images become its record's.
+    runtime._assemble_from_the_record()
+
     said, waiting = sentences.count(runtime.world)
     asked, unread = portraits.count(runtime.world)
     print(f"\nafter the reading: {waiting} of {said} facts said in words still unread; "
