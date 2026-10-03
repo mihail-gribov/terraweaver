@@ -43,6 +43,15 @@ class Session:
         self.readings: dict[str, str] = {}
         # Which of them have already been put to the host, so the close asks once.
         self.read_back: set[str] = set()
+        # Statements that write and never ran — failed, or never reached — keyed by their shape,
+        # with the text the host wrote. A later run of the same statement settles one. The close
+        # will not pass while any stand, once (`runtime._never_ran`).
+        self.owed: dict[str, str] = {}
+        self.owed_shown: set[str] = set()
+        # What each owed statement names, and how much of it has been written about since: once
+        # all of it has, the fact was said again in other words and is not owed any more.
+        self.owed_about: dict[str, frozenset] = {}
+        self.owed_seen: dict[str, set] = {}
 
         for name, value in (seed or {}).items():
             self.bind(name, value, "pre-loaded data")

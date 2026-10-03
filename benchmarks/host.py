@@ -107,7 +107,7 @@ def ask(host, prompt: str, flags: list[str], resume: str | None, log: Path,
         raise RuntimeError(
             f"the host produced nothing (exit {run.returncode}). stderr: "
             f"{(run.stderr or '').strip()[:800] or '(empty)'}")
-    outcome = {"text": "", "session": resume, "turns": 0, "cost": 0.0,
+    outcome = {"text": "", "session": resume, "turns": 0, "cost": 0.0, "closed": False,
                "seconds": time.monotonic() - started, "unreachable": [], "limited": None,
                "tool_errors": []}
     for line in run.stdout.splitlines():
@@ -131,6 +131,10 @@ def ask(host, prompt: str, flags: list[str], resume: str | None, log: Path,
             # the rest of the batch while the run recorded the batch as done.
             if isinstance(block, dict) and block.get("type") == "tool_result" and block.get("is_error"):
                 outcome["tool_errors"].append(str(block.get("content"))[:200])
+            elif isinstance(block, dict) and block.get("type") == "tool_result":
+                said = str(block.get("content"))
+                if "Task closed:" in said or "Task abandoned:" in said:
+                    outcome["closed"] = True
         if event.get("type") == "rate_limit_event":
             about = (event.get("rate_limit_info") or {})
             outcome["limited"] = {k: about.get(k) for k in ("status", "rateLimitType",

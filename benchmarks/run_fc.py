@@ -41,6 +41,10 @@ asking later gives today's answer.
 
 {facts}"""
 
+NOBODY_HERE = """\
+Nobody is here to answer: the person who told you these facts has gone. Record every one of them \
+as it was given, then finish the task."""
+
 ASK = """\
 Today is {when}. {question}
 
@@ -148,10 +152,22 @@ def main() -> int:
                 raise RuntimeError(f"the world stopped answering before the batch of {day} — "
                                    f"nothing was written for it, and a run with a batch missing is "
                                    f"not a measurement")
+            flags = agent.conversation()
             got = hosting.ask(agent, RECORD.format(when=day.isoformat(), facts=listed),
-                              agent.conversation(), None, log, args.model)
+                              flags, None, log, args.model)
             spent["turns"] += got["turns"]
             spent["cost"] += got["cost"]
+            if not hosting.went_wrong(got) and not got.get("closed") and got.get("session"):
+                # A turn can end with the task still open and nothing written: measured
+                # 2026-10-03, a batch of 25 ended on "the world asks for biographical details
+                # you haven't given — provide them, or skip?", addressed to a user who is not
+                # there, and recorded none of it. The same conversation, on the same world
+                # session, is told so once.
+                got = hosting.ask(agent, NOBODY_HERE, flags, got["session"], log, args.model)
+                spent["turns"] += got["turns"]
+                spent["cost"] += got["cost"]
+                print(f"  {day}: the turn ended with the task open — told nobody is here "
+                      f"({'closed' if got.get('closed') else 'still open'})", flush=True)
             trouble = hosting.went_wrong(got)
             fumbled = hosting.hosts_own(got)
             if trouble:

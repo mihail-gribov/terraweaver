@@ -768,7 +768,54 @@ def several_under_one_word_are_said_in_the_order_they_were_told() -> None:
           said[:300])
 
 
+def a_statement_that_never_ran_keeps_the_task_open() -> None:
+    """A write that failed is owed until it runs; the close says which, in the host's own words.
+
+    Measured 2026-10-03 on var/run11: 18 of 22 facts never recorded were on lines of a block that
+    failed there, and the host's continuation printed them as recorded instead of writing them.
+    """
+    rt = base.world()
+    rt.run('anna = Thing.new(name="Anna")\n'
+           'berlin = Thing.new(name="Berlin")\n'
+           'anna.relate(berln, "Anna lives in Berlin")\n'
+           'anna.describe("a friend from school")', "k")
+    first = rt.finish_task("k")
+    check("the close names the statement that never ran",
+          "Not closed" in first and 'anna.relate(berln, "Anna lives in Berlin")' in first,
+          str(first)[:300])
+    check("and not the ones that did", 'anna.describe("a friend' not in first, str(first)[:300])
+
+    rt.run('berln = berlin\nanna.relate(berln, "Anna lives in Berlin")\n'
+           'berlin.describe("the city Anna lives in")', "k")
+    closed = rt.finish_task("k")
+    check("running the same statement settles it", "Not closed" not in str(closed)
+          and "never ran" not in str(closed), str(closed)[:300])
+
+    # Said again in other words — another call, the other way round, a name for a variable —
+    # is the fact recorded: what it named has been written about since, all of it.
+    rt.start_task("k3", "record a fact the long way round", "recording")
+    rt.run('anna = Thing.get(name="Anna")\nworld.relate(anna, "Berlin", "lives_in")', "k3")
+    rt.run('berlin = Thing.get(name="Berlin")\n'
+           'berlin.relate(anna, "Berlin is where Anna lives")', "k3")
+    other_words = rt.finish_task("k3")
+    check("a fact said again in other words is not owed",
+          "never ran" not in str(other_words) and "Not closed" not in str(other_words),
+          str(other_words)[:300])
+
+    rt.start_task("k2", "record another fact", "recording")
+    rt.run('anna = Thing.get(name="Anna")\nanna.relate(munich, "Anna works in Munich")\n'
+           'paris = Thing.new(name="Paris")\nparis.describe("the city Anna studied in")\n'
+           'anna.relate(paris, "Anna studied in Paris")', "k2")
+    rt.finish_task("k2")
+    rt.run('print("Anna works in Munich — recorded")', "k2")
+    again = rt.finish_task("k2")
+    check("printing it does not, and the second close passes with it said",
+          "Not closed" not in str(again) and "never ran" in str(again)
+          and "Munich" in str(again), str(again)[:400])
+
+
 def main() -> None:
+    a_statement_that_never_ran_keeps_the_task_open()
     several_under_one_word_are_said_in_the_order_they_were_told()
     everything_is_called_by_its_name()
     the_names_pass_writes_as_of_when_the_words_were_said()

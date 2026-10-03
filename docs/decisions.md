@@ -4293,3 +4293,22 @@ and every checker had to work out per class what the name was called.
   as before — 74% as owed, the same buckets to the fact.
 - `Thing.all()` now lists the kinds of Thing as well. The world's own sweeps go class by class
   through `world.all`, which stays exact, or an entity would be met once per ancestor.
+
+## 2026-10-03 — a fact that was written and never ran keeps the task open
+
+The author's rule, said plainly: facts are always recorded, whatever they are. run11 lost 22
+answers at the writing stage, and the host's own log says how 18 of them went: the fact was on a
+line of a block that failed there; the rest of the block ran; the host was told which lines did
+not; and its continuation looked the things up again and *printed* the facts —
+`print("5. Slovakia national football team: associated_with_sport cricket")` — instead of writing
+them. The task closed, and the fact was nowhere.
+
+The world knows exactly which statements did not run, so it keeps them. A statement that writes
+(`relate`, `set_*`, `describe`, `new`, an assignment to an attribute …) and failed or was never
+reached is owed to the session, keyed by its shape (the AST, so formatting does not matter); the
+same statement running later settles it. `finish_task` on a recording task will not close while any
+are owed and names them in the host's own words. Once: a host that recorded the fact another way —
+a different variable, a different word — closes on the second call, and the close says what it
+closed over, so that word is on the record beside what it covers. A refusal that cannot be got
+past would be worse than the loss it guards against. Lookups and prints are never owed: what is
+lost when a line never runs is what it would have written.

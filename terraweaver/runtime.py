@@ -784,6 +784,20 @@ class WorldRuntime:
                     f"the one that went in backwards. Then finish_task again — I will not ask "
                     f"a second time."
                 )
+            never = {shape: text for shape, text in session.owed.items()
+                     if shape not in session.owed_shown}
+            if never:
+                session.owed_shown |= set(never)
+                shown = "\n".join(f"    {text}" for text in list(never.values())[:20])
+                more = f"\n    … and {len(never) - 20} more" if len(never) > 20 else ""
+                return NotClosed(
+                    f"Not closed: {len(never)} statement(s) you wrote to record something never "
+                    f"ran — they failed, or the block never reached them — and nothing since has "
+                    f"run them:\n{shown}{more}\n\n"
+                    f"Those facts are not in the world. Printing that a fact is recorded does not "
+                    f"record it. Run each of them, fixed where it failed. If you have since "
+                    f"recorded one of them another way, finish_task again and it will close."
+                )
             crossed = self._links_against_their_type(session)
             if crossed:
                 shown = "\n".join(f"    {name}" for name, _, _ in crossed)
@@ -889,12 +903,19 @@ class WorldRuntime:
         unnamed = self._types_without_named_ends()
         turned = self._turn_the_odd_ones()
         offered = self._read_the_new_types()
+        unrun = list(session.owed.values())
         self.reset_session(key)
         if abandon:
             return f"Task abandoned: {abandon.strip()}. What it did record stays in the world."
         # Asked at the end, and the task closes either way. A type whose ends are not named
         # works; what it cannot do is be checked, and that is worth one line rather than a wall.
         asked = ""
+        if unrun:
+            # Closed on the host's word that they were recorded another way, and said once more
+            # so the word is on the record next to what it covers.
+            shown = "\n".join(f"    {text}" for text in unrun[:20])
+            asked += (f"\n\nClosed with {len(unrun)} statement(s) that never ran, on your word "
+                      f"that what they said is recorded another way:\n{shown}")
         if typed.get("failed"):
             asked += (f"\n\nThe facts you said in words were not read — the reading failed: "
                       f"{typed['failed']}. They are in the world as untyped links, with your words "
@@ -1441,6 +1462,8 @@ class WorldRuntime:
                         + sandbox.AVAILABLE.split(". No files")[0] + "."
                     )
                 _exec_by_statement(tree, namespace, self.store)
+            _settle(session, code, tree.body, ran=lambda one: True)
+            _settle_by_what_was_written(session, _written_about(recording))
             with self.store.transaction():
                 access = dict(counts)
                 self._persist(recording, namespace)
@@ -1482,6 +1505,14 @@ class WorldRuntime:
                 # statement was undone; it is not among what was kept.
                 effects["created"] = [line for line in effects["created"]
                                       if "id=None" not in line]
+            outcome = getattr(exc, "by_statement", None)
+            if outcome is not None and "tree" in locals():
+                done = {start for start, _, ok in outcome if ok}
+                # What this run wrote first, then what it owes: a statement failing here cannot
+                # be settled by the lines beside it in the same block.
+                _settle_by_what_was_written(session, _written_about(recording))
+                _settle(session, code, tree.body, ran=lambda one: one.lineno in done,
+                        namespace=namespace, world=self.world)
             self._refresh(namespace)
             standing, unrecorded = _what_survived(namespace, session)
             ran_before = _ran_before(code, exc, wrote=True)
@@ -1845,6 +1876,113 @@ def _block_as_it_stands(code: str, exc: BaseException, reason: str) -> str:
     out += [("# " + line) if line.strip() else line for line in lines[where - 1:]]
     out.append("# --- from here on, nothing ran: fix and carry on below ---")
     return "\n".join(out)
+
+
+# The calls that put something in the world. A lookup, a print, a date are not owed: what is lost
+# when a line never runs is what it would have written.
+_WRITING = {"relate", "link", "describe", "add", "new", "ensure", "set_period", "retract",
+            "become", "attribute", "define", "define_relation", "repeats", "tag"}
+
+
+def _writes(statement) -> bool:
+    """Whether this statement would write to the world if it ran."""
+    import ast
+
+    for node in ast.walk(statement):
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
+            if node.func.attr in _WRITING or node.func.attr.startswith("set_"):
+                return True
+        if isinstance(node, (ast.Assign, ast.AugAssign, ast.AnnAssign)):
+            targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+            if any(isinstance(t, ast.Attribute) for t in targets):
+                return True
+    return False
+
+
+def _named_in(statement, namespace: dict, world) -> frozenset:
+    """The entities a statement names: by the variables it uses, and by the names it spells out.
+
+    What the statement would have written is about these. A later run that writes about all of
+    them has said the fact again, whatever words it used for it.
+    """
+    import ast
+
+    ids = set()
+    for node in ast.walk(statement):
+        if isinstance(node, ast.Name):
+            value = namespace.get(node.id)
+            if isinstance(value, Entity) and getattr(value, "id", None):
+                ids.add(value.id)
+        elif isinstance(node, ast.Constant) and isinstance(node.value, str) and 0 < len(node.value) < 80:
+            ids |= _called(world, node.value)
+    return frozenset(ids)
+
+
+def _called(world, name: str) -> set:
+    """The ids of whatever the world holds under exactly this name, read off the images — a
+    lookup per class table, not a load of every entity in the world."""
+    conn = world.store.conn
+    tables = {n for (n,) in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
+    out = set()
+    for class_name, cls in world.classes.items():
+        if cls._spec.get("relation") or class_name not in tables:
+            continue
+        out |= {i for (i,) in conn.execute(
+            f'SELECT instance_id FROM "{class_name}" WHERE attr = ? AND value = ?',
+            (matching.NAME, json.dumps(name)))}
+    return out
+
+
+def _written_about(recording) -> set:
+    """The entities a run wrote something about, both ends of every link it wrote included."""
+    if recording is None:
+        return set()
+    out = set()
+    for key, entity in recording.changed.items():
+        if not recording.attrs.get(key, set()) - _BOOKKEEPING or getattr(entity, "id", None) is None:
+            continue
+        out.add(entity.id)
+        for end in ("subject", "object"):
+            other = getattr(entity, end, None)
+            if isinstance(other, Entity) and other.id is not None:
+                out.add(other.id)
+    return out
+
+
+def _settle_by_what_was_written(session, written: set) -> None:
+    """A fact owed is settled once every thing it names has been written about since."""
+    for shape in list(session.owed):
+        about = session.owed_about.get(shape)
+        if not about:
+            continue
+        seen = session.owed_seen.setdefault(shape, set())
+        seen |= written & about
+        if about <= seen:
+            session.owed.pop(shape, None)
+
+
+def _settle(session, code: str, statements: list, ran, namespace=None, world=None) -> None:
+    """Keep the session's account of what was written and never ran.
+
+    Measured 2026-10-03 on var/run11: 18 of 22 facts the host never recorded were on lines of a
+    block that failed there — the rest of the block ran, the host was told which lines did not,
+    and its continuation looked the things up again and *printed* the facts (`print("5. Slovakia:
+    associated_with_sport cricket")`) instead of writing them. The world knows exactly which
+    statements did not run, so it keeps them until the same statement runs.
+    """
+    import ast
+
+    for one in statements:
+        if not _writes(one):
+            continue
+        shape = ast.dump(one, include_attributes=False)
+        if ran(one):
+            session.owed.pop(shape, None)
+        else:
+            session.owed[shape] = (ast.get_source_segment(code, one) or ast.unparse(one)).strip()
+            if namespace is not None and world is not None and shape not in session.owed_about:
+                session.owed_about[shape] = _named_in(one, namespace, world)
+                session.owed_seen[shape] = set()
 
 
 def _ran_before(code: str, exc: BaseException, wrote: bool) -> dict:
