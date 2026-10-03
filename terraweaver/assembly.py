@@ -345,75 +345,108 @@ def assemble(facts, rule: Callable[[list, list], bool] = same_name, at: datetime
     for subject, image_id in belongs.items():
         images.setdefault(image_id, Image(id=image_id, subjects=[])).subjects.append(subject)
     for image in images.values():
-        image.subjects.sort()
-        by_slot: dict[str, list] = {}
-        for subject in image.subjects:
-            for statement in facts.about(subject):
-                if statement.slot in (SAME_AS, NOT_SAME_AS, IS_A):
-                    continue
-                # Free text had three names once, and worlds recorded before that still hold
-                # statements under the other two. They are read as what they always were.
-                slot = ONE_WORD_FOR_TEXT.get(statement.slot, statement.slot)
-                by_slot.setdefault(slot, []).append(statement)
-        if not by_slot and not any(facts.about(s, IS_A) for s in image.subjects):
-            # Everything ever said about it has been taken back — the reading's own link, written
-            # and then not borne out by the words. A subject is registered when it is first spoken
-            # of, so it is still listed; an image of it would be a link with no ends, built from
-            # nothing (measured 2026-10-03: ten of them on rebuilding a 125-fact world).
-            image.subjects = []
+        _assemble_one(facts, image, belongs, at, specs)
+    return {image_id: image for image_id, image in images.items() if image.subjects}
+
+
+def _assemble_one(facts, image, belongs, at, specs) -> None:
+    """One image from the statements of the subjects it is made of. `belongs` says, for a
+    subject a value points at, which image it is part of — `.get` is all that is asked of it."""
+    from terraweaver import ontology
+
+    image.subjects.sort()
+    by_slot: dict[str, list] = {}
+    for subject in image.subjects:
+        for statement in facts.about(subject):
+            if statement.slot in (SAME_AS, NOT_SAME_AS, IS_A):
+                continue
+            # Free text had three names once, and worlds recorded before that still hold
+            # statements under the other two. They are read as what they always were.
+            slot = ONE_WORD_FOR_TEXT.get(statement.slot, statement.slot)
+            by_slot.setdefault(slot, []).append(statement)
+    if not by_slot and not any(facts.about(s, IS_A) for s in image.subjects):
+        # Everything ever said about it has been taken back — the reading's own link, written
+        # and then not borne out by the words. A subject is registered when it is first spoken
+        # of, so it is still listed; an image of it would be a link with no ends, built from
+        # nothing (measured 2026-10-03: ten of them on rebuilding a 125-fact world).
+        image.subjects = []
+        return
+    class_name = became(facts, image.subjects) or next(
+        (facts.class_of(s) for s in image.subjects if facts.class_of(s)), None)
+    name_slot = matching.NAME_KEYS.get(class_name or "")
+    # Whatever it was called before is what it is called now: a Thing's `name` read as a
+    # Vacancy's `title`. Without this the one thing every entity has would be the one thing
+    # lost in becoming something else.
+    for was, statements in list(by_slot.items()):
+        if name_slot and was != name_slot and was in matching.NAME_KEYS.values():
+            by_slot.setdefault(name_slot, []).extend(statements)
+    for slot, statements in by_slot.items():
+        if slot == name_slot:
+            image.names, image.proposed_names = name_forms(statements, at)
+            if image.names:
+                image.values[slot] = image.names[0]
+                image.sources[slot] = next(s.source for s in reversed(statements)
+                                           if s.source != facts_module.WORKED)
             continue
-        class_name = became(facts, image.subjects) or next(
-            (facts.class_of(s) for s in image.subjects if facts.class_of(s)), None)
-        name_slot = matching.NAME_KEYS.get(class_name or "")
-        # Whatever it was called before is what it is called now: a Thing's `name` read as a
-        # Vacancy's `title`. Without this the one thing every entity has would be the one thing
-        # lost in becoming something else.
-        for was, statements in list(by_slot.items()):
-            if name_slot and was != name_slot and was in matching.NAME_KEYS.values():
-                by_slot.setdefault(name_slot, []).extend(statements)
-        for slot, statements in by_slot.items():
-            if slot == name_slot:
-                image.names, image.proposed_names = name_forms(statements, at)
-                if image.names:
-                    image.values[slot] = image.names[0]
-                    image.sources[slot] = next(s.source for s in reversed(statements)
-                                               if s.source != facts_module.WORKED)
+        if holds_many(specs, class_name, slot):
+            # Everything still standing, newest first. Nothing here is a rival to anything.
+            standing = [s for s in statements if s.holds_at(at)]
+            if not standing:
                 continue
-            if holds_many(specs, class_name, slot):
-                # Everything still standing, newest first. Nothing here is a rival to anything.
-                standing = [s for s in statements if s.holds_at(at)]
-                if not standing:
-                    continue
-                seen, many = set(), []
-                for statement in sorted(standing, key=lambda s: s.last_said, reverse=True):
-                    # A statement about a list slot may carry one value or the whole list — the
-                    # host writes `tags = tags + ["x"]` as often as it appends — so they are
-                    # flattened here. Otherwise an image ends up holding lists of lists, which is
-                    # nobody's idea of a list of tags.
-                    values = statement.value if isinstance(statement.value, list) else [statement.value]
-                    for value in values:
-                        key = _text(value)
-                        if key in seen:
-                            continue
-                        seen.add(key)
-                        many.append(belongs.get(value.get("$subject")) if _is_ref(value) else value)
-                image.values[slot] = many
-                image.sources[slot] = standing[-1].source
-                continue
-            best, rivals = resolve(statements, at)
-            if best is None or best.value is None:
-                continue
-            value = best.value
-            image.values[slot] = belongs.get(value.get("$subject")) if _is_ref(value) else value
-            image.sources[slot] = best.source
-            if best.is_conclusion:
-                # The image says which values were worked out rather than told, so an answer can
-                # be phrased as what it is — and a judgement whose basis has moved says so.
-                image.judged.add(slot)
-                if facts.stale(best):
-                    image.stale.add(slot)
-            if rivals:
-                image.conflicts[slot] = rivals
+            seen, many = set(), []
+            # Texts in the order they were said, as the live world shows them (`Entity._show`)
+            # and as `notes` — the latest description — reads them; anything else newest first.
+            # Two orders for one slot made an image read differently after a rebuild than
+            # before it, which was invisible while rebuilds were rare.
+            spec = (specs or {}).get(class_name) or {}
+            texts = slot in ontology.dated_lists(spec) if spec else slot == "tags"
+            ordered = standing if texts else sorted(standing, key=lambda s: s.last_said, reverse=True)
+            for statement in ordered:
+                # A statement about a list slot may carry one value or the whole list — the
+                # host writes `tags = tags + ["x"]` as often as it appends — so they are
+                # flattened here. Otherwise an image ends up holding lists of lists, which is
+                # nobody's idea of a list of tags.
+                values = statement.value if isinstance(statement.value, list) else [statement.value]
+                for value in values:
+                    key = _text(value)
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    many.append(belongs.get(value.get("$subject")) if _is_ref(value) else value)
+            image.values[slot] = many
+            image.sources[slot] = standing[-1].source
+            continue
+        best, rivals = resolve(statements, at)
+        if best is None or best.value is None:
+            continue
+        value = best.value
+        image.values[slot] = belongs.get(value.get("$subject")) if _is_ref(value) else value
+        image.sources[slot] = best.source
+        if best.is_conclusion:
+            # The image says which values were worked out rather than told, so an answer can
+            # be phrased as what it is — and a judgement whose basis has moved says so.
+            image.judged.add(slot)
+            if facts.stale(best):
+                image.stale.add(slot)
+        if rivals:
+            image.conflicts[slot] = rivals
+
+
+def assemble_these(facts, groups: dict, belongs, at: datetime | None = None,
+                   specs: dict | None = None) -> dict[str, Image]:
+    """The images of these things only, each from the subjects it is already made of.
+
+    `groups` is image id -> its subjects, as the last whole assembly glued them; nothing is glued
+    afresh here — which subjects are one thing is a question about the whole world, and is asked at
+    the close. This is the other half of "rebuild the one entity this run touched".
+    """
+    from terraweaver import timeutil
+
+    at = at or timeutil.now()
+    images = {image_id: Image(id=image_id, subjects=sorted(subjects))
+              for image_id, subjects in groups.items()}
+    for image in images.values():
+        _assemble_one(facts, image, belongs, at, specs)
     return {image_id: image for image_id, image in images.items() if image.subjects}
 
 

@@ -4358,3 +4358,29 @@ value (`image_vs_record.py`: nothing lost, merged, new or different); 92% of the
 owed; the 12 questions whose facts are all in those 125 answered 11 of 12, as on the world written
 the hour before without it. What is left of rule 4 is step 3b: assembling only what a run touched,
 after every run, so that intake writes no image at all.
+
+## 2026-10-04 — after every run, what it said is assembled from the record into the objects held
+
+Step 3b, the end of rule 4. The record keeps the subjects it has been told about
+(`Facts.spoken_of`: every state, restatement, end and retraction), and after each run — clean or
+not — `rebuild.refresh` assembles their images from the statements, into the very objects the
+host's variables hold. Within a run the images are still written from the objects, because the
+next line of a block has to see the link the last one made; that is a cache that lives until the
+run ends. Taken from the record and not from the run's list of changed objects, because
+`describe` and the other dated lists write through their own door and were not on that list.
+
+Gluing is a question about the whole world, so it stays with the full assembly at the close, which
+now keeps what it glued (`image_subjects`); the per-run assembly builds each image from the
+subjects it is already made of (`assembly.assemble_these`, the one image's code split out of
+`assemble`).
+
+Two things the rebuild had been getting wrong, invisible while it was rare:
+- **Texts in two orders.** The live world showed a dated list in the order it was said
+  (`Entity._show`), the assembly newest first; `notes`, the latest description, reads the former.
+  The assembly now keeps said order for text lists and tags.
+- **The two parties are not 32 hex.** A reference to `person:user` was not recognised as an id,
+  and a link to the user came back with no subject.
+
+Measured on a fresh 125-fact world: images and record agree to the value; 95% of the standing facts
+as owed; no warning from the assembly in the run's log. What is still writing images from objects
+is only the in-run cache; `World._with_its_name` stays until a full run shows it never fires.

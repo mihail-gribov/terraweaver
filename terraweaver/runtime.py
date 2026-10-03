@@ -1108,6 +1108,23 @@ class WorldRuntime:
         except Exception:  # noqa: BLE001 - reading is never what stops a task closing
             return {}, 0
 
+    def _from_the_record(self, recording) -> None:
+        """What this run changed, as the record now says it — the image is a cache of the record.
+
+        Each statement of the run wrote its image from the object it held, so the next line could
+        read what the last one made; this puts the record's reading in place of that before
+        anybody else sees it (docs/architecture.md, rule 4).
+        """
+        from terraweaver import rebuild
+
+        if recording is None:
+            return
+        try:
+            rebuild.refresh(self.world, rebuild.spoken_of(self.world, self.world.facts.taken_since()))
+        except Exception:  # noqa: BLE001 - the images stay as the run wrote them; the record is whole
+            log.warning("the images this run changed could not be assembled from the record",
+                        exc_info=True)
+
     def _assemble_from_the_record(self) -> None:
         """The images built again from what was said, at the end of a piece of recording work.
 
@@ -1457,6 +1474,8 @@ class WorldRuntime:
         before = {name: id(value) for name, value in namespace.items()}
         # What this run makes, kept for the run and not for one statement's transaction.
         self.store.made = []
+        # And what it says: the images assembled from the record afterwards are of these.
+        self.world.facts.taken_since()
         try:
             ontology.set_open_tokens(self.world.questions.tokens())
             skipped_imports: list[str] = []
@@ -1489,6 +1508,7 @@ class WorldRuntime:
             with self.store.transaction():
                 access = dict(counts)
                 self._persist(recording, namespace)
+                self._from_the_record(recording)
                 learned = self._learn_name_choice(session, recording, before)
                 effects = _effects(recording, created={id(o) for o in self.store.made if o.id is not None})
                 effects["assumed"] += learned
@@ -1517,6 +1537,7 @@ class WorldRuntime:
             # recording to report from.
             if recording is not None:
                 with self.store.transaction():
+                    self._from_the_record(recording)
                     effects = _effects(recording, created={id(o) for o in self.store.made if o.id is not None})
                     effects["assumed"] += self._learn_name_choice(session, recording, before)
                     # The statements that finished are in the world, so the task did touch

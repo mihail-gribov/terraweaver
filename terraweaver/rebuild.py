@@ -21,12 +21,35 @@ from datetime import datetime
 from terraweaver import assembly, ontology, tags
 
 
+# Which subjects each image is made of, as the last whole assembly glued them. Kept, because the
+# image after one run is assembled from its own subjects alone (`refresh`) and gluing is a question
+# about the whole world, asked at the close.
+GLUED = """
+CREATE TABLE IF NOT EXISTS image_subjects (
+    subject TEXT PRIMARY KEY,
+    image_id TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_image_subjects_image ON image_subjects(image_id);
+"""
+
+
+def _glued(conn) -> None:
+    for statement in GLUED.strip().split(";"):
+        if statement.strip():
+            conn.execute(statement)
+
+
 def rebuild(world, rule=None, at: datetime | None = None) -> dict:
     """Throw away the images and build them again from the statements. Returns what was built."""
     images = assembly.assemble(world.facts, rule or assembly.same_name, at, world.specs)
     built: dict = {}
     with world.store.transaction(), ontology.trusted_writes(), ontology.not_recording(), \
             ontology.filling_from_record():
+        _glued(world.store.conn)
+        world.store.conn.execute("DELETE FROM image_subjects")
+        world.store.conn.executemany(
+            "INSERT OR REPLACE INTO image_subjects (subject, image_id) VALUES (?, ?)",
+            [(subject, image.id) for image in images.values() for subject in image.subjects])
         for class_name, cls in world.classes.items():
             # Not what the world is told — what the world keeps for itself. A Task is the one
             # such class: it says where a piece of work started and stopped, which nobody ever
@@ -71,6 +94,114 @@ def rebuild(world, rule=None, at: datetime | None = None) -> dict:
     # host learns a word, and the first run that used them ended with both gone.
     world.ensure_selves()
     return built
+
+
+class _Leaders:
+    """For a subject a value points at, the image it is part of — read from the last gluing."""
+
+    def __init__(self, conn):
+        self.conn = conn
+
+    def get(self, subject, default=None):
+        if subject is None:
+            return default
+        row = self.conn.execute("SELECT image_id FROM image_subjects WHERE subject = ?",
+                                (subject,)).fetchone()
+        return row[0] if row else subject
+
+
+class _Loaded:
+    """The entities a refreshed image points at, loaded as they are — the `built` of a rebuild,
+    for a few things rather than for all of them."""
+
+    def __init__(self, world, held: dict):
+        self.world, self.held = world, held
+
+    def __contains__(self, value) -> bool:
+        # By the table, not by the shape: the two parties are `person:user` and `agent:assistant`,
+        # and a link to the user read as a link to nobody.
+        if not isinstance(value, str) or not value:
+            return False
+        if value in self.held:
+            return True
+        return self.world.store.conn.execute(
+            "SELECT 1 FROM instances WHERE id = ?", (value,)).fetchone() is not None
+
+    def __getitem__(self, value):
+        if value in self.held:
+            return self.held[value]
+        return self.world.store.load(value, self.world.classes)
+
+
+def spoken_of(world, subjects) -> list:
+    """The entities these subjects build, as they are held now — each image once."""
+    conn = world.store.conn
+    _glued(conn)
+    out, seen = [], set()
+    for subject in subjects:
+        row = conn.execute("SELECT image_id FROM image_subjects WHERE subject = ?",
+                           (subject,)).fetchone()
+        image_id = row[0] if row else subject
+        if image_id in seen:
+            continue
+        seen.add(image_id)
+        if conn.execute("SELECT 1 FROM instances WHERE id = ?", (image_id,)).fetchone() is None:
+            continue
+        try:
+            one = world.store.load(image_id, world.classes)
+        except Exception:  # noqa: BLE001 - a thing that will not load keeps the image it has
+            continue
+        if one is not None:
+            out.append(one)
+    return out
+
+
+def refresh(world, entities) -> int:
+    """The images of these things assembled from the record, into the objects already held.
+
+    Rule 4 of docs/architecture.md, after every run rather than only at the close: whatever a door
+    put on an object, what the image holds when the run ends is what the statements say. Into the
+    same objects, so every variable a host holds still holds the thing; from the subjects each was
+    already made of, so nothing is glued or split here. The two parties are left alone — the tie
+    between them is not a statement — and so is the world's own bookkeeping. Returns how many were
+    assembled.
+    """
+    from terraweaver.world import THE_PARTIES
+
+    conn = world.store.conn
+    _glued(conn)
+    held = {}
+    for one in entities:
+        if (getattr(one, "id", None) is None or one.id in THE_PARTIES or one._spec.get("own")
+                or not world.store.is_live(one)):
+            continue
+        held[one.id] = one
+    if not held:
+        return 0
+    groups = {}
+    for image_id in held:
+        rows = conn.execute("SELECT subject FROM image_subjects WHERE image_id = ?",
+                            (image_id,)).fetchall()
+        groups[image_id] = [r[0] for r in rows] or [held[image_id].subject_id]
+    # The classes as they are now — one made during this run is not in the specs the world opened
+    # with, and read without it a list slot came back as the letters of its one value.
+    specs = {name: cls._spec for name, cls in world.classes.items()}
+    images = assembly.assemble_these(world.facts, groups, _Leaders(conn), None, specs)
+    loaded = _Loaded(world, held)
+    done = 0
+    with world.store.transaction(), ontology.trusted_writes(), ontology.not_recording(), \
+            ontology.filling_from_record():
+        for image_id, entity in held.items():
+            image = images.get(image_id)
+            if image is None or _class_of(world, image) not in (None, type(entity).__name__):
+                continue          # nothing said about it yet, or it is becoming something else
+            looked_at = entity.__dict__.get("accessed_at")   # attention, not a fact: kept
+            _fill(world, entity, image, loaded)
+            if looked_at is not None:
+                entity.accessed_at = looked_at
+            world.store.save(entity)
+            done += 1
+    return done
 
 
 def _class_of(world, image) -> str | None:

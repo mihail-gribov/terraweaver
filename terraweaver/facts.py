@@ -158,6 +158,10 @@ class Facts:
         # derivation rebuilds once, which is exactly right, and two processes never have to agree
         # on anything (docs/code-review-2026-09-30.md 2.4).
         self.writes = 0
+        # Every subject something has been said about since this was last asked: what the images
+        # that follow from the record have to be assembled again for (`rebuild.refresh`). Kept by
+        # the record, because the record is the one place every door writes through.
+        self.spoken_of: set[str] = set()
         _run(conn, SUBJECTS)
         conn.commit()
         # A world written before time became a number is brought over on the way in, once. Two
@@ -236,6 +240,7 @@ class Facts:
                 f"UPDATE {table} SET restated_at = ?, times = ? WHERE id = ?",
                 (max(when, self._last_said(table, row_id)), times + 1, row_id))
             self.writes += 1
+            self.spoken_of.add(subject)
             return f"{table}:{row_id}"
         return self._insert(table, subject, slot, value, valid_from, valid_until, when, source,
                             run_id, None)
@@ -275,6 +280,7 @@ class Facts:
         self.conn.execute(f"UPDATE {table} SET valid_until = ? WHERE id = ? AND valid_until IS NULL",
                           (_iso(at) or _now(), row))
         self.writes += 1
+        self._spoken_of_row(table, row)
 
     def retract(self, statement_id: str, by: str | None = None) -> None:
         """Take a statement back — it was wrong, or the run that made it was undone. It stays in
@@ -283,6 +289,17 @@ class Facts:
         self.conn.execute(f"UPDATE {table} SET retracted_by = ? WHERE id = ?",
                           (by or "retracted", row))
         self.writes += 1
+        self._spoken_of_row(table, row)
+
+    def _spoken_of_row(self, table: str, row) -> None:
+        found = self.conn.execute(f"SELECT subject FROM {table} WHERE id = ?", (row,)).fetchone()
+        if found:
+            self.spoken_of.add(found[0])
+
+    def taken_since(self) -> set[str]:
+        """The subjects spoken of since the last time this was asked, and forget them."""
+        said, self.spoken_of = self.spoken_of, set()
+        return said
 
     def _last_said(self, table: str, row_id: int) -> int:
         """When this row was last heard, as it stands — `restated_at` if there is one, else `stated_at`.
@@ -413,6 +430,7 @@ class Facts:
              _digest(basis) if basis is not None else None),
         )
         self.writes += 1
+        self.spoken_of.add(subject)
         return f"{table}:{cursor.lastrowid}"
 
     def _query(self, where: str, args: list, tables: list[str],

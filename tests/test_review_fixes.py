@@ -834,7 +834,31 @@ def a_thing_made_by_hand_is_in_the_record_as_well_as_the_image() -> None:
           str([link.display_name() for link in again.relations()]))
 
 
+def what_a_run_changed_is_shown_as_the_record_says_it() -> None:
+    """At the end of a run, the image of what it changed is the record's reading, not the object's.
+
+    Rule 4 of docs/architecture.md. A door that changes an object without saying it — the shell a
+    failed load left, which nulled 31 names in a 455-fact world — must not reach the image.
+    """
+    from terraweaver import ontology
+
+    rt = base.world()
+    rt.run('kyd = Person.new(name="Thomas Kyd")\nkyd.describe("an English playwright")', "k")
+    kyd = rt.world.get("Person", name="Thomas Kyd")
+    with ontology.trusted_writes(), ontology.not_recording():
+        kyd.name = None                       # a door that says nothing
+    rt.run('kyd.describe("born in London")', "k")
+    row = rt.world.store.conn.execute(
+        "SELECT value FROM Person WHERE instance_id = ? AND attr = 'name'", (kyd.id,)).fetchone()
+    check("the image holds the name the record holds", row and row[0] == '"Thomas Kyd"', str(row))
+    check("and so does the object the host is holding", kyd.name == "Thomas Kyd", repr(kyd.name))
+    check("with both descriptions", set(kyd.descriptions or []) == {"an English playwright",
+                                                                     "born in London"},
+          str(kyd.descriptions))
+
+
 def main() -> None:
+    what_a_run_changed_is_shown_as_the_record_says_it()
     a_thing_made_by_hand_is_in_the_record_as_well_as_the_image()
     a_statement_that_never_ran_keeps_the_task_open()
     several_under_one_word_are_said_in_the_order_they_were_told()
