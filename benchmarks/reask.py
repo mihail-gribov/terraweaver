@@ -40,13 +40,19 @@ def main() -> int:
     parser.add_argument("--model", default="haiku")
     parser.add_argument("--port", type=int, default=7070)
     parser.add_argument("--label", default="reask")
+    parser.add_argument("--own", default=None,
+                        help="questions of our own instead of the benchmark's, as written by "
+                             "experiments/own_questions.py: [{id, question, gold}]")
     parser.add_argument("--only", default=None,
                         help="ask just these questions, by number in the slice (2,7,19) — the "
                              "aimed re-ask of the ones that went wrong, at cents each")
     args = parser.parse_args()
 
     variant = fc.load(args.hops, args.context)
-    if args.only:
+    if args.own:
+        questions = [fc.Question(one["id"], one["question"], list(one["gold"]))
+                     for one in json.loads(Path(args.own).read_text())]
+    elif args.only:
         wanted = {int(n) for n in args.only.replace(" ", "").split(",") if n}
         questions = [q for n, q in enumerate(variant.questions, 1) if n in wanted]
     else:
