@@ -1094,7 +1094,10 @@ class World:
             with ontology.trusted_writes(), ontology.not_recording():
                 for attr, value in period.items():
                     setattr(instance, attr, value)
+        first = len(self.store.made)
         self.store.save_graph(instance)
+        # The far ends of a link made by hand arrive here too, and nothing else would state them.
+        self.say_what_came_in(self.store.made[first:], but=instance)
         # Attributes given at construction are set before the entity has an id, so they can't
         # state themselves on the way in; they are stated here, once it has one.
         source, run_id = ontology.stated_by()
@@ -1154,7 +1157,38 @@ class World:
         ontology.note_world_call("world_writes")
         instance.touch()
         self._with_its_name(instance)
+        first = len(self.store.made)
         self.store.save_graph(instance)
+        self.say_what_came_in(self.store.made[first:])
+
+    def say_what_came_in(self, arrived: list, but=None) -> None:
+        """A thing that got its id on the way to storage says what it holds, once.
+
+        `Thing(name="Harvard University")` built by hand and passed as the far end of a link is
+        given its id by the save that stores the link — and an attribute set before there is an id
+        states nothing, so the image held a name the record had never heard. Measured 2026-10-03:
+        three things in a 125-fact world existed only as images, six links pointing at them, and a
+        rebuild from the record cut every one of those links off at the end. `create` states what
+        it was given; this is the same for whatever came in beside it.
+        """
+        source, run_id = ontology.stated_by()
+        for one in arrived:
+            if one is but or getattr(one, "id", None) is None or one._spec.get("own"):
+                continue
+            try:
+                if self.facts.about(one.subject_id):
+                    continue
+            except Exception:  # noqa: BLE001 - a record that cannot be read has nothing to compare
+                continue
+            for attr in type(one)._spec["attributes"]:
+                name = attr["name"]
+                if "derived" in attr or name in ontology.MANAGED_VALUE_ATTRS:
+                    continue
+                value = one.__dict__.get(name)
+                if value is None or value == []:
+                    continue
+                self.facts.state(one.subject_id, name, ontology._as_statement(value),
+                                 source=source, run_id=run_id, class_name=type(one).__name__)
 
     def _with_its_name(self, instance) -> None:
         """An image never goes to storage without the name its record holds.

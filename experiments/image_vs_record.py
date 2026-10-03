@@ -57,6 +57,10 @@ def main() -> int:
     kinds_after, after = snapshot(conn, world.classes)
 
     gone = [i for i, k in kinds_before.items() if i not in kinds_after and k not in own]
+    # A copy the identity rule glued onto another of the same name is not lost: its statements
+    # are there and now build the other image. Only one with nothing in the record is.
+    merged = [i for i in gone if world.facts.about(i)]
+    gone = [i for i in gone if i not in merged]
     new = [i for i in kinds_after if i not in kinds_before]
     moved = [(i, kinds_before[i], kinds_after[i]) for i in kinds_before
              if i in kinds_after and kinds_before[i] != kinds_after[i]]
@@ -82,6 +86,7 @@ def main() -> int:
     print(f"{len(kinds_before)} instances before, {len(kinds_after)} after the rebuild "
           f"({len(own)} own classes left out of the count of lost ones)\n")
     print(f"   lost entirely      {len(gone)}   (in the image, nowhere in the record)")
+    print(f"   merged             {len(merged)}   (copies the identity rule glued onto another)")
     print(f"   new                {len(new)}")
     print(f"   another class      {len(moved)}")
     print(f"   values: shown only by the image {sum(lost.values())}, only by the record "

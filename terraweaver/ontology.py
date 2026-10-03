@@ -143,13 +143,13 @@ def record_changes():
 @contextmanager
 def not_recording():
     """Suspend change recording — loading from storage fills attributes but changes nothing."""
-    global _CHANGED
-    previous = _CHANGED
-    _CHANGED = None
+    global _CHANGED, _SAYING
+    previous, saying = _CHANGED, _SAYING
+    _CHANGED, _SAYING = None, False
     try:
         yield
     finally:
-        _CHANGED = previous
+        _CHANGED, _SAYING = previous, saying
 
 
 @contextmanager
@@ -268,6 +268,11 @@ def ask_if_questioned(entity, token: str) -> None:
 
 
 _STATING = ("agent", None)
+# Whether a write outside a host's run is said, not only shown. Inside a run every write is stated;
+# outside one only what is under `stating(...)` — the world's own passes. Without it they changed
+# the image and nothing else: measured 2026-10-03, rebuilding var/run11 from its record brought
+# back 121 bare links the reading had ended in the image only (experiments/image_vs_record.py).
+_SAYING = False
 
 
 @contextmanager
@@ -279,13 +284,13 @@ def stating(source: str, run_id: str | None = None):
     passes on is the assistant's responsibility. The world's own work says `stating("world",
     ticket)`, and what it writes then carries the lowest standing and comes back off in one
     move."""
-    global _STATING
-    before = _STATING
-    _STATING = (source, run_id)
+    global _STATING, _SAYING
+    before, saying = _STATING, _SAYING
+    _STATING, _SAYING = (source, run_id), True
     try:
         yield
     finally:
-        _STATING = before
+        _STATING, _SAYING = before, saying
 
 
 def stated_by() -> tuple:
@@ -1372,7 +1377,7 @@ class Entity:
         # When a record holds is data about it like any other, so it is stated too; only the
         # world's own bookkeeping (id, when we first saw it, when it was last touched) isn't.
         given = value if "given" not in dir() else given
-        if (_CHANGED is not None and not name.startswith("_")
+        if ((_CHANGED is not None or _SAYING) and not name.startswith("_")
                 and name not in ("id", "created_at", "accessed_at")
                 and getattr(self, "id", None) is not None):
             # What is written is also what was said: the image changes here, and the statement

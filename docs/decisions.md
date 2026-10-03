@@ -4312,3 +4312,28 @@ a different variable, a different word — closes on the second call, and the cl
 closed over, so that word is on the record beside what it covers. A refusal that cannot be got
 past would be worse than the loss it guards against. Lookups and prints are never owed: what is
 lost when a line never runs is what it would have written.
+
+## 2026-10-03 — what the world does is said, and the record is enough to build the images again
+
+Step 0 of making the image a cache of the record (architecture.md, rule 4): rebuild a copy of a
+world and diff it against itself (`experiments/image_vs_record.py`). On var/run11, 167 values were
+in the images and nowhere in the record, and three doors explained them:
+
+- **The world's own passes changed the image only.** A statement was written only inside a
+  host's run (`_CHANGED`), so the reading ending a bare link after typing it (121 of the 167), the
+  settling by verdict, a link turned round, a task's bookkeeping — all of it under
+  `stating("world")`, all of it shown and never said. `stating(...)` now means what it says: the
+  writes inside it are statements, run or no run. `not_recording()` still silences — a load, the
+  values `retype` carries over — so an old value is never said again as if it were new.
+- **The rebuild did not read `from_is`/`until_is`** — whether a moment was said or worked out at
+  a hand-over, which is what comparing like with like rests on. It reads them now.
+- **A thing built with its constructor and passed as a link's far end** got its id from the save
+  that stored the link and stated nothing. `World.say_what_came_in` states, once, what anything
+  that arrives in storage without a word in the record holds.
+
+Measured on a fresh 125-fact world with all three: 8 values only in the image, against 121–167.
+What remains different is descriptions the record has ended and the image still showed — which is
+the image being stale, and the next step (one door into the image) is for that. The rebuild also
+glues same-name copies into one — 28 in run11, and the stage breakdown of a rebuilt run11 had 2
+answers lost to copies instead of 10. That is the identity rule doing what architecture.md says
+it does; it simply never ran while the world was in use.

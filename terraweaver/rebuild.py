@@ -91,7 +91,14 @@ def _fill(world, entity, image, built: dict) -> None:
     for name, attribute in declared.items():
         setattr(entity, name, [] if attribute.get("type", "").startswith("list[") else None)
     entity.valid_from = entity.valid_until = None  # when it holds is stated too, and may be unset
+    # And what those two moments are — said, or worked out at a hand-over ("before"). Read back
+    # like the rest: dropped, a rebuilt world could no longer tell a date somebody gave from one
+    # the world inferred, which is the whole of comparing like with like (`_which_is_later`).
+    entity.from_is = entity.until_is = None
     for slot, value in image.values.items():
+        if slot in ("from_is", "until_is"):
+            setattr(entity, slot, value if isinstance(value, str) else None)
+            continue
         if slot in declared or slot in ("valid_from", "valid_until"):
             kind = declared.get(slot, {}).get("type", "datetime" if slot.startswith("valid_") else "")
             try:

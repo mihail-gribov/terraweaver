@@ -884,7 +884,8 @@ class WorldRuntime:
                 )
         left = self.world.questions.open_(limit=5, here=set(session.touched)) if session.touched else []
         if task is not None:
-            with ontology.trusted_writes():
+            # Said, not only shown: how a task went is the world's own record of its work.
+            with ontology.trusted_writes(), ontology.stating("world"):
                 task.runs = session.runs
                 touched = [self.store.load(i, self.classes) for i in sorted(session.touched)]
                 task.touched = [e for e in touched if e is not None]
@@ -1663,8 +1664,10 @@ class WorldRuntime:
             # saving it would overwrite what the world holds now.
             roots.extend(item for item in items if isinstance(item, Entity) and item.id is not None
                          and self.store.is_live(item))
+        first = len(self.store.made)
         for root in roots:
             self.store.save_graph(root, seen)
+        self.world.say_what_came_in(self.store.made[first:])
 
     def _refresh(self, namespace: dict[str, Any]) -> None:
         """After a rollback, rebind entities the namespace holds to their stored state."""

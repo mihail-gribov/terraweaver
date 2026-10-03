@@ -814,7 +814,28 @@ def a_statement_that_never_ran_keeps_the_task_open() -> None:
           and "Munich" in str(again), str(again)[:400])
 
 
+def a_thing_made_by_hand_is_in_the_record_as_well_as_the_image() -> None:
+    """A thing built with its constructor and passed as a link's far end is stated, not only shown.
+
+    Measured 2026-10-03: three things in a 125-fact world existed as images and nowhere in the
+    record, six links pointing at them; a rebuild from the record cut those links off at the end.
+    """
+    rt = base.world()
+    rt.run('nietzsche = Person.new(name="Friedrich Nietzsche")\n'
+           'book = Thing(name="The Birth of Tragedy")\n'
+           'nietzsche.relate(book, "Nietzsche wrote The Birth of Tragedy")', "k")
+    book = rt.world.find("Thing", name="The Birth of Tragedy").matches[0]
+    check("the far end is in the record", any(one.slot == "name" for one in rt.world.facts.about(book.id)),
+          str([(one.slot, one.value) for one in rt.world.facts.about(book.id)]))
+    rt.world.rebuild()
+    again = rt.world.get("Person", name="Friedrich Nietzsche")
+    check("and the link survives a rebuild, both ends on it",
+          [link.other(again).display_name() for link in again.relations()] == ["The Birth of Tragedy"],
+          str([link.display_name() for link in again.relations()]))
+
+
 def main() -> None:
+    a_thing_made_by_hand_is_in_the_record_as_well_as_the_image()
     a_statement_that_never_ran_keeps_the_task_open()
     several_under_one_word_are_said_in_the_order_they_were_told()
     everything_is_called_by_its_name()

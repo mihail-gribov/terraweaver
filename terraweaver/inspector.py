@@ -506,7 +506,7 @@ def turn_the_odd_ones(world, least_run: int = A_RUN) -> list[str]:
             if link is None:
                 continue
             was = link.display_name()
-            with ontology.trusted_writes():
+            with ontology.trusted_writes(), ontology.stating("world"):
                 link.subject, link.object = link.object, link.subject
                 world.save(link)
             with ontology.stating("world"):
