@@ -56,7 +56,10 @@ class World:
                 "--allowedTools", "mcp__terraweaver__*",
                 # Without this the host reads and writes files, and in the first smoke run it
                 # answered out of Claude Code's own per-folder memory instead of the world.
-                "--disallowedTools", "Read Write Edit Bash Glob Grep WebFetch WebSearch NotebookEdit"]
+                # And nothing that waits on a person: nobody is there. `AskUserQuestion` failed with
+                # "Answer questions?" in batch 2 of a full run on 2026-10-03 and stopped it.
+                "--disallowedTools", "Read Write Edit Bash Glob Grep WebFetch WebSearch NotebookEdit "
+                                     "AskUserQuestion EnterPlanMode EnterWorktree"]
 
     cwd = property(lambda self: self.here)
 
@@ -267,7 +270,7 @@ def went_wrong(got: dict) -> dict | None:
 # plumbing failing, so none of it is kept out of the number — a host that cannot work the world's
 # door is answering badly, and that is the thing being measured. It is counted and reported.
 HOSTS_OWN = ("No such tool available", "Invalid tool name", "validation error",
-             "Unknown skill", "Cannot create agent worktree")
+             "Unknown skill", "Cannot create agent worktree", "Answer questions?")
 
 # Not a failure of the world and not of the host either: the account simply has no usage left.
 # Measured 2026-09-30, it took 95 of 100 questions in one run — "You're out of extra usage · resets
