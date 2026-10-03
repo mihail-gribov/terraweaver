@@ -724,7 +724,52 @@ def everything_is_called_by_its_name() -> None:
           str([(one.slot, one.value) for one in again.world.facts.about(kyd.id)]))
 
 
+def several_under_one_word_are_said_in_the_order_they_were_told() -> None:
+    """Two tellings standing under one word: the read says which came last, and ends nothing.
+
+    Found 2026-10-03 on var/run10: "Klapisch citizen_of France", then "… of Malaysia", under a word
+    that holds several; and "Microsoft ceo_of Satya Nadella" written the other way round beside
+    "Steve Jobs ceo_of Microsoft". The host was handed both and chose by what it knew of the world.
+    """
+    from terraweaver import ontology, timeutil
+
+    rt = base.world()
+    base.word(rt, "citizen_of", "a person being a citizen of a country", "many-to-many",
+              subject_is="the citizen", object_is="the country")
+    base.word(rt, "ceo_of", "a person running a company as its chief executive", "many-to-one",
+              subject_is="the chief executive", object_is="the company")
+    w = rt.world
+    klapisch = w.new("Person", name="Cédric Klapisch")
+    france, malaysia = w.new("Thing", name="France"), w.new("Thing", name="Malaysia")
+    microsoft = w.new("Thing", name="Microsoft")
+    nadella, jobs = w.new("Person", name="Satya Nadella"), w.new("Person", name="Steve Jobs")
+    with timeutil.as_of(datetime(2020, 1, 3)):
+        w.relate(klapisch, france, "citizen_of")
+        w.relate(microsoft, nadella, "ceo_of")            # the other way round
+    with timeutil.as_of(datetime(2020, 1, 9)):
+        w.relate(klapisch, malaysia, "citizen_of")
+        w.relate(jobs, microsoft, "ceo_of")
+
+    with ontology.record_changes() as heard:
+        both = klapisch.related("citizen_of")
+    check("both still stand", {x.display_name() for x in both} == {"France", "Malaysia"},
+          str([x.display_name() for x in both]))
+    said = " ".join(heard.hints)
+    check("and the read says which was told last",
+          "the last told is" in said and said.index("Malaysia") < said.index("France"), said[:300])
+
+    with ontology.record_changes() as heard:
+        microsoft.related("ceo")
+    said = " ".join(heard.hints)
+    check("a telling written the other way round is named beside it",
+          "the other way round" in said and "Satya Nadella" in said and "Steve Jobs" in said,
+          said[:300])
+    check("the later one first", "Steve Jobs" in said and said.index("Steve Jobs") < said.index("Satya"),
+          said[:300])
+
+
 def main() -> None:
+    several_under_one_word_are_said_in_the_order_they_were_told()
     everything_is_called_by_its_name()
     the_names_pass_writes_as_of_when_the_words_were_said()
     a_hand_over_compares_like_with_like()

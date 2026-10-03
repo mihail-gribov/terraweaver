@@ -1433,7 +1433,69 @@ def relations_of(world, entity, kind: str | None = None, history: bool = False,
                reverse=True)
     for relation in found:  # so rel.counterpart knows which end the host asked from
         relation.__dict__["_asked_from"] = entity
+    if kind is not None and not history and by_label is None:
+        _note_several(world, entity, kind, found, chosen)
+    elif kind is None and not history:
+        # Every link at once is how a host most often reads a thing, so the order of tellings is
+        # said here too, a word at a time.
+        by_type: dict = {}
+        for r in found:
+            by_type.setdefault(type(r).__name__, []).append(r)
+        for name, links in by_type.items():
+            if len(links) > 1 and not spec(world.classes[name]).get("free"):
+                _say_the_order(entity, spec(world.classes[name])["kind"], links, None)
     return found
+
+
+def _when_told(relation):
+    """When this telling was given: the moment it was said to hold from, or when it came in."""
+    return timeutil.as_datetime(relation.valid_from or relation.created_at)
+
+
+def _note_several(world, entity, kind: str, found: list, chosen: list) -> None:
+    """Several hold under one word at once: say which was told last, and nothing more.
+
+    A word that holds several is not wrong to — a person speaks two languages — and the world does
+    not end one telling because another came. But a host asked "which sport", handed two, broke the
+    tie with what it knows of the real world and not with what it was told: measured 2026-10-03 on
+    var/run10, 16 of the wrong answers stood beside a second value under the same word, eight of
+    them under a word that holds several (`citizen_of`, `associated_with`), the rest one written
+    the other way round (`Microsoft ceo_of Satya Nadella` beside `Steve Jobs ceo_of Microsoft`) or
+    held at the wrong end. So the order of tellings is said, which is a fact the world has, and the
+    choice stays the host's.
+    """
+    name, reverse = chosen[0]
+    if reverse is None:
+        return
+    # The same word written with this thing at the other end: a telling of the same fact, put the
+    # other way round, which the word alone cannot hand over to.
+    turned = []
+    for r in world.all(name, limit=None):
+        try:
+            other_end = same(r.subject, entity) if reverse else same(r.object, entity)
+        except AttributeError:
+            continue
+        if other_end and r not in found:
+            turned.append(r)
+    _say_the_order(entity, kind, list(found) + turned, {id(r) for r in turned})
+
+
+def _say_the_order(entity, kind: str, links: list, turned: set | None) -> None:
+    """One line: these hold at once under one word, latest told first, and which is the last.
+
+    `turned` is the links written the other way round from the one asked about; None reads it
+    against the last told, which is the one the line ends on.
+    """
+    if len(links) < 2:
+        return
+    told = sorted(links, key=_when_told, reverse=True)
+    if turned is None:
+        turned = {id(r) for r in told if same(r.object, entity) != same(told[0].object, entity)}
+    shown = "; ".join(f"{r.display_name()}{' — the other way round' if id(r) in turned else ''} "
+                      f"(told {timeutil.show(_when_told(r))})" for r in told[:5])
+    ontology.note_hint(
+        f"{entity.display_name()}: {len(told)} hold under {kind!r} at once, latest told first — "
+        f"{shown}. None of them ended another; the last told is {told[0].display_name()}.")
 
 
 def _stated_rank(world, relation) -> int:
