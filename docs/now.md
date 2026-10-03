@@ -74,6 +74,25 @@ demo. And `docs/architecture.md`, `contextvars`, the god modules — all argued 
 
 ---
 
+## var/run11 — 65% (2026-10-03, commit 43b1f20)
+
+`scripts/measure.sh full var/run11` — 455 facts, $5.19 to write (50 min), $9.88 and 90 minutes in
+all. **65/100** — run10 45%, run9 52%. What changed since run10: the names pass only places, one
+`name` for everything, the reading reads everything, questions asked on the world's own day,
+`World.specs` read with `name`, and the order of tellings said on a read of several values.
+
+| stage | run10 | run11 |
+|---|---|---|
+| writing (host) | 12 | **22** — 14 both there and never linked, 4 in prose only, 4 an end never made |
+| reading (world) | 36 | **1** |
+| answering | 7 | 12 — **10 the gold on one of several copies** |
+
+Free reads: 72% of standing facts as owed, 2% missing, 50% of superseding pairs hold the later.
+The copies have a mechanism, read off `host.jsonl`: a block of `identify` lines fails on one, and
+the host writes "create the things that weren't found" — `Thing.new(name="Tunisia national
+football team")` beside the `FootballTeam` already there. The later telling lands on the copy;
+the question finds the other.
+
 ## var/run10's 55 wrong answers, by stage (2026-10-03, `experiments/wrong_answers.py`, free)
 
 | stage | n | inside |
