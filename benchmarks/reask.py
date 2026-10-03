@@ -24,11 +24,9 @@ import host as hosting
 ROOT = Path(__file__).resolve().parent.parent
 RESULTS = ROOT / "benchmarks" / "results"
 
-ASK = """\
-Today is {when}. {question}
-
-Answer from what is recorded, with the value and nothing else. If a thing was recorded more than \
-once over time, give the one that holds now, not the first one."""
+# One wording for the question, the one the full run asks with — a re-ask that words it
+# differently measures the wording.
+from run_fc import ASK  # noqa: E402
 
 
 def main() -> int:
