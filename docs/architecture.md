@@ -18,6 +18,36 @@ Measured, not asserted: the most expensive thing the world ever did to a host wa
 `from datetime import date` — 63 wasted runs, protecting nothing. The checks that hold data
 uniform (vocabularies, relation rules, value kinds) cost nothing and prevented junk.
 
+## How a world serves an agent
+
+Set with the author on 2026-10-03, after a day of reading wrong answers by the stage they were
+lost at (`experiments/wrong_answers.py`). Three rules about the two directions information
+moves in, and one about where it is kept.
+
+1. **Take it the way the agent finds convenient, and keep all of it.** Words instead of types, a
+   bare name instead of a class, `full_name=` where the world says `name`, a string where a
+   thing belongs: accepted, recorded, structured afterwards by the world. Nothing the agent said
+   is refused or lost — a write that failed is held open until it is made
+   (`runtime._settle`), and a task does not close over a fact that is not in the world.
+2. **The world reconciles, not the agent.** Copies of one thing, a later telling and an
+   earlier one, a link written the other way round, which clock a date is on: the world settles
+   them before it answers. What it cannot settle it says *in* the answer — "X; before that, Y" —
+   never as two values handed over to be sorted out. Measured: handed two values and a hint
+   beside them, the host saw the hint in 3 of 10 cases and broke the tie with what it knew of the
+   real world.
+3. **Give it back the way the agent asks, not the way it is stored.** "Who runs Microsoft now" is
+   the question; relation classes, directions (`ceo` or `ceo_of`), ids and `valid_from` are the
+   world's own language, not the agent's. The world's ongoing work — reading, placing, merging —
+   is building such views. The quality of the views is measured by the *answering* stage: the
+   world held the answer and the agent did not get it.
+4. **The image is a cache of the record.** Nothing the agent says is written into an image; an
+   image is assembled from the statements, and kept assembled because assembling it on every
+   read would cost too much (the next section). *Where the code still departs from this:*
+   `World.save → store.save_graph → store.save` writes images from objects in memory. Every
+   image that disagreed with its record on 2026-10-02 came through there — names nulled while
+   the record held them, a `died_in` snapshot showing a link the record had ended — and
+   `World._with_its_name` is a patch on that door, not a fix.
+
 ## Two stages: what was said, and what follows
 
     statements ──assembly──▶ images
