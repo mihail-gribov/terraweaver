@@ -23,11 +23,49 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "benchmarks"))
 import factconsolidation as fc  # noqa: E402
 
 
+def corrections(upto: int) -> list[dict]:
+    """A question for every correction among the first `upto` facts, asking for the latest telling.
+
+    What the benchmark is about: of the 455 facts, 159 sentences are told again with another answer.
+    A sentence is its words without the answer; grouped that way, a correction is the same words
+    with a different end. Fair to a world holding all 455 as well, so a correction made after
+    `upto` leaves the question out.
+    """
+    import collections
+
+    frames = collections.defaultdict(list)
+    for one in written_down(None):
+        said = one["said"].rstrip(" .")
+        gold = next((end for end in (one["object"], one["subject"])
+                     if said.lower().endswith(str(end).lower())), None)
+        if gold:
+            frames[said[: len(said) - len(gold)]].append((one["fact"], gold))
+    out = []
+    for start, tellings in frames.items():
+        inside = sorted(t for t in tellings if t[0] <= upto)
+        if len({g.lower() for _, g in inside}) < 2:
+            continue
+        number, last = inside[-1]
+        if any(n > upto and g.lower() != last.lower() for n, g in tellings):
+            continue
+        out.append({"id": f"fix_{number}", "fact": number,
+                    "told": [n for n, _ in inside],
+                    "question": f'Complete this from what is recorded, as it stands now: "{start}___."',
+                    "gold": [last]})
+    return sorted(out, key=lambda one: one["fact"])
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--upto", type=int, default=125)
+    parser.add_argument("--corrections", action="store_true",
+                        help="only what was corrected: a sentence told twice or more among the "
+                             "first --upto with different answers, asked for the last of them")
     args = parser.parse_args()
+    if args.corrections:
+        json.dump(corrections(args.upto), sys.stdout, indent=1, ensure_ascii=False)
+        return 0
 
     facts = fc.load("sh", "6k").facts
     out = []

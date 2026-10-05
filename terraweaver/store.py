@@ -188,7 +188,7 @@ class Store:
             for name in names:
                 self.conn.execute(
                     f'INSERT OR REPLACE INTO "{table}" (instance_id, attr, value) VALUES (?, ?, ?)',
-                    (instance.id, name, _encode(getattr(instance, name, None))),
+                    (instance.id, name, _encode(ontology.stored_value(instance, name))),
                 )
         return instance.id
 
@@ -228,7 +228,7 @@ class Store:
         for attr in instance._spec["attributes"]:
             if "derived" in attr:
                 continue
-            value = getattr(instance, attr["name"], None)
+            value = ontology.stored_value(instance, attr["name"])
             if _is_instance(value):
                 self._collect(value, visited, out)
             elif isinstance(value, list):

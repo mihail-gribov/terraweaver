@@ -123,7 +123,7 @@ NO_WORD_YET = """## This record has no word for this kind of link, so declare on
 On its own line, and then write the link:
 
     world.define_relation("mayor_of", "a person who leads the government of a city",
-                          cardinality="many-to-one",
+                          cardinality="one-to-many",
                           subject_is="a person who leads a city's government",
                           object_is="the city they lead")
     a.set_mayor_of(b)

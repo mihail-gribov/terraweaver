@@ -22,6 +22,69 @@ conversion, not the training).
 Ordered by what currently blocks progress. The focus is reading the world; write tasks are
 deliberately parked (see below).
 
+## Skill tests: what the world must be able to do, with a real agent, three times each (queued 2026-10-05)
+
+**Why the cardinality and the shadowing defects lived for weeks.**
+
+1. *The unit tests carry the same assumption as the code.* Every test that touches supersession
+   declares its own word — `base.word(rt, "plays_position", ..., cardinality="many-to-one")` — so
+   it tests what the world does with a correct type, never which type the world makes. The
+   decision that was wrong is made by the engineer, the picker or the host, and no model-free test
+   can reach it.
+2. *The benchmark's number aggregates over the failure.* 20 of the 26 unlimited sides were
+   answered right because the host believed the "latest told first" hint, so the defect cost six
+   answers in a slice and read as host noise. `wrong_answers.py` looks only at wrong answers; a
+   world that holds the gold *beside* another value and gets lucky is invisible to it.
+3. *The schema emerges in a real world only.* `Country.capital` beside `capital_of` exists only
+   after the engineer grew both; no fixture has it, and no lint looked across the two.
+4. *Full runs are rare and expensive*, and a 25-fact gate answers "does the chain run".
+
+**What to build.** A pool of skill tests, one per thing the world must do, each the smallest story
+that exercises it, run through the real chain (host over MCP, engineer, picker, the close) and
+judged on **what the world holds**, not on the text of an answer — plus one question at the end
+for the answering stage. Each run **three times** (pass^3, `benchmarks/run.py` already has
+`pass_hat_k`), because a skill that holds one draw in three is not a skill. Cents per skill; the
+pool is a gate before any full run.
+
+First skills, each from a real loss:
+- supersession at the object end: "The capital of X is A", later "... is B" → X holds B only
+- supersession at the subject end: "H plays the position of A", later "... B"
+- no supersession where several are normal: a second citizenship, a second language → both hold
+- a word that is an attribute and a link: after the engineer grows `capital`, `x.capital` reads the link
+- direction from a passive sentence: "S was performed by P" → P performed S, never the other way
+- told order within one day: two tellings with the same date → the later stands
+- identity across batches: a thing told in batch 1 and again in batch 3 → one thing, not a copy
+- a fact on a failing line of a block → it is in the world when the task closes
+
+**And free lints over every world a run writes**, so a defect of this shape shows in the first
+gate: a declared attribute with the same word as a link reaching the class; a doubled side with no
+`how_many` ruling; bare links still unread; copies of one name; questions in the asked shape
+("as it stands now") where the world holds the gold beside another value — counted on right
+answers too, not only wrong ones (the scratch scripts `sides.py` / `only_gold.py` of 2026-10-05
+are the start of the last one).
+
+## Read every prompt again, the engineer's and the checker's, one by one (queued 2026-10-05)
+
+The author's request, after the cardinality defect: the example in `prompts.NO_WORD_YET` said
+`mayor_of` is `many-to-one` — wrong (a city has one mayor at a time, so the limited end is the
+object) — and an example is copied, not read, so the engineer and the host reproduced it on most
+types they made. One wrong example cost the supersession of every "the X of Y is Z" fact.
+
+Go through every prompt the world sends out, with the same suspicion, and check each against what
+it is for and against the runs it produced (`readings`, `portraits`, `type_checks` in a world.db):
+
+- the engineer: `A_LINK_SAID`, `NO_WORD_YET`, `THE_WORD_IS_HERE`, `WRITE_AGAIN`, `JOINED_NOTHING`,
+  `WRITING`/`WRITE_ONE`, the portraits and namer prompts;
+- the checker and the look: `IS_IT_SAID` and what `check.py` asks per attribute (87 of 211
+  verdicts were `not_in_it` on the 250-fact world, sure 0.69 — are those right?), `WHICH_WORD`,
+  `NONE_OF_THESE_IS`, `outside.ENDS_FRAME`;
+- the host-facing ones that teach the same things: `describe.py`, the refusals in `relations.py`
+  and `authoring.py` that carry an example call.
+
+For each: is every example right, does it name a word no fact in sight needs, does it teach
+something the world now decides itself (cardinality is the picker's since `how_many`), and does
+the run data show it being copied.
+
 ## The recorder keeps fumbling the definition calls
 
 Measured mid-run on 2026-09-24 (`dated455`, first eight batches). The host's calls to

@@ -4384,3 +4384,39 @@ Two things the rebuild had been getting wrong, invisible while it was rare:
 Measured on a fresh 125-fact world: images and record agree to the value; 95% of the standing facts
 as owed; no warning from the assembly in the run's log. What is still writing images from objects
 is only the in-run cache; `World._with_its_name` stays until a full run shows it never fires.
+
+## 2026-10-05 — how many a word holds at once is the picker's, and a word means one thing on a class
+
+**The defect.** A link type's two sides decide whether a later telling ends the earlier one. Every
+type the world made for itself was `many-to-one` — one per *subject* — by a constant in
+`relations._make_the_type` and `restructure`, and the engineer's prompt showed `mayor_of` as
+`many-to-one`, which is wrong (a city has one mayor at a time; the limited end is the object) and
+was copied. So `capital_of` limited the city, `author_of` the author, `chairperson_of` the person.
+Measured on a fresh 250-fact world: of 42 corrections whose gold sat under a typed link, **26** had
+the asked end unlimited; six were answered wrong and twenty right only because the host believed
+the "latest told first" hint. This is likely a large part of what earlier runs lost to "both
+holding".
+
+**The fix: a closed question per side, to the picker** (`how_many.settle`, at every close and after
+the offline reading). Asked only where one end already holds two under the word, once per side,
+with the probability kept on the type (`relation.how_many`). "At any one moment, how many X can one
+Y have?" — about the word, with no links shown: shown, the doubled links argued for "several" by
+being there (capital_of 0.65 with them, 0.78 without). At 0.6 and above the side is limited and the
+standing tellings hand over in the order they were told (like with like, as `_which_is_later`).
+Probed on the 18 doubled sides: capital_of, chairperson_of, head_of_state limited; author_of and
+founder_of stay several at ~0.4 (co-authors exist), citizen_of and speaks_in at 0.1–0.4. Why the
+picker and not the host: how many a thing can have is what the word means — semantic, the world's
+business — and the storyteller is not asked about cardinality. Only limits are added here; taking a
+limit away reopens what the world ended and was not measured. Result on a copy of that world: six
+questions moved from "gold beside another" to "gold only", none the other way; re-asked, Soviet
+Union and Harvard turned right.
+
+**And a word means one thing on a class.** The re-ask showed the next loss: `fatah.chairperson`
+read None while the world held "Moshe Kahlon chairperson of Fatah", because the engineer had grown
+a `chairperson` attribute on `PoliticalOrganization` and a declared attribute was never shadowed by
+the link's reverse word. Seven such clashes in that world — `Country.capital`, `Book.author`,
+`Religion.founder` — the very words the questions are asked in; run11 had `Thing.capital`. Now such
+a word reads the link where one holds at this end (strictly — answering from the other end would
+make every city's `capital` its country) and the attribute where none does; writing it writes the
+attribute, and storage reads the attribute's own value (`ontology.stored_value`), so no link is
+ever written into an image.

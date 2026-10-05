@@ -20,7 +20,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from terraweaver import authoring, formalise, ontology, outside, portraits, sentences  # noqa: E402
+from terraweaver import authoring, formalise, how_many, ontology, outside, portraits, sentences  # noqa: E402
 from terraweaver.formalise import record  # noqa: E402
 from terraweaver.runtime import WorldRuntime  # noqa: E402
 
@@ -86,6 +86,11 @@ def main() -> int:
         got = portraits.formalise(runtime.world, runtime.world.engineer, limit=args.limit)
         runtime._hand_back_what_moved(got.pop("moved", []))
         print("things that came in as names:", got, flush=True)
+
+    # How many each word holds at once, where the reading left one end holding two: a closed
+    # question per side to the picker, and a side ruled "one" ends the earlier tellings.
+    for line in how_many.settle(runtime.world):
+        print("how many:", line, flush=True)
 
     # The images built from the record once the reading is done, as at every close: what the
     # reading placed and ended is said, so this is where a world's images become its record's.

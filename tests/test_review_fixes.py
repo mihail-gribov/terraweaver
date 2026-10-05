@@ -523,6 +523,95 @@ def an_image_never_goes_to_storage_without_the_name_its_record_holds() -> None:
           rt.world.get("Person", name="Ada Lovelace").name == "Ada Lovelace")
 
 
+def a_word_that_is_an_attribute_and_a_link_reads_the_link() -> None:
+    """An empty attribute hid the link of the same word, and the host said "Not recorded".
+
+    Found 2026-10-05: `PoliticalOrganization` grew a `chairperson` attribute, `chairperson_of`
+    reads back as `chairperson`, and `fatah.chairperson` was None while the world held "Moshe
+    Kahlon chairperson of Fatah". Seven such classes in a 250-fact world. The link answers where
+    one holds; the attribute where none does; storage keeps the attribute's own value.
+    """
+    rt = base.world()
+    base.attribute(rt, "Thing", "capital", "the capital, as said")
+    base.word(rt, "capital_of", "a city that is the seat of government of a country",
+              cardinality="many-to-one", subject_is="a city that serves as a capital",
+              object_is="a country that has a capital")
+    su = rt.world.new("Thing", name="Soviet Union")
+    check("with no link, the attribute answers (None)", su.capital is None)
+    su.capital = "Moscow"
+    rt.world.save(su)
+    check("with no link, the attribute answers what was put in it", su.capital == "Moscow")
+    city = rt.world.new("Thing", name="Russellville")
+    rt.world.relate(city, su, "capital_of")
+    got = su.capital
+    check("with a link holding, the link answers",
+          [getattr(one, "name", one) for one in (got if isinstance(got, list) else [got])]
+          == ["Russellville"], repr(got))
+    check("and the city does not read the country as its own capital", city.capital is None,
+          repr(city.capital))
+    row = rt.world.store.conn.execute(
+        f'SELECT value FROM "{rt.world.store.values_table("Thing")}" WHERE instance_id=? AND attr=?',
+        (su.id, "capital")).fetchone()
+    check("and storage keeps the attribute's own value, not the link", row and "Moscow" in row[0],
+          repr(row))
+
+
+def a_side_the_picker_rules_one_at_a_time_ends_the_earlier_telling() -> None:
+    """The world made its words one per subject, so "the capital of X" never superseded.
+
+    Found 2026-10-05 on a fresh 250-fact world: `capital_of` limited the city, not the country,
+    and "Moscow capital of Soviet Union" stood beside "Russellville capital of Soviet Union", told
+    later; 26 of 42 corrections had the asked end unlimited. `how_many.settle` asks the picker
+    about a side only where one end holds two, rules once, and a side ruled "one" hands over in
+    the order the tellings were given.
+    """
+    from terraweaver import how_many, timeutil
+
+    class Picker:
+        def __init__(self, one):
+            self.one, self.asked = one, []
+
+        def yes(self, state, question, true, false):
+            self.asked.append(question)
+            return self.one
+
+    for one, ended_expected in ((0.9, True), (0.2, False)):
+        rt = base.world()
+        base.word(rt, "capital_of", "a city that is the seat of government of a country",
+                  cardinality="many-to-one", subject_is="a city that serves as a capital",
+                  object_is="a country that has a capital")
+        su = rt.world.new("Thing", name="Soviet Union")
+        italy = rt.world.new("Thing", name="Italy")
+        moscow = rt.world.new("Thing", name="Moscow")
+        russellville = rt.world.new("Thing", name="Russellville")
+        rome = rt.world.new("Thing", name="Rome")
+        with timeutil.as_of(datetime(2020, 1, 1)):
+            first = rt.world.relate(moscow, su, "capital_of")
+            rt.world.relate(rome, italy, "capital_of")
+        with timeutil.as_of(datetime(2020, 1, 2)):
+            later = rt.world.relate(russellville, su, "capital_of")
+        picker = Picker(one)
+        how_many.settle(rt.world, picker)
+        how_many.settle(rt.world, picker)
+        name = type(first).__name__
+        holding = {l.subject.name for l in rt.world.all(name, limit=None)
+                   if l.object.name == "Soviet Union" and how_many._standing(l)}
+        rel = rt.world.classes[name]._spec["relation"]
+        check(f"capital_of at {one}: the object side is asked once, the subject side never",
+              len(picker.asked) == 1 and "country" in picker.asked[0].split("can one")[1],
+              str(picker.asked))
+        if ended_expected:
+            check("ruled one: the later telling stands and the earlier is ended",
+                  holding == {"Russellville"} and rel.get("inverse_functional"), str(holding))
+        else:
+            check("ruled several: both stand and the ruling is kept on the type",
+                  holding == {"Moscow", "Russellville"} and not rel.get("inverse_functional")
+                  and rel["how_many"]["object"]["one"] == 0.2, str(holding))
+        check("a capital of another country is left alone",
+              any(l.subject.name == "Rome" and how_many._standing(l)
+                  for l in rt.world.all(name, limit=None)))
+
+
 def the_later_telling_stands_whichever_order_it_is_read_in() -> None:
     """Two one-at-a-time facts, said a day apart, typed in either order: the later one stands.
 
@@ -866,6 +955,8 @@ def main() -> None:
     the_names_pass_writes_as_of_when_the_words_were_said()
     a_hand_over_compares_like_with_like()
     the_later_telling_stands_whichever_order_it_is_read_in()
+    a_side_the_picker_rules_one_at_a_time_ends_the_earlier_telling()
+    a_word_that_is_an_attribute_and_a_link_reads_the_link()
     an_image_never_goes_to_storage_without_the_name_its_record_holds()
     a_lookup_sees_the_classes_beneath_it()
     a_row_that_will_not_load_costs_only_that_row()

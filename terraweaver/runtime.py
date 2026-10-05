@@ -904,6 +904,7 @@ class WorldRuntime:
         unnamed = self._types_without_named_ends()
         turned = self._turn_the_odd_ones()
         offered = self._read_the_new_types()
+        self._how_many_at_once()
         unrun = list(session.owed.values())
         if task is not None and getattr(task, "mode", None) == "recording" and not abandon:
             self._assemble_from_the_record()
@@ -1213,6 +1214,16 @@ class WorldRuntime:
             return inspector.look_at_types(self.world)
         except Exception:  # noqa: BLE001 - reading is never what stops a task closing
             return {}
+
+    def _how_many_at_once(self) -> list[str]:
+        """How many each side of a doubled type holds at once, asked of the picker: see how_many."""
+        try:
+            from terraweaver import how_many
+
+            return how_many.settle(self.world)
+        except Exception:  # noqa: BLE001 - a ruling is never what stops a task closing
+            log.warning("how many a type holds at once could not be settled", exc_info=True)
+            return []
 
     def _types_without_named_ends(self) -> list[tuple]:
         """Link types this world grew that never said what each of their two ends is."""

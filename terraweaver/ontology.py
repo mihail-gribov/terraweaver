@@ -1940,11 +1940,63 @@ def _lend_relations(classes: dict, defined: str) -> None:
                 # see it and the method would be lent over the top of it — invisibly, until the
                 # attribute happened to be unset and `vacancy.location` handed back a function.
                 declared = {a["name"] for a in cls._spec.get("attributes", [])}
-                if not word or hasattr(cls, word) or word in declared:
+                if not word or hasattr(cls, word):
                     continue
                 backwards = side == "to"
-                setattr(cls, word, _relation_role(type_name, rel, backwards))
-                setattr(cls, f"set_{word}", _sets_the_role(type_name, rel, backwards))
+                if word in declared:
+                    # The same word is an attribute of the class and an end of a link, and the
+                    # empty attribute hid the link: `country.capital` read None while the world
+                    # held "Russellville capital of Soviet Union", and a host told "Not recorded".
+                    # Found 2026-10-05 on seven classes of a 250-fact world — `Country.capital`,
+                    # `Book.author`, `PoliticalOrganization.chairperson` — the words the questions
+                    # are asked in. One word reads one way: the link where one holds, the
+                    # attribute where none does.
+                    setattr(cls, word, _AttributeOrLink(word, rel, backwards))
+                else:
+                    setattr(cls, word, _relation_role(type_name, rel, backwards))
+                if not hasattr(cls, f"set_{word}"):
+                    setattr(cls, f"set_{word}", _sets_the_role(type_name, rel, backwards))
+
+
+class _AttributeOrLink:
+    """A declared attribute that is also the word of a link reaching this class.
+
+    Read, it gives what the link holds now and the attribute only where no link does — the link
+    is the structured telling, handed over when corrected, and an attribute beside it is at best
+    a snapshot. Written, it is the attribute and nothing else, so storage keeps exactly what was
+    said into it: `stored_value` reads the attribute's own value, never the link.
+    """
+
+    def __init__(self, word: str, rel: dict, backwards: bool):
+        self.word, self.rel, self.backwards = word, rel, backwards
+
+    def __get__(self, instance, owner=None):
+        if instance is None:
+            return self
+        from terraweaver import relations
+
+        # Strictly from this end. A link word with nothing at this end answers from the other one,
+        # which is right for a word and wrong for an attribute: every city would read the country
+        # it is the capital of as its own `capital`.
+        try:
+            links = relations.relations_of(current_world(), instance, self.word, strict=True)
+        except Exception:  # noqa: BLE001 - an end that cannot be read leaves the attribute to answer
+            links = []
+        others = [r.other(instance) for r in links]
+        if others:
+            reads_one = self.rel.get("inverse_functional") if self.backwards else self.rel.get("functional")
+            return others[0] if reads_one else others
+        return instance.__dict__.get(self.word)
+
+    def __set__(self, instance, value):
+        instance.__dict__[self.word] = value
+
+
+def stored_value(instance, name: str):
+    """The value an attribute itself holds, for storage: the attribute, never a link of the same word."""
+    if isinstance(getattr(type(instance), name, None), _AttributeOrLink):
+        return instance.__dict__.get(name)
+    return getattr(instance, name, None)
 
 
 def _is_a_question(value) -> bool:
