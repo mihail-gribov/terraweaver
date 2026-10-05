@@ -58,8 +58,11 @@ class World:
                 # answered out of Claude Code's own per-folder memory instead of the world.
                 # And nothing that waits on a person: nobody is there. `AskUserQuestion` failed with
                 # "Answer questions?" in batch 2 of a full run on 2026-10-03 and stopped it.
+                # And nothing that answers for it: on 2026-10-05 a host handed a question to an
+                # async `Task` subagent and replied before it came back, and another reached for
+                # the websearch skill — both answers lost to the harness, not the world.
                 "--disallowedTools", "Read Write Edit Bash Glob Grep WebFetch WebSearch NotebookEdit "
-                                     "AskUserQuestion EnterPlanMode EnterWorktree"]
+                                     "AskUserQuestion EnterPlanMode EnterWorktree Task Agent Skill"]
 
     cwd = property(lambda self: self.here)
 
