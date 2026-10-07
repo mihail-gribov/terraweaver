@@ -4385,6 +4385,33 @@ Measured on a fresh 125-fact world: images and record agree to the value; 95% of
 as owed; no warning from the assembly in the run's log. What is still writing images from objects
 is only the in-run cache; `World._with_its_name` stays until a full run shows it never fires.
 
+## 2026-10-05 — the web is a second narrator, and what it brings is chosen for the person
+
+Web search goes through `ait-search` (`~/Projects/agent-tools/search-cli`), not through raw
+Tavily calls, because it already keeps every page it returned, marks the new ones on a repeated
+search and holds the fetched bodies — the store a watch needs. Tavily was added there in keyless
+mode, so the experiment runs before a key exists and the same code runs with one.
+
+**Building from the web is the world's main task again.** A page is a storyteller in the place of
+the person; `formalise`, the engineer, the picker and the walk down the class tree do the same
+work. Nothing is hand-written for it: a public event grows as a subclass of `Event`, as any class
+grows from a conversation. Why: a hand-written `PublicEvent` is a fixture, which this repository
+decided against; and if one machinery builds a sound model from both a dialogue and the web, that
+is evidence it is general rather than fitted to dialogue. What differs and has to be lived
+through: the page can be checked, there is nobody to ask, one listing is dozens of objects, one
+event appears on several sites, and a web fact goes stale.
+
+**Selection and unasked mentions are in the person's interest.** The mechanics of advertising —
+interests, a selection, a moment — with the profile owned by the person and nobody paying for a
+place in it. A mention nobody asked for needs an occasion in the conversation and always says why;
+the same for things to buy, where "don't, this is no better than yours" is a legitimate outcome.
+Scenarios in `docs/ideas-research.md`; the experiment is `experiments/04_web_search`.
+
+**Open: interests leak through queries.** "Jazz, Berlin, Saturday" names no one, but thirty
+queries about the same interests make a profile at the search provider. It keeps the letter of
+"search is never about the person" and strains its spirit. Proposed: generic queries with no
+names or links, and an interest goes out only with the person's consent. Not decided.
+
 ## 2026-10-05 — how many a word holds at once is the picker's, and a word means one thing on a class
 
 **The defect.** A link type's two sides decide whether a later telling ends the earlier one. Every
