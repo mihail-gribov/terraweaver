@@ -1,0 +1,5 @@
+#!/bin/sh
+# Claude Code started in the user's personal world: the plugin loaded and its mode on from the first message.
+# The memory server must be running (PERSONAL_MEMORY_URL, default http://127.0.0.1:7100).
+here=$(dirname "$(readlink -f "$0")")
+PERSONAL_WORLD=on exec claude --plugin-dir "$here/plugin" "$@"

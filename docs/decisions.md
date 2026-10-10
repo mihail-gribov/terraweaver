@@ -4447,3 +4447,78 @@ a word reads the link where one holds at this end (strictly — answering from t
 make every city's `capital` its country) and the attribute where none does; writing it writes the
 attribute, and storage reads the attribute's own value (`ontology.stored_value`), so no link is
 ever written into an image.
+
+## 2026-10-07 — The world's reasoning folds into one thinking machine
+
+The world's reasoning was written by hand four times. `formalise` is look (recognise) → make (ask) →
+check → write → record, and the inspector, the walk down the class tree and `how_many` are the same
+loop, each with its own retries, thresholds and fallbacks patched separately. After a month it reads
+as a set of crutches, and the result is not good enough to justify them. So the loop is built once,
+as a machine in its own directory (`machine/`, contract in `machine/ARCHITECTURE.md`), and the
+existing modules become graphs for it — their lessons kept as node content.
+
+What was decided, and why:
+
+- **Question in, answer out; no access to the world.** The machine is tested and grown on plain
+  data; the world builds questions from its record and applies answers with its own code.
+- **Answers are data in a declared form, not code.** A fact written as code can be written many
+  ways and a reader of the source saw one of four; as data it is stated once and checked in the
+  answer. This departs from "class + code" for the engineer, deliberately.
+- **Three roles: picker, engineer, big brain.** The engineer works on limited, given context and
+  adds nothing; big brain knows things and may research, so it may run long — hence `waiting`, a
+  separate runner, and an `urgency` the caller sets. Only values the world marks `may_leave` go out.
+- **Identity stays with the world.** The image is assembled deterministically from identity links
+  of different strength; a model's intuition is a weak link, never a glue.
+
+## 2026-10-07 — One contract for any agent, and its plainest implementation as the baseline
+
+The world has to serve whatever agent the person uses — Claude Code, Codex, OpenClaw, their own —
+so what an agent is told cannot depend on one agent's hooks or subagents. The contract is four
+calls at the agent's level, with no ontology in them: `context(message)` before answering,
+`tell(text, source)` after a turn, `ask(question)` when needed, `questions()` when convenient.
+Recording and reading move inside the world; `run(code)` stays as the door for strong agents.
+
+`baseline/server.py` is that contract with nothing behind it: `tell` appends dated text to
+`var/baseline/<name>/facts.md`, `ask` and `context` give the whole file to Haiku, `questions` is
+always empty. It imports nothing from terraweaver. It exists to be measured against: the world's
+effect is what it does beyond this, through the same four calls, for the same agent.
+
+For Claude Code the contract gets a skill and two hooks (now the plugin
+`adapters/claude_code/plugin`): `UserPromptSubmit` puts what `context` returns beside the message, `Stop`
+first had Haiku read the turn and `tell` every personal fact the agent did not tell itself. Measured
+with `baseline/check_agent.py`, three runs each: bare, the agent skipped `tell` once in three and
+the fact was lost; with hooks the recorder caught it every time. The first recorder wrote a
+user's question ("remind me when Mia starts school") as a fact ("the date is not specified") —
+a later entry that would override the true one — so it is told that a question is not a fact and
+that nothing is recorded as unknown, and the check now asks the memory afterwards.
+
+Being in the personal world is a mode of a session, not a property of the install: `/personal`
+enters it, `/personal off` leaves it, `adapters/claude_code/claude-personal` starts a session in
+it. The switch is made by the `UserPromptSubmit` hook, which sees the command before the model
+does, and kept as a flag per session id; outside the mode the hooks do nothing. Measured that
+"off" was not off: with the mode off, the agent still called `tell` on its own, because the skill
+and the server's instructions are there whenever the plugin is loaded. So a `PreToolUse` hook
+refuses `tell` outside the mode — reading stays open, writing needs the user to have entered.
+
+The recorder is the host's, not a model of ours. The host — the agent the user talks to, or its
+subagent — is the user's side; the world is our system; a third model in the adapter that reads
+the transcript is neither, so the `Stop` hook no longer calls one. When a turn in the mode ends
+with no `tell`, the hook stops the agent once and asks it to pass on anything personal or just
+stop. Measured: `check_agent --plugin` 3/3; on turns with nothing personal the agent adds a
+second short message after being stopped — the visible cost of asking every turn.
+
+The skill's description says what the memory *is* — the system where everything about the user
+is kept, which anything directly about the user goes through, including what is said in passing
+in an unrelated task — rather than only when to call it. Measured on a harder scenario
+(`check_agent --scenario buried`: a father's knee surgery mentioned as an apology inside a coding
+task), Haiku host, skill only, no hooks, five runs each: bare 0/5, the old description 0/5, the
+new one 5/5; on the easy scenario 5/5. The skill's body was never loaded in any of those runs (no
+`Skill` call): the description alone, always in context, did it — so the body's "it matters" and
+"it is safe" are not what was measured. Over five work-only turns (code, TCP, a pasted API key,
+a project deadline, tabs over spaces) it recorded nothing, and the next personal aside in the
+same session was recorded at once.
+
+With that description the `Stop` hook is gone. It stopped the agent at the end of every turn with
+no `tell`, which on work turns cost a second, visible message each time, and the description alone
+recorded 10 of 10 without it. What stays: `context` before each message in the mode, and the
+`PreToolUse` guard that keeps "off" off.

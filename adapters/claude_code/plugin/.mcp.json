@@ -1,0 +1,5 @@
+{
+  "mcpServers": {
+    "memory": {"type": "http", "url": "${PERSONAL_MEMORY_URL:-http://127.0.0.1:7100}/mcp"}
+  }
+}
