@@ -24,7 +24,7 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "mcp__.*memory__tell",
+        "matcher": "mcp__.*memory__(tell|add_memory|forget)",
         "hooks": [
           {
             "type": "command",

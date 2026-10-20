@@ -1,4 +1,5 @@
-"""PreToolUse on the memory's `tell`: outside the personal world nothing is written.
+"""PreToolUse on the memory's writes (`tell`, `add_memory`, `forget`): outside the personal world
+nothing is written.
 
 Measured: with the mode off, the agent still recorded "the user is allergic to cats" on its own —
 the skill and the server's instructions are there in every session the plugin is loaded in. So

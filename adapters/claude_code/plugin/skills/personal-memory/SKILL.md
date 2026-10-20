@@ -5,7 +5,7 @@ description: The user's personal memory — the system where everything about th
 
 # Personal memory
 
-This MCP server (tools `context`, `tell`, `ask`, `questions`) is the user's own memory: the
+This MCP server (tools `context`, `tell`, `ask`, `questions`, `search_memory`, `forget`, `forgotten`; `add_memory` is `tell`) is the user's own memory: the
 system that stores what is known about the user, across every conversation and every agent they
 use. The user set it up and wants it used.
 
@@ -30,6 +30,9 @@ user's life are answered from here.
 | `context(message)` | at the start of any task that touches the user's life | the user's message as written |
 | `ask(question)` | when context did not settle what you need | one specific question |
 | `questions()` | at a natural pause, at most once a conversation | nothing |
+| `search_memory(query)` | when you need the entries themselves, as told, not an answer | what to look for |
+| `forget(what)` | when the user asks for something to be forgotten | it in words, or entry numbers (`#12`) |
+| `forgotten()` | when the user asks what they had forgotten | nothing |
 
 ## Telling — do it first, not last
 

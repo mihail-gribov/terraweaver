@@ -73,7 +73,7 @@ def session(prompt: str, model: str, port: int, where: Path, skill: Path | None,
     run = subprocess.run(
         ["claude", "-p", prompt, "--model", model, "--output-format", "stream-json", "--verbose",
          "--strict-mcp-config", "--mcp-config", json.dumps(config), *flags,
-         "--allowedTools", "Skill mcp__memory__context mcp__memory__tell mcp__memory__ask mcp__memory__questions"],
+         "--allowedTools", "Skill mcp__memory__context mcp__memory__tell mcp__memory__ask mcp__memory__questions mcp__memory__add_memory mcp__memory__search_memory mcp__memory__forget mcp__memory__forgotten"],
         cwd=where, capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=600,
         env={**os.environ, "PERSONAL_MEMORY_URL": f"http://127.0.0.1:{port}",
              "PERSONAL_WORLD": "on" if plugin else "off"})

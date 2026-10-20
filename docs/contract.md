@@ -28,6 +28,14 @@ world's classes, relation types, ids or code, and nothing asks the world to see 
 | `tell` | when it hears something about the user's life | a statement and its source | `Kept.` | yes |
 | `ask` | when it needs one specific thing | a question | an answer in words | no |
 | `questions` | at a natural pause | a limit | what the world wants the user to settle | no |
+| `search_memory` | when it needs the entries, not an answer | a query, a limit | the entries as told | no |
+| `forget` | when the user asks for something to be forgotten | it in words, or entry numbers | the entries taken out | yes |
+| `forgotten` | when the user asks what they had forgotten | nothing | the entries in the bin, until they are deleted | no |
+| `add_memory` | — | as `tell` | as `tell` | yes |
+
+`add_memory` and `search_memory` are the names every other memory uses (Mem0, Graphiti,
+Supermemory, LangMem), so an agent that has seen them recognises them; `add_memory` is `tell`
+under that name. Why the three were added: `docs/decisions.md`, 2026-10-15.
 
 All input and output is plain UTF-8 text in English. Every call stands alone: there is no
 session, no handle, no state the host has to carry between calls.
@@ -148,11 +156,51 @@ two dentists both recorded as current.
   answer back as an ordinary statement that names what it settles ("Anna Lee and Anna from the
   gym are the same person").
 
+### `search_memory(query, limit=10) -> text`
+
+The entries the world holds that bear on a query, as they were told — not an answer.
+
+- Returns a list (above) of entries, most relevant first, at most `limit`, each
+  `- #<number> · <time told> · <source>: <the words>`, or exactly `nothing`. An entry is whole:
+  the 300-character bound of a list item does not cut it.
+- Where two entries disagree, both come back; the larger number is the later one. The world MAY
+  say which still holds; it MUST NOT leave one out because it was replaced.
+- It MUST NOT change what the world holds.
+
+### `forget(what, now=None) -> text`
+
+Takes out what the user wants forgotten: `what` in words ("Anna's old phone number"), or entry
+numbers from `search_memory` ("#12, #14"), which are taken exactly.
+
+- Returns the entries taken out, as a list in `search_memory`'s form, or exactly
+  `Nothing was forgotten.` The host shows the user what went, so a wrong one can be told again.
+- A forgotten entry goes to a bin: no reader sees it (`context`, `ask`, `search_memory`, any
+  image), and only `forgotten` lists it. After a set time (30 days by default, by the world's
+  clock) it is deleted for good, and so is everything the world held because of it. Its number
+  is never given to another entry.
+- A correction is not a forgetting: "Anna moved to Porto" is a `tell`, and the earlier entry
+  stays as what held before.
+- The request is kept: one new entry, source `forget`, dated `now` (the agent's, else the
+  world's clock), saying that the user asked and how many entries went, in `what`'s words. So
+  `what` names what to forget by what it is ("the storage unit move with Darren"), not by the
+  detail to be dropped; "what did I ask you to drop?" is answered from it. A request is never
+  taken by a later `forget` in words, only by its number.
+- Whatever else a world holds of the same words goes to the same bin: a world that keeps the
+  messages it heard takes out the sentences that said what was forgotten, and the answer lists
+  them too.
+
+### `forgotten() -> text`
+
+What is in the bin: each forgotten entry as it was told, when it was forgotten, the words of the
+request, and the day after which it is deleted for good — or exactly
+`Nothing was forgotten in the last N days.` So the user can always see what they asked to drop
+in that time. Nothing in the bin comes back by itself; to have it again, it is told again.
+
 ## Transport
 
 The same four calls over two transports. An implementation MUST serve both.
 
-**MCP** (streamable HTTP, path `/mcp`): tools named `context`, `tell`, `ask`, `questions` with the
+**MCP** (streamable HTTP, path `/mcp`): tools named `context`, `tell`, `ask`, `questions`, `search_memory`, `forget`, `forgotten`, `add_memory` with the
 parameters above. The server's `instructions` SHOULD tell the agent what the memory is — the
 place everything about the user is kept — not only when to call it (see the measurements below).
 
@@ -164,6 +212,10 @@ place everything about the user is kept — not only when to call it (see the me
 | `POST /tell` | `{"text": "...", "source": "..."}` | as `tell` |
 | `POST /ask` | `{"question": "..."}` | as `ask` |
 | `GET /questions?limit=5` | — | as `questions` |
+| `POST /search_memory` | `{"query": "...", "limit": 10}` | as `search_memory` |
+| `POST /forget` | `{"what": "...", "now": "..."}` | as `forget` |
+| `GET /forgotten` | — | as `forgotten` |
+| `POST /add_memory` | `{"text": "...", "source": "..."}` | as `tell` |
 | `GET /health` | — | `{"ok": true, ...}` |
 
 Bound to anything but localhost, every request except `/health` MUST carry

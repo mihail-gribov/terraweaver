@@ -4522,3 +4522,216 @@ With that description the `Stop` hook is gone. It stopped the agent at the end o
 no `tell`, which on work turns cost a second, visible message each time, and the description alone
 recorded 10 of 10 without it. What stays: `context` before each message in the mode, and the
 `PreToolUse` guard that keeps "off" off.
+
+## 2026-10-15 — The world is grown by cutting up the mock, and what is held at every cut is recall
+
+**The architecture.** A fact is its text: one self-contained sentence, with when and from whom.
+The structure built over the texts — who is who, which link, what holds now, what replaced what —
+is for finding and reasoning, and what goes to the model that answers is the texts it found, with
+the status the structure gave them. A label (`capital`) is not a fact: run12 lost Romania and
+Harvard to labels whose direction nothing could check — the picker, shown the bare word, answered
+`not_in_it` 10 times of 11, and shown the label between its ends, caught both and turned a correct
+one round at 0.74. And in run12's world a typed link holds no text at all: the reading ends the
+bare link and its words with it.
+
+**The way there.** Not a rewrite: the baseline behind the contract is layer 0 of this architecture
+(every text, a model reading them), so it is cut up one piece at a time — texts as records, a
+minimal structure from them, a search by the question, then what holds now — checking after every
+cut that nothing was lost. The structure will be brought onto the knowledge base already built,
+which is isolated enough to take it.
+
+**The mark is not 100.** `run_context.py`, every fact in one prompt, scored 100/100 on 2026-10-06
+and 91/100 on 2026-10-15; the model alone wavers by several points between runs. What a cut has to
+keep is therefore not an answer score but **recall**: for every question, the fact its gold answer
+comes from is among what the model is shown. That is checked without a model, it is ours alone,
+and it is exactly 100 or it is a loss. The answer score is compared with the reference's, with
+repeats, not with 100.
+
+**Step 0, the baseline through the contract** (`benchmarks/run_contract.py`: 455 `tell`s, 100
+`ask`s, no agent): 67/100 at first, 90/100 after three changes to the baseline, each measured on
+the 33 questions the first run lost:
+
+- Entries are numbered, and the rule is "the larger number holds". Every entry of a batch told in
+  one minute bore the same time, and the model left to find the later one by position took the one
+  it already believed: Priscilla Presley over the benchmark's Charles the Bold.
+- No system prompt of our own. With run_context's prompt word for word, 19 of 33 under a one-line
+  system prompt, 30 under Claude Code's own.
+- The model reads `n. fact` lines in run_context's words. Time and source on each line, 26; the
+  baseline's own preamble and a rule to list every entry, 26. The file still keeps time and source;
+  giving them back to the model is a step of its own, because a date with no year needs the time
+  it was told.
+
+## 2026-10-15 — A memory of texts first, then the structure grown over it, one measured step at a time
+
+**The order.** First a memory that holds nothing but texts — numbered, dated, with their source —
+and serves every call from them: the baseline, given the calls every other memory has
+(`add_memory`, `search_memory`, `forget`) beside our four. It is the simplest memory that works,
+the same idea as Karpathy's LLM Wiki at its first layer (raw sources and an append-only log), and
+it is the mark. Only then the structure, and two questions asked of every step: how the texts are
+structured (pages per entity as in the LLM Wiki; proto-instances of one generic class with free
+attributes and free links, each pointing at its text) and how the state of the world is handed to
+the agent (raw texts, texts with their status, an entity's page). Each answer is measured against
+the text memory, with recall held at 100.
+
+**Why one generic class.** The world grows its classes itself (`docs/decisions.md`, the
+crystallizer); started from an ontology, a structure error was fatal and nobody could say which
+piece of structure had cost the points. Started from one class with a name, a kind word, free
+attributes and free links, structure is added by tightening — reuse the words in use, then how
+many hold at once, then supersession by structure, then classes from settled kinds — and the step
+that loses answers is the step to blame. A value or a link is never written without the text it
+came from, enforced in code: a label is not a fact.
+
+**Why the familiar names.** Every memory surveyed (Mem0, Graphiti, Supermemory, LangMem) writes
+with `add_memory` and finds with `search_memory`; agents have seen those names. `search_memory`
+is not `ask`: it returns the entries as they were told, with number, time and source, and the
+agent reasons over them — which is also the shape the structured world will hand over, texts
+first. `forget` exists because "forget that" is the user's right, and a correction told with
+`tell` does not take the words out of the memory.
+
+**Facts apart from images, as before.** The told texts are the facts: appended, never rewritten,
+the one source of truth. Everything handed to an agent — an answer, a search's entries, the
+context of a message, and later an entity's page — is an image, made from the facts for the one
+asking and thrown away, never kept as truth beside them (the image is a cache of the record,
+2026-10-03). An LLM Wiki page is such an image: it may be cached, but it is rebuilt from the texts
+and never edited as the thing itself. `forget` is the only call that takes a fact out, and every
+image follows, because none is kept.
+
+## 2026-10-15 — Entities, events and links the agent names, by code, over the memory of texts
+
+**What.** `proto/`: the baseline with one more tool, `run(code)`, where the agent makes `entity`,
+`event` and `link`, says facts with `x.say(text)`, and reads with `x.about()`. Every one of them
+is a sentence written to the baseline's journal like a `tell`; the things it is about go to an
+append-only index beside it (`structure.jsonl`). Variables last between runs of a session, keyed
+as in `terraweaver/server.py` (a header the host sets, otherwise the client's name), because the
+MCP protocol has no session since 2026-07-28.
+
+**Why.** The agent knows who is who in the conversation it alone sees; describing two people, it
+holds each as a variable and says what joins them, instead of names the world must match later.
+Names, kinds and link words are free: the world sorts them out on arrival, and the agent does
+not have to know an object model. That model is small enough to be the skill's text
+(`proto/SKILL.md`), so MCP gains one tool.
+
+**The world asks back.** Identity across conversations is never decided at write time: a new
+`Anna` where the memory holds one comes back as a question in the run's answer, settled by
+`same`/`different` in the next run (or left for the user). A sentence that does not name its
+thing is kept and asked about, since a reader sees only the sentence.
+
+**What it keeps from the text memory.** The journal is the baseline's, so every contract call and
+every recall check is unchanged; what the index adds — search by a thing, a second hop by a link
+— is measured against it.
+
+**First measure (experiments/05_proto_code, sh/6k).** Haiku as host told the 455 facts in 19 runs
+of code ($0.075): 404 things, no name made twice (it reused its variables, so an update such as
+Earthsea's second author lands on the same thing), 449 `link`s, 14 `say`s, no `event`, 64 link
+words (`capital` beside `capital_of`), `kind` dropped on 97 things in later batches. Asked by the
+things a question names — the texts of their entries, 3.6 on average against the baseline's 462 —
+recall was 100/100 and Haiku answered 98/100, against 90–91 for every fact in one prompt. Two
+warnings came with it: one fact was never told (Country Joe McDonald's second citizenship, an
+update), and 41 of 455 were not told verbatim — mostly "in" for "of", but one gained "As of
+2026-10-15" and one lost "the city of". Both are the host's, so both need a check in code: every
+fact that came in is in the journal, and as it came.
+Repeated three times on the same structure: 97, 95, 97 (with the first, 98: 96.75 on average,
+95–98). Recall stayed 100 every time. What is lost is mostly the model's own knowledge winning
+over a counterfactual text it was shown (Germany in Europe, Paris for France, Satya Nadella), and
+twice a "does not say" where the host had rewritten the fact.
+
+## 2026-10-15 — A personal conversation through the proto door (MemOps B01_update)
+
+`experiments/06_memops/run.py`: Haiku as host, one `run` per user turn, the turn heard first; the
+probe questions answered from the texts of the things they name, and from the whole journal,
+each dated, judged by Sonnet. After three fixes, 4/4 and 4/4. Each fix was in what had got in
+the way, and nothing was added to what the agent sees:
+
+- **The host's clock is real.** Replayed in April, the host wrote "As of 2026-10-15" into a fact
+  told on April 15 — `claude -p` tells the model today's date — and the answer read the deadline
+  as past. A replay now ends today. In use, the agent's now and the real now are one: the rule
+  stays "now is the agent's, else the clock's", and the image carries each text's date.
+- **The heard-text check by words was noise.** The host retells, as it should, so nearly every
+  sentence read as untold ("Thanks, yeah." among them) and the one real loss — Tyler's $150K
+  offer, said "one random thing" in the last turn — was the forty-first question. Checked by
+  what a sentence names and counts (capitalised words, numbers), the same run gives four, Tyler's
+  two among them; with contractions and sentence openers left out, two.
+- **A host reads the tool's answer.** The harness gives it one more run when the memory asks.
+- Haiku as judge passed and failed the same "$148K a year"; Sonnet judges.
+
+Seen and left alone, as not yet in the way: the host retells a user's recap as new entries
+(51 entries for ~30 facts), and makes things of events ("Dive bar hangout with Darren", twice).
+
+## 2026-10-16 — Forget keeps the request (MemOps forget, remember, update)
+
+Six more MemOps conversations through the proto door (A02, B01, C01 forget; A01, B01 remember;
+C01 update). The harness host may now call `forget` beside `run` (a ```forget block).
+
+- **A forget left nothing to answer "what did I ask you to drop?"** — every TargetBinding probe
+  failed, in both images, and in C01 the host's `forget` in words took out its own note of the
+  change. So `forget` now keeps the request as an entry of its own, dated, in `what`'s words
+  (source `forget`): that the user asked is a fact like any other, and the only one left of what
+  was dropped. The tool says to name what to forget by what it is ("the storage unit move with
+  Darren"), not by the detail — MemOps expects exactly that: "the activity where you helped
+  Darren with a practical logistics task in mid-April". `forget` takes `now`, as `run` does.
+- **The request is about what was taken.** Not tied to a thing, it was in the journal and not in
+  any thing's image. The journal tells whoever indexes it (`on_forget`: the numbers taken, the
+  request's number), and the structure ties the request to the things those entries were about.
+- **MemOps's own dates are spring 2025** ("Saturday, May 10th"; employee ID MCG-20250115). Told
+  in October 2026, a plan for May read as past and the answer called the memory self-
+  contradictory. `--start 2025-04-07` dates the replay in its own time; the host still slips its
+  real date in now and then (`# now: 2026-10-16T10:40` in one turn of 23).
+- **The judge reads MemOps's rubric** (must include, must not), not the whole expected
+  paragraph: "Removed: David Lam; Rachel Tseng's record unaffected" was failed for not
+  reproducing it all. The same memory answered and judged twice still moves by 1–2 of 5.
+
+After these, the whole journal: A02 4/5, B01 2/5, C01 3/5 (forget, `--start`); A01 6/6, B01 5/6,
+C01 4/4 (remember, update, ending today). What is still failed reads right or is the benchmark's
+own tension — B01's trace wants the forgotten storage move listed.
+
+The image by named things is far worse (1, 3, 0 of 5 on forget) and the cause is the finder, not
+the structure: names are matched from the question's capitalised words, so "my bathroom fan"
+finds nothing (C01: 0 shown, always), and "Meridian" finds Meridian but not Rachel Tseng or
+David Lam, who are linked to the department, not the firm. What a question is about is the
+agent's to say (it holds the variables) or the reader's to search; a cut by question words
+measures the cut. Left as it is: not a thing to build before it is in the way of a real host.
+
+## 2026-10-16 — Forget is a bin, emptied after a set time
+
+The user's rule: a forgotten fact is marked for deletion and deleted for good a period later, so
+what one asked to drop can always be looked at within that period. `forget` moves the entries to
+`forgotten.jsonl` beside the journal: each as it was, with the request's words, when it was asked
+(the agent's now) and when it was binned (the world's clock). No reader sees the bin — `context`,
+`ask`, `search_memory` and the structure's `about()` read the journal alone — and the new
+`forgotten()` lists it. Every read of the journal first deletes what has been in the bin longer
+than `keep_forgotten` (30 days, `--keep-forgotten`).
+
+- **The world's clock decides deletion,** not the agent's: how long words stay on disk is the
+  world's to keep, and a replay dated 2025 would otherwise delete everything at once.
+- **The request stays in the journal** after the purge: "the storage unit move with Darren" is
+  what the user asked, and once the bin is empty it is all that is left to answer "what did I ask
+  you to drop?" — beyond the period, the topic, not the detail.
+- **No restore call.** To have an entry again, it is told again: one write door, not two.
+- **Purged at the next read,** not on a timer: an idle memory keeps its bin until it is next
+  touched. Enough while every call reads the journal first.
+
+Not yet covered: the proto's `heard.md` keeps each user message whole, and a forgotten detail
+stays in it. It needs the same bin, by sentence, before forgetting can be promised.
+
+## 2026-10-20 — What was heard is forgotten too, by sentence
+
+`forget` now reaches `heard.md`. The journal's hook (`on_forget`) gets the entries taken and a
+`to_bin`; the proto finds the heard sentences that may say the same — every sentence of the
+messages those entries were told from, and any other naming what they name — and Haiku picks
+which do. Those go to the bin first, then out of their message; the rest of the message stays as
+it came, and a sentence taken is no longer asked about as untold. The answer lists them.
+
+- **By sentence, not by message:** a message says many things, and the user asked for one.
+- **Code narrows, a model picks:** which sentence says what an entry said is a reading, and the
+  host retells; but only candidates are read, so the call stays short as `heard.md` grows.
+
+Live, MemOps B01_forget: the storage-unit move left heard #6 in four sentences, the entry and
+the request stayed apart, 4/5 and 4/5. Two things it showed:
+
+- **A second `forget` in words took the first request.** Asked twice about the storage move, the
+  model reading the journal for "the storage unit move" found the first request too, and what
+  the user had asked was gone. Requests are now left out of a `forget` in words; by number, they
+  can still go.
+- **The host packs.** "The user always prefers hole-in-the-wall spots over trendy cocktail bars"
+  was in the same entry as the move, so it was forgotten with it — and its sentence with it, which
+  was right by the entry. One fact one entry is the host's; seen, not yet in the way.
