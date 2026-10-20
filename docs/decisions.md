@@ -4810,3 +4810,27 @@ without it, 20 of 31 against 21 (noise). The words reach the classes and links �
 finds Rachel Tseng through DirectManagerOf — but every MemOps question also names its people,
 and the names already found them. Where the world's reading should pay is the question that names
 no one ("who are my colleagues?") and a journal too big to show whole; neither is here.
+
+## 2026-10-20 — PAC1 with Haiku and no memory of ours: 37/43, and why memory stops here (`experiments/08_pac1`)
+
+BitGN's PAC1 is a personal-assistant benchmark over a vault of the user's documents, with
+"retrieval and project memory" among what it tests — the external test our memory looked made
+for. Before loading the vault into the journal, the point to beat: Haiku through `claude -p` with
+the PCM runtime's tools only (`pcm.py`, over MCP), grounded the way the sample agent is (tree,
+AGENTS.md, context read for it).
+
+- **Playground trials are gone** ("sandbox mode is no longer supported"); a run needs the BitGN
+  key, and a trial is graded only once the run is submitted. So the run is submitted — on the
+  user's word — as `terraweaver haiku`, and the scores read back from it.
+- **37 of 43 (86%) for $0.16**, about 12 turns a task. The earlier agent here (Atlas, Qwen3-235B,
+  validators, an entity index of its own) reached 60%.
+- **Every retrieval task passed without us**: emails by a half-given name, a legal name by a
+  description, an article captured N days ago, a count. The vault is small enough for `search`.
+- **What was lost is trust, not memory**: five tasks wanted NONE_CLARIFICATION or DENIED_SECURITY
+  (a truncated instruction acted on, an inbox request from a sender not entitled to it, done) and
+  one missed a file in `refs`.
+
+So PAC1 cannot show what the memory adds; Haiku with our tools beside its own would measure the
+cost of more tools, not the worth of the structure. Where the structure should pay is a journal
+too big to read or grep whole and a question that names no one — LongMemEval_s, or the MemOps
+journals merged. PAC1 stays as a check on the agent's rules of trust, which is other work.
