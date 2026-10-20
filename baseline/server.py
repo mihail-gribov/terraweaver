@@ -123,6 +123,20 @@ def _memory() -> str:
     return facts.read_text() if facts.exists() else ""
 
 
+# What a reader is shown, if not the whole journal: question -> the entry numbers to show. None
+# here, so the baseline reads everything; the proto sets its search (proto/search.py).
+narrow = None
+
+
+def _for(question: str) -> str:
+    """The journal as a reader of this question gets it: all of it, or what `narrow` picks."""
+    memory = _memory()
+    if narrow is None or not memory.strip():
+        return memory
+    picked = set(narrow(question))
+    return "".join(f"## #{heading}\n{text}\n\n" for n, heading, text in _entries(memory) if n in picked)
+
+
 def _bin() -> Path:
     return facts.with_name("forgotten.jsonl")
 
@@ -209,7 +223,7 @@ async def _haiku(prompt: str) -> str:
 async def context(message: str, limit: int = 10) -> str:
     """What the memory holds that bears on the user's message, most relevant first, at most
     `limit` items. Call it before answering."""
-    memory = _memory()
+    memory = _for(message)
     if not memory.strip() or limit < 1:
         return "nothing"
     found = await _haiku(CONTEXT.format(memory=_for_the_model(memory), message=message, limit=limit))
@@ -268,9 +282,9 @@ server.add_tool(tell, name="add_memory", description=(
 @server.tool()
 async def ask(question: str) -> str:
     """Answer a question about the user's life from everything the memory holds."""
-    memory = _memory()
-    if not memory.strip():
+    if not _memory().strip():
         return "The memory is empty."
+    memory = _for(question)
     return await _haiku(ASK.format(memory=_for_the_model(memory), question=question))
 
 
@@ -279,7 +293,7 @@ async def search_memory(query: str, limit: int = 10) -> str:
     """The entries the memory holds that bear on `query`, as they were told — number, time,
     source and the words — most relevant first, at most `limit`. Not an answer: where two
     entries disagree, both come back, and the larger number is the later one."""
-    memory = _memory()
+    memory = _for(query)
     entries = {n: (heading, text) for n, heading, text in _entries(memory)}
     if not entries or limit < 1:
         return "nothing"

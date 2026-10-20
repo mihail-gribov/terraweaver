@@ -28,6 +28,10 @@ from proto.model import Structure
 SESSION_HEADER = "x-terraweaver-session"
 structure: Structure
 sessions: dict[str, dict] = {}
+# The world the journal is said into and read by (proto/world.py), when there is one; and the
+# search the readers are shown entries by (proto/search.py).
+world = None
+search = None
 
 
 HEARD = """Below are sentences the user said, numbered.
@@ -47,6 +51,11 @@ async def forgot(taken: list[tuple[int, str]], request: int, to_bin) -> list[str
     things, and what was heard is taken out where it says what was forgotten — or the words the
     user asked to be rid of stay on disk for good, in the message they came in."""
     structure.forgot([n for n, _ in taken], request)
+    if search is not None:
+        search.drop([n for n, _ in taken])
+    if world is not None:
+        # Waited for: the words are out of the world before the user is told they are gone.
+        world.send("forget", taken, wait=True)
     candidates = structure.heard_candidates(taken)
     if not candidates:
         return []
@@ -112,6 +121,8 @@ def run_code(code: str, session: str, now: str | None = None) -> str:
     except Exception:  # noqa: BLE001 - the agent's error is the agent's to read
         failed = "".join(traceback.format_exc().splitlines(keepends=True)[-3:])
     structure.check_heard(session)
+    if world is not None:
+        world.send("sync", structure, held())
     parts = [out.getvalue().rstrip()]
     if failed:
         parts.append(f"Error:\n{failed.rstrip()}")
@@ -134,17 +145,28 @@ async def run(code: str, ctx: Context, now: str | None = None) -> str:
 
 
 def main() -> None:
-    global structure
+    global structure, world, search
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--name", default="main", help="var/proto/<name>/: facts.md and structure.jsonl")
     parser.add_argument("--model", default="haiku", help="the model that reads the journal")
     parser.add_argument("--port", type=int, default=7110)
+    parser.add_argument("--no-world", action="store_true",
+                        help="keep the journal and the index only: no world said into, nothing read")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
     where = base.ROOT / "var" / "proto" / args.name
     base.facts, base.model = where / "facts.md", args.model
     structure = Structure(where / "structure.jsonl", base._keep, held)
+    if not args.no_world:
+        from proto.world import Worker
+        world = Worker(where / "world")
+    # Readers are shown what the search finds, not the whole journal: every entry about a thing
+    # the question names, and twelve more by words and meaning (docs/decisions.md, 2026-10-20).
+    from proto.search import Search
+    search = Search(structure, lambda: {n: t for n, _, t in base._entries(base._memory())},
+                    where / "vectors.jsonl", image=(lambda: world.image) if world else None)
+    base.narrow = lambda question: search.find(question, limit=12)
     base.serve(args.port)
 
 

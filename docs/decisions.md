@@ -4735,3 +4735,78 @@ the request stayed apart, 4/5 and 4/5. Two things it showed:
 - **The host packs.** "The user always prefers hole-in-the-wall spots over trendy cocktail bars"
   was in the same entry as the move, so it was forgotten with it — and its sentence with it, which
   was right by the entry. One fact one entry is the host's; seen, not yet in the way.
+
+## 2026-10-20 — Search by structure, words and meaning (`proto/search.py`)
+
+Every reader handed the whole journal to a model; that does not grow. Three channels each rank
+the entries — structure (the things a question names, then one hop), BM25 over the texts, cosine
+over bge-small embeddings (fastembed, local, kept beside the journal and deleted with a forgotten
+entry) — fused by reciprocal rank. `experiments/07_search/measure.py` measures recall with no
+model.
+
+- **FactConsolidation (sh/6k, 455 entries):** at 3 / 5 entries, structure 78 / 88, words 98 / 99,
+  meaning 100 / 100, all three 98 / 100. One question, one fact, nearly the fact's words: the
+  text channels find it alone, and the structure's ranking (by how many named things an entry
+  holds, then the newest) is the weakest at the top.
+- **MemOps, six conversations (31 probes, 31–42 entries each):** twelve fused entries 19, the
+  things-only image 13, the whole journal 25. Lost were the "summarise everything about Darren"
+  questions: they need all of his thirty entries. So the structure's part is changed: every entry
+  about a named thing comes first, whole, and the fused ranking adds twelve more — 21 of 31,
+  against 24 for the whole journal in the same pass. But that shows ~30 of ~37 entries: a
+  MemOps journal is too small to say anything of search, and the same journal answered twice
+  moves by 3. Search is measured where the haystack is large.
+
+## 2026-10-20 — The proto said into the world, for the world to read (`proto/world.py`)
+
+The user: the world extracts structure from the fact's text, and terraweaver already does —
+`portraits` reads a class from what was said of a thing, `formalise` a typed link from what was
+said of two. The agent's variables make the anchors: one `darren` across many texts is one
+thing, so texts join through it, and the world reads only what each says of it. So the proto
+does not extract anything itself; `Mirror.sync` says every held entry into a world beside the
+journal, through the host's door with the things bound (never found again by name): one thing,
+`describe(text)`; two or more, `relate(first, other, text)`. Which entity is which proto group,
+and which entry was said, is kept in `mirror.json`. `Mirror.read` runs the world's own reading
+(Nemotron as engineer, Jev as picker), `Mirror.image` gives classes and typed links back.
+
+MemOps B01_forget mirrored: 42 entries, 7 entities, no errors. Not read: both Nebius and
+typesafe answer 402 (budget exhausted).
+
+That showed a world bug: `portraits.walk_down` took a picker that raised for "stays where it
+sits", and the reading was marked done — all 34 accounts marked read as `Thing`, never to be read
+again. A call that failed is not an answer: it now raises `Unread`, counted as failed, and the
+words stay in the queue.
+
+Open: `forget` does not reach the world yet — a forgotten entry's description or link stays in
+`world.db`, and the forgotten "Storage unit move with Darren" is an entity there.
+
+## 2026-10-20 — The world read, forgets, and feeds the search
+
+Nebius topped up (typesafe still 402, so the engineer chooses too): B01_forget's 42 entries read
+in 6 minutes into Person (Darren, Kevin, Naomi), Gift, Occasion, and eight typed links in six new
+words — GirlfriendOf, OlderBrotherOf, GiftFor, PlannedFor… "The user" was read as a Friend: the
+proto's user is not yet the world's owner (open).
+
+- **Forget reaches the world, for good.** The words are in many tables (texts, statements,
+  comments, the log of every run's code, the readings), so `Mirror.forget` scrubs every text
+  column there is rather than the places known today; then erases what stood only on the
+  forgotten entries — a link between two things no remaining entry joins, a thing no remaining
+  entry is about — and the names of erased things from the logs; then VACUUM. Forgetting all of
+  Kevin's seven entries: 44 scrubbed, Kevin and OlderBrotherOf erased, no "Kevin" left anywhere.
+  The world's rule "what was said stays" holds for everything but this: the user asking.
+- **One thread holds the world** (`Worker`): SQLite is bound to the thread that opened it and a
+  reading takes minutes. `sync` after every run (no model), `forget` waited for, and a reading a
+  minute at a time after 30 quiet seconds, so a forget never waits long behind it. The image is
+  cached there for the readers.
+- **The search reaches things through what the world read:** a class the question names, or a
+  kind of link ("his girlfriend" → GirlfriendOf → both ends).
+- **The readers are shown what the search finds** (`base.narrow`): every entry about a named
+  thing, and twelve more. The baseline is unchanged (`narrow` is None there).
+
+Measured on the six MemOps journals, each read by the world (classes: Company, Department,
+HardwareStore, ExhaustFan…; links: DirectManagerOf, DepartmentOf, BestFriendOf, PartnerOf…, and
+some noise — PlanTo, two BrightFix, the request to forget read as RequestedRemovalOf, now no
+longer said into the world): the search with the world's image shows the same entries as
+without it, 20 of 31 against 21 (noise). The words reach the classes and links — "my manager"
+finds Rachel Tseng through DirectManagerOf — but every MemOps question also names its people,
+and the names already found them. Where the world's reading should pay is the question that names
+no one ("who are my colleagues?") and a journal too big to show whole; neither is here.

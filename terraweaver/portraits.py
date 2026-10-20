@@ -240,6 +240,10 @@ def children_of(world, name: str) -> dict:
             if c._spec.get("parent") == name and not c._spec.get("relation")}
 
 
+class Unread(Exception):
+    """The picker could not be asked: the words stay for a later pass."""
+
+
 def walk_down(world, entity, words: str, jev) -> tuple[str, str | None]:
     """Descend from where the thing sits to the most particular class that fits.
 
@@ -266,9 +270,13 @@ def walk_down(world, entity, words: str, jev) -> tuple[str, str | None]:
                             f"record has no class for")
         try:
             scored = jev.choose(state, f"Which of these is {entity.display_name()}?", options)
-        except Exception as wrong:  # noqa: BLE001 - one that fails leaves it where it sits
+        except Exception as wrong:  # noqa: BLE001 - the caller leaves the words unread
+            # A call that failed is not an answer. This returned "stays where it sits", and the
+            # reading was marked done: 2026-10-20, with the engineer refused by its provider
+            # (402), all 34 accounts of a world were marked read as Thing and no later pass would
+            # have read them again.
             log.debug("%s", wrong, exc_info=True)
-            return at, None
+            raise Unread(str(wrong)) from wrong
         if not scored:
             return at, None
         best = max(scored, key=scored.get)
@@ -409,7 +417,11 @@ def formalise(world, engineer, limit: int = 50, jev=None,
         if expected:
             words = (f"{words}\n    Somebody looked for this under "
                      f"{' and '.join(sorted(set(expected)))} and did not find it there.")
-        at, wanting = walk_down(world, entity, words, jev)
+        try:
+            at, wanting = walk_down(world, entity, words, jev)
+        except Unread:
+            tally["failed"] += 1
+            continue
         read_as = {"words": one["words"], "source": one["source"], "walked_to": at,
                    "new_under": wanting}
         if wanting:

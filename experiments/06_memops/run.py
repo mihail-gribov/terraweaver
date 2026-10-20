@@ -32,6 +32,7 @@ sys.path.insert(0, str(ROOT))
 from baseline import server as base  # noqa: E402
 from proto import server  # noqa: E402
 from proto.model import Structure  # noqa: E402
+from proto.search import Search  # noqa: E402
 
 _spec = importlib.util.spec_from_file_location("proto_run", ROOT / "experiments" / "05_proto_code" / "run.py")
 p05 = importlib.util.module_from_spec(_spec)
@@ -44,6 +45,8 @@ DATA = ROOT / "data" / "memops" / "raw" / "generated_result" / "2-evidence_conve
 # own dates are spring 2025 ("Saturday, May 10th"), and told in October those plans read as past,
 # so `--start 2025-04-07` dates it in its own time, the host's "Now:" carrying it.
 START = None
+# Entries the fused search hands the answer: about a third of a MemOps journal.
+SEARCH_LIMIT = 12
 
 HOST = """You are the user's assistant, and the user's personal memory is connected to you. \
 This is how it is used:
@@ -226,6 +229,10 @@ def ask(out: Path) -> None:
             seen.add(a["question"])
             questions.append(a)
 
+    held = {n: text for n, _, text in base._entries(base._memory())}
+    search = Search(server.structure, lambda: held, out / "vectors.jsonl")
+    search.find("warm up", limit=1)  # embed the journal once, before the threads
+
     def one(a):
         # A disambiguation question is asked with its options, as MemOps asks it.
         if a.get("candidate_options"):
@@ -235,7 +242,9 @@ def ask(out: Path) -> None:
                           for e in server.structure.about(server.structure.thing("q", t["thing"]))})
         row = {"question": a["question"], "type": a["evaluation_type"], "expected": a["expected_answer"],
                "named": [t["name"] for t in found], "shown": len(numbers)}
-        for image, picked in (("things", numbers), ("all", every)):
+        found = sorted(search.find(a["question"], limit=SEARCH_LIMIT))
+        row["found"] = len(found)
+        for image, picked in (("things", numbers), ("search", found), ("all", every)):
             said, _ = p05.haiku(ANSWER.format(memory=dated(picked) or "(nothing)", now=now, question=a["question"]))
             verdict = judge(JUDGE.format(question=a["question"], expected=a["expected_answer"], answer=said, **rubric(a)))
             row[image] = {"answer": said, "right": verdict.strip().lower().startswith("yes")}
@@ -247,9 +256,11 @@ def ask(out: Path) -> None:
         print(f"[{r['type']}] named={r['named']} shown={r['shown']}")
         print(f"  Q: {r['question'][:160]}")
         print(f"  expected: {r['expected'][:160]}")
-        for image in ("things", "all"):
+        for image in ("things", "search", "all"):
             print(f"  {image:6} {'RIGHT' if r[image]['right'] else 'WRONG'}: {r[image]['answer'][:300]!r}")
-    print(f"things {sum(r['things']['right'] for r in rows)}/{len(rows)}, "
+    print(f"search {sum(r['search']['right'] for r in rows)}/{len(rows)} "
+          f"({sum(r['found'] for r in rows) / len(rows):.0f} shown), "
+          f"things {sum(r['things']['right'] for r in rows)}/{len(rows)}, "
           f"all {sum(r['all']['right'] for r in rows)}/{len(rows)}, journal {len(every)} entries")
     (out / "answers.json").write_text(json.dumps(rows, ensure_ascii=False, indent=1))
 

@@ -23,6 +23,10 @@ def check(name: str, condition: bool, detail: str = "") -> None:
         failures.append(name)
 
 
+async def _none() -> str:
+    return "none"
+
+
 def main() -> int:
     with tempfile.TemporaryDirectory() as where:
         base.facts = Path(where) / "facts.md"
@@ -144,6 +148,29 @@ def main() -> int:
         server.structure.forget_heard([(server.structure.pending["s1"][0], "Anna's dog Rex barks.")])
         check("a forgotten sentence is not asked about as untold",
               "Rex" not in server.run_code('print(1)', "s1", now="2020-01-06"))
+
+        # --- the world: entries said into it, and a forgotten one taken out of it, for good ---
+        from proto.world import Worker, _text_columns
+        server.world = Worker(Path(where) / "world", quiet=3600)
+        try:
+            server.run_code('mia = entity("Mia", "Mia is the user\'s niece.")\n'
+                            'link(mia, anna, "Mia is Anna\'s daughter and plays the cello.")', "s1", now="2020-01-07")
+            server.world.send("sync", server.structure, server.held(), wait=True)
+            names = {t["name"] for t in server.world.image["things"].values()}
+            check("the world holds the proto's things", {"Anna", "Mia"} <= names, str(names))
+            number = max(n for n, t in server.held().items() if "cello" in t)
+            real, base._haiku = base._haiku, (lambda prompt: _none())
+            try:
+                asyncio.run(base.forget(f"#{number}"))
+            finally:
+                base._haiku = real
+            import sqlite3
+            conn = sqlite3.connect(Path(where) / "world" / "world.db")
+            left = [t for t, c in _text_columns(conn)
+                    if conn.execute(f'SELECT count(*) FROM "{t}" WHERE instr("{c}", "cello") > 0').fetchone()[0]]
+            check("a forgotten entry's words are nowhere in the world", not left, str(left))
+        finally:
+            server.world = None
 
         check("the run tool is one more tool beside the contract's",
               {"run", "tell", "ask", "search_memory", "forget"} <= {t.name for t in asyncio.run(base.server.list_tools())})
