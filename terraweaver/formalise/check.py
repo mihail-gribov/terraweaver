@@ -84,6 +84,31 @@ def _asking(claim: dict) -> tuple:
              NOT_IN_IT: f"the sentence does not say when it {when} — that time is not in it"})
 
 
+SAID = "yes — the sentence says this, in those words or plainly the same thing"
+NOT_SAID = "no — the sentence does not say this"
+
+
+def _link_as_claims(claim: dict) -> dict:
+    """A link as two yes-or-no questions — said as written? said the other way round?
+
+    For a picker that reads claims (`asks_claims`). The three-way question above is answered says_so
+    every time by Nemotron reading letters: on 447 gold facts not_in_it 0%, backwards 57% — the
+    says_so option ("…or it does not say which way round…") takes everything. Asked as two claims
+    the same model is 0.895 on whether a sentence says one (`experiments/09_decision`).
+    """
+    a, b = claim["subject"].display_name(), claim["object"].display_name()
+    said_as_words = claim["word"].replace("_", " ")
+    return {way: {"type": "noul", "instructions": f"Does that sentence say \u00ab{x} {said_as_words} {y}\u00bb?",
+                  "criteria": {"true": SAID, "false": NOT_SAID}}
+            for way, (x, y) in (("as_written", (a, b)), ("turned", (b, a)))}
+
+
+def _as_three(as_written: float, turned: float) -> dict:
+    """The two answers folded into the three verdicts the rest of the check reads."""
+    return {SAYS_SO: as_written, BACKWARDS: (1 - as_written) * turned,
+            NOT_IN_IT: (1 - as_written) * (1 - turned)}
+
+
 def _why(claim: dict, verdict: str) -> str:
     """The one line the world says about a claim it will not take."""
     a, b = claim["subject"].display_name(), claim["object"].display_name()
@@ -169,8 +194,12 @@ def not_borne_out(picker, words: str, links: list) -> tuple:
     if not claims:
         return "", {"asked": False, "why": "nothing was written between these two things"}
     state = prompts.IS_IT_SAID.format(words=words)
-    questions = {}
+    questions, by_claims = {}, getattr(picker, "asks_claims", False)
     for n, claim in enumerate(claims):
+        if by_claims and claim["what"] == "link":
+            for way, asked in _link_as_claims(claim).items():
+                questions[f"q{n}_{way}"] = asked
+            continue
         instructions, options = _asking(claim)
         questions[f"q{n}"] = {"type": "choice", "instructions": instructions, "criteria": options}
     try:
@@ -179,7 +208,11 @@ def not_borne_out(picker, words: str, links: list) -> tuple:
         return "", {"asked": True, "failed": str(wrong)[:200]}
     trace, refused = [], []
     for n, claim in enumerate(claims):
-        scored = (answers.get(f"q{n}") or {}).get("probabilities") or {}
+        if f"q{n}_as_written" in answers:
+            scored = _as_three(float(answers[f"q{n}_as_written"]["noul"]),
+                               float(answers[f"q{n}_turned"]["noul"]))
+        else:
+            scored = (answers.get(f"q{n}") or {}).get("probabilities") or {}
         if not scored:
             continue
         verdict = max(scored, key=scored.get)

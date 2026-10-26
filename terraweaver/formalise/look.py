@@ -84,11 +84,11 @@ def look(world, subject, obj, words: str, picker) -> tuple:
         # became another word for an idea the record already had, and two words for one idea switch
         # supersession off. Asked as two words the decision model got 13 of those 14 right, and the
         # one it missed is a boundary a person would argue about too.
-        if nearest is not None and says_the_same(words, nearest, picker):
+        if nearest is not None and says_the_same(words, nearest, picker, subject, obj):
             asked["taken"] = f"{nearest} — the look passed it over and it says the same"
             return nearest, asked
         return None, asked
-    if CHECKED and not says_the_same(words, best, picker):
+    if CHECKED and not says_the_same(words, best, picker, subject, obj):
         # A word that means something else is not this link's word, and a new one is honest about
         # that. `take_in` moves the links if somebody later decides the two words are one idea.
         asked["refused"] = f"{best} does not say what the words say"
@@ -103,9 +103,14 @@ def look(world, subject, obj, words: str, picker) -> tuple:
 # pairs, and because the cost of a wrong refusal has been measured — one reading went from 27 words
 # to 48 when refusals ran unchecked.
 A_DIFFERENT_IDEA = 0.75
+# How unlikely "the sentence says «a word b»" has to be before the word is taken away, when the
+# question is put about the claim. Measured 2026-10-26 with Nemotron as the decision model on nine
+# probes: wrong words 0.01–0.04 (Naomi «older brother of» Darren for a girlfriend), right ones
+# 0.36–0.78 (it hesitates on «Kevin brother of Darren», it is not wrong). So only a confident no.
+SAYS_NOT = 0.2
 
 
-def says_the_same(words: str, word: str, picker) -> bool:
+def says_the_same(words: str, word: str, picker, a=None, b=None) -> bool:
     """Are the words that were said and the word the look picked one idea, or two?
 
     **Asked about the two words, and not about the account.** The first version of this asked "is
@@ -127,6 +132,21 @@ def says_the_same(words: str, word: str, picker) -> bool:
     a language: an underscore is **our own** spelling of a word, and undoing it is undoing ours.
     """
     said_as_words = word.replace("_", " ")
+    if a is not None and b is not None and hasattr(picker, "yes"):
+        # **With the two ends, asked about the claim.** Nemotron reading letters answers the word
+        # pair wrong: 0.75 that «Naomi is Darren's girlfriend» and «older brother of» are one idea,
+        # 0.78 for «the gift is for Darren», so in one reading (MemOps B01) every bare link took
+        # `older_brother_of`. Asked whether the sentence says «Naomi older brother of Darren Liu»
+        # it says 0.01. Jev was wrong the other way on this shape (it refused `performed_by` for
+        # «performed» at 0.93), which is why only a confident no takes the word away.
+        claim = f"{a.display_name()} {said_as_words} {b.display_name()}"
+        try:
+            p = float(picker.yes(f"Text: {str(words).strip()}", f"Does the text say: \u00ab{claim}\u00bb?",
+                                 "yes — the text says this, in those words or plainly the same thing",
+                                 "no — the text does not say this"))
+        except Exception:  # noqa: BLE001 - a check that cannot run is not a word refused
+            return True
+        return p >= SAYS_NOT
     state = (f"Two words a record could file one fact under:\n"
              f"    \u00ab{str(words).replace('_', ' ').strip()}\u00bb\n"
              f"    \u00ab{said_as_words}\u00bb")

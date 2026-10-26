@@ -37,6 +37,27 @@ class Thing:
         """Every entry the memory holds about this thing, as told."""
         return self._memory.about(self)
 
+    def set(self, attr: str, value, text: str, source: str = "conversation") -> str:
+        """A value of this thing — `price_eur`, 299 — kept with the sentence that says it."""
+        return self._memory.set_value(self._session, self, attr, value, text, source)
+
+    def get(self, attr: str):
+        """What the memory holds for `attr`: one value, an interval of numbers, or None."""
+        return self._memory.value(self, attr)["value"]
+
+    def values(self) -> dict:
+        """Every attribute this thing has a value for, folded: {attr: value}."""
+        return {a: self._memory.value(self, a)["value"] for a in self._memory.attrs(self)}
+
+    def links(self, as_: str | None = None) -> list[tuple["Thing", str, str]]:
+        """The things joined to this one: (thing, the link's word, its sentence)."""
+        return self._memory.links(self, as_)
+
+    def dates(self) -> dict:
+        """When it came into the memory, when anything about it last did, and when it was last
+        said to be so by the agent: {"created", "changed", "told"} — times as "YYYY-MM-DD HH:MM:SS"."""
+        return self._memory.dates(self)
+
     def __repr__(self) -> str:
         return f"{self.name} ({self.id})"
 
@@ -59,6 +80,9 @@ class Structure:
                  entries: Callable[[], dict[int, str]]):
         self.path, self._keep, self._entries = path, keep, entries
         self.records: list[dict] = []
+        # Read only what came since this time, when set: a collection gathered for a task reads
+        # its values and texts as this task found them, not as a page said them last week.
+        self.since: str | None = None
         if path.exists():
             self.records = [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
         self.asked: list[str] = []      # what the world asks the agent, read off after each run
@@ -73,7 +97,8 @@ class Structure:
         self.now: dict[str, datetime] = {}
 
     def _write(self, record: dict) -> None:
-        record["n"] = len(self.records) + 1
+        # Past the last, not the count: a thing that outlived its time is gone from the records.
+        record["n"] = max((r["n"] for r in self.records), default=0) + 1
         record["at"] = f"{datetime.now():%Y-%m-%d %H:%M:%S}"      # when it arrived here
         told = self.now.get(record.get("session"))
         if told:
@@ -102,7 +127,7 @@ class Structure:
         name = " ".join(str(name or "").split())
         if not name:
             raise ValueError('entity(name) needs a name: entity("Anna"), entity("the flat on Rua Augusta").')
-        thing = Thing(self, session, f"t{len(self._things()) + 1}", name, _word(kind))
+        thing = Thing(self, session, f"t{max((int(t[1:]) for t in self._things() if t[1:].isdigit()), default=0) + 1}", name, _word(kind))
         self._write({"thing": thing.id, "name": name, "kind": thing.kind, "session": session})
         self._ask_who(thing)
         if text:
@@ -120,7 +145,7 @@ class Structure:
         return self.said(session, text, [one, other], as_=as_, source=source)
 
     def said(self, session: str, text: str, about: list, as_: str | None = None,
-             when: str | None = None, source: str = "conversation") -> str:
+             when: str | None = None, source: str = "conversation", value=None) -> str:
         text = (text or "").strip()
         things = [self.thing(session, t) for t in about]
         if not text and (as_ or len(things) > 1):
@@ -140,8 +165,11 @@ class Structure:
                              "\"Anna moved from Lisbon to Porto in September 2026.\"")
         number = self._keep(text, " ".join((source or "").split())[:200] or "conversation",
                             self.now.get(session))
-        self._write({"entry": number, "about": [t.id for t in things], "as": _word(as_),
-                     "when": when, "session": session, "heard": self.last_heard.get(session)})
+        record = {"entry": number, "about": [t.id for t in things], "as": _word(as_),
+                  "when": when, "session": session, "heard": self.last_heard.get(session)}
+        if value is not None:
+            record["value"] = value
+        self._write(record)
         self.kept.append(f"#{number} ({', '.join(t.name for t in things)})")
         # The journal is what every reader sees, alone: a sentence that does not name its thing
         # will be read as about nobody. Said, not refused — the agent knows what it meant.
@@ -152,6 +180,81 @@ class Structure:
                 f"the memory sees only the sentence. If it is about them, say it again with the "
                 f"name in it; the memory keeps both.")
         return f"#{number}"
+
+    def set_value(self, session: str, thing: Thing, attr: str, value, text: str,
+            source: str = "conversation") -> str:
+        """A value is a fact like any other: its sentence goes to the journal, and the record
+        beside it says which attribute of which thing the sentence gives. A value without a
+        sentence is refused, since nothing could show where it came from."""
+        attr = _word(attr)
+        if not attr:
+            raise ValueError('set(attr, value, text) needs an attribute: x.set("price_eur", 299, "...").')
+        if not isinstance(value, (int, float, str, bool)) or value == "":
+            raise ValueError(f"{attr}: a value is a number, a word or True/False, not {value!r}.")
+        return self.said(session, text, [thing], as_=attr, source=source, value=value)
+
+    def dates(self, thing: Thing) -> dict:
+        group = self.one_with(thing)
+        mine = [r for r in self.records if r.get("thing") in group or group & set(r.get("about") or ())]
+        made = [r["at"] for r in mine if "thing" in r]
+        told = [r["told"] for r in mine if r.get("told")]
+        return {"created": min(made) if made else None, "changed": max((r["at"] for r in mine), default=None),
+                "told": max(told) if told else None}
+
+    def attrs(self, thing: Thing) -> list[str]:
+        group = self.one_with(thing)
+        return sorted({r["as"] for r in self.records if "value" in r and group & set(r["about"]) and self._fresh(r)})
+
+    def value(self, thing: Thing, attr: str) -> dict:
+        """Every value said for `attr` of this thing (and those settled the same), with its
+        sentence, and the values folded: numbers into [lowest, highest], words and yes/no into
+        the one said most (a tie is None — not known, rather than a guess)."""
+        group, held, attr = self.one_with(thing), self._entries(), _word(attr)
+        said = [(r["value"], held[r["entry"]]) for r in self.records
+                if "value" in r and r.get("as") == attr and group & set(r["about"]) and r["entry"] in held
+                and self._fresh(r)]
+        values = [v for v, _ in said]
+        if not values:
+            folded = None
+        elif all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in values):
+            folded = min(values) if min(values) == max(values) else [min(values), max(values)]
+        else:
+            counts: dict = {}
+            for v in values:
+                counts[v] = counts.get(v, 0) + 1
+            top = sorted(counts.items(), key=lambda kv: -kv[1])
+            folded = top[0][0] if len(top) == 1 or top[0][1] > top[1][1] else None
+        return {"value": folded, "said": said}
+
+    def links(self, thing: Thing, as_: str | None = None) -> list[tuple[Thing, str, str]]:
+        group, held = self.one_with(thing), self._entries()
+        things, out = self._things(), []
+        for r in self.records:
+            if "value" in r or "entry" not in r or len(r.get("about") or ()) < 2 or not group & set(r["about"]):
+                continue
+            if as_ and r.get("as") != _word(as_):
+                continue
+            for other in r["about"]:
+                if other not in group and other in things:
+                    o = things[other]
+                    out.append((Thing(self, thing._session, other, o["name"], o.get("kind")),
+                                r.get("as"), held.get(r["entry"], "")))
+        return out
+
+    def things(self, session: str, kind: str | None = None) -> list[Thing]:
+        """Every thing the memory holds, or every one of a kind; one per group settled the same."""
+        # A kind is a free word, said differently by each teller: "robot vacuum", robot_vacuum,
+        # "robot vacuums". Matched by its words, any of them in the thing's kind or name.
+        want = {w.rstrip("s") for w in re.findall(r"[a-z0-9]+", (kind or "").lower())}
+        seen, out = set(), []
+        for r in self._things().values():
+            has = {w.rstrip("s") for w in re.findall(r"[a-z0-9]+", f"{r.get('kind') or ''} {r['name']}".lower())}
+            if r["thing"] in seen or (want and not want & has):
+                continue
+            t = Thing(self, session, r["thing"], r["name"], r.get("kind"))
+            seen |= self.one_with(t)
+            out.append(t)
+        return out
 
     def forgot(self, taken: list[int], request: int) -> None:
         """The journal's `forget` took `taken` out and kept the request as `request`: the request
@@ -273,8 +376,11 @@ class Structure:
     def about(self, thing: Thing) -> list[str]:
         group, held = self.one_with(thing), self._entries()
         numbers = sorted({r["entry"] for r in self.records
-                          if "entry" in r and group & set(r["about"]) and r["entry"] in held})
+                          if "entry" in r and group & set(r["about"]) and r["entry"] in held and self._fresh(r)})
         return [held[n] for n in numbers]
+
+    def _fresh(self, record: dict) -> bool:
+        return self.since is None or record.get("at", "") >= self.since
 
     def _ask_who(self, thing: Thing) -> None:
         """Ask whether a new thing is one the memory already holds under a name it shares."""
@@ -307,6 +413,7 @@ class Structure:
             "same": lambda one, other: self.settle(session, one, other, True),
             "different": lambda one, other: self.settle(session, one, other, False),
             "thing": lambda ref: self.thing(session, ref),
+            "things": lambda kind=None: self.things(session, kind),
         }
 
 

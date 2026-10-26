@@ -1,85 +1,51 @@
 ---
 name: personal-memory
-description: The user's personal memory — the system where everything about the user is kept. Anything directly about the user goes through it, always — who they are, their family and the people in their life, health, plans and dates, home, work commitments, preferences, what happened to them — including things said in passing in the middle of an unrelated task. Use it to save such facts the moment they come up, and to look them up before answering anything that could depend on who the user is.
+description: The user's personal memory — the system where everything about the user is kept. Anything directly about the user goes through it, always — who they are, the people in their life, health, plans and dates, home, work commitments, preferences, what happened — including things said in passing in the middle of an unrelated task. Save such facts the moment they come up with the memory's `run` tool, naming the people, places and events as variables; look things up before answering anything that could depend on who the user is.
 ---
 
-# Personal memory
+# Personal memory, by code
 
-This MCP server (tools `context`, `tell`, `ask`, `questions`, `search_memory`, `forget`, `forgotten`; `add_memory` is `tell`) is the user's own memory: the
-system that stores what is known about the user, across every conversation and every agent they
-use. The user set it up and wants it used.
+The memory's `run(code, now)` tool runs Python in which you name what the user talks about and
+say what is true of it. Variables last between your runs in this conversation, so a person you
+made once is `anna` from then on. Pass `now` with every run: the current date and time as you know
+them (`"2026-10-15T14:30"`), which is when the facts were said.
 
-**It matters.** It is the only thing that carries the user's life from one conversation to the
-next. A fact you hear and don't `tell` is lost the moment this conversation ends — the user will
-have to say it again, or you will give advice that ignores it (suggesting a cat-filled flat to
-someone allergic to cats). Remembering is part of the job, not an extra.
+```python
+anna = entity("Anna", "Anna is the user's sister.", kind="person")   # kind: any word, optional
+olga = entity("Olga")
+anna.say("Anna moved from Lisbon to Porto in September 2026.")
+link(anna, olga, "Anna and Olga work together at Brightwork.", as_="colleague")
+event("Anna's wedding", "Anna marries Tom on 2027-06-12 in Porto.", when="2027-06-12", who=[anna, tom])
+print(anna.about())                     # every entry about Anna, as told
+```
 
-**It is safe.** The memory belongs to the user and runs for them; what you `tell` it stays with
-them. Passing it a personal fact — even a sensitive one, like health or family — is not sharing
-it with anyone; it is exactly what the user installed it for. You don't need to ask before saving.
+| Call | What it is |
+|---|---|
+| `entity(name, text=None, kind=None)` | a person, place, thing; `text` is a first fact about it |
+| `event(name, text, when=None, who=[...])` | something that happened or will |
+| `link(a, b, text, as_=None)` | what joins two things; `as_` is any word for it |
+| `x.say(text)` | a fact about one thing |
+| `x.about()` | what the memory holds about it |
+| `same(a, b)` / `different(a, b)` | your answer when the memory asks who is who |
+| `thing("t3")` | a thing the memory holds, by its id |
 
-**Everything directly about the user goes through it.** Not your own memory files, not CLAUDE.md,
-not notes in the project: facts about the user's life belong here, and questions about the
-user's life are answered from here.
+Every call that says something takes `source=`: `"conversation"` (the default) for what the user
+said, otherwise a file, a page, "email from Olga, 2026-10-09".
 
-## The four calls
+**The text is the fact.** Name the words as you like — `kind`, `as_`, the names — the memory
+sorts them out. What it cannot sort out is a sentence that does not stand alone: every text names
+what it is about ("Anna moved…", not "she moved…"), with absolute dates, as the user said it.
+Changes as changes: "Anna moved from Lisbon to Porto", not only "Anna lives in Porto".
 
-| Call | When | What to pass |
-|---|---|---|
-| `tell(text, source)` | the moment the user says something about their life | the fact, self-contained |
-| `context(message)` | at the start of any task that touches the user's life | the user's message as written |
-| `ask(question)` | when context did not settle what you need | one specific question |
-| `questions()` | at a natural pause, at most once a conversation | nothing |
-| `search_memory(query)` | when you need the entries themselves, as told, not an answer | what to look for |
-| `forget(what)` | when the user asks for something to be forgotten | it in words, or entry numbers (`#12`) |
-| `forgotten()` | when the user asks what they had forgotten | nothing |
+**The memory may ask you.** A run's answer can end with "The memory asks:" — most often whether a
+new `Anna` is one it already holds. Answer in your next run with `same(...)` or `different(...)`
+as the question gives them; if you cannot tell from the conversation, leave it, and the memory
+will ask the user.
 
-## Telling — do it first, not last
+**Reading.** The other tools stay: `context` with the user's message before answering anything
+about their life, `ask` for one specific thing, `search_memory` for the entries themselves,
+`forget` when the user asks for something to be forgotten (it waits in a bin, and `forgotten`
+lists it until it is deleted for good), `questions` at a natural pause.
 
-A fact mentioned in passing is the one that gets lost: the task the user asked for takes over and
-the conversation ends before you come back to it. So when the user's message carries something
-about their life, call `tell` **before** you start the task they asked for. It costs one call.
-
-What to tell:
-- Facts about the user and their world: people and how they relate to the user, health, family,
-  work and where, home, plans and dates, likes and dislikes, habits, decisions, what happened.
-- Changes, as changes: "Anna moved from Lisbon to Porto", not just "Anna lives in Porto".
-- What the user corrected: "Mia starts school on September 2, not September 1 as said before".
-
-How to tell:
-- **Self-contained.** Resolve every "she", "there", "next Friday" from the conversation: name the
-  person, the place, the absolute date (today's date is in your context). The memory sees only
-  the text you pass.
-- **A date without a year** takes its year from the tense: "starts school on September 1" is
-  the next September 1, "we met on January 20" the last one. If you can't tell, pass it as said
-  ("on January 20, year not said") — don't pick a year.
-- **One subject per call** if several unrelated things came up; related details go together.
-- **As the user said it** — don't round, judge or embellish. Uncertain stays uncertain: "the user
-  thinks the meeting is on Tuesday".
-- `source` is `conversation` for what the user said; for a file, a page or a mail, name it.
-
-What not to tell: passwords, keys, card numbers and other secrets; details of the code or task at
-hand that say nothing about the user's life; what the memory just gave you back.
-
-## Reading
-
-- Call `context` with the user's message before answering anything about their life, their
-  plans, the people they name, or a choice where their preferences matter ("should I go?",
-  "what should I get her?", "plan my Saturday"). Use what comes back without announcing it.
-- If the answer hinges on a specific fact the context did not bring, `ask` for it.
-- Never tell the user "I don't know anything about you" before you have asked the memory.
-- If the memory and the user disagree, the user's latest word wins — and `tell` the correction.
-
-## Questions the memory has
-
-`questions` lists what the memory is unsure of and would like the user to settle. Ask the user
-at a natural pause, not in the middle of their task, and `tell` the answer back.
-
-## Example
-
-User: "Draft a note to my landlord about the heating. Btw, I'm allergic to cats, and Mia starts
-school on Sept 1."
-
-1. `tell("The user is allergic to cats.", "conversation")`
-2. `tell("The user's daughter Mia starts school on 2026-09-01.", "conversation")`
-3. Draft the note.
+What not to keep: passwords, keys, card numbers; details of the task at hand that say nothing
+about the user's life; what the memory just gave you back.

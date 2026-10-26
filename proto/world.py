@@ -113,24 +113,16 @@ class Mirror:
 
     def read(self, seconds: float | None = None) -> dict:
         """The world's own reading of what is unread: typed links, then classes."""
-        from terraweaver import formalise, outside, portraits
+        from terraweaver import decision, formalise, outside, portraits
 
         world = self.rt.world
         if not os.environ.get("NEBIUS_API_KEY"):
             return {"read": "no engineer: NEBIUS_API_KEY is not set"}
         world.engineer = outside.Nemotron(ttl=120)
         world.better = outside.Nemotron(outside.NEMOTRON_SENIOR, ttl=180)
-        world.jev = None
-        if os.environ.get("TYPESAFE_API_KEY"):
-            # Asked once before it is relied on: a picker that refuses every call (402) leaves
-            # every reading unread, where the engineer standing in would have read them.
-            try:
-                jev = outside.Jev()
-                jev.choose("Rome is a city in Italy.", "Which of these is Rome?",
-                           {"City": "a city", "Person": "a person"})
-                world.jev = jev
-            except Exception as wrong:  # noqa: BLE001 - without a picker the engineer chooses
-                log.warning("no picker, the engineer chooses: %r", wrong)
+        world.jev = decision.picker()
+        if world.jev is None:
+            log.warning("no picker, the engineer chooses")
         links = formalise.formalise(self.rt, world.engineer, seconds=seconds)
         classes = portraits.formalise(world, world.engineer, limit=10_000, jev=world.jev,
                                       seconds=seconds)

@@ -9,6 +9,7 @@ and `say` in it, whose sentences go to that journal and whose things go to an in
 
     .venv/bin/python -m proto.server                     # var/proto/main/, port 7110
     .venv/bin/python -m proto.server --name fc --port 7111
+    .venv/bin/python -m proto.server --host 0.0.0.0      # the local network, behind a token
 
 A run's variables last between runs of one session: the `x-terraweaver-session` header if the
 host sends one, otherwise the client's name (the MCP protocol is stateless, 2026-07-28).
@@ -59,7 +60,7 @@ async def forgot(taken: list[tuple[int, str]], request: int, to_bin) -> list[str
     candidates = structure.heard_candidates(taken)
     if not candidates:
         return []
-    said = await base._haiku(HEARD.format(
+    said = await base._read(HEARD.format(
         sentences="\n".join(f"{i}. {sentence}" for i, (_, sentence) in enumerate(candidates, 1)),
         entries="\n".join(f"- {text}" for _, text in taken)))
     chosen = [candidates[i - 1] for i in base._numbers(said, set(range(1, len(candidates) + 1)), len(candidates))]
@@ -134,6 +135,22 @@ def run_code(code: str, session: str, now: str | None = None) -> str:
     return "\n\n".join(p for p in parts if p) or "Done."
 
 
+# The baseline tells the agent to keep facts with `tell`; here they are kept with `run`, which
+# says whom each fact is about. Measured 2026-10-26: under the baseline's words a host with the
+# plugin read with `context` and kept nothing.
+base.server._lowlevel_server.instructions = (
+    "The user's personal memory. Before answering anything that may touch the user's life — "
+    "people, plans, places, preferences, what happened — call `context` with the user's message. "
+    "When the user says something about themselves or the people and things in their life, keep "
+    "it at once, before the task they asked for, with `run`: Python where `entity`, `event` and "
+    "`link` name what the fact is about and `x.say(text)` states it — "
+    "`anna = entity(\"Anna\", \"Anna is the user's sister.\", kind=\"person\")`, then "
+    "`anna.say(\"Anna moved from Lisbon to Porto in September 2026.\")`. Every text stands alone, "
+    "with names and absolute dates; pass `now` with every run. For a question the context did "
+    "not settle, call `ask`. `questions` lists what the memory wants to ask the user."
+)
+
+
 @base.server.tool()
 async def run(code: str, ctx: Context, now: str | None = None) -> str:
     """Run Python against the user's memory: `entity`, `event`, `link`, `x.say(...)`,
@@ -148,8 +165,11 @@ def main() -> None:
     global structure, world, search
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--name", default="main", help="var/proto/<name>/: facts.md and structure.jsonl")
-    parser.add_argument("--model", default="haiku", help="the model that reads the journal")
+    parser.add_argument("--model", default="nvidia/nemotron-3-super-120b-a12b",
+                        help="the model that reads the journal: Token Factory, or `haiku` via the claude CLI")
     parser.add_argument("--port", type=int, default=7110)
+    parser.add_argument("--host", default="127.0.0.1",
+                        help="0.0.0.0 to serve the local network, behind a bearer token")
     parser.add_argument("--no-world", action="store_true",
                         help="keep the journal and the index only: no world said into, nothing read")
     args = parser.parse_args()
@@ -167,7 +187,7 @@ def main() -> None:
     search = Search(structure, lambda: {n: t for n, _, t in base._entries(base._memory())},
                     where / "vectors.jsonl", image=(lambda: world.image) if world else None)
     base.narrow = lambda question: search.find(question, limit=12)
-    base.serve(args.port)
+    base.serve(args.port, args.host)
 
 
 if __name__ == "__main__":

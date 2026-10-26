@@ -130,11 +130,11 @@ def main() -> int:
             asked_for.append(prompt)
             return next(line.split(".")[0] for line in prompt.splitlines() if "Rex" in line)
 
-        real, base._haiku = base._haiku, model
+        real, base._read = base._read, model
         try:
             gone = asyncio.run(base.forget(f"#{number}", now="2020-01-06"))
         finally:
-            base._haiku = real
+            base._read = real
         heard = (Path(where) / "heard.md").read_text()
         check("forget: the heard sentence is taken out, the rest of the message stays",
               "Rex" not in heard and "Anna's hairdresser is Olga." in heard, heard)
@@ -159,11 +159,11 @@ def main() -> int:
             names = {t["name"] for t in server.world.image["things"].values()}
             check("the world holds the proto's things", {"Anna", "Mia"} <= names, str(names))
             number = max(n for n, t in server.held().items() if "cello" in t)
-            real, base._haiku = base._haiku, (lambda prompt: _none())
+            real, base._read = base._read, (lambda prompt: _none())
             try:
                 asyncio.run(base.forget(f"#{number}"))
             finally:
-                base._haiku = real
+                base._read = real
             import sqlite3
             conn = sqlite3.connect(Path(where) / "world" / "world.db")
             left = [t for t, c in _text_columns(conn)

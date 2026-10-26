@@ -1,0 +1,15 @@
+{
+  "product": {
+    "about": "something on sale that can be ordered",
+    "fields": {"price_eur": "current price in euros, as offered for sale",
+               "in_stock": "whether it can be ordered now"},
+    "required": ["price_eur"],
+    "why": "a product whose price nobody states is most likely not on sale: a review or an archive page, not an offer"
+  },
+  "event": {
+    "about": "something that happens at a time and a place",
+    "fields": {"date": "the date it happens, as YYYY-MM-DD", "place": "where it happens"},
+    "required": ["date"],
+    "why": "an event without a date can't be planned for"
+  }
+}

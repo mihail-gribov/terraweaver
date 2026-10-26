@@ -305,13 +305,10 @@ def _give_it_an_engineer(world) -> None:
     """
     import os
 
-    if os.environ.get("TYPESAFE_API_KEY"):
-        try:
-            from terraweaver import outside
+    from terraweaver import decision
 
-            world.jev = outside.Jev()
-        except Exception:  # noqa: BLE001 - a world with no picker asks the engineer instead
-            pass
+    # Nemotron reading option letters (`decision.py`), the same family as the engineer.
+    world.jev = decision.picker()
     if not os.environ.get("NEBIUS_API_KEY"):
         return
     try:

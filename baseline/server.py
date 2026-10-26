@@ -4,7 +4,7 @@ What every agent is told is one contract — `context`, `tell`, `ask`, `question
 every other memory has, `add_memory`, `search_memory`, `forget` — and this is that contract with
 nothing behind it but a text file. `tell` (and `add_memory`, the same call) appends what was said,
 numbered, dated and with its source, as it came. `ask`, `context` and `search_memory` hand the
-whole file to Haiku with the question; `search_memory` gives back the entries themselves, not an
+whole file to the reading model with the question; `search_memory` gives back the entries themselves, not an
 answer. `forget` moves entries to a bin, `forgotten.jsonl` beside the file, where no reader looks
 and `forgotten` lists them; they are deleted for good a set time later. `questions` never has any: a text file has no
 doubts. Whatever the world does better than this
@@ -17,9 +17,12 @@ Connect an agent to http://127.0.0.1:7100/mcp. Nothing here imports terraweaver.
 """
 import argparse
 import asyncio
+import hmac
 import json
 import logging
+import os
 import re
+import secrets
 import tempfile
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -194,7 +197,37 @@ def _for_the_model(memory: str) -> str:
     return "\n".join(f"{n}. {' '.join(text.split())}" for n, _, text in _entries(memory))
 
 
-async def _haiku(prompt: str) -> str:
+async def _read(prompt: str) -> str:
+    """One call to the model that reads the memory, with no tools and no memory of its own.
+
+    A model with a slash in its name is served by Nebius Token Factory (NEBIUS_API_KEY): Nemotron
+    by default in the product, so the memory runs on nothing but its own server and one key. A
+    bare name (`haiku`) goes through the `claude` CLI, as every measured run before 2026-10-26 did.
+    """
+    return await (_token_factory(prompt) if "/" in model else _claude(prompt))
+
+
+async def _token_factory(prompt: str) -> str:
+    """The prompt as one user turn, thinking off: the reader picks entries, it doesn't plan."""
+    global _nebius
+    if _nebius is None:
+        from openai import AsyncOpenAI
+        _nebius = AsyncOpenAI(base_url="https://api.tokenfactory.nebius.com/v1/",
+                              api_key=os.environ["NEBIUS_API_KEY"], timeout=300)
+    answer = await _nebius.chat.completions.create(
+        model=model, temperature=0, max_tokens=4000,
+        messages=[{"role": "user", "content": prompt}],
+        extra_body={"chat_template_kwargs": {"enable_thinking": False}})
+    usage = answer.usage
+    log.info("%s %d chars in, %d tokens in, %d out", model, len(prompt),
+             usage.prompt_tokens if usage else 0, usage.completion_tokens if usage else 0)
+    return (answer.choices[0].message.content or "").strip()
+
+
+_nebius = None
+
+
+async def _claude(prompt: str) -> str:
     """One call to the model with no tools, no settings and no memory of its own.
 
     Through the `claude` CLI, like every other model call in the repository, so it needs no key
@@ -226,7 +259,7 @@ async def context(message: str, limit: int = 10) -> str:
     memory = _for(message)
     if not memory.strip() or limit < 1:
         return "nothing"
-    found = await _haiku(CONTEXT.format(memory=_for_the_model(memory), message=message, limit=limit))
+    found = await _read(CONTEXT.format(memory=_for_the_model(memory), message=message, limit=limit))
     # The contract's "nothing" is exact, so a hook can test for it; the model may dress it up.
     if found.lower().strip(" .") in ("", "nothing"):
         return "nothing"
@@ -285,7 +318,7 @@ async def ask(question: str) -> str:
     if not _memory().strip():
         return "The memory is empty."
     memory = _for(question)
-    return await _haiku(ASK.format(memory=_for_the_model(memory), question=question))
+    return await _read(ASK.format(memory=_for_the_model(memory), question=question))
 
 
 @server.tool()
@@ -297,7 +330,7 @@ async def search_memory(query: str, limit: int = 10) -> str:
     entries = {n: (heading, text) for n, heading, text in _entries(memory)}
     if not entries or limit < 1:
         return "nothing"
-    said = await _haiku(SEARCH.format(memory=_for_the_model(memory), query=query, limit=limit))
+    said = await _read(SEARCH.format(memory=_for_the_model(memory), query=query, limit=limit))
     found = _numbers(said, set(entries), limit)
     return "\n".join(_as_entry(*entries[n]) for n in found) or "nothing"
 
@@ -332,7 +365,7 @@ async def forget(what: str, now: str | None = None) -> str:
         requests = {n for n, heading, _ in _entries(_memory()) if heading.endswith(" · forget")}
         memory = "".join(f"## #{heading}\n{text}\n\n" for n, heading, text in _entries(_memory())
                          if n not in requests)
-        said = await _haiku(FORGET.format(memory=_for_the_model(memory), what=what))
+        said = await _read(FORGET.format(memory=_for_the_model(memory), what=what))
         gone = _numbers(said, held - requests, len(held))
     if not gone:
         return "Nothing was forgotten."
@@ -456,6 +489,8 @@ def main() -> None:
     parser.add_argument("--name", default="main", help="the memory's name: var/baseline/<name>/facts.md")
     parser.add_argument("--model", default="haiku", help="the model that reads the file")
     parser.add_argument("--port", type=int, default=7100)
+    parser.add_argument("--host", default="127.0.0.1",
+                        help="0.0.0.0 to serve the local network, behind a bearer token")
     parser.add_argument("--keep-forgotten", type=int, default=30, metavar="DAYS",
                         help="days a forgotten entry stays in the bin before it is deleted")
     args = parser.parse_args()
@@ -463,20 +498,57 @@ def main() -> None:
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
     facts, model = ROOT / "var" / "baseline" / args.name / "facts.md", args.model
-    serve(args.port)
+    serve(args.port, args.host)
 
 
-def serve(port: int) -> None:
-    """Serve MCP on /mcp and the plain HTTP routes, on localhost only."""
-    names = ["127.0.0.1", "localhost"]
-    security = TransportSecuritySettings(
-        allowed_hosts=[f"{name}:{port}" for name in names],
-        allowed_origins=[f"http://{name}:{port}" for name in names],
-    )
-    app = server.streamable_http_app(host="127.0.0.1", transport_security=security)
-    log.info("memory %s on http://127.0.0.1:%d/mcp", facts, port)
-    uvicorn.run(app, host="127.0.0.1", port=port, log_level="info")
+def serve(port: int, host: str = "127.0.0.1") -> None:
+    """Serve MCP on /mcp and the plain HTTP routes: on localhost, or on the network with a token.
 
+    On localhost the host and origin checks keep a web page from reaching the memory. Off it they
+    can't, since the names a LAN client uses aren't known here, so every request must carry
+    `Authorization: Bearer <token>` instead: TERRAWEAVER_TOKEN, or one made once and kept beside
+    the journal (`token`, readable by its owner only). The token itself is never logged.
+    """
+    if host in ("127.0.0.1", "localhost"):
+        names = ["127.0.0.1", "localhost"]
+        security = TransportSecuritySettings(
+            allowed_hosts=[f"{name}:{port}" for name in names],
+            allowed_origins=[f"http://{name}:{port}" for name in names],
+        )
+        app = server.streamable_http_app(host="127.0.0.1", transport_security=security)
+        log.info("memory %s on http://127.0.0.1:%d/mcp", facts, port)
+    else:
+        token, kept = _token(facts.parent / "token")
+        app = _guarded(server.streamable_http_app(
+            host=host, transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False)),
+            token)
+        log.info("memory %s on http://%s:%d/mcp, bearer token %s", facts, host, port, kept)
+    uvicorn.run(app, host=host, port=port, log_level="info")
+
+
+def _token(path: Path) -> tuple[str, str]:
+    """The network token, and where it comes from (for the log, without the token)."""
+    if token := os.environ.get("TERRAWEAVER_TOKEN", "").strip():
+        return token, "from TERRAWEAVER_TOKEN"
+    if not path.exists():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.touch(mode=0o600)
+        path.write_text(secrets.token_urlsafe(32) + "\n")
+    return path.read_text().strip(), f"in {path}"
+
+
+def _guarded(app, token: str):
+    """Pass on only the requests that carry the token; answer 401 to the rest."""
+    expected = f"Bearer {token}".encode()
+
+    async def guarded(scope, receive, send):
+        if scope["type"] == "http":
+            given = dict(scope["headers"]).get(b"authorization", b"")
+            if not hmac.compare_digest(given, expected):
+                await PlainTextResponse("unauthorized", status_code=401)(scope, receive, send)
+                return
+        await app(scope, receive, send)
+    return guarded
 
 if __name__ == "__main__":
     main()

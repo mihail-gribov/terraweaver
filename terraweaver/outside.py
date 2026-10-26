@@ -4,11 +4,10 @@ There are two ways of getting an answer and they cost differently by an order of
 
 A **closed** question — which of these named options — comes back as a probability per option.
 It is cheap, it is calibrated, and it is where the volume is: one per link. `Closed` is the
-connector for it; `Jev` speaks to a hosted system-one model, `TypecastLM` to a Jev-class model
-with open weights that can run on this machine. Which of them answers is a matter of where the
-weights are and not of what the world is asking, and the second has a third answer the first
-has not — `unsure`, read from the same forward pass, which is the abstention this world would
-otherwise have to build out of thresholds.
+connector for it; `decision.Decision` answers it with Nemotron reading option letters, the same
+model family that writes the world's code, and has a third answer — `unsure`, read from the same
+forward pass, which is the abstention this world would otherwise have to build out of thresholds.
+`Jev`, TypeSafe's hosted model, is kept for the experiments that measured it and is wired nowhere.
 
 An **open** question — where a word has to be invented — is the expensive kind and is asked
 once per type, never per link. `Open` is the connector, `Nemotron` the implementation.
@@ -98,57 +97,6 @@ class Jev(Closed):
             time.sleep(wait)
             wait = min(wait * 2, 8.0)
         raise RuntimeError("unreachable")
-
-
-class TypecastLM(Closed):
-    """A Jev-class model with open weights, over HTTP or in this process (`typecastlm`).
-
-    The same four shapes of question under the same names, so what the world asks does not
-    depend on where the weights are. One thing it has that Jev has not: `tfu`, the same question
-    read over three answers — the two criteria and `unsure`, which is what is left when neither
-    fits. That is the abstention this world wants and had to be built out of thresholds: a
-    picker that must call something a yes will, and a link turned round on a forced yes is a
-    wrong fact where there was a right one.
-
-    `Client()` when a service is running (`TYPECASTLM_ENDPOINT`), `Reader(...)` for the weights
-    in this process. Which one is a deployment question and not the world's.
-    """
-
-    def __init__(self, in_process=None, endpoint: str | None = None, model: str | None = None):
-        if in_process is not None:
-            self.closed = in_process
-        elif model:
-            from typecastlm import Reader
-
-            self.closed = Reader(model)
-        else:
-            from typecastlm import Client
-
-            self.closed = Client(endpoint) if endpoint else Client()
-
-    def ask(self, state: str, questions: dict) -> dict:
-        """The Jev shape, answered question by question — `noul` becomes `tfu` for the third
-        answer, and `unsure` is carried through beside the probability rather than thresholded
-        into one."""
-        out = {}
-        for key, question in questions.items():
-            criteria = question.get("criteria", {})
-            if question.get("type") == "choice":
-                said = self.closed.choice(state, question["instructions"],
-                                          [(name, text) for name, text in criteria.items()])
-                out[key] = {"probabilities": dict(said.get("probabilities", said)),
-                            "choice": said.get("choice")}
-                continue
-            said = self.closed.tfu(state, question["instructions"],
-                                   true=criteria.get("true", ""), false=criteria.get("false", ""))
-            probabilities = said.get("probabilities", said)
-            out[key] = {"noul": float(probabilities.get("true", 0.0)),
-                        "unsure": float(probabilities.get("unsure", 0.0))}
-        return out
-
-
-# The name it had while there was only one of them.
-Local = TypecastLM
 
 
 def _one_of(options: dict, said: str) -> str | None:
@@ -281,46 +229,33 @@ class Open:
 
 
 class Nemotron(Open):
-    """Nemotron through Nebius Token Factory."""
+    """Nemotron through Nebius Token Factory, as the engineer: the LLM role of `terraweaver.nemotron`.
 
-    # A reasoning model thinks inside the same budget it answers in, so a budget that is merely
-    # generous for the answer is a cliff for the pair: measured on one question of experiment 01,
-    # 3000 tokens came back `finish_reason='length'` with **nothing at all** — 3000 spent thinking
-    # and none left to say it — and 8000 finished the same question in 2845 with the right answer.
-    # Two of nine readings in one run were lost that way and reported as "the engineer answered with
-    # nothing", which is true and points at the wrong thing. 8000 was not the end of it: measured
-    # 2026-09-28 over 25 readings of one batch, one was still cut off with nothing said, so the
-    # cliff is per question and not per size. 16000 is the same argument applied once more, and the
-    # reading now says when it happens (`readings.whose_fault` = technical) instead of it looking
-    # like a model with no opinion.
+    One client to the model serves both roles — this one writes, `decision.Decision` decides — so
+    the request, the room to think and the cut-off are `nemotron.Nemotron`'s.
+    What is kept here is the world's side: the `Open` connector and the room it gives.
+
+    A reasoning model thinks inside the same budget it answers in, so a budget that is merely
+    generous for the answer is a cliff for the pair: measured on one question of experiment 01,
+    3000 tokens came back `finish_reason='length'` with **nothing at all** and 8000 finished the
+    same question in 2845 with the right answer; on 2026-09-28 over 25 readings 8000 still lost one,
+    so the cliff is per question and not per size. 16000 is that argument applied once more, and
+    the cut-off is said out loud (`CutOff`, a RuntimeError) rather than returned as an empty string
+    that every caller would read as "the engineer had nothing to say".
+    """
+
     ROOM = 16000
 
     def __init__(self, model: str = NEMOTRON, key: str | None = None, ttl: float = TTL,
                  thinking_room: int = ROOM):
-        from openai import OpenAI
+        from terraweaver.nemotron import Nemotron as Client
 
         self.model, self.room = model, thinking_room
-        self.client = OpenAI(base_url=NEBIUS, api_key=key or os.environ["NEBIUS_API_KEY"],
-                             timeout=ttl)
+        self.client = Client(model=model, base_url=NEBIUS, api_key=key, timeout=ttl,
+                             calibration=False)
 
     def say(self, system: str, asked: str) -> str:
-        answer = self.client.chat.completions.create(
-            model=self.model, temperature=0, max_tokens=self.room,
-            messages=[{"role": "system", "content": system},
-                      {"role": "user", "content": [{"type": "text", "text": asked}]}])
-        choice = answer.choices[0]
-        said = choice.message.content or ""
-        if not said.strip() and choice.finish_reason == "length":
-            # Said out loud rather than returned as an empty string. Every caller of this treats
-            # nothing as "the engineer had nothing to say" and moves on, which is the one reading
-            # this is not: it was cut off mid-thought, and the answer to that is room, not
-            # another try at the same size.
-            raise RuntimeError(
-                f"the engineer was cut off after {answer.usage.completion_tokens} tokens with "
-                f"nothing said — it spent the whole budget thinking. Give it room: "
-                f"Nemotron(thinking_room={max(self.room * 2, 8000)})."
-            )
-        return said
+        return self.client.say(system, asked, room=self.room)
 
 
 # --- the two questions the inspector asks, each built on its connector ---

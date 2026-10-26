@@ -1,4 +1,4 @@
-"""PreToolUse on the memory's writes (`tell`, `add_memory`, `forget`): outside the personal world
+"""PreToolUse on the memory's writes (`run`, `tell`, `add_memory`, `forget`): outside the personal world
 nothing is written.
 
 Measured: with the mode off, the agent still recorded "the user is allergic to cats" on its own —

@@ -11,12 +11,14 @@ import os
 import urllib.request
 from pathlib import Path
 
-MEMORY = os.environ.get("PERSONAL_MEMORY_URL", "http://127.0.0.1:7100")
+MEMORY = os.environ.get("PERSONAL_MEMORY_URL", "http://127.0.0.1:7110")
+# Needed only when the memory serves the network (`--host 0.0.0.0`); localhost ignores it.
+TOKEN = os.environ.get("PERSONAL_MEMORY_TOKEN", "")
 SESSIONS = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local" / "state")) / "personal-world" / "sessions"
 
 ENTERED = ("This session is in the user's personal world: their memory is connected and on, "
            "and what it holds about each message is put beside it. Use the personal-memory "
-           "skill: tell facts about the user the moment they come up, and ask the memory before "
+           "skill: keep facts about the user with `run` the moment they come up, and ask the memory before "
            "saying you don't know something about the user. `/personal off` leaves the mode.")
 LEFT = ("The session has left the user's personal world: messages are no longer read against "
         "the memory and nothing is recorded. The memory tools stay available if asked for.")
@@ -24,8 +26,10 @@ LEFT = ("The session has left the user's personal world: messages are no longer 
 
 def call(path: str, body: dict | None = None, timeout: float = 120) -> str:
     data = json.dumps(body).encode() if body is not None else None
-    request = urllib.request.Request(MEMORY + path, data=data,
-                                     headers={"Content-Type": "application/json"})
+    headers = {"Content-Type": "application/json"}
+    if TOKEN:
+        headers["Authorization"] = f"Bearer {TOKEN}"
+    request = urllib.request.Request(MEMORY + path, data=data, headers=headers)
     with urllib.request.urlopen(request, timeout=timeout) as response:
         return response.read().decode()
 

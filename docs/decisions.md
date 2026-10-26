@@ -4834,3 +4834,207 @@ So PAC1 cannot show what the memory adds; Haiku with our tools beside its own wo
 cost of more tools, not the worth of the structure. Where the structure should pay is a journal
 too big to read or grep whole and a question that names no one — LongMemEval_s, or the MemOps
 journals merged. PAC1 stays as a check on the agent's rules of trust, which is other work.
+
+## 2026-10-26 — The memory reads with Nemotron, and serves the local network behind a token
+
+The readers inside the memory — `ask`, `context`, `search_memory`, picking what `forget` means,
+picking what the proto heard — went through the `claude` CLI to Haiku. That made the memory need
+Claude Code installed and logged in wherever it ran, and put a model other than Nemotron at its
+centre, when the design was always that Nemotron runs the world. A model with a slash in its name
+now goes to Token Factory (thinking off, temperature 0); the proto server defaults to
+`nvidia/nemotron-3-super-120b-a12b`. `--model haiku` keeps the CLI path, so the measured runs can
+be repeated as they were; the baseline server keeps Haiku as its default for the same reason.
+
+`--host 0.0.0.0` serves the memory to other machines on the local network, so it can live on a box
+of its own and every agent docks to one URL. Off localhost the host and origin checks can't work —
+the names LAN clients use aren't known — so every request must carry a bearer token instead:
+`TERRAWEAVER_TOKEN`, or one generated once into `token` beside the journal, mode 600, never logged.
+A memory of someone's life open to the whole network without one was not an option.
+
+## 2026-10-26 — Nemotron is the decision model: option letters read, calibrated per mode (issue #1)
+
+Jev answers 402 and `typecastlm` is another package to depend on, so the closed questions — which
+class, which word, which way, one or several — go to the same Nemotron that writes the world's code,
+read as a decision model (`terraweaver/decision.py`): options lettered, thinking off, one token out,
+the probability of each option read from `top_logprobs`. `decision.picker()` is the picker wherever
+`NEBIUS_API_KEY` is set (`server.py`, `proto/world.py`); `outside.TypecastLM` is gone and Jev is
+wired nowhere.
+
+**Measured** (`experiments/09_decision`, Nano-30B-A3B, held-out half of 1256 public rows; the
+temperatures shipped in `terraweaver/decision.json` with the model id they hold for):
+
+| mode | accuracy | balanced | ECE raw → fitted | sets |
+|---|---|---|---|---|
+| noul | 0.819 | 0.824 | 0.031 → 0.061 (t≈1.0 on all rows) | BoolQ RTE FEVER VitaminC PAWS StrategyQA PubMedQA |
+| tfu | 0.547 | 0.538 | 0.146 → 0.069 | CB ANLI WANLI Climate-FEVER ContractNLI |
+| choice | 0.842 | 0.853 | 0.103 → 0.077 | ARC RACE QuALITY AG News |
+| scale | 0.500 | 0.432 | 0.165 → 0.084 | SST-5 |
+
+0.37 s a call.
+
+- **Both orders, everywhere.** The first letter wins 75% of noul questions on public rows and 79%
+  on ours. Plain accuracy hid it (one order and both tie at 0.819 on bench) while one order caught a
+  "no" 63% of the time and both 86%; on the world's own questions 0.70 against 0.90. So orders are
+  chosen by accuracy averaged over labels, and every mode reads both, at two calls side by side.
+- **Temperatures by calibration error**, fitted on public data only. On the world's questions they
+  hold loosely: noul there is easier and the shipped t leaves it underconfident (ECE 0.22).
+- **`unsure` is weak**: tfu catches "the text does not settle it" 21% of the time on public rows.
+  Nothing should rest on it alone yet; a verdict head on the hidden state is being tried for it.
+
+**What it broke, and the fix.** Read with Decision, one MemOps journal (B01_forget) came out worse
+than with the engineer answering the closed questions in words: Naomi `older_brother_of` Darren
+for his girlfriend, the gift and the dinner offered the same word, five links left untyped. The
+look had said "none of these" each time; the second question — are the said words and the nearest
+word one idea — was answered "yes" at 0.75 for «girlfriend» and «older brother of», and the bar to
+take a word away was 0.75 against. The model is wrong on the word-pair shape, not mis-scaled (the
+same with no temperature). Asked instead whether the sentence says «Naomi older brother of Darren
+Liu» it answers 0.01; right claims 0.36–0.78 (nine probes). So `look.says_the_same` asks about the
+claim when the two ends are known and takes the word away only on a confident no (`SAYS_NOT` 0.2):
+Jev, on that shape, refused right words at 0.93, and a refusal costs a second word for one idea.
+
+**And `check`: a link as two claims.** On our 447 gold facts the three-way link question (says_so /
+backwards / not_in_it) is answered says_so every time — not_in_it 0%, backwards 57% with both orders
+— at any temperature; the says_so option ("…or it does not say which way round and this one is not
+against it") takes everything. So for a picker that reads claims (`Decision.asks_claims`) a link is
+two noul questions, said as written? said turned round?, folded into the same three verdicts
+(`check._link_as_claims`, `_as_three`); dates and attributes keep their question, and the engineer
+standing in keeps the old one. On 150 gold facts (`experiments/09_decision/check_links.py`): links
+as said 150/150 says_so and **none refused**; turned round, the verdict right 67% and 52 of 120
+refused at `SURE_ENOUGH`; another fact's word, not_in_it 73% (was 0).
+
+**Read again** (B01_forget, three readings with Decision, one with the engineer choosing). After both
+changes no wrong link is written: Kevin `brother_of` Darren, the gift `is_for` the dinner, and the
+girlfriend fact found no word (the look said "none of these") — that reading and one other were then
+lost to the engineer running out of its 16000 thinking tokens, which is the engineer's and not the
+picker's. Before them, Naomi `older_brother_of` Darren and then Darren `girlfriend_of` Naomi. Still
+open: all three Decision readings placed "Darren's birthday dinner" as a Person (the engineer made it
+a Celebration); asked again outside the run on the grown world it answers Present, so the live state
+of that question is not yet reproduced. One journal, three runs: a direction, not a measurement.
+
+## 2026-10-26 — The Claude Code plugin docks to the proto memory
+
+The plugin pointed at the baseline (port 7100, `tell`); it now points at the proto (7110, `run`),
+the memory that is submitted. Its skill is `proto/SKILL.md` under the plugin's name, the guard
+hook covers `run` as a write, and both the MCP connection and the hooks send
+`PERSONAL_MEMORY_TOKEN` as a bearer token, so the plugin docks to a memory on another machine of
+the local network by setting two variables.
+
+The proto server had inherited the baseline's MCP instructions, which say to keep facts with
+`tell`. Under them, a Claude Code host with the plugin (Haiku, mode on) read with `context` and kept
+nothing — the skill is only loaded if the host chooses to. The proto now says `run` in its own
+instructions, with one example; after that 3 runs of 3 kept the fact before answering, and a fresh
+session answered "where does my sister live now?" from it.
+
+**One client, two roles** (the user's aim for this work). `terraweaver/nemotron.py` is the one client
+to Nemotron over the API: `say`/`json` as the LLM (thinking on, 16000 tokens of room, `CutOff` when
+the room went on thinking), `noul`/`tfu`/`choice`/`scale`/`ask` as the decision model. The engineer
+(`outside.Nemotron`) and the picker (`decision.Decision`) are thin over it, and the calibration lives
+once, in `terraweaver/decision.json`. A module and not a package, on the user's word: it was briefly
+`packages/nemotron-decision`, and a package is a second thing to install for no reader but us.
+Nemotron is used through the API only; a verdict head on hidden states was started and dropped the
+same day, since it needs the weights served locally and this machine cannot serve them.
+
+## 2026-10-26 — The world solves tasks: a program over a talking object model (`proto/tools.py`, `proto/solve.py`)
+
+**What.** A task the agent brings ("pick me a robot vacuum", "who are my colleagues?") is solved by
+the world with a program its model writes once, whole, and runs. The program works with a small
+object model — `user_memory`, `web`, `new_collection(...)`, `Items.rank_by(...)`, `Item.value_of(...)`,
+`Ranking.choose_one_for(...)`, `Ranked.report()`, `reply_to_agent(...)` — over a store of things,
+their values and their links (`proto/model.py`), filled from texts by `proto/parse.py`.
+
+**Why a program and not an agent's loop.** The user's rule: a clear program, even with model calls
+inside it, not a chain of reasoning turns. Calls to a model are steps of the program like any
+function; branches (too few passed → gather more, relax a condition) are written in the code. Only
+a program that fails — an exception, a syntax error, or no reply — goes back to be fixed, twice at
+most. The program is kept with the run (`program.py`): it can be read, rerun, reused.
+
+**Why nothing is task-specific.** The first version was a pipeline for robot vacuums: its fields,
+its German search words, its claim templates were code. The user's point: the world gets tools —
+find, parse, check, store, select — and composes them for whatever task comes; search is one tool
+among them, and "who are my colleagues?" never uses it (measured: the program read the memory's
+links and answered "Priya and Anna" with no web call). What does hold for a whole class of things
+is data, not code: `proto/classes.json` (a product's price must be known — a product whose price
+nobody states is most likely not on sale; an event's date must be known).
+
+**Correctness lives in the tools; strategy in the model.** Every rule given to a model as words
+failed at least once today, and each was moved into code:
+
+- *"null when the page doesn't say it"* — the extractor wrote needs_cloud=false for pages silent on
+  the cloud. Every value now carries a quote; code checks the quote is in the text (and that a
+  number's quote has a number, a "cm" quote isn't read as mm), and the decision model checks the
+  quote says the claim. On 1821 values from 259 pages it rejected 426 (23%): "LiDAR navigation" for
+  works-without-a-cloud, "the SharkClean app walked me through connecting to WiFi" for the same.
+  The cloud field went from 91 values to 25. That check is the same closed question the decision
+  model was calibrated on (issue #1): one set of Nemotron weights extracts, the other role checks.
+- *"answer None when a field is unknown"* — the planner wrote `x is not None and …` and ruled out
+  all 134 rows. `rank_by` now decides unknown itself: a condition that reads a value the item
+  lacks is not known, never "not met"; a `must_hold` one has to be met and known.
+- *"use the user's limits"* — a program written blind recalled them at run time and ignored them
+  (a 450-dollar pick for a 400-euro budget). What the memory holds for the task is now gathered by
+  a fixed step first and given to the writer, so the limits become conditions in the code.
+- *"queries name kinds of thing"* — `web.search_pages` refuses a query naming anyone in the
+  user's memory.
+
+**Why a talking object model.** Given functions and a long description, the writer passed its own
+Python class as `of=`, imported a module called `shelf`, wrote `items.len`, and returned
+exploration steps instead of a program. Methods now hang on the object they apply to and say what
+they do (`collection.add_from_texts`, `items.rank_by`, `item.chance_that`); the writer's manual is
+built from their docstrings; a wrong call raises an error that says what came, what is expected and
+a call that works; one example program, for another task, shows the shape. And the reply is begun
+for the model with a code fence: with thinking on, a third of replies held no program, and the
+endpoint continues a begun reply only with thinking off. After these, 4 of 4 programs ran on the
+first attempt (three vacuum runs, one colleagues run).
+
+**Where it stands.** The vacuum task gives an answer every run, but not the same one: which
+conditions a program makes `must_hold` differs between runs (one answered honestly that nothing
+known to be under 400 € works without an app; two picked a Xiaomi at 154 € and a Rowenta at 370 €).
+`choose_one_for` still re-judges conditions in its own words ("63 dB — acceptable") and once named
+models the program never gathered. Next: the choice is written from the report's marks as given,
+and a reply naming a thing outside what was gathered is refused.
+
+**Search engine.** The submission searches with Tavily only (`ait-search --engine tavily`): the
+hackathon's Tavily bonus asks for a runtime call to its API. Tavily without a key ran out after two
+queries an hour; tests run on Keenable (`--engine keenable`) until a key is in `.env`.
+
+## 2026-10-26 — A registry of task programs; collections that live a week
+
+**A task is a program, so programs are kept.** Each program the world writes begins with a
+docstring: its first line is the kind of task it solves, in general words (the reply is begun with
+`"""`, so none comes without one). A program that answered is kept in `var/programs/<name>.py`;
+before writing, the world asks which kept program solves a task of the same kind, and the writer
+starts from it — "keep what worked, change what this task needs" — and the newer version replaces
+it. Why: written from nothing, the same vacuum task got a different program and a different answer
+every run. Why the writer adapts rather than reruns: a program has this user's limits in its code.
+
+**The decision model chooses the program.** It is a closed question — one of the kept programs'
+descriptions or "none: a new kind of task" — so it goes to the judge's `choice`, one call, not to
+an LLM's free answer. On five tasks against three kept programs it chose right five times: the
+kettle went to the product-picking program, the birthday question to none.
+
+**Collections live with the memory, for a week.** A collection was the run's own and was gone with
+it. It now lives under the memory (`collections/`), so what a task found can still be asked about
+afterwards. But a task chooses only from what it found itself: what is reused is the program, not
+the finds — a price or stock seen days ago may be gone. And not for good: an item is removed — its records and texts, for good — `LIFETIME` (7 days) after it was last
+found. What the user's memory names, what was spoken of with the user, has no lifetime; that is
+read off the memory each time rather than marked, so a thing the user forgets regains its lifetime.
+
+**Every thing has its dates.** `item.dates()` gives when it came, when anything about it last
+did, when the agent said it, and `lives_until` (None for what has no lifetime) — read off the
+records' times, which were always kept. Ids and entry numbers count on from the highest, so a
+removal never gives a new thing an old one's id.
+
+**Search: Tavily finds, any fetcher reads.** With `--engine tavily` the page bodies came from
+keenable's fetcher, and `_search` kept only bodies of the engine's own, so a Tavily search gave a
+program no pages. Any fetched body is taken now.
+
+**A number's quote says what the number is.** The first Tavily run picked a robot that "crosses
+10.2 cm thresholds", from the quote "10.2 cm" — its own height. A bare length fits any dimension,
+and the judge, asked whether "10.2 cm" says the threshold is 10.2 cm, said yes. A number's quote
+now needs a word beyond its unit, checked by code; the reader is told so. The one exception is
+money: an amount in euros can only be a price, and 24 of the 41 prices kept stood bare ("249 €").
+
+**A found-again item reads this task's values only.** The rerun reused the kept program and picked
+the same robot — with the "10.2 cm" threshold again: the item was found anew, and its value from the
+earlier run, kept before the quote rule, folded in with the new ones. A collection's store now reads
+only records since the task started (`Structure.since`); what came before stays to be asked about
+until its lifetime ends.

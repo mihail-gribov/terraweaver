@@ -271,6 +271,33 @@ def main() -> int:
     check("and a model that only hesitates does not take it away",
           says_the_same("performed", "performed_by", _Hesitant(False)))
 
+    # With the two ends known, the question is about the claim, and only a confident no takes the
+    # word away: Nemotron answers the word pair wrong (0.75 that "girlfriend" and "older brother of"
+    # are one idea) and the claim right (0.01 that the sentence says "Naomi older brother of Darren").
+    class _Claim:
+        def __init__(self, p):
+            self.p, self.asked = p, None
+
+        def yes(self, state, question, true, false):
+            self.asked = question
+            return self.p
+
+    class _End:
+        def __init__(self, name):
+            self.name = name
+
+        def display_name(self):
+            return self.name
+
+    naomi, darren = _End("Naomi"), _End("Darren Liu")
+    claim = _Claim(0.01)
+    check("with both ends, a confident no to the claim takes the word away",
+          not says_the_same("Naomi is Darren's girlfriend.", "older_brother_of", claim, naomi, darren))
+    check("and the claim asked is the link written out",
+          "Naomi older brother of Darren Liu" in (claim.asked or ""), str(claim.asked))
+    check("a hesitant yes keeps the word",
+          says_the_same("Kevin is Darren's brother.", "older_brother_of", _Claim(0.36), naomi, darren))
+
     # And the same question is put to the word the look passed over. Measured 2026-09-30: of 25
     # refusals across two readings, nine were of a word that said the same thing — `famous for`
     # refused against `famous_for` — and each became a second word for one idea.
