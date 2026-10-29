@@ -57,19 +57,23 @@ writing = asyncio.Lock()
 # each way this prompt departed from them cost about four of the 33 hardest questions (the entry's
 # time and source on its line, a preamble about "the user", a rule to list every entry), so it
 # departs only where the contract makes it: an ask says when the memory does not say.
-ASK = """Below is a list of facts, numbered in the order they were stated. Some facts were later \
-updated: when two facts conflict, the one with the larger number is newer and is the one that holds.
+ASK = """Below is what the user told their personal memory, one fact a line: its number, the day \
+it was said, and what was said. Facts are numbered in the order they were said; when two conflict, \
+the one with the larger number is newer and is the one that holds.
 
 {memory}
 
-Question: {question}
+Today is {today}. Question: {question}
 
-Answer with the value that holds now and nothing else. If no fact answers it, say that the \
-memory does not say."""
+Answer from these facts. Give what they say that bears on the question, with the day a fact was \
+said whenever time matters, and work out how long or how many when that is asked. When the \
+question asks for a suggestion, give the facts about the user that it should take into account: \
+the suggestion itself is not yours to make. Name the numbers of the facts you used. If no fact \
+bears on it, say that the memory does not say."""
 
-CONTEXT = """Below is a list of facts, numbered in the order they were stated. Some facts were \
-later updated: when two facts conflict, the one with the larger number is newer and is the one \
-that holds.
+CONTEXT = """Below is a list of facts, numbered in the order they were stated, each with the day \
+it was said. Some facts were later updated: when two facts conflict, the one with the larger \
+number is newer and is the one that holds.
 
 {memory}
 
@@ -185,7 +189,7 @@ def _numbers(said: str, held: set[int], limit: int) -> list[int]:
     return out[:max(limit, 0)]
 
 
-def _for_the_model(memory: str) -> str:
+def _for_the_model(memory: str, dated: bool = False) -> str:
     """The file as the model reads it: one line an entry, its number first, then what was said.
 
     The file keeps each entry under a heading of its own, with its time and source; handed over
@@ -194,30 +198,40 @@ def _for_the_model(memory: str) -> str:
     on each line, fewer still under the headings (docs/decisions.md). Time and source stay in the
     file; giving them back to the model is a step of its own, measured.
     """
-    return "\n".join(f"{n}. {' '.join(text.split())}" for n, _, text in _entries(memory))
+    # Dated where the question may be about time (`ask`, `context`): without the day, "how many
+    # days ago did I buy the smoker?" had nothing to be answered from (LongMemEval, 2026-10-29).
+    return "\n".join(f"{n}. " + (f"[{_day(heading)}] " if dated else "") + " ".join(text.split())
+                     for n, heading, text in _entries(memory))
 
 
-async def _read(prompt: str) -> str:
+def _day(heading: str) -> str:
+    """The day of an entry, from its heading: "12 · 2023-03-15 10:44:00 · the user" → 2023-03-15."""
+    parts = heading.split(" · ")
+    return parts[1][:10] if len(parts) > 1 else "?"
+
+
+async def _read(prompt: str, thinking: bool = False) -> str:
     """One call to the model that reads the memory, with no tools and no memory of its own.
 
     A model with a slash in its name is served by Nebius Token Factory (NEBIUS_API_KEY): Nemotron
     by default in the product, so the memory runs on nothing but its own server and one key. A
     bare name (`haiku`) goes through the `claude` CLI, as every measured run before 2026-10-26 did.
     """
-    return await (_token_factory(prompt) if "/" in model else _claude(prompt))
+    return await (_token_factory(prompt, thinking) if "/" in model else _claude(prompt))
 
 
-async def _token_factory(prompt: str) -> str:
-    """The prompt as one user turn, thinking off: the reader picks entries, it doesn't plan."""
+async def _token_factory(prompt: str, thinking: bool = False) -> str:
+    """The prompt as one user turn, thinking off where the reader only picks entries; on for `ask`,
+    which may have to count days between them."""
     global _nebius
     if _nebius is None:
         from openai import AsyncOpenAI
         _nebius = AsyncOpenAI(base_url="https://api.tokenfactory.nebius.com/v1/",
                               api_key=os.environ["NEBIUS_API_KEY"], timeout=300)
     answer = await _nebius.chat.completions.create(
-        model=model, temperature=0, max_tokens=4000,
+        model=model, temperature=0, max_tokens=12000 if thinking else 4000,
         messages=[{"role": "user", "content": prompt}],
-        extra_body={"chat_template_kwargs": {"enable_thinking": False}})
+        extra_body={"chat_template_kwargs": {"enable_thinking": thinking}})
     usage = answer.usage
     log.info("%s %d chars in, %d tokens in, %d out", model, len(prompt),
              usage.prompt_tokens if usage else 0, usage.completion_tokens if usage else 0)
@@ -259,7 +273,7 @@ async def context(message: str, limit: int = 10) -> str:
     memory = _for(message)
     if not memory.strip() or limit < 1:
         return "nothing"
-    found = await _read(CONTEXT.format(memory=_for_the_model(memory), message=message, limit=limit))
+    found = await _read(CONTEXT.format(memory=_for_the_model(memory, dated=True), message=message, limit=limit))
     # The contract's "nothing" is exact, so a hook can test for it; the model may dress it up.
     if found.lower().strip(" .") in ("", "nothing"):
         return "nothing"
@@ -313,12 +327,15 @@ server.add_tool(tell, name="add_memory", description=(
 
 
 @server.tool()
-async def ask(question: str) -> str:
-    """Answer a question about the user's life from everything the memory holds."""
+async def ask(question: str, now: str | None = None) -> str:
+    """Answer a question about the user's life from everything the memory holds. `now`: today's
+    date, when it is not the machine's (a benchmark asks as of its own day)."""
     if not _memory().strip():
         return "The memory is empty."
     memory = _for(question)
-    return await _read(ASK.format(memory=_for_the_model(memory), question=question))
+    today = (now or f"{datetime.now():%Y-%m-%d}")[:10]
+    return await _read(ASK.format(memory=_for_the_model(memory, dated=True), question=question, today=today),
+                       thinking=True)
 
 
 @server.tool()

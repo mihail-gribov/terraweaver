@@ -1,6 +1,7 @@
 # Docs
 
 **The memory as it is now**
+- [memory.md](memory.md) — what the memory is: its principles, what it works with, what it does, where it stands
 - [decisions.md](decisions.md) — every behaviour change with the reason and the measurement behind it, newest last
 - [contract.md](contract.md) — how any agent works with a personal memory: the calls and what each guarantees
 - [TODO.md](TODO.md) — what is queued, and why in that order

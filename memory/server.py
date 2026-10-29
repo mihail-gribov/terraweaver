@@ -302,12 +302,12 @@ async def http_say(request):
 
 @base.server.custom_route("/ask", ["POST"])
 async def http_ask(request):
-    """`ask` over HTTP, for runners outside an agent: {"question": ..., "gather": false} answers from
-    what the memory holds only."""
+    """`ask` over HTTP, for runners outside an agent: {"question": ..., "gather": false, "now": ...}
+    answers from what the memory holds only, as of `now`."""
     from starlette.responses import PlainTextResponse
     body = await request.json()
     return PlainTextResponse(await listener.ask(body.get("question", ""), wait=True,
-                                                gather=bool(body.get("gather", True))))
+                                                gather=bool(body.get("gather", True)), now=body.get("now")))
 
 
 @base.server.custom_route("/interests", ["GET"])

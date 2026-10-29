@@ -5402,3 +5402,48 @@ first. The launch now holds by itself until `/personal off` (which leaves an `.o
 And the host kept the user's facts in Claude Code's own auto-memory
 (`~/.claude/projects/<dir>/memory/`) — a second memory beside ours, out of the user's world and
 out of what it forgets. `claude-personal` and the experiment set `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1`.
+
+## 2026-10-29 — LongMemEval through the two doors; the journal's answer dated and made for questions
+
+`experiments/14_longmemeval`: a stratified 30 of LongMemEval `oracle`, every turn passed by `/say`
+with its session's date, the question by `/ask` from what the memory holds only (no web, no
+world's reading), against Nemotron Super given every session. First run, seed 0: memory 46.7%,
+context 86.7%; temporal-reasoning 0/5 and single-session-preference 0/5 for the memory.
+
+The facts were kept ("I just got a smoker today", 2023-03-15) and lost at the answer, twice over.
+The journal shows the model its entries without their day — fitted to FactConsolidation, where the
+time on each line cost 4 of 33 — so "how many days ago" had nothing to count from. And its `ask`
+said "answer with the value that holds now and nothing else": a FactConsolidation question, so
+"suggest accessories for my phone" got "the memory does not say" while "iPhone 13 Pro" sat in it.
+Now `ask` and `context` show each entry's day; `ask` is told today's date, thinks, works out how
+long and how many, and for a suggestion gives the facts about the user it should take into
+account — the suggestion is the agent's. The runner's answering step, the same in both modes,
+makes a suggestion itself and answers facts of the user's life only from what it was given.
+Re-measured on seed 0 and, so as not to be fitted to it, on seed 1:
+
+| | memory | context |
+|---|---|---|
+| seed 0 | 56.7% (temporal 2/5, preference 2/5, knowledge-update 5/5) | 66.7% |
+| seed 1 | 63.3% | 76.7% |
+
+The context fell from 86.7% on seed 0 with the new answering step, which is the same in both
+modes: the spread between runs is as large as the change. Most of the gap is
+single-session-assistant, 1/5 against 5/5 on both seeds: those questions ask what the assistant
+said, and the memory drops the agent's messages by design. Without them, seed 1: memory 19/25,
+context 21/25.
+
+## 2026-10-29 — Texts and a knowledge graph on them, in time (design, not built)
+
+The user, designing topics: the memory works with texts — the user's resolved messages, a dialogue
+made of them alone, topics written over them — and with each text go the entities it mentions and
+the relations it states, each entity and relation backed by texts: a knowledge graph. Built with
+time: newer closes older. The source data is never lost, and entities and relations do not
+collapse — every statement stays its own assertion with its text and day, and those of different
+dialogues live apart, joined only by an identity link with its own support; an entity's image is built from them
+dynamically, when asked for, and only cached; a new fact can add or undo an identity link and
+so rebuild the images it touches. An entry is read as soon as it is kept, in parallel with the
+conversation, not after a quiet: it stands alone, and the next request is likely to need it. The automatic class hierarchy and its methods (engineer,
+picker) are set aside for now: an entity carries a plain kind word, and the structure stays simple. Support is the user's
+words only; a topic's text, written by the model, mentions but never supports, so a wrong summary
+cannot confirm itself. Closing, not deleting, is what lets a topic say what was ruled out and why.
+The full design is in `docs/TODO.md`, under the topics paragraph.

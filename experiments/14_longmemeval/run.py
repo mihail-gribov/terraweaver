@@ -40,8 +40,12 @@ from judge import judge  # noqa: E402
 
 from memory.models import role  # noqa: E402
 
-ANSWER_SYSTEM = ("You are a personal assistant answering the user's question. Answer from what you are "
-                 "given only. If it does not say, answer that you don't know. Be brief.")
+# The agent's part, the same in both modes: facts of the user's life only from what it was given;
+# a suggestion its own, made for this user.
+ANSWER_SYSTEM = ("You are a personal assistant answering the user's question. About the user's own life — "
+                 "what they did, said, have or prefer, and when — answer only from what you are given; if it "
+                 "does not say, answer that you don't know. When they ask for a suggestion or advice, give it, "
+                 "made for them from what you are given about them. Be brief.")
 
 
 def call(port: int, path: str, body: dict, timeout: float = 600) -> str:
@@ -75,8 +79,8 @@ def by_memory(instance, port: int, out: Path) -> dict:
                 role_of = "user" if turn["role"] == "user" else "agent"
                 call(port, "/say", {"messages": [{"role": role_of, "text": turn["content"]}], "now": now})
         told = round(time.time() - began)
-        held = call(port, "/ask", {"question": f"{instance.question} (asked on {instance.asked_on})",
-                                   "gather": False})
+        asked = lme.Session(instance.asked_on, []).date.isoformat(timespec="minutes")
+        held = call(port, "/ask", {"question": instance.question, "gather": False, "now": asked})
     finally:
         server.terminate()
         server.wait(timeout=30)
@@ -134,7 +138,7 @@ def main() -> int:
     picked = ([i for i in instances if i.id in args.only] if args.only
               else lme.slice_of(instances, args.count, seed=args.seed))
     modes = ["memory", "context"] if args.mode == "both" else [args.mode]
-    out = ROOT / "experiments" / "results" / "14_longmemeval" / datetime.now().strftime("%Y%m%d-%H%M%S")
+    out = ROOT / "experiments" / "results" / "14_longmemeval" / f"{datetime.now():%Y%m%d-%H%M%S}-seed{args.seed}"
     out.mkdir(parents=True)
     print(f"{len(picked)} questions, modes {modes}, results in {out}", flush=True)
 

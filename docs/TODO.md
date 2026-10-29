@@ -119,6 +119,54 @@ complaint about assistants that "suggest what we already rejected". A later chan
 more layer: "then moved from the Samsung to the LG after all". What the assistant said in those talks is another
 subject (working with dialogues), not this one.
 
+**The design: texts and a knowledge graph on them, in time** (the user, 2026-10-29).
+- **Three levels of text.** The entry: one user message, rewritten to stand alone, dated (the
+  journal). The dialogue: the entries of one conversation in a row, the user's only, until a new
+  session or a long pause: a stretch of the journal, not stored apart. The topic: a text written by the model,
+  layered, with days; every version kept, a new one closes the one before. An entry can belong to
+  several topics. No waiting for a quiet: an entry is read as soon as it is kept, beside the
+  conversation, since the next request is likely to need it — the entry plus what its dialogue
+  already gave plus the topics' last texts go to Super in one call, which gives the entities and
+  assertions it adds, the topics it touched (old or new), and their new text.
+- **Entities and relations on every text.** Each text is linked to the entities it mentions and
+  the relations it states; each entity and relation is linked to the texts it stands on. Support
+  is the user's words only: an entry, with its quote checked by code. A topic or dialogue text
+  mentions (a way to find), never supports — a summary is the model's text, and a relation that
+  stood on it would let the model confirm itself.
+- **Nothing collapses; each dialogue keeps its own.** Entities and relations live within the
+  dialogue they were read from: "Tom" in Monday's talk and "Tom" in Friday's are two entities, and
+  "Mila is my wife" said in two dialogues is two assertions. Within one dialogue the context is
+  shared, so "my wife" and "Mila" there are one. That two dialogues' entities are one thing is a
+  link of its own, with its own support, that can be undone ("Tom" the flatmate and "Tom Becker"
+  the manager stay two). What holds now is computed when read, never by merging what was stored.
+- **Images of entities, built dynamically.** An entity's image — Mila as the memory knows her now —
+  is assembled when asked for: the per-dialogue entities joined by identity links, their open
+  assertions, the latest first, each with its text. It is never stored as the truth, only cached:
+  a new dialogue, a closed assertion or an undone identity link changes it on the next build.
+  New facts can rebuild them: an entry that says the Tom of Monday is Tom Becker adds the identity
+  link, one that tells them apart undoes it, and the images on both sides are built anew. The
+  identity links a new fact bears on are asked again, as a later entry is asked whether it ends a link.
+- **Time.** Every assertion carries `said` (the day of its entry) and `until` (the day, and the
+  entry, of what closed it). Newer closes older, it never deletes: the answer shows what is open
+  (settled on the Samsung), the topic still says what was dropped and why (Sony, too dear). A
+  one-valued relation (the chosen TV, the budget, the city) is closed by the next value, by code;
+  a many-valued one (likes jazz, likes classical) only by an entry that says the old no longer
+  holds, a closed question to the decision model. Which kind a relation is, the model says once
+  per relation type.
+- **The source is never lost.** The journal is append-only and the source of truth; the graph,
+  dialogues, topics and every version are derived and rebuilt from it. Only forgetting, on the
+  user's word, removes an entry, and with it everything that stood on it.
+
+- **No class hierarchy, for now.** The automatic ontology — classes grown by the engineer and the
+  picker, methods written for them — is set aside: an entity carries a plain kind word the reader
+  gives ("person", "TV"), nothing inherits, nothing is generated as code. The graph stands on texts,
+  entities, assertions and identity links alone.
+
+Much of this the world already does for entries (values and links with their entry and quote,
+`from_journal`; a later entry asked whether it ends an earlier link). New: the dialogue and topic
+levels as texts in the graph, mentions on every level, `until` instead of a dropped link, and the
+topic text written with the entries it stands on.
+
 ## Skill tests: what the world must be able to do, with a real agent, three times each (queued 2026-10-05)
 
 **Why the cardinality and the shadowing defects lived for weeks.**
