@@ -3,6 +3,7 @@
 Run: .venv/bin/python tests/test_graph.py           # no model calls: a reader that answers as told
      .venv/bin/python tests/test_graph.py --live    # the TV story through Nemotron Super
 """
+import json
 import sys
 import tempfile
 from pathlib import Path
@@ -143,6 +144,36 @@ def personal_world() -> None:
         check("an answer gets the user's world", "works at: Globex" in g.facts_for([4], "where do I work?"))
 
 
+def filled_from_messages() -> None:
+    """The world is filled as the user speaks: "my wife" gives the user a wife whose name is not known
+    yet; when an entry names her, she is that wife — joined, with the fact that joined them."""
+    entries = [(1, "2026-03-01 10:00:00", "My wife loves jazz, I want to get her concert tickets."),
+               (2, "2026-03-05 10:00:00", "My wife's birthday is on 3 May."),
+               (3, "2026-03-20 10:00:00", "Mila, my wife, prefers small venues.")]
+    readings = [{}, {"links": [{"from": "the user's wife", "relation": "born_on", "to": "3 May", "quote": "birthday is on 3 May"}]},
+                {"entities": [{"name": "Mila", "kind": "person", "as": "Mila"}]}]
+    with tempfile.TemporaryDirectory() as tmp:
+        g = Graph(Path(tmp), journal(entries[:2]), reader=told(readings), decide=first, goes_on=lambda m, t: 0.0)
+        g.wait(10)
+        world = "\n".join(g.world_lines(USER, gaps=True))
+        check("'my wife' with no name: the user has a wife, her name not known yet",
+              "spouse: the user's wife (name not known yet)" in world and "the name of the user's wife" in world, world)
+        check("what is said of her is hers before she is named", "born on: 3 May" in "\n".join(g.world_lines("the user's wife")))
+        g.entries = journal(entries)
+        g.wake()
+        g.wait(10)
+        world = "\n".join(g.world_lines(USER, gaps=True))
+        check("named later: the same wife, now Mila", "spouse: Mila (fact" in world and "the user's wife" not in world, world)
+        check("what was said of her before she was named is Mila's", "born on: 3 May" in "\n".join(g.world_lines("Mila")))
+        check("the join is kept with the fact that made it", g.aliases.get("the user's wife", {}).get("fact") == 3, str(g.aliases))
+        kept = json.loads((Path(tmp) / "world.json").read_text())
+        check("the world is kept as a structure: every part, filled or empty",
+              kept[USER]["parts"]["spouse"]["now"][0]["value"] == "Mila" and kept[USER]["parts"]["born_on"]["now"] == []
+              and kept["Mila"]["known_as"] == ["the user's wife"], json.dumps(kept[USER]["parts"]["spouse"]))
+        again = Graph(Path(tmp), journal(entries), reader=told([]), decide=first)
+        check("the join holds across a restart", "spouse: Mila" in "\n".join(again.world_lines(USER)))
+
+
 READINGS = [
     {"entities": [{"name": "the user", "kind": "person", "as": "I"},
                   {"name": "Mila", "kind": "person", "as": "My wife Mila"},
@@ -281,6 +312,19 @@ def live_world() -> None:
         check("live world: owns the LG C4, the Samsung ended", "LG C4" in world.split("owns:")[1].split("was:")[0]
               and "Samsung" in world.split("owns:")[1].split("\n")[0].split("was:")[-1], world)
         check("live world: Mila's birthday", "born on: 3 May" in "\n".join(g.world_lines("Mila")))
+    entries = [(1, "2026-03-01 10:00:00", "My wife loves jazz, I want to get her concert tickets."),
+               (2, "2026-03-05 10:00:00", "My wife's birthday is on 3 May, and my sister is visiting then."),
+               (3, "2026-03-20 10:00:00", "Mila, my wife, prefers small venues."),
+               (4, "2026-03-21 10:00:00", "My sister Ana lives in Lisbon.")]
+    with tempfile.TemporaryDirectory() as tmp:
+        g = Graph(Path(tmp), journal(entries))
+        g.wait(600)
+        world = "\n".join(g.world_lines(USER, gaps=True))
+        print(world)
+        print("\n".join(g.world_lines("Mila") + g.world_lines("Ana")))
+        check("live filling: the wife named later is one with 'my wife'", "spouse: Mila" in world and "user's wife" not in world, world)
+        check("live filling: the sister named later is one with 'my sister'", "sibling: Ana" in world and "user's sister" not in world, world)
+        check("live filling: what was said before the name is hers", "born on: 3 May" in "\n".join(g.world_lines("Mila")))
 
 
 def main() -> int:
@@ -288,6 +332,7 @@ def main() -> int:
     at_scale()
     said_of_self()
     personal_world()
+    filled_from_messages()
     if "--live" in sys.argv:
         live()
         live_world()

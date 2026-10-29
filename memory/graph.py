@@ -192,10 +192,21 @@ def _words(text: str) -> str:
     return " ".join(re.sub(r"[^\w]+", " ", str(text).lower()).split())
 
 
+def _label(name: str) -> str:
+    """"user's wife", "The user's wife" -> "the user's wife": one way to name someone not yet named."""
+    got = re.fullmatch(r"(?:the\s+)?user'?s\s+(\w+)", name.strip(), re.I)
+    return f"the user's {got.group(1).lower()}" if got else name
+
+
+def unnamed(name: str) -> bool:
+    """Someone the memory knows only by what they are to the user: "the user's wife"."""
+    return name.startswith("the user's ")
+
+
 def _named(name) -> str:
     """The name as kept: the user under one name, whatever the reader wrote for them."""
     name = str(name or "").strip()
-    return USER if _words(name) in SELF else name
+    return USER if _words(name) in SELF else _label(name)
 
 
 class Graph:
@@ -230,18 +241,35 @@ class Graph:
         self.mentions = self._lines("mentions.jsonl")
         self.links = self._lines("links.jsonl")
         self.topics = self._lines("topics.jsonl")
+        # Who an unnamed one turned out to be: "the user's wife" is Mila, from the fact that named her.
+        # A join, kept as its own row with its fact, so that it can be undone.
+        self.aliases = {r["label"].lower(): r for r in self._lines("aliases.jsonl")}
         state = self.where / "state.json"
         self.read_upto = json.loads(state.read_text())["read_upto"] if state.exists() else 0
         # Indexes, so that finding by an entity, an entry or a topic never walks everything.
         self.by_entity, self.by_text, self.links_of, self.latest, self.kinds = {}, {}, {}, {}, {}
         self._index(self.mentions, self.links, self.topics)
 
+    def canon(self, name: str) -> str:
+        """The name the memory knows someone by now: an unnamed one, once named, by their name."""
+        seen = set()
+        while name.lower() in self.aliases and name.lower() not in seen:
+            seen.add(name.lower())
+            name = self.aliases[name.lower()]["to"]
+        return name
+
     def _index(self, mentions, links, topics) -> None:
+        # The indexes hold every mention and link under the names known now; what was kept on disk
+        # stays as it was read, so a join undone is the indexes built again.
         for m in mentions:
+            m = {**m, "entity": self.canon(m["entity"])}
             self.by_entity.setdefault(m["entity"].lower(), []).append(m)
             self.by_text.setdefault(m["text"], []).append(m)
             self.kinds.setdefault(m["entity"], m["kind"])
         for l in links:
+            l = {**l, "from": self.canon(l["from"]), "to": self.canon(l["to"])}
+            if l["from"] == l["to"]:
+                continue
             for end in (l["from"], l["to"]):
                 self.links_of.setdefault(end.lower(), []).append(l)
         for t in topics:
@@ -259,7 +287,7 @@ class Graph:
     def rebuild(self) -> None:
         """Everything read again from the journal: what the graph holds is derived, never the truth."""
         with self.lock:
-            for name in ("mentions.jsonl", "links.jsonl", "topics.jsonl", "state.json"):
+            for name in ("mentions.jsonl", "links.jsonl", "topics.jsonl", "aliases.jsonl", "world.json", "state.json"):
                 (self.where / name).unlink(missing_ok=True)
             self._load()
         self.wake()
@@ -336,7 +364,7 @@ class Graph:
             relation = "_".join(_words(l.get("relation")).split()) if isinstance(l, dict) else ""
             if not relation:
                 continue
-            a, b = (named.get(_named(l.get(end)).lower()) for end in ("from", "to"))
+            a, b = (named.get(self.canon(_named(l.get(end))).lower()) for end in ("from", "to"))
             to = re.sub(r"^(the|a|an|our|my|his|her|their)\s+", "", str(l.get("to") or "").strip(), flags=re.I)
             if a and relation in OWN:
                 # "the Samsung" for the "Samsung TV" the person already has: the item it names.
@@ -371,6 +399,21 @@ class Graph:
                     links.append({"from": m["entity"], "relation": relation, "common": True, "to": USER, "text": n,
                                   "day": day, "quote": said.group(0)})
                     have.add((m["entity"], relation, USER))
+        # "My wife…" with no name said: the user has a wife, whose name the memory does not know yet.
+        # She is "the user's wife" until an entry names her; then the two are joined (_settle_people).
+        for relation, words in CALLED.items():
+            for word in sorted(words):
+                for said in re.finditer(rf"\b(?i:my|our)\s+(?:\w+\s+)?(?i:{word})\b(?!\s*,?\s*(?:called\s+|named\s+)?[A-Z])", text):
+                    label = f"the user's {word.lower()}"
+                    # "Mila, my wife": the wife is named in this very entry.
+                    if any(l["relation"] == relation and l["to"] == USER and (l["from"] == label or not unnamed(l["from"]))
+                           for l in links):
+                        continue
+                    if not any(m["entity"] == label for m in mentions):
+                        mentions.append({"text": n, "dialogue": dialogue, "day": day, "entity": label,
+                                         "kind": "animal" if relation == "pet" else "person", "as": said.group(0)})
+                    links.append({"from": label, "relation": relation, "common": True, "to": USER, "text": n,
+                                  "day": day, "quote": said.group(0)})
         latest = dict(self.latest)
         versions = []
         for t in got.get("topics") or []:
@@ -416,6 +459,9 @@ class Graph:
             self._index([], links, versions)
             self._append("links.jsonl", links)
             self._append("topics.jsonl", versions)
+            if links:
+                self._settle_people(links[0]["text"], links[0]["day"])
+                self._write_world()
 
     # --- what is read from it -------------------------------------------------------------------
 
@@ -488,6 +534,50 @@ class Graph:
                 out[ms[0]["entity"]] = ms[0]["kind"]
         return list(out.items())[:SHOWN_ENTITIES]
 
+    # The user's people a join may be made in: one of each is common ("my sister" and "my sister Ana"
+    # are one when she is the only sister the memory knows); friends and colleagues are many.
+    JOINABLE = {"spouse", "partner", "manager", "child", "parent", "sibling", "pet"}
+
+    def _settle_people(self, n: int, day: str) -> None:
+        """An unnamed one of the user's people and a named one in the same place of the user's world
+        are one person, when the place holds one (a spouse) or the memory knows only one of each
+        there: "the user's wife" is Mila. Joined by a row of its own, with the fact that made it."""
+        joined = False
+        for relation in self.JOINABLE:
+            now = sorted({(l["from"] if l["to"] == USER else l["to"]) for l in self.links_of.get(USER, [])
+                          if not l.get("ended") and ((l["relation"] == relation and l["to"] == USER)
+                                                     or (l["relation"] == INVERSE.get(relation) and l["from"] == USER))})
+            labels, names = [o for o in now if unnamed(o)], [o for o in now if not unnamed(o)]
+            if len(names) == 1 and (PEOPLE[relation][0] == "one" or len(labels) == 1):
+                for label in labels:
+                    row = {"label": label, "to": names[0], "relation": relation, "fact": n, "day": day}
+                    self.aliases[label.lower()] = row
+                    self._append("aliases.jsonl", [row])
+                    joined = True
+        if joined:
+            self.by_entity, self.by_text, self.links_of, self.kinds = {}, {}, {}, {}
+            self._index(self.mentions, self.links, [])
+
+    def world(self) -> dict:
+        """The user's world as a structure: every person the memory knows of, each with every part a
+        person has — filled or empty — and in each what holds now and what was, with facts and days."""
+        people = [USER] + sorted({e for e, k in self.kinds.items() if e != USER and k in ("person", "animal", "dog", "cat", "pet")})
+        out = {}
+        for name in people:
+            parts = self.world_of(name)
+            entry = lambda o, l: {"value": o, **({"kind": self.kinds[o]} if o in self.kinds and o not in people else {}),  # noqa: E731
+                                  "fact": l["text"], "day": l["day"][:10], "quote": l["quote"],
+                                  **({"ended": True} if l.get("ended") else {})}
+            out[name] = {"named": not unnamed(name), "kind": self.kinds.get(name, "person"),
+                         "known_as": sorted(r["label"] for r in self.aliases.values() if r["to"] == name),
+                         "parts": {r: {"size": size, "now": [entry(o, l) for o, l in parts.get(r, {}).get("now", [])],
+                                       "was": [entry(o, l) for o, l in parts.get(r, {}).get("was", [])]}
+                                   for r, (size, _) in (PEOPLE | OWN).items()}}
+        return out
+
+    def _write_world(self) -> None:
+        (self.where / "world.json").write_text(json.dumps(self.world(), ensure_ascii=False, indent=1))
+
     def world_of(self, name: str) -> dict:
         """A person's world as the memory knows it now, by the fixed parts every person has: for each,
         what holds (the newest for a one-value part; every item not ended for a list) and what was,
@@ -528,7 +618,8 @@ class Graph:
 
         def item(other, l):
             kind = self.kinds.get(other)
-            return f'{other}{f" [{kind}]" if kind and kind not in ("thing", "person") else ""} (fact {l["text"]}, {l["day"][:10]})'
+            return (f'{other}{" (name not known yet)" if unnamed(other) else ""}'
+                    f'{f" [{kind}]" if kind and kind not in ("thing", "person") else ""} (fact {l["text"]}, {l["day"][:10]})')
         lines = []
         for relation, got in parts.items():
             if only is not None and relation not in only:
@@ -539,6 +630,7 @@ class Graph:
             lines.append(line)
         if gaps and only is None:
             missing = [r.replace("_", " ") for r in ("spouse", "child", "born_on", "lives_in", "works_at", "job") if r not in parts]
+            missing += [f"the name of {o}" for got in parts.values() for o, _ in got["now"] if unnamed(o)]
             if missing:
                 lines.append("  not known yet: " + ", ".join(missing))
         if not lines:

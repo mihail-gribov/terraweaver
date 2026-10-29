@@ -334,6 +334,19 @@ async def http_interests(request):
     return JSONResponse(listener.interests())
 
 
+@base.server.custom_route("/world", ["GET"])
+async def http_world(request):
+    """The user's world as the memory has filled it so far: every person it knows of, each with every
+    part a person has, filled or empty, what holds now and what was, with facts and days."""
+    from starlette.responses import JSONResponse
+    if graph is None:
+        return JSONResponse({})
+    def read():
+        with graph.lock:
+            return graph.world()
+    return JSONResponse(await asyncio.to_thread(read))
+
+
 @base.server.custom_route("/settle", ["GET"])
 async def http_settle(request):
     """Until every kept entry is read into the graph, up to `wait` seconds: for a demo or a run that

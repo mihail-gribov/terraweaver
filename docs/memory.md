@@ -74,6 +74,31 @@ glare, which the blinds later solved (fact 3); the Samsung chosen at first and t
 | **Interest** | a question the user asked, with how often it came back | the interests log |
 | **Finding** | what a gathering read on the web, with the page and words it stands on | lives a TTL from its last use; about the world, never about the user |
 
+## The user's world
+
+A structure the memory fills as the user speaks, half fixed. What every person can have is fixed:
+the same parts for the user and for each of their people. What fills the parts comes only from the
+user's words, each value with its quote, fact and day. Whatever does not fit is still kept, as a link
+under its own name or in the text.
+
+| Part | One or many | Read as |
+|---|---|---|
+| spouse, partner, manager | one | *Mila — spouse → the user* |
+| child, parent, sibling, relative, friend, colleague, pet | many | *Lev — child → the user*; "the user is the father of Lev" says the same |
+| born on, age, lives in, works at, job, studies at | one | *Mila — born_on → 3 May*: the value in the entry's own words |
+| owns, skill, speaks, hobby, health, likes, dislikes | many | *the user — owns → LG C4* |
+
+How it is filled:
+- **One value:** the newest holds and the older is kept as *was*. Leaving Acme for Globex: works at Globex; was Acme.
+- **A list:** grows. An entry that says an item no longer holds (sold, broke up, moved out, went with another instead) ends it. The item is kept as *was*, with the fact that ended it.
+- **Someone not yet named:** "My wife loves jazz" gives the user a wife, *the user's wife*, whose name is not known yet. Code sets this from the words, not a model. What is said of her is hers.
+- **Named later:** "Mila, my wife…" names her. *The user's wife* and Mila are joined as one person, and what was said before the name is Mila's. Code joins the two when the user has only one person in that place: one spouse, or the only sister the memory knows. The join is a row of its own with the fact that made it, so it can be undone.
+- **Plain facts by code:** the user's plainest links ("my wife Mila", "Mila, my wife", "our son Lev") are set by code from the words. A model may miss them.
+
+What is not filled yet is part of the structure: *not known yet: born on, the name of the user's wife*. This is where the memory's questions to the user will come from.
+
+The world is kept as `world.json` beside the graph, updated after every entry, and served at `GET /world`. Like everything but the journal, it is rebuilt from the journal. `ask` gets the user's world and the worlds of the people the question names. Beside a message go only the parts it speaks of ("my wife", "the TV", "her birthday") and the worlds of the people it names.
+
 ## What it does
 
 **Hears.** Every message comes through `say`. A gate — the decision model over the last four
