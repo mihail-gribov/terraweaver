@@ -31,7 +31,7 @@ deliberately parked (see below).
 
 ## Filling the user's world from what they say (set 2026-10-29, first cut built)
 
-The task: the user's world is a half-fixed structure (`PEOPLE`, `OWN` in `memory/graph.py`, described in
+The task: the user's world is a half-fixed structure (`PARTS` in `memory/graph.py`, described in
 `docs/memory.md`). The memory fills it from the conversation with no one telling it to. The goal needs
 no judge: the share of expected values that land in their places, with what was replaced kept as *was*.
 

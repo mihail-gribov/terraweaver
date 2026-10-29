@@ -84,15 +84,18 @@ under its own name or in the text.
 | Part | One or many | Read as |
 |---|---|---|
 | spouse, partner, manager | one | *Mila — spouse → the user* |
-| child, parent, sibling, relative, friend, colleague, pet | many | *Lev — child → the user*; "the user is the father of Lev" says the same |
+| child, parent, sibling, pet | few: a list where one of each is usual | *Lev — child → the user*; "the user is the father of Lev" says the same |
+| relative, friend, colleague | many | *Ana — friend → the user* |
 | born on, age, lives in, works at, job, studies at | one | *Mila — born_on → 3 May*: the value in the entry's own words |
 | owns, skill, speaks, hobby, health, likes, dislikes | many | *the user — owns → LG C4* |
+
+Each part is one row of one table (`PARTS` in `memory/graph.py`). The row says its group, its size, what fills it (a person, an animal, a thing or a value), what the reader and the decision model are told, what the user calls it ("my wife"), and its inverse. The reading, the tree of questions, the joins, the world and recall all read the same row, so a new part is one new row.
 
 How it is filled:
 - **One value:** the newest holds and the older is kept as *was*. Leaving Acme for Globex: works at Globex; was Acme.
 - **A list:** grows. An entry that says an item no longer holds (sold, broke up, moved out, went with another instead) ends it. The item is kept as *was*, with the fact that ended it.
 - **Someone not yet named:** "My wife loves jazz" gives the user a wife, *the user's wife*, whose name is not known yet. Code sets this from the words, not a model. What is said of her is hers.
-- **Named later:** "Mila, my wife…" names her. *The user's wife* and Mila are joined as one person, and what was said before the name is Mila's. Code joins the two when the user has only one person in that place: one spouse, or the only sister the memory knows. The join is a row of its own with the fact that made it, so it can be undone.
+- **Named later:** "Mila, my wife…" names her. *The user's wife* and Mila are joined as one person, and what was said before the name is Mila's. Code joins the two when the user has only one person in that place: one spouse, or the only sister the memory knows. Friends, colleagues and relatives are many and are never joined this way. The join is a row of its own with the fact that made it, so it can be undone.
 - **Plain facts by code:** the user's plainest links ("my wife Mila", "Mila, my wife", "our son Lev") are set by code from the words. A model may miss them.
 
 What is not filled yet is part of the structure: *not known yet: born on, the name of the user's wife*. This is where the memory's questions to the user will come from.

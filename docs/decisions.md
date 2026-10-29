@@ -5475,3 +5475,30 @@ alone, before the server adds its own; the first route wins. So `now` and `gathe
 every HTTP ask: LongMemEval's memory answered as of the machine's day, not the question's — its
 temporal questions were counted from the wrong today, while the context mode was given the right
 one. The journal's route is dropped in the server; LongMemEval re-measured.
+
+## 2026-10-29 — One table for the parts of a person's world, not a pile of ifs
+
+The personal world grew one fix at a time: a list of the people's parts, another of what a person
+has, the words a user calls their people by, the words a message speaks of a part by, the reader's
+synonyms, the inverse of each relation, the tree's groups and their questions, the parts a join may
+be made in, and special cases in the reading (an animal owned turned into a pet, the pet link turned
+round, three regex loops for "my wife Mila", "Mila, my wife" and "my wife"). The user asked for one
+logic. Now each part is one row of `PARTS` (`memory/graph.py`): its group in the tree, its size,
+what fills it, what the reader and the decision model are told, what the user calls it, the other
+words for it, the reader's synonyms, its inverse. Everything else is read from the table:
+
+- the reader's lists and the tree's questions;
+- one step puts a link in its part by what fills it (`_as_part`): what fills a part is of the part's
+  kind, so an animal had is a pet and the user is nobody's pet;
+- one finder for the user's people (`_called`): every "my/our <word>", then a name after it or
+  before it, else an unnamed label;
+- one reading of what fills a part from either end of a link (`_filled`), behind the world, the
+  joins, the entities shown to the reader and recall;
+- joins by size: "one" (a spouse) and "few" (children, parents, siblings, pets: one of each is
+  usual) are joined, "many" (friends, colleagues, relatives) never;
+- a topic and a portrait are written the same way, a text over its versions (`_version`); they stay
+  in two files, since one is found by meaning and the other by its person.
+
+A fix it brought: recall matched "my mother" against every link of the user, so a son, linked as
+"the user — parent → Lev", came back for "my mother". Read through the parts, the user's mother is
+only who fills the user's `parent` part.
