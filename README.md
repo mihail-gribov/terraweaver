@@ -176,6 +176,9 @@ docs/decisions.md      every behaviour change with its reason
   reads first what the user keeps coming back to, so the answer is ready before it is asked again.
 - **Forgetting on the user's word.** The memory can take entries out once the user confirms which;
   next, reading "forget everything about Olga" reliably, and the words gone everywhere they reached.
+- **Topics, each with its summary.** The journal cut into topics and joined across sessions, each
+  topic summarised and kept apart, rebuilt from the user's words: "we talked about this last
+  year" raises what that talk came to.
 - **Hooks beyond Claude Code.** Any agent with MCP can use `say` and `ask` today, passing the
   messages itself; next, the same hooks for other agents, so none of them has to remember to.
 

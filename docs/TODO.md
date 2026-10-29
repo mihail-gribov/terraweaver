@@ -101,6 +101,14 @@ f8's), a name's identity is judged against the contexts it was said in ("Tom" th
 their contexts. Open: whether my own labels at the edges are right — knee pain after a run is
 "running" or "health"?
 
+**Each topic its own summary, kept apart** (the user, 2026-10-29). "We talked about this before" needs
+no roles: it is knowing that a topic was taken up already, raising what it came to, and answering
+with it. So each context, once cut and joined across sessions, gets a summary of its own, stored
+beside the journal and rebuilt from the context's entries whenever they change — derived like the
+world's image, never written over the user's words, so a wrong summary is rebuilt, not a memory
+spoiled. What the assistant said in those talks is another subject (working with dialogues), not
+this one.
+
 ## Skill tests: what the world must be able to do, with a real agent, three times each (queued 2026-10-05)
 
 **Why the cardinality and the shadowing defects lived for weeks.**
