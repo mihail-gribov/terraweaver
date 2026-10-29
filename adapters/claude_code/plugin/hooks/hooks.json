@@ -24,12 +24,23 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "mcp__.*memory__(run|tell|add_memory|forget)",
+        "matcher": "mcp__.*memory__(say|run|tell|add_memory|forget)",
         "hooks": [
           {
             "type": "command",
             "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/guard_hook.py\"",
             "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/reply_hook.py\"",
+            "timeout": 15
           }
         ]
       }

@@ -92,12 +92,19 @@ class Search:
 
     def by_structure(self, question: str) -> list[int]:
         held = self.entries()
-        named = set()
+        named, hosts = set(), self.structure._things()
         for thing in self.named(question):
-            named |= self.structure.one_with(self.structure.thing("q", thing))
+            # A thing the world read and the host never named ("r:…") is in the image only: it is
+            # reached through the image's links. Looked up in the host's structure, it failed every
+            # search and every ask (2026-10-27).
+            named |= self.structure.one_with(self.structure.thing("q", thing)) if thing in hosts else {thing}
         if not named:
             return []
         rows = [r for r in self.structure.records if r.get("entry") in held]
+        image = self.image() if self.image else None
+        for link in (image or {}).get("links", []):
+            if link.get("entry") in held:
+                rows.append({"entry": link["entry"], "about": [link["subject"], link["object"]]})
         direct = Counter()
         for r in rows:
             direct[r["entry"]] = max(direct[r["entry"]], len(named & set(r["about"])))
@@ -159,10 +166,13 @@ class Search:
 
     def about_named(self, question: str) -> list[int]:
         """Every held entry about a thing the question names (and things settled the same)."""
-        held, group = self.entries(), set()
+        held, group, hosts = self.entries(), set(), self.structure._things()
         for thing in self.named(question):
-            group |= self.structure.one_with(self.structure.thing("q", thing))
-        return sorted({r["entry"] for r in self.structure.records
+            group |= self.structure.one_with(self.structure.thing("q", thing)) if thing in hosts else {thing}
+        image = self.image() if self.image else None
+        read = [{"entry": l["entry"], "about": [l["subject"], l["object"]]}
+                for l in (image or {}).get("links", []) if l.get("entry") is not None]
+        return sorted({r["entry"] for r in [*self.structure.records, *read]
                        if r.get("entry") in held and group & set(r["about"])}, reverse=True)
 
     # --- embeddings, kept beside the journal ------------------------------------------------

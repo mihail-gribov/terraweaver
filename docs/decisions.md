@@ -4934,6 +4934,13 @@ once, in `terraweaver/decision.json`. A module and not a package, on the user's 
 Nemotron is used through the API only; a verdict head on hidden states was started and dropped the
 same day, since it needs the weights served locally and this machine cannot serve them.
 
+**Any Nemotron, 2026-10-27** (the user: "надо, чтобы подставить можно было любой немотрон").
+`decision.json` holds one calibration per model; `Decision(model=...)` or `TERRAWEAVER_DECISION`
+picks the model and its own temperatures, and a model with no entry reads raw. Fitted on bench for
+Lightning, Super-VL, Super-120B and Ultra beside the Nano (table in experiments/09_decision/README.md).
+What it changes: the Nano's two weaknesses — the first-letter lean and an `unsure` caught 21% of the
+time — are the Nano's, not the method's; the others catch `unsure` 55–79% and lean little.
+
 ## 2026-10-26 — The world solves tasks: a program over a talking object model (`proto/tools.py`, `proto/solve.py`)
 
 **What.** A task the agent brings ("pick me a robot vacuum", "who are my colleagues?") is solved by
@@ -5014,8 +5021,8 @@ kettle went to the product-picking program, the birthday question to none.
 **Collections live with the memory, for a week.** A collection was the run's own and was gone with
 it. It now lives under the memory (`collections/`), so what a task found can still be asked about
 afterwards. But a task chooses only from what it found itself: what is reused is the program, not
-the finds — a price or stock seen days ago may be gone. And not for good: an item is removed — its records and texts, for good — `LIFETIME` (7 days) after it was last
-found. What the user's memory names, what was spoken of with the user, has no lifetime; that is
+the finds — a price or stock seen days ago may be gone. And not for good: what a task finds is a temporary thing, removed — its records and texts, for good — `TEMPORARY`
+(7 days) after it was last found. What the user's memory names, what was spoken of with the user, has no lifetime; that is
 read off the memory each time rather than marked, so a thing the user forgets regains its lifetime.
 
 **Every thing has its dates.** `item.dates()` gives when it came, when anything about it last
@@ -5038,3 +5045,360 @@ the same robot — with the "10.2 cm" threshold again: the item was found anew, 
 earlier run, kept before the quote rule, folded in with the new ones. A collection's store now reads
 only records since the task started (`Structure.since`); what came before stays to be asked about
 until its lifetime ends.
+
+**The registry keeps statistics.** Each run logs the program it used or made, whether it answered,
+its attempts and seconds — a kept program that failed is a use all the same. Per program, read off
+that log (`python -m proto.programs`): when made, when last used, runs and reuses, answered, first
+attempts, versions, median seconds, the last tasks. Why: a registry that only grows can't tell a
+program that works from one that was kept once; these are what retiring or trusting one rests on.
+
+**One cleaner, for temporary things and for programs.** `proto/cleaner.py` removes what has
+outlived its time, before every task and on its own: temporary things after a week, programs not
+used for three months (`programs.LIFETIME`). A kind of task the user hasn't brought for a season
+isn't theirs any more, and the judge chooses worse from a registry that only grows. A program's
+runs stay in the log, and its removal is logged with why. The user's own memory is never touched
+by the cleaner: what the user told goes only when the user asks.
+
+**Fresh for three days, temporary for four weeks.** Choosing only from what the task itself found
+hid eleven dated Candlelight concerts found four minutes before by the same kind of task; a task
+now chooses from what was found in the last three days (`FRESH`). A temporary thing — found, never
+spoken of with the user — is removed four weeks after it was last found (`TEMPORARY`): long enough
+to ask about what was found last month, short of keeping a shop's word for good. Both are the
+user's numbers (2026-10-27).
+
+**A limit is checked in its words; nothing passing gives the closest.** The writer's sorting made
+"Sunday evenings go to preparing for work" and "prefers Friday or Saturday" into must_hold
+conditions; a limit now needs a limit's words in its quote (under, between, don't want, must,
+can't, a sum of money…), else it is a wish. And a program that found nothing passing answered
+"nothing fits" with dated candidates in hand: `rank_by` now keeps the three nearest with the empty
+ranking, and a reply that names none of them gets them added.
+
+**An event has its start time apart from its date; the chooser always chooses.** With the date
+alone ("2027-03-20"), a program read its hour as 0 and marked a Saturday concert "not on a
+Saturday evening" — not known became no. The event class now gathers `starts_at`, so a condition
+on the evening reads a value that is there or is not known. And the chooser, given candidates that
+all passed what must hold but met none of the wishes, answered "none of them" — told now that the
+rest are wishes, it chooses the one meeting them best.
+
+**One TTL, three months, from the last use; none once with the user.** This replaces the week and
+the four weeks above. Everything that can outlive its use has the same TTL (`proto/ttl.py`, 90
+days), counted from its last use, not from when it came: a thing found for a task is used when a
+task finds it again or reads it (`all_items`, recorded in the collection's `used.json`); a program,
+when it runs. What has been with the user has no TTL and lives until the user says to forget it:
+a thing named in an answer the agent got (marked, with when) and a thing the user's memory names
+(read each time). Why: a week deleted what the user may still ask about — "the concert from last
+month" — and a removal that counts from arrival deletes what is still in use. Only what nobody
+touched for a season goes. Freshness for choosing stays three days.
+
+**The task's own words are limits; dates are read by code.** "In the next three months" was in the
+task, not in the memory, and the limits were sorted from the memory: a concert three days past the
+window was chosen. The task is the user's word as it stands, so a limit quoting it is kept as one.
+And the chooser worked out a weekday itself ("January 30, 2027 is a Thursday — but wait"):
+`item.date_of(...)` gives a date to compute on, not known when absent, and a report shows each
+date's weekday.
+
+## 2026-10-27 — `task`: the agent hands the memory a task
+
+The solver was a command line; an agent could not reach it. `task(text)` is one more MCP tool of
+the proto server: the task in the user's words, solved by `proto.solve.run` in a thread (it takes
+minutes; the memory keeps answering meanwhile). One door for every task, not one per kind: which
+program solves it is the registry's and the writer's business. The skill and the server's
+instructions say when to call it — gathering, comparing, choosing — and not to restate what the
+memory knows. A task takes minutes, so the plugin's launcher lets tool calls run half an hour
+(`MCP_TOOL_TIMEOUT`). Measured over MCP on demo-people: the call works end to end; the answer to
+"who are my colleagues" was wrong — the program looked for a works_at the host never wrote
+(started_at, moved_to, teammate_of). Free link words are the image's to type (proto/world.py,
+asked of the decision-model session the same day).
+
+## 2026-10-27 — The world reads the journal in the quiet: values and links, each on its entry (`proto/world.py`)
+
+Asked by the user, through the session that builds the task solver: the memory should look alive —
+while the agent is quiet the world reads what was said into structure, the way a mind consolidates.
+And the solver (`proto/solve.py`) reads only the host's structure, so it saw nothing the world read.
+
+**The scheme is kept.** The journal is the truth; the image is what the world read from it — a cache,
+rebuilt from the journal, nothing written into it on intake, and gone with a forgotten fact. So the
+reading lands in `world/read.json` beside the world, not in the world's tables, and every value and
+every link carries the number of the entry its quote stands in. `forget` drops what stands on the
+entries taken, and a read thing nothing stands on any more.
+
+- **A session at a time.** What joins two things is said across sentences, so a session's unread
+  entries are read together (cut at 12000 characters) by `proto.parse.read`, which proposes and
+  checks each value and link twice — the quote is in the text, by code; the quote says the claim, by
+  the judge. The entry is found here: the latest whose words hold the quote.
+- **Identity is not a merge by name**, as settled before for the world. A name read is the proto thing of
+  that name when one thing could bear it. When more could — two Annas, "Anna" and "Anna Lee" — the
+  judge (the decision model) gets a closed question with "none of these" among the options, and only
+  an answer at 0.6 or more binds. A name nobody holds becomes a thing of the image (`source: read`).
+  "I", "me", "the user" are the user, and the user's thing is marked `user: true`.
+- **An ending is not a second fact.** "Rachel left Brightwork", "Olga used to be my manager" end a
+  link. A link the world typed keeps its `valid_until` and is shown `holds: ended`, not dropped; a
+  link read from words gets one more closed question — does this still hold: now / ended / unsaid.
+  The acceptance case (var/proto/demo-people, "who are my colleagues?") needs exactly that.
+  `ended` is taken only at 0.6 or more, else `unsaid`: on demo-people the Nano leaned "ended" at
+  0.41–0.53 on links that hold ("Anna works at Brightwork", "I sit next to Priya"), while the real
+  endings (Olga, Lumen, Rachel) came at 0.61–0.90. A wrong ending hides a colleague; a missed one
+  is still in the quote.
+- **Read first, then typed.** In the quiet the worker reads the journal before `formalise` and
+  `portraits`. The image is written to `world/image.json` each time it is rebuilt, and
+  `proto.world.image_of(dir)` reads it from outside the server.
+
+- **Every thing the host named is in the image.** The image listed only what the mirror had said
+  into the world, and a thing with no entry of its own ("Marco in sales") is never said, so it was
+  missing. And a thing only ever said in links (all of demo-people) gives `portraits` no description
+  to read, so it stays `Thing`; the image then shows the kind the host gave it (found by
+  terraweaver-da in the solver, 2026-10-27).
+
+
+**Changed the same day, for the submission** (asked by the user through terraweaver-da):
+
+- **Consecutive entries, not sessions.** The session is the MCP client's name — "claude-code" for
+  every conversation — so it grouped nothing. Chunks are unread entries in journal order, cut by
+  size; each is shown with the three entries before it and a line per thing the image already knows
+  that the chunk names (and the user), as context the reader does not read from. `proto.parse.read`
+  gets it as `context=` when it takes one; otherwise it is put in front, and a quote found only there
+  stands in no entry of the chunk and is dropped. Entries keep their numbers and dates.
+- **A later entry can end an earlier link.** `holds` is judged inside the chunk; a link read before
+  is asked again when a new entry names both its ends, or one of them with a sign of change in it
+  (the user alone needs a word of the link too: "my manager is now Tom"). One later entry at a time,
+  beside the entry that said the link, as yes/no, ended at 0.75 (`ENDS`). Measured on demo-people
+  cut small, three readings: "Rachel left Brightwork" against "Rachel is the user's manager"
+  0.78–0.82, every wrong pair 0.39–0.65. The three-way question let "Olga used to be my manager" end
+  Rachel's link at 0.60–0.64, and several entries in one question read the true ending at 0.56. The
+  link gets `ended_in`, the entry that ended it; forgetting that entry unends it.
+- **The user is one thing.** The host wrote "the user" and "Alex" for one person
+  (var/proto/dialogue-colleagues-20261027-191432), and the links split between two read things. A
+  person's name no thing holds exactly is asked about once (yes/no, 0.75): is this the user? A yes is
+  kept in read.json (`user_names`) and binds from then on. On that memory: 27 links, all of the
+  user's on one thing; before, Alex was left unbound or a thing of its own.
+- **The ontology is off unless asked for** (`TERRAWEAVER_ONTOLOGY=1`). The solver reads the read
+  links and the host's kinds; `formalise` and `portraits` cost minutes and calls for nothing it uses.
+  The demo-people reading takes 13 s without them.
+
+Tests: `tests/test_world_reading.py`, reader and judge stood in.
+
+**The solver reads the image.** What a program reads of the user's memory is now the image the
+world read from the journal (`proto.world.image_of`), when there is one, else what the host wrote:
+things (a class the world has not read falls back to the host's kind; a thing the host named and
+the world has not mirrored is kept), values, and the links the world read over its own typed ones —
+those held "now" for Olga and Rachel, who had stopped being managers. An ended link reads as
+`former_<word>`, and `user_memory.the_user()` gives the user. Also: two items of one thing are equal
+— `org == brightwork` compared two wrappers and was never true. Measured on a copy of demo-people
+with its image: "Who are my colleagues?" — Anna, Priya, Tom, each with its quote, not Rachel, not
+Olga — three runs of three, the second and third by the kept program. With the host's structure
+alone, the same question failed: a works_at the host never wrote.
+
+## 2026-10-27 — Dialogues through a real host; forget confirmed entry by entry
+
+`experiments/13_dialogues/run.py`: a clean Claude Code host (none of this machine's user settings,
+a working directory outside the repository, the user named Alex) with the plugin; the history told
+over sessions, the world left to read it, then the task talked through with follow-ups. Found on the
+first runs, and fixed:
+
+- A host with this machine's settings answered in Russian and kept "Mike" in the memory: hence the
+  clean host (`--setting-sources project`, a persona).
+- After the world had read the journal, every `search_memory` and `ask` failed: the search looked a
+  thing the world read ("r:…") up in the host's structure. It now reaches such things through the
+  image's links (proto/search.py).
+- "Forget everything about Olga, Alex's former manager at Lumen" took three entries about Alex at
+  Lumen with no Olga in them: the reader chose by the whole request. Each chosen entry is now
+  confirmed by the decision model — does it say anything about what is to be forgotten — kept below
+  0.55 (`baseline.confirm_forget`, set by the proto server). Measured on the five entries: Olga's
+  0.68–0.75, the others 0.36–0.47; asked instead "is it about what is to be forgotten", the judge said
+  yes to all five. Five entries are little to set a threshold on.
+- `proto.parse.read(..., context=)`: earlier entries and known things, shown apart, to understand the
+  text by; quotes must stand in the text (asked by the reading session for its chunks).
+
+## 2026-10-27 — The world gives facts; the agent decides
+
+**The boundary.** The world is a store of facts: it gathers them as text, reads them into
+structure, finds them, and gives them when asked — in the task's context and in the context of
+the user's own world. It does not decide. A choice is the agent's, made with the user.
+
+**What changed.** `Ranking.choose_one_for(task)` asked a model of the world's (the "chooser") to
+pick one candidate and say why. That was a decision taken from the agent and the user, so it is
+gone, and the chooser role with it. In its place `ranking.brief()` gives the first few candidates,
+each with its conditions met / not known / NOT met and the words each stands on, what is said
+about it, and how many were ruled out by which limit. No model call: arranging found facts by the
+user's own conditions is presenting them, not deciding. And every `task` answer now ends, by a
+fixed step and whatever the program wrote, with the user's side: the limits they stated and the
+wishes they voiced, in their words. The agent's context does not hold them — they were said
+sessions ago — and a decision needs them as much as the candidates; the world holds the user's
+whole world, so it knows which of it bears on the task.
+
+**What stays in the world.** Closed questions about facts: does this quote say this value, does
+this link still hold, is this the same person, does this entry speak of who is to be forgotten,
+does an answer give the information asked (whether a program is kept). And applying the limits the
+user stated (`must_hold`): that is the user's decision, already made, not the world's.
+
+**How it is judged.** A dialogue turn is judged twice, apart (experiments/13_dialogues `judge`):
+did the world give what a decision needs (`given`: words that must be in what `task` returned —
+the candidates and the user's limits), and what did the agent make of it (`must`/`never` on its
+reply). Too few facts is the world's failure; a wrong decision from enough facts is the agent's.
+
+## 2026-10-27 — Two doors: the memory hears the conversation, the agent asks
+
+**The memory hears; it is not told.** The agent no longer decides what is worth keeping, nor
+names entities in code: the conversation goes to the memory as it goes, by `say(messages)`, each
+message with who said it, and the memory sorts what it heard (`proto/listen.py`). Two ways in, one
+call: where the agent has hooks (Claude Code), a hook passes every message — the user's on
+`UserPromptSubmit`, the agent's reply on `Stop` from the transcript, in the background — so
+nothing depends on the model remembering; where it has not, the agent passes every message that
+touches the user's life, as the server's instructions say. The agent's own door is `ask`. The
+rest of the calls (`run`, `task`, `context`, `forget`…) stay for experiments, behind `--tools all`.
+Why: the agent was a recorder it should not have to be — it chose what to keep, named it in code,
+and could forget to; and messages alone (not the agent's paraphrase) are the best source there is.
+
+**Roles.** `user` — the user's words, the source of facts about their life. `agent` — never a
+fact on its own: "the Dreame for 329 €" is a suggestion, not a purchase; it is held, and kept only
+with the user's reply it explains ("up to 400" is the budget only after "what budget?"). `tool` —
+evidence, kept with its source ("email from the airline"). `memory` — what the memory itself put
+beside a message, never taken back in, or the memory would confirm itself.
+
+**A request to find is an interest, not an order.** In a conversation, "find me a concert" is the
+user's wish: kept as one, and looked into by the memory by itself; what it finds is brought up
+later, as "the user was interested in this, and here is what there is", for the agent to tell the
+user or not. The agent may be searching too, and may `ask` the memory the same: that `ask` is
+answered, always, and from the gathering already under way (the judge: "the same search?"), so
+there is one search, not two, and what the agent was given is not brought up again.
+
+**What is never decided on a guess.** A forget heard in the conversation is only proposed — the
+entries listed — and done when the user's next words confirm it. A message the judge could not
+sort (Token Factory answered 402 on 2026-10-27) is kept as it is, never dropped. A secret — keys,
+tokens, card numbers, "password is …" — is withheld before anything is written.
+
+**Open.** In hook mode every message of the personal session reaches Token Factory to be sorted;
+work sessions are outside the mode and send nothing. Not yet measured with a model: whether the
+judge sorts as the agent did (`tell`: 5/5 on a buried aside, nothing kept from five work turns),
+and whether an agent without hooks passes the messages it should.
+
+**The user's questions are their interests, and are kept.** Every question the user asks, and
+every request to find something, is a wish to know — a part of who the user is, so it is kept
+(`interests.jsonl` beside the journal: what was asked, when, by whom, the answer prepared and
+when, whether it was given). What the memory already holds goes beside the message at once; when
+that does not give what was asked (the judge: "does the answer give it?") and the question bears
+on the user's life, the memory looks into it by itself and brings it up later for the agent to
+judge whether the question is still the user's. A question of general knowledge is kept as an
+interest but not looked into: the agent answers it. Unanswered interests are looked into again
+after a restart.
+
+**A repeated question is answered at once.** A question is matched to the interests by meaning
+(bge-small, local) and settled by the judge: on 2026-10-27 real repeats sat at 0.64–0.85 while
+"weather in Belgrade on Saturday" ~ "on Sunday" was 0.89, so meaning alone takes only a
+near-verbatim repeat (≥ 0.97) and the judge decides from 0.6 up. A repeat with an answer ready
+gets it at once, dated; one older than three days is given all the same and prepared again.
+Not clustered yet: one interest per question.
+
+**Agreed next (2026-10-27, not built yet).** No `tool` role: what the agent reads (mail, files,
+pages) is not the user's word, and reaches the memory only when the agent tells the user and the
+user answers — then it is the user's reply, understood by the agent's words. And no retelling:
+the user's reply is made to stand alone by resolving what it points to in **the agent's message
+just before it, and nothing else** — "up to 400" after "what budget for the vacuum?" becomes
+"[the vacuum's price must be] up to 400 [euros]". The user's words stay as they are and in order
+(checked by code), what is added is in brackets and must come from the agent's message (checked
+by the judge); a message with nothing to resolve is kept as it is, with no model call; a
+resolution that fails a check leaves the exchange as it was said. On the small Nemotron.
+
+**The intake: what the memory takes from each message of the user's (2026-10-28, `intake/`).**
+Built apart from `say` to be measured first; prompts in `intake/prompts/`. Every step sees two
+messages, the agent's and the user's after it. (1) The decision model (Super): anything personal,
+or a request? No — nothing more, one call for a work message. (2) The big Nemotron (Super,
+thinking on): a new-topic flag, the message rewritten to stand alone, and its questions copied out
+of the rewrite. (3) Each question by the decision model: the user's, and of which kind (know or
+find, the memory, an action). The information is not split into atoms: the user's message is kept
+whole, only the questions are taken apart, since a question is what the memory acts on.
+
+Why each piece, from what failed that day:
+- **Two messages, not a window.** Shown the last four, the model took its references from earlier
+  messages ("those" became "the candlelight concerts in Belgrade" from two messages back instead of
+  the concert the agent had just named). The earlier messages the memory already holds.
+- **The new-topic flag from the big model.** Asked of the decision model apart, it scored
+  0.17–0.49 whatever came; the big model has both messages in its context, so the flag is one
+  more field.
+- **Plain text, no brackets, no check in code** (the user: keep it simple). Brackets with a
+  word-for-word check were tried first; the model either left them out or described the
+  conversation in them ("[the concert options mentioned by the assistant]").
+- **The rewrite worded by the user**, with its rules and examples: keep meaning, person, form and
+  style; resolve only from the agent's message; a word the agent's message does not explain stays
+  as it is. On the three dialogues of `experiments/13_dialogues`, 16 hand checks: a short prompt of
+  our own 8–9 of 16, the user's wording 12–13 (a window of four or two messages alike), with two examples added (the agent naming the
+  user; one named thing called "those") 14, 16, 14, 13, 15, 14 over six runs.
+- **Super, thinking on.** Nano copied the prompt's examples into its answers and made questions of
+  statements; Super without thinking lost the conditions of questions ("now", "at any job") from
+  one run to the next.
+
+Forget is left for later (reworded in 4 of 6 runs, not copied out in 4 of 6). Not yet measured on
+MemOps or LongMemEval.
+
+**The gate reads the last four messages, the rewrite two (2026-10-28).** Wired into `say`
+(`proto/listen.py`), live: "up to 400" after "What budget do you have for the vacuum?" scored 0.41
+with the agent's message alone, and was not kept; with the user's message before it ("we need a new
+robot vacuum") 0.72, kept as "My budget for the vacuum is up to 400." Whether a message is the
+user's life depends on what the user said before; what a word points to, only on the agent's
+message just before. `say` now: secrets withheld before any model reads the message; no `tool`
+role (what the agent read reaches the memory through the user's answer); no retelling.
+
+**Personal data beyond the regex is the agent's, for now (the user, 2026-10-28).** The memory takes
+nothing more on itself: no "don't keep this" handling, no new patterns. The `SECRETS` regex in
+`proto/listen.py` stays — no model call, it spoils nothing — and withholds keys, tokens, card
+numbers and passwords said as such before any model reads the message.
+
+**A client with hooks is not heard through `say` as well (2026-10-28).** The server's instructions
+tell every MCP client to pass the conversation by `say` — right for an agent without hooks — and
+the Claude Code plugin's hooks pass every message already: an agent that followed both would have
+each message kept twice. The plugin says so in its `.mcp.json` (`X-Personal-Hooks: on`), and the
+server's `say` answers such a client "not taken; `ask` it for what you need". MCP's own
+`clientInfo` names the program, not whether it has hooks, so the client says it itself; the header
+is its word, not an identity, enough to stop a duplicate and opening nothing.
+
+## 2026-10-28 — The Stop hook runs in the foreground
+
+The agent's reply is what the user's next words are understood by, so it must reach the memory.
+With `async: true` it never did under `claude -p`: the first live run of `experiments/13_dialogues`
+heard four user messages and no reply, and a one-turn check against a logging stub got the user's
+`/say` only. The same hook in the foreground delivered the reply. It costs nothing: for an agent
+message the memory only holds the text for the next user message, no model is asked.
+
+## 2026-10-28 — The agent is never in the user's "us"
+
+In the first live run with the agent's replies heard, "Neither of us likes loud clubs" after the
+agent's "Got it: you like going out…" was kept as "Neither you nor I like loud clubs": the model
+read the agent's "you" plus itself as "us". 1 in 16 on that exchange. Rule 9 of the rewrite now
+says the agent is never one of the user's "we"/"us", with two examples (the agent's "you" keeps
+"us"; "you and Mila" resolves it). On four exchanges unlike the examples: 32/32.
+
+## 2026-10-28 — The user's questions are interests, not orders
+
+The memory used to look into a question of the user's at once, as a background gathering from the
+web. In the first live run with hooks on both sides it raced the agent: the hook started a search
+for the concert, the agent asked the same in its own, sharper words ten seconds later, and a
+second gathering ran beside the first. The user put the design straight: a question of the user's
+is there to tell what they care about. It is not answered by the memory there and then — the
+agent answers, asking the memory — it says what the memory should get ready first (structure the
+texts it bears on, and so on), so that the next time it comes up the memory has it to hand.
+
+So: a question heard is kept in `interests.jsonl` with how many times it was asked (a repeat is
+found by meaning, then the judge); nothing is searched for and nothing is said about it to the
+agent. The agent's `ask` is the only door that gathers from the web — the user: "only its own",
+the preparing reads only what the memory already holds. Preparing by interest is the world's
+(`proto/world.py`), not built yet.
+
+## 2026-10-28 — The agent's message is read by, then dropped
+
+An entry the intake rewrote used to keep the agent's message it answered beside it, as evidence
+of how it was understood — cut to its last 600 characters, so it began mid-sentence and lost the
+list "those" pointed into. The user: the agent's messages can be very long and are not needed;
+everything belongs in the user's message. Its context is taken to resolve the user's words, and
+it goes. An entry keeps the rewrite, and the user's words as said when they differ. The agent's
+messages stay only in the last few the intake reads by, in memory, and in `heard.jsonl`, the log
+for looking at a run.
+
+## 2026-10-29 — The mode holds from the launch; Claude Code's own memory is off
+
+Two things the concert run of 2026-10-29 showed. The first message of a session launched with
+`PERSONAL_WORLD=on` never reached the memory, nor the reply to it: the hooks ask whether the
+session is in the mode by a flag SessionStart sets, and under `claude -p` the message was passed
+first. The launch now holds by itself until `/personal off` (which leaves an `.off` mark).
+And the host kept the user's facts in Claude Code's own auto-memory
+(`~/.claude/projects/<dir>/memory/`) — a second memory beside ours, out of the user's world and
+out of what it forgets. `claude-personal` and the experiment set `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1`.

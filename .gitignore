@@ -12,3 +12,4 @@ var/
 data/longmemeval/
 data/memoryagentbench/
 benchmarks/results/
+machine/

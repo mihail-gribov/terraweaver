@@ -21,6 +21,94 @@
       },
       "fitted_on": "experiments/09_decision bench",
       "rows": 1256
+    },
+    "nvidia/Nemotron-3_5-Lightning": {
+      "calibration": {
+        "noul": {
+          "orders": 1,
+          "temperature": 0.932
+        },
+        "tfu": {
+          "orders": 2,
+          "temperature": 0.863
+        },
+        "choice": {
+          "orders": 1,
+          "temperature": 1.37
+        },
+        "scale": {
+          "orders": 2,
+          "temperature": 1.725
+        }
+      },
+      "fitted_on": "experiments/09_decision bench",
+      "rows": 1256
+    },
+    "nvidia/Nemotron-3.5-Super-VL": {
+      "calibration": {
+        "noul": {
+          "orders": 2,
+          "temperature": 2.535
+        },
+        "tfu": {
+          "orders": 2,
+          "temperature": 3.194
+        },
+        "choice": {
+          "orders": 2,
+          "temperature": 1.863
+        },
+        "scale": {
+          "orders": 1,
+          "temperature": 3.449
+        }
+      },
+      "fitted_on": "experiments/09_decision bench",
+      "rows": 1256
+    },
+    "nvidia/nemotron-3-super-120b-a12b": {
+      "calibration": {
+        "noul": {
+          "orders": 2,
+          "temperature": 2.174
+        },
+        "tfu": {
+          "orders": 2,
+          "temperature": 2.347
+        },
+        "choice": {
+          "orders": 1,
+          "temperature": 2.174
+        },
+        "scale": {
+          "orders": 2,
+          "temperature": 2.535
+        }
+      },
+      "fitted_on": "experiments/09_decision bench",
+      "rows": 1256
+    },
+    "nvidia/Nemotron-3-Ultra-550b-a55b": {
+      "calibration": {
+        "noul": {
+          "orders": 2,
+          "temperature": 2.347
+        },
+        "tfu": {
+          "orders": 2,
+          "temperature": 2.738
+        },
+        "choice": {
+          "orders": 2,
+          "temperature": 2.174
+        },
+        "scale": {
+          "orders": 2,
+          "temperature": 3.449
+        }
+      },
+      "fitted_on": "experiments/09_decision bench",
+      "rows": 1256
     }
   }
 }

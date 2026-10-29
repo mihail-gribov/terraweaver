@@ -57,6 +57,24 @@ Held-out half; accuracy is the same before and after the temperature, ECE is raw
   than on bench and the bench temperature leaves it underconfident (ECE 0.22; its own fit would be
   t≈0.25). Bench is what is shipped; the world set says how far to trust it.
 
+## Any Nemotron (2026-10-27)
+
+`--model` picks the Nemotron; its letters are cached per model and `fit --ship` writes its own entry
+into `terraweaver/decision.json`, so `Decision(model=...)` reads it calibrated. Bench, held-out half,
+both orders, accuracy:
+
+| model | noul | tfu | unsure caught | choice | scale | s a call |
+|---|---|---|---|---|---|---|
+| Nano-30B-A3B | 0.819 | 0.547 | 0.21 | 0.842 | 0.500 | 0.37 |
+| 3.5-Lightning | 0.867 | 0.730 | 0.57 | 0.867 | 0.533 | 0.24 |
+| 3.5-Super-VL | 0.867 | 0.709 | 0.70 | 0.900 | 0.547 | 0.25 |
+| 3-Super-120B | 0.871 | 0.750 | 0.79 | 0.883 | 0.540 | 0.39 |
+| 3-Ultra-550B | 0.886 | 0.709 | 0.55 | 0.875 | 0.553 | 0.25 |
+
+The first-letter lean is the Nano's: 75% first-place wins on noul, 45–53% on the others. Its weak
+`unsure` is the Nano's too — every larger Nemotron catches "the text does not settle it" more than
+half the time. The default stays the Nano until the user says otherwise.
+
 ## The link check as two claims (`check_links.py`)
 
 After the finding above, `formalise.check` asks a claim-reading picker two noul questions per link —

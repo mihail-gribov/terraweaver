@@ -10,6 +10,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from proto.cleaner import clean  # noqa: E402
 from proto.parse import _says_what  # noqa: E402
 from proto.programs import Programs, description  # noqa: E402
 from proto.tools import Item, Shelf, Tools  # noqa: E402
@@ -24,12 +25,12 @@ def check(name: str, condition: bool, detail: str = "") -> None:
 
 
 class Judge:
-    """Chooses the option whose text holds a word of the task, else "new"."""
+    """Says "same kind" when the new task shares a long word with the program's text."""
 
-    def choice(self, state, question, options):
-        task = state.lower()
-        hit = next((n for n, t in options[1:] if any(w in task for w in t.lower().split() if len(w) > 5)), "new")
-        return {"choice": hit}
+    def noul(self, state, question, true, false):
+        known, _, task = state.lower().partition("a new task:")
+        same = any(w in known for w in task.split() if len(w.strip('"?')) > 5)
+        return {"p": {"yes": 0.9 if same else 0.1, "no": 0.1 if same else 0.9}}
 
 
 def registry(where: Path) -> None:
@@ -44,10 +45,18 @@ def registry(where: Path) -> None:
     check("the same description gets a second name", programs.keep(pick, "t", True) == f"{name}_2")
     check("a program based on a kept one replaces it", programs.keep(pick + "# v2\n", "t", True, based_on=name) == name
           and "# v2" in programs.text(name))
-    check("the judge's choice is the program found", programs.find("which product should I buy", Judge()) in (name, f"{name}_2"))
+    check("the judge's choice is the program found", programs.find("which product should I purchase", Judge()) in (name, f"{name}_2"))
     check("the judge's none is no program", programs.find("when is the birthday", Judge()) is None)
     runs = (where / "programs" / "runs.jsonl").read_text().splitlines()
     check("every run is logged", len(runs) == 5 and json.loads(runs[1])["answered"] is False)
+    programs.keep(pick, "pick a kettle", answered=False, based_on=name, attempts=3, seconds=40)
+    programs.keep(pick, "pick a lamp", answered=True, based_on=name, attempts=1, seconds=20)
+    st = programs.stats()[name]
+    check("a failed run of a kept program counts as a use", st["uses"] == 4 and st["reuses"] == 3, str(st))
+    check("statistics: answered, versions, first attempts", st["answered"] == 3 and st["versions"] == 3
+          and st["first_attempt"] == 3, str(st))
+    check("statistics: when made and last used, the last tasks", st["created"] <= st["last_used"]
+          and st["tasks"][-1] == "pick a lamp")
 
 
 def lifetime(where: Path) -> None:
@@ -56,29 +65,40 @@ def lifetime(where: Path) -> None:
     eufy = mem.structure.entity("world", "Eufy 11S Max", kind="product")
     mem.structure.said("world", "The user bought the Eufy 11S Max last year.", [user, eufy])
     col = Shelf(where / "mem" / "collections" / "robot-vacuums", of="product")
-    for name, price in [("Eufy 11S Max", 199), ("Roborock Q7", 249)]:
-        col.structure.entity("world", name, kind="product").set("price_eur", price, f"{name} costs {price}", "https://a")
+    made = {}
+    for name, price in [("Eufy 11S Max", 199), ("Roborock Q7", 249), ("Dreame D10", 179), ("Roborock Q5", 159)]:
+        made[name] = col.structure.entity("world", name, kind="product")
+        made[name].set("price_eur", price, f"{name} costs {price}", "https://a")
     fresh = col.structure.entity("world", "Xiaomi H40", kind="product")
     fresh.set("price_eur", 203, "Xiaomi H40 costs 203", "https://b")
-    old = f"{datetime.now() - timedelta(days=8):%Y-%m-%d %H:%M:%S}"
+    old = f"{datetime.now() - timedelta(days=100):%Y-%m-%d %H:%M:%S}"
     for r in col.structure.records:
         if not (r.get("thing") == fresh.id or fresh.id in (r.get("about") or ())):
             r["at"] = old
     col.structure.path.write_text("".join(json.dumps(r) + "\n" for r in col.structure.records))
+    (col.path / "used.json").write_text(json.dumps({
+        made["Dreame D10"].id: {"used": f"{datetime.now() - timedelta(days=10):%Y-%m-%d %H:%M:%S}"},
+        made["Roborock Q5"].id: {"used": old, "lasting": "named in an answer, 2026-07-01"}}))
 
+    removed = clean(mem, Programs(where / "programs"), log=lambda *_: None)
+    check("the cleaner removes what was not used for its TTL", removed["items"] == {"robot-vacuums": ["Roborock Q7"]},
+          str(removed))
     tools = Tools(mem, where / "run", log=lambda *_: None)
     tools.started = old
     items = {i.name: i for i in tools.new_collection("robot vacuums", of_class="product").all_items()}
-    check("an item past its lifetime is removed", "Roborock Q7" not in items, str(sorted(items)))
-    check("its text is removed with it", "Roborock" not in (where / "mem/collections/robot-vacuums/facts.md").read_text())
-    check("an item spoken of with the user has no lifetime", "Eufy 11S Max" in items
-          and items["Eufy 11S Max"].dates()["lives_until"] is None)
-    check("a fresh item lives a week from when it was found", items.get("Xiaomi H40") is not None
-          and items["Xiaomi H40"].dates()["lives_until"] > f"{datetime.now() + timedelta(days=6):%Y-%m-%d}")
+    check("its text is removed with it", "Roborock Q7" not in (where / "mem/collections/robot-vacuums/facts.md").read_text())
+    check("found long ago but read by a task lately: kept", "Dreame D10" in items)
+    check("once named in an answer: no TTL", "Roborock Q5" in items and items["Roborock Q5"].dates()["lives_until"] is None)
+    check("named in the user's memory: no TTL", items["Eufy 11S Max"].dates()["lives_until"] is None)
+    check("the TTL counts from the last use: three months on", items["Xiaomi H40"].dates()["lives_until"]
+          > f"{datetime.now() + timedelta(days=89):%Y-%m-%d}")
+    tools.reply_to_agent("Choice: Xiaomi H40, at 203 euros.")
+    check("what the answer names has been with the user: no TTL", items["Xiaomi H40"].dates()["lives_until"] is None
+          and items["Dreame D10"].dates()["lives_until"] is not None)
     dates = Item(eufy, tools).dates()
     check("everything has its dates", dates["created"] and dates["changed"] and dates["lives_until"] is None)
     tools.started = f"{datetime.now() + timedelta(seconds=1):%Y-%m-%d %H:%M:%S}"
-    check("a task chooses from what it found itself, not from earlier finds",
+    check("a task chooses from what was found lately, not from earlier finds",
           not tools.new_collection("robot vacuums").all_items())
     refound = tools.new_collection("robot vacuums")._shelf
     refound.structure.since = f"{datetime.now():%Y-%m-%d %H:%M:%S}"
@@ -98,11 +118,75 @@ def quotes() -> None:
     check("but not anything else", not _says_what("249 €", "threshold_cm"))
 
 
+def programs_age(where: Path) -> None:
+    programs = Programs(where / "aging")
+    old = programs.keep('"""Plan a trip for the user."""\nreply_to_agent(1)\n', "plan a trip", True)
+    new = programs.keep('"""Say who the colleagues of the user are."""\nreply_to_agent(2)\n', "colleagues", True)
+    runs = programs.runs()
+    runs[0]["at"] = (datetime.now() - timedelta(days=100)).isoformat(timespec="seconds")
+    (where / "aging" / "runs.jsonl").write_text("".join(json.dumps(r) + "\n" for r in runs))
+    check("a program used within its lifetime is kept until three months after", programs.stats()[new]["lives_until"]
+          > (datetime.now() + timedelta(days=89)).isoformat())
+    removed = clean(Shelf(where / "empty"), programs, log=lambda *_: None)  # TTL: 90 days
+    check("a program not used for three months is removed", removed["programs"] == [old]
+          and not (where / "aging" / f"{old}.py").exists() and new in programs.all(), str(removed))
+    check("its removal is logged", any(r.get("removed") == old for r in programs.runs()))
+    check("statistics ignore the removal records", set(programs.stats()) == {new})
+
+
+def limits_and_closest(where: Path) -> None:
+    from proto.solve import LIMIT_WORDS
+    check("a stated limit has a limit's words", all(LIMIT_WORDS.search(q) for q in (
+        "has to stay under 400 euros", "between 200 and 500", "does not want another device that works only through a cloud")))
+    check("a preference or a habit is no limit", not any(LIMIT_WORDS.search(q) for q in (
+        "prefers evenings out on Friday or Saturday", "Sunday evenings go to preparing for work", "don't like loud clubs")))
+    tools = Tools(Shelf(where / "closest-mem"), where / "run", log=lambda *_: None)
+    c = tools.new_collection("concerts", of_class="event")
+    for name, date in [("Candlelight: Vivaldi", "2026-12-10"), ("Candlelight: Queen", "2026-11-22")]:
+        c._shelf.structure.entity("world", name, kind="event").set("date", date, f"{name} is on {date}", "https://a")
+    ranking = c.all_items().rank_by({"on_saturday": lambda i: i.value_of("date") == "2026-10-31",
+                                     "candlelight": lambda i: "Candlelight" in i.name}, must_hold=["on_saturday"])
+    check("the same thing is the same item, however reached",
+          c.all_items()[0] == c.all_items()[0] and len({*c.all_items(), *c.all_items()}) == 2)
+    check("nothing passed: the closest come with the ranking", not ranking and len(ranking.closest) == 2)
+    tools.reply_to_agent("No concert fits.")
+    check("and go into the reply, whatever the program wrote", "Candlelight: Vivaldi" in tools.answered
+          and "closest" in tools.answered, tools.answered)
+    from datetime import date
+    vivaldi = next(i for i in c.all_items() if "Vivaldi" in i.name)
+    check("a date is read by code, weekday and all", vivaldi.date_of("date") == date(2026, 12, 10)
+          and vivaldi.date_of("place") is None)
+    weekend = c.all_items().rank_by({"weekend": lambda i: i.date_of("date").weekday() >= 5,
+                                     "evening": lambda i: i.date_of("starts_at").hour >= 18})
+    check("a date not known is not known, not no", all(r.conditions["evening"] is None for r in weekend)
+          and {r.item.name: r.conditions["weekend"] for r in weekend} == {"Candlelight: Queen": True,
+                                                                         "Candlelight: Vivaldi": False})
+    check("a report gives a date's weekday", "(Sunday)" in next(r for r in weekend if "Queen" in r.item.name).report())
+
+
+def search_reaches_read_things(where: Path) -> None:
+    from proto.search import Search
+    mem = Shelf(where / "search-mem")
+    anna = mem.structure.entity("world", "Anna", "Anna is the user's sister.", kind="person")
+    image = {"things": {anna.id: {"name": "Anna", "class": "Person"}, "r:the-user": {"name": "the user", "class": "Person",
+                                                                                    "user": True}},
+             "links": [{"type": "ManagerOf", "subject": "r:the-user", "object": anna.id, "entry": 1}], "values": {}}
+    search = Search(mem.structure, lambda: mem.journal.entries, where / "vectors.jsonl", image=lambda: image)
+    try:
+        about, by = search.about_named("Who manages Anna?"), search.by_structure("Is my manager Anna?")
+        check("a thing only the world read doesn't break the search", 1 in about and 1 in by, f"{about} {by}")
+    except ValueError as wrong:
+        check("a thing only the world read doesn't break the search", False, repr(wrong))
+
+
 def main() -> int:
     quotes()
     with tempfile.TemporaryDirectory() as where:
         registry(Path(where))
         lifetime(Path(where))
+        programs_age(Path(where))
+        limits_and_closest(Path(where))
+        search_reaches_read_things(Path(where))
     print(f"\n{len(failures)} failed" if failures else "\nall passed")
     return 1 if failures else 0
 

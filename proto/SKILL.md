@@ -47,5 +47,14 @@ about their life, `ask` for one specific thing, `search_memory` for the entries 
 `forget` when the user asks for something to be forgotten (it waits in a bin, and `forgotten`
 lists it until it is deleted for good), `questions` at a natural pause.
 
+**Tasks.** For anything that needs gathering, comparing or choosing — "pick me a robot vacuum",
+"what's that concert my wife mentioned, and when could we go", "what did we spend on the car this
+year" — call `task(text)` with the task in the user's words. Don't restate what the memory knows
+(budget, wishes, who the people are): it adds that itself. It takes a few minutes. The memory
+gives facts, not decisions: its answer is what was found, how each candidate stands on the user's
+limits and wishes (met, not known, NOT met, with the words each stands on), what was ruled out,
+and the user's own limits and wishes as they said them. The decision is yours, made with the
+user: choose from that answer, say why in its terms, and name nothing it does not hold.
+
 What not to keep: passwords, keys, card numbers; details of the task at hand that say nothing
 about the user's life; what the memory just gave you back.

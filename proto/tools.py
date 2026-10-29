@@ -15,29 +15,33 @@ no program can skip it:
 The user's memory is `memory`; a collection gathered for a task is a shelf — the same kind of
 store under the memory's directory (collections/), so a thousand products don't crowd the user's
 life. A collection outlives the task, so what was found can still be asked about, but a task
-chooses only from what it found itself — what reuses is the program, not stale prices. Not for
-good either: an item lives LIFETIME from the last time it was found, unless the user's memory names
-it — what was spoken of with the user has no lifetime. An item past its time is removed, its texts
-with it.
+chooses only from what was found lately (FRESH) — what reuses is the program, not stale prices.
+Not for good either: a thing found lives TTL (proto/ttl.py) from its last use — found or read by a
+task — unless it has been with the user: named in an answer the agent got, or in the user's memory.
+Those have no TTL. What is past its TTL is removed, its texts with it, by the cleaner
+(proto/cleaner.py).
 """
 import asyncio
 import json
 import re
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 from proto import parse as parsing
 from proto.models import role
 from proto.model import Structure, Thing
+from proto.ttl import TTL
 
 ENGINE = "tavily"
 # What holds for every thing of a class, whatever the task: its fields, and which must be known.
 CLASSES = json.loads((Path(__file__).with_name("classes.json")).read_text())
-# How long an item found for a task and never spoken of with the user is kept, from the last time
-# it was found: prices and stock a week old are no longer a shop's word.
-LIFETIME = timedelta(days=7)
+# What a task chooses from: what was found within this long. A day old, a price or a date still
+# holds for a few days; older, it may not.
+FRESH = timedelta(days=3)
+# Kinds that are places: a query may name them.
+PLACES = {"place", "city", "town", "country", "region", "district", "neighbourhood", "neighborhood"}
 
 
 class Journal:
@@ -83,14 +87,48 @@ class Shelf:
     def things(self, kind: str | None = None) -> list[Thing]:
         return self.structure.things(self.session, kind)
 
+    # --- use: what keeps a thing alive -------------------------------------------------------
+
+    def _uses(self) -> dict:
+        if not hasattr(self, "_used"):
+            file = self.path / "used.json"
+            self._used = json.loads(file.read_text()) if file.exists() else {}
+        return self._used
+
+    def _save_uses(self) -> None:
+        self.path.mkdir(parents=True, exist_ok=True)
+        (self.path / "used.json").write_text(json.dumps(self._uses(), ensure_ascii=False, indent=0))
+
+    def use(self, things, lasting: str | None = None) -> None:
+        """Mark these things used now; `lasting` says why they have no TTL any more."""
+        now, uses = f"{datetime.now():%Y-%m-%d %H:%M:%S}", self._uses()
+        for t in things:
+            mark = uses.setdefault(t.id, {})
+            mark["used"] = now
+            if lasting and not mark.get("lasting"):
+                mark["lasting"] = lasting
+        self._save_uses()
+
+    def last_use(self, thing: Thing) -> str | None:
+        """The last time it was found or read by a task."""
+        return max(filter(None, (self.structure.dates(thing)["changed"], self._uses().get(thing.id, {}).get("used"))),
+                   default=None)
+
+    def lasting(self, thing: Thing) -> str | None:
+        """Why it has no TTL — it has been with the user — or None."""
+        return self._uses().get(thing.id, {}).get("lasting")
+
     def expire(self, spoken, now: datetime | None = None) -> list[str]:
-        """Remove every thing last found more than LIFETIME ago that `spoken(name)` doesn't hold
-        for, with the records and texts about it. Returns the names removed."""
-        cut = f"{(now or datetime.now()) - LIFETIME:%Y-%m-%d %H:%M:%S}"
+        """Remove every thing not used for TTL that has not been with the user — no lasting mark,
+        and `spoken(name)` doesn't hold — with the records and texts about it. Returns the names."""
+        cut = f"{(now or datetime.now()) - TTL:%Y-%m-%d %H:%M:%S}"
         gone = {t.id: t.name for t in self.things()
-                if t.name != "the user" and (self.structure.dates(t)["changed"] or "") < cut and not spoken(t.name)}
+                if t.name != "the user" and (self.last_use(t) or "") < cut and not self.lasting(t) and not spoken(t.name)}
         if not gone:
             return []
+        for id_ in gone:
+            self._uses().pop(id_, None)
+        self._save_uses()
         records = self.structure.records
         out = [r for r in records if r.get("thing") in gone or set(r.get("about") or ()) & set(gone)]
         stay = [r for r in records if r not in out]
@@ -98,6 +136,13 @@ class Shelf:
         self.structure.records = stay
         self.structure.path.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in stay))
         return sorted(gone.values())
+
+
+def spoken(memory: Shelf, name: str) -> bool:
+    """The user's memory names it: it was spoken of with the user."""
+    said = re.compile(rf"\b{re.escape(name.lower())}\b")
+    return any(t.name.lower() == name.lower() for t in memory.things()) or \
+        any(said.search(e.lower()) for e in memory.journal.entries.values())
 
 
 class Mistake(ValueError):
@@ -134,6 +179,11 @@ class Item(Talking):
         price <= 400 if some offer is, 200 <= price <= 500 if some offer is in the range."""
         return _plain(self._thing.get(attribute))
 
+    def date_of(self, attribute: str = "date"):
+        """item.date_of("date") -> a datetime.date, or None if not known — its weekday is
+        .weekday() (Monday 0 … Sunday 6), and it compares with date.fromisoformat(today)"""
+        return _date(self.value_of(attribute))
+
     def all_values(self) -> dict:
         """item.all_values() -> {attribute: value} for everything known about it"""
         return self._thing.values()
@@ -147,12 +197,15 @@ class Item(Talking):
         return self._thing.about()
 
     def dates(self) -> dict:
-        """item.dates() -> {"created", "changed", "told", "lives_until"} as "YYYY-MM-DD HH:MM:SS";
-        lives_until is None for what has no lifetime: the user's own memory, and what was spoken of with the user"""
+        """item.dates() -> {"created", "changed", "told", "used", "lives_until"} as "YYYY-MM-DD HH:MM:SS";
+        lives_until is None for what has been with the user: the user's own memory, what was named in
+        an answer, what the user's memory names"""
         dates = self._thing.dates()
-        lasting = self._thing._memory is self._tools.memory.structure or self._tools._spoken(self.name)
-        dates["lives_until"] = None if lasting or not dates["changed"] else \
-            f"{datetime.strptime(dates['changed'], '%Y-%m-%d %H:%M:%S') + LIFETIME:%Y-%m-%d %H:%M:%S}"
+        shelf = self._tools._shelf_of(self._thing)
+        dates["used"] = shelf.last_use(self._thing) if shelf else dates["changed"]
+        lasting = shelf is None or shelf.lasting(self._thing) or self._tools._spoken(self.name)
+        dates["lives_until"] = None if lasting or not dates["used"] else \
+            f"{datetime.strptime(dates['used'], '%Y-%m-%d %H:%M:%S') + TTL:%Y-%m-%d %H:%M:%S}"
         return dates
 
     def chance_that(self, claim: str) -> float:
@@ -166,6 +219,15 @@ class Item(Talking):
                                 true="yes, what is known shows it", false="no, or nothing known shows it")["p"]["yes"]
         except Exception:  # noqa: BLE001 - what can't be read shows nothing
             return 0.0
+
+    # The same thing is the same item, however it was reached: `org == brightwork` compared two
+    # wrappers of one thing and was never true, so no colleague was found (2026-10-27).
+    def __eq__(self, other) -> bool:
+        return isinstance(other, (Item, _Seen)) and self._thing.id == other._thing.id and \
+            self._thing._memory is other._thing._memory
+
+    def __hash__(self) -> int:
+        return hash(self._thing.id)
 
     def __repr__(self) -> str:
         return f"<{self.name} ({self.kind or 'thing'}): {self.all_values()}>"
@@ -208,7 +270,8 @@ class Ranked(Talking):
             seen = []
             for attr in dict.fromkeys(self._read.get(name, ())):
                 said = t._memory.value(t, attr)["said"]
-                seen.append(f"{attr} = {t.get(attr)!r}" + (f' — {said[0][1].split(" — ", 1)[-1][:160]}' if said else ""))
+                day = _date(t.get(attr)) if isinstance(t.get(attr), str) else None
+                seen.append(f"{attr} = {t.get(attr)!r}" + (f" ({day:%A})" if day else "") + (f' — {said[0][1].split(" — ", 1)[-1][:160]}' if said else ""))
             lines.append(f"- {name}: {mark}" + (f" ({'; '.join(seen)})" if seen else ""))
         return f"{self.item.name}\n" + "\n".join(lines)
 
@@ -220,42 +283,48 @@ class Ranked(Talking):
 class Ranking(Talking, list):
     """Ranked items, best first."""
 
-    def __init__(self, ranked, tools: "Tools"):
+    def __init__(self, ranked, tools: "Tools", closest=(), ruled_out=None):
         super().__init__(ranked)
         self._tools = tools
+        # When nothing passed: the items that came nearest — most must_hold conditions met.
+        self.closest = list(closest)
+        # How many were left out by each condition that must hold: not met, or not known.
+        self.ruled_out = dict(ruled_out or {})
 
     def best(self) -> Ranked | None:
         """ranking.best() -> the first Ranked, or None if nothing passed"""
         return self[0] if self else None
 
-    def choose_one_for(self, task: str, among: int = 5) -> str:
-        """ranking.choose_one_for("a light laptop for a student") -> the choice among the first few, why, and its report"""
+    def brief(self, among: int = 5) -> str:
+        """ranking.brief() -> the first few for the agent to decide from: each condition met / not known / NOT met with the words it stands on, what is said about each, and what was ruled out by which limit"""
+        # The world gives facts and the agent decides: a choice made here, by a model of the
+        # world's, was a decision taken from the agent and the user (2026-10-27).
         if not self:
-            return "Nothing passed the conditions, so there is nothing to choose from."
-        writer = role("chooser")
-        top = self[:among]
-        listed = "\n\n".join(f"{r.report()}\nWhat is said about it:\n" +
-                             "\n".join(f"- {e}" for e in r.item.texts_about()[:12]) for r in top)
-        said = writer.say(
-            "You choose for the user among the candidates given, and only among them.",
-            f"Task: {task}\n\nCandidates, each with its conditions already judged — met, not known, "
-            f"NOT met. Those marks are final: do not judge a condition again or call a NOT met one "
-            f"acceptable.\n\n{listed}\n\nFirst line: \"Choice: <the candidate's name exactly as "
-            f"written>\". Then a few lines why, quoting the marks, and what to check before acting. "
-            f"Name no product, shop or model that is not among the candidates.",
-            room=3000, thinking=False)
-        first, _, why = said.strip().partition("\n")
-        named = first.split(":", 1)[-1].strip().strip("*\" ")
-        # The choice must be one of the candidates: a model named from the writer's own knowledge
-        # is no candidate at all (seen 2026-10-26: "consider the Eufy G30").
-        chosen = next((r for r in top if r.item.name.lower() == named.lower()), None)
-        if chosen is None:
-            chosen, why = top[0], (f"(The model named {named!r}, which is not among the candidates; "
-                                   f"the first by the conditions is given instead.)\n" + why)
-        return f"Choice: {chosen.item.name}\n{why.strip()}\n\n{chosen.report()}"
+            return _nothing_passed(self.closest, self.ruled_out)
+        listed = "\n\n".join(f"{n}. {r.report()}\nWhat is said about it:\n" +
+                              "\n".join(f"  - {e}" for e in r.item.texts_about()[:8])
+                              for n, r in enumerate(self[:among], 1))
+        more = f" The first {among} of {len(self)} that passed, by how many conditions they meet." if len(self) > among else ""
+        return (f"Candidates, in order of the conditions they meet — for you and the user to decide from.{more}"
+                f"\n\n{listed}{_ruled_out(self.ruled_out)}")
 
     def __repr__(self) -> str:
+        if not self:
+            return f"<ranking of 0; closest: " + "; ".join(repr(r)[1:-1] for r in self.closest[:5]) + ">"
         return f"<ranking of {len(self)}: " + "; ".join(repr(r)[1:-1] for r in self[:5]) + (" …>" if len(self) > 5 else ">")
+
+
+def _nothing_passed(closest, ruled_out=None) -> str:
+    if not closest:
+        return "Nothing known passed the conditions, and nothing came close." + _ruled_out(ruled_out)
+    return ("Nothing passed every condition that must hold. What came closest, with each condition as judged:\n\n"
+            + "\n\n".join(r.report() for r in closest) + _ruled_out(ruled_out))
+
+
+def _ruled_out(ruled_out) -> str:
+    if not ruled_out:
+        return ""
+    return "\n\nRuled out: " + "; ".join(f"{n} where {name} was not met or not known" for name, n in ruled_out.items())
 
 
 class Collection(Talking):
@@ -276,11 +345,12 @@ class Collection(Talking):
         return _describe(self._shelf.structure)
 
     def all_items(self, kind: str | None = None) -> Items:
-        """collection.all_items() -> Items found for this task"""
+        """collection.all_items() -> Items found in the last three days, by this task or one before"""
         # What earlier tasks found stays for its lifetime, to answer about, but a choice is made
-        # from what this task found: a price or stock seen days ago may be gone.
-        return Items([Item(t, self._tools) for t in self._shelf.things(kind)
-                      if (self._shelf.structure.dates(t)["changed"] or "") >= self._tools.started], self._tools)
+        # from what was found in the last three days (FRESH): a price or a date seen days ago may be gone.
+        found = [t for t in self._shelf.things(kind) if (self._shelf.structure.dates(t)["changed"] or "") >= self._tools.started]
+        self._shelf.use(found)  # read by a task: a use, which its TTL counts from
+        return Items([Item(t, self._tools) for t in found], self._tools)
 
     def __repr__(self) -> str:
         return f"<collection of {self.of_class or 'things'}: {len(self._shelf.things())} items>"
@@ -302,11 +372,18 @@ class UserMemory(Talking):
 
     def all_items(self, kind: str | None = None) -> Items:
         """user_memory.all_items("person") -> Items: the people, places, things the memory holds"""
-        return Items([Item(t, self._tools) for t in self._tools.memory.things(kind)], self._tools)
+        return Items([Item(t, self._tools) for t in self._tools._known().things("world", kind)], self._tools)
+
+    def the_user(self) -> "Item":
+        """user_memory.the_user() -> the user, as an Item: their links and values"""
+        known = self._tools._known()
+        return Item(next(t for t in known.things("world") if t.name == "the user"), self._tools)
 
     def describe(self) -> str:
         """user_memory.describe() -> what the memory holds: its kinds, value names and link words, with counts"""
-        return _describe(self._tools.memory.structure)
+        return _describe(self._tools._known()) + (
+            "\nA link word starting former_ is a link that has ended (\"used to be\", \"left\"); the others hold."
+            if self._tools._image_used else "")
 
     def add_from_texts(self, texts, fields: dict | None = None) -> dict:
         """user_memory.add_from_texts("Olga moved to Porto.") -> counts: keeps what the text states about the user's life"""
@@ -333,13 +410,15 @@ class Tools:
     def __init__(self, memory: Shelf, root: Path, recall_with=None, engine: str = ENGINE, log=print):
         self.memory, self.root, self.engine, self.log = memory, root, engine, log
         self.shelves: dict[str, Shelf] = {}
-        self.started = f"{datetime.now():%Y-%m-%d %H:%M:%S}"
-        # Collections live with the memory and outlast the task; what is past its time goes now.
+        self._view, self._image_used = None, False
+        # What a task chooses from: found within FRESH. Only what this run found hid eleven dated
+        # concerts found four minutes before (2026-10-27); what is days old may be gone.
+        self.started = f"{datetime.now() - FRESH:%Y-%m-%d %H:%M:%S}"
+        self._closest: list = []
+        self._ruled_out: dict = {}
+        # Collections live with the memory and outlast the task; what is past its time is
+        # removed by the cleaner (proto/cleaner.py), before a task starts.
         self.collections = memory.path / "collections"
-        for path in sorted(self.collections.glob("*/")) if self.collections.exists() else []:
-            gone = Shelf(path).expire(self._spoken)
-            if gone:
-                self.log(f"collection {path.name}: {len(gone)} items past their lifetime, removed")
         self._recall, self.answered = recall_with, None
         # Pages already read onto a shelf with the same fields: a program fixed and run again
         # gathers the same pages, and reading them is the slow part.
@@ -366,6 +445,14 @@ class Tools:
     def reply_to_agent(self, text) -> None:
         """reply_to_agent(text) — the answer the agent gets; the program ends with it. A Ranked is given as its report()."""
         self.answered = text.report() if isinstance(text, Ranked) else str(text)
+        # A reply that says nothing passed gets what came closest, whatever the program wrote.
+        if self._closest and not any(r.item.name in self.answered for r in self._closest):
+            self.answered += "\n\n" + _nothing_passed(self._closest, self._ruled_out)
+        # What the answer names has been with the user: it has no TTL from now on.
+        for shelf in self.shelves.values():
+            named = [t for t in shelf.things() if len(t.name) > 3 and t.name in self.answered]
+            if named:
+                shelf.use(named, lasting=f"named in an answer, {datetime.now():%Y-%m-%d}")
 
     def namespace(self) -> dict:
         return {"user_memory": UserMemory(self), "web": Web(self), "new_collection": self.new_collection,
@@ -388,14 +475,33 @@ class Tools:
 
     # --- inside -------------------------------------------------------------------------------
 
+    def _known(self) -> Structure:
+        """What the program reads of the user's memory: the image the world read from the journal
+        when there is one — things, values and links, typed, each standing on its entry — else
+        what the host wrote. Read once per task."""
+        if self._view is None:
+            self._view, self._image_used = self.memory.structure, False
+            try:
+                from proto.world import image_of
+                world = self.memory.path / "world"
+                image = image_of(world) if (world / "image.json").exists() else None
+            except Exception as wrong:  # noqa: BLE001 - without the image, the host's structure
+                self.log(f"the image could not be read ({wrong!r}); reading what the host wrote")
+                image = None
+            if image and image.get("things"):
+                self._view, self._image_used = _from_image(image, lambda: self.memory.journal.entries,
+                                                           self.memory.structure), True
+        return self._view
+
     def _spoken(self, name: str) -> bool:
-        """The user's memory names it: it was spoken of with the user."""
-        said = re.compile(rf"\b{re.escape(name.lower())}\b")
-        return any(t.name.lower() == name.lower() for t in self.memory.things()) or \
-            any(said.search(e.lower()) for e in self.memory.journal.entries.values())
+        return spoken(self.memory, name)
 
     def _private(self) -> set[str]:
-        return {t.name.lower() for t in self.memory.things() if len(t.name) > 2 and t.name.lower() != "the user"}
+        # A place is the market a query names — "concerts in Belgrade" — and tells the web nothing
+        # of the user; people and organisations would. Refusing every name refused the city an
+        # events task can't search without (2026-10-27).
+        return {t.name.lower() for t in self.memory.things() if len(t.name) > 2 and t.name.lower() != "the user"
+                and not {w.rstrip("s") for w in re.findall(r"[a-z]+", (t.kind or "").lower())} & PLACES}
 
     def _search(self, query: str, pages: int) -> list:
         if not isinstance(query, str) or not query.strip():
@@ -447,6 +553,9 @@ class Tools:
             total["dropped"] += len(kept["dropped"])
         return total
 
+    def _shelf_of(self, thing: Thing) -> Shelf | None:
+        return next((s for s in self.shelves.values() if thing._memory is s.structure), None)
+
     def _class_of(self, thing: Thing) -> dict:
         for shelf in self.shelves.values():
             if thing._memory is shelf.structure and shelf.of:
@@ -462,7 +571,7 @@ class Tools:
             raise Mistake(f"rank_by got must_hold={list(must_hold)}, naming {sorted(set(must_hold) - set(conditions))} "
                           f"that are not among the conditions {sorted(conditions)}", "names of conditions",
                           f"must_hold={[next(iter(conditions))] if conditions else []}")
-        out = []
+        out, near, ruled_out = [], [], {}
         for item in items:
             t = item._thing
             values = t.values()
@@ -478,11 +587,57 @@ class Tools:
                 except Exception:  # noqa: BLE001 - a value of another shape is not known either
                     held[name] = None
                 read[name] = seen.read
-            if any(held.get(h) is not True for h in must_hold):
-                continue
             score = sum(1 if v else 0.5 if v is None else 0 for v in held.values()) + 0.01 * len(t.about())
+            if any(held.get(h) is not True for h in must_hold):
+                for h in must_hold:
+                    if held.get(h) is not True:
+                        ruled_out[h] = ruled_out.get(h, 0) + 1
+                near.append((sum(held.get(h) is True for h in must_hold), Ranked(item, held, read, score)))
+                continue
             out.append(Ranked(item, held, read, score))
-        return Ranking(sorted(out, key=lambda r: -r.score)[:keep_top], self)
+        # Nothing passed: the nearest go with the empty ranking, and into the reply. A program left
+        # to say so itself answered "no candlelight concert avoids Sunday evenings", with eleven
+        # of them, dated, in its collection (2026-10-27).
+        closest = [r for _, r in sorted(near, key=lambda nr: (-nr[0], -nr[1].score))[:3]] if not out else []
+        self._closest, self._ruled_out = closest, ruled_out
+        return Ranking(sorted(out, key=lambda r: -r.score)[:keep_top], self, closest, ruled_out)
+
+
+def _from_image(image: dict, entries, host: Structure | None = None) -> Structure:
+    """The image as a store the object model reads: a thing per image thing (the user named "the
+    user"), its values, and its links — those the world read from the journal over its own typed
+    ones, which held "now" where they had ended (2026-10-27) — an ended link's word as former_<word>.
+    Nothing is written: it lives for the task."""
+    view = Structure(Path("/nonexistent/image.jsonl"), lambda text, source: 0, entries)
+    at = f"{datetime.now():%Y-%m-%d %H:%M:%S}"
+    records = view.records
+    add = lambda r: records.append({**r, "session": "world", "n": len(records) + 1, "at": at})
+    hosts = host._things() if host else {}
+    for group, t in image.get("things", {}).items():
+        # A class the world has not read yet is no kind; the host's word for it is.
+        kind = _plain_word(t["class"]) if t.get("class") not in (None, "Thing") else (hosts.get(group) or {}).get("kind")
+        add({"thing": group, "name": "the user" if t.get("user") else t.get("name") or group, "kind": kind})
+    for group, r in hosts.items():  # what the host named and the world has not mirrored yet
+        if group not in image.get("things", {}):
+            add({"thing": group, "name": r["name"], "kind": r.get("kind")})
+    for group, attrs in image.get("values", {}).items():
+        for attr, said in attrs.items():
+            for v in said:
+                add({"entry": v["entry"], "about": [group], "as": attr, "value": v["value"], "when": None})
+    links = image.get("links", [])
+    read = [l for l in links if l.get("source") == "read"] or links
+    for l in read:
+        word = _plain_word(l["type"])
+        if l.get("holds") == "ended" and not word.startswith("former"):
+            word = f"former_{word}"
+        if l.get("entry") is not None and l["subject"] in image["things"] and l["object"] in image["things"]:
+            add({"entry": l["entry"], "about": [l["subject"], l["object"]], "as": word, "when": None})
+    return view
+
+
+def _plain_word(word: str) -> str:
+    """ManagerOf, manager of, manager_of -> manager_of."""
+    return "_".join(re.sub(r"(?<=[a-z])(?=[A-Z])", " ", str(word)).lower().split())
 
 
 def _describe(structure: Structure) -> str:
@@ -534,6 +689,16 @@ class Seen:
     def __repr__(self): return f"{self.lowest}–{self.highest}"
 
 
+def _date(value):
+    """A value read as a date: "2027-01-30" or "2027-01-30T19:00" -> date(2027, 1, 30); else None.
+    A weekday worked out by a model came out wrong ("January 30, 2027 is a Thursday — but wait")."""
+    m = re.match(r"\s*(\d{4}-\d{2}-\d{2})", str(value or ""))
+    try:
+        return date.fromisoformat(m.group(1)) if m else None
+    except ValueError:
+        return None
+
+
 def _plain(value):
     return Seen(*value) if isinstance(value, list) and len(value) == 2 else value
 
@@ -553,6 +718,12 @@ class _Seen:
         if value is None:
             raise _Unknown(attribute)
         return _plain(value)
+
+    def date_of(self, attribute: str = "date"):
+        day = _date(self.value_of(attribute))
+        if day is None:
+            raise _Unknown(attribute)
+        return day
 
     def __getattr__(self, name):
         return getattr(self._item, name)

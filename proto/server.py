@@ -5,7 +5,9 @@ Every call of the baseline is here as it is (`baseline/server.py`) — the same 
 contract is the baseline's. What is added is `run(code)`: Python with `entity`, `event`, `link`
 and `say` in it, whose sentences go to that journal and whose things go to an index beside it
 (`proto/model.py`). The object model is small enough to live in the skill's text
-(`proto/SKILL.md`), so MCP gains one tool and nothing else.
+(`proto/SKILL.md`). And `task(text)`: a task in the user's words, which the memory solves by a
+program it writes or reuses (`proto/solve.py`) — from what it holds, and from the web when the
+task needs it.
 
     .venv/bin/python -m proto.server                     # var/proto/main/, port 7110
     .venv/bin/python -m proto.server --name fc --port 7111
@@ -15,6 +17,7 @@ A run's variables last between runs of one session: the `x-terraweaver-session` 
 host sends one, otherwise the client's name (the MCP protocol is stateless, 2026-07-28).
 """
 import argparse
+import asyncio
 import contextlib
 import io
 import logging
@@ -33,6 +36,8 @@ sessions: dict[str, dict] = {}
 # search the readers are shown entries by (proto/search.py).
 world = None
 search = None
+# Which memory this is (var/proto/<name>), and the search engine tasks use.
+name, engine = "main", "tavily"
 
 
 HEARD = """Below are sentences the user said, numbered.
@@ -147,7 +152,10 @@ base.server._lowlevel_server.instructions = (
     "`anna = entity(\"Anna\", \"Anna is the user's sister.\", kind=\"person\")`, then "
     "`anna.say(\"Anna moved from Lisbon to Porto in September 2026.\")`. Every text stands alone, "
     "with names and absolute dates; pass `now` with every run. For a question the context did "
-    "not settle, call `ask`. `questions` lists what the memory wants to ask the user."
+    "not settle, call `ask`. For a task that needs gathering, comparing or choosing — pick me a "
+    "product, find out what an event is and when, what we spent on something, who of my people … — "
+    "call `task` with it in the user's words: the memory gathers the facts for it, from what it "
+    "holds and from the web, in a few minutes; the decision is yours, with the user. `questions` lists what the memory wants to ask the user."
 )
 
 
@@ -161,8 +169,155 @@ async def run(code: str, ctx: Context, now: str | None = None) -> str:
         return run_code(code, session_of(ctx), now)
 
 
+def confirm_forget(what: str, entry: str) -> bool:
+    """Is this entry what the user asked to forget, or only something the request names to say
+    which one? A closed question, for the decision model; kept when it can't be asked."""
+    from proto.models import role
+    try:
+        p = role("judge").noul(f'The user asked the memory to forget: "{what}"\n\nAn entry of the memory:\n"{entry}"',
+                               "Does this entry say anything about the person or thing the user wants forgotten?",
+                               true="yes, it says something about it", false="no, it says nothing about it")["p"]["yes"]
+    except Exception:  # noqa: BLE001 - not asked: the reader's choice stands
+        return True
+    # On the Olga request, entries about her read 0.68–0.75, the user's own at Lumen 0.36–0.47;
+    # asked "is this entry about what is to be forgotten", it said yes to all five (2026-10-27).
+    return p >= 0.55
+
+
+@base.server.tool()
+async def task(text: str, ctx: Context) -> str:
+    """Gather the facts a task needs: candidates for a product, what an event is and when it is
+    on, sums over what the user told — anything that needs gathering, checking and comparing.
+    The memory gives facts and does not decide: choosing is yours, with the user. Give it in the
+    user's words; what the memory knows about the user — limits, wishes,
+    people, places — it adds itself, so don't restate it. It writes a program for the task, or
+    reuses one it kept for a task of the same kind, and runs it: from the memory, and from the web
+    when needed. Takes a few minutes. Returns what was found, how each candidate stands on the user's limits
+    and wishes with the words each stands on, what was ruled out, and the user's limits and wishes
+    as they said them."""
+    from proto import solve
+
+    out = base.ROOT / "var" / "solve" / f"{name}-{datetime.now():%Y%m%d-%H%M%S}"
+    out.mkdir(parents=True, exist_ok=True)
+    # In a thread: a task takes minutes, and the memory keeps answering meanwhile. And it says it
+    # is alive: a client that hears nothing for five minutes gives up on the call (Claude Code did,
+    # 2026-10-27), so a progress notification goes every twenty seconds until the answer.
+    work = asyncio.ensure_future(asyncio.to_thread(solve.run, text, name, engine, 2, out))
+    beat = 0
+    while not work.done():
+        await asyncio.wait({work}, timeout=20)
+        if not work.done():
+            beat += 1
+            try:
+                await ctx.report_progress(beat, None, f"working on the task: {beat * 20} s")
+            except Exception:  # noqa: BLE001 - a client that takes no progress still gets the answer
+                pass
+    return work.result()
+
+
+listener = None
+# What every MCP client is told, when the agent passes the conversation itself (no hooks).
+TWO_DOORS = (
+    "The user's personal memory. Pass it the conversation as it goes with `say`: each message of "
+    "the user's that touches their life — themselves, the people in it, home, health, work, plans, "
+    "wishes, what happened, a question about any of it, a request to find, pick or forget "
+    "something — as written, with your reply before it ({\"role\": \"agent\"}). What you read "
+    "(mail, files, pages) reaches it when you tell the user and they answer. It keeps "
+    "what matters and answers with what it holds that bears on it. When you need something about "
+    "the user, or something found for them, `ask` it. The memory gives facts, with the words they "
+    "stand on; deciding is yours, with the user."
+)
+
+
+def _solve(text: str) -> str:
+    from proto import solve
+    out = base.ROOT / "var" / "solve" / f"{name}-{datetime.now():%Y%m%d-%H%M%S}"
+    out.mkdir(parents=True, exist_ok=True)
+    return solve.run(text, name, engine, 2, out)
+
+
+def _journal_changed() -> None:
+    if world is not None:
+        world.send("sync", structure, held())
+
+
+async def say(messages: list[dict], ctx: Context, now: str | None = None) -> str:
+    """Pass the conversation to the user's memory as it goes: each message as written, with who
+    said it — {"role": "user", "text": ...}, {"role": "agent", "text": ...} for your own reply
+    before it. Every message that touches the user's life; what you read reaches the memory when
+    the user answers it. The memory keeps what is worth keeping, and
+    answers with what it holds that bears on it — facts, with the words they stand on; deciding
+    is yours, with the user. A question of the user's is kept as their interest, not answered
+    here: `ask` the memory for what you need, and for anything to be found. A request to forget is
+    done once the user confirms. `now`: the current date and time."""
+    if hooked(ctx):
+        return HOOKED
+    return await listener.say(messages, now, wait=True, progress=_beat(ctx))
+
+
+# A client whose hooks pass every message (the Claude Code plugin says so in its .mcp.json) is not
+# heard through `say` as well: the same message would be kept twice. The header is the client's
+# word, not an identity — enough to stop a duplicate, nothing is opened by it.
+HOOKS_HEADER = "x-personal-hooks"
+HOOKED = ("Not taken: your client's hooks already pass every message of this conversation to the "
+          "memory. Pass nothing yourself; `ask` it for what you need.")
+
+
+def hooked(ctx: Context) -> bool:
+    try:
+        headers = ctx.headers or {}
+    except ValueError:  # outside a request
+        return False
+    return str(headers.get(HOOKS_HEADER, "")).lower() == "on"
+
+
+async def ask(question: str, ctx: Context) -> str:
+    """Ask the user's memory something you need: "what is Tom's surname?", "what limits a purchase
+    for the flat?", or ask it to find something — "candlelight concerts in Belgrade this winter" —
+    which takes a few minutes. It answers with facts and the words they stand on, from what it
+    holds and, for a search, from the web; the decision is yours, with the user."""
+    return await listener.ask(question, wait=True, progress=_beat(ctx))
+
+
+def _beat(ctx: Context):
+    async def beat(n: int) -> None:
+        try:
+            await ctx.report_progress(n, None, f"gathering: {n * 20} s")
+        except Exception:  # noqa: BLE001 - a client that takes no progress still gets the answer
+            pass
+    return beat
+
+
+@base.server.custom_route("/say", ["POST"])
+async def http_say(request):
+    """`say` for a hook: {"messages": [...]}, or {"message": ..., "role": ...}. Answers at once with
+    what the memory holds that bears on it; nothing is searched for from here."""
+    from starlette.responses import PlainTextResponse
+    body = await request.json()
+    messages = body.get("messages") or [{"role": body.get("role", "user"), "text": body.get("message", ""),
+                                         "source": body.get("source", "")}]
+    return PlainTextResponse(await listener.say(messages, body.get("now"), wait=bool(body.get("wait", False))))
+
+
+@base.server.custom_route("/interests", ["GET"])
+async def http_interests(request):
+    """What the user wanted to know, and whether an answer is ready: for a look, not for the agent."""
+    from starlette.responses import JSONResponse
+    return JSONResponse(listener.interests())
+
+
+@base.server.custom_route("/notes", ["GET"])
+async def http_notes(request):
+    """What the memory came to since it last answered, waiting up to `wait` seconds for it."""
+    from starlette.responses import PlainTextResponse
+    until = asyncio.get_running_loop().time() + float(request.query_params.get("wait", 0))
+    while not listener.notes and asyncio.get_running_loop().time() < until:
+        await asyncio.sleep(2)
+    return PlainTextResponse("\n\n".join(listener.take_notes()) or "nothing")
+
+
 def main() -> None:
-    global structure, world, search
+    global structure, world, search, name, engine, listener
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--name", default="main", help="var/proto/<name>/: facts.md and structure.jsonl")
     parser.add_argument("--model", default="nvidia/nemotron-3-super-120b-a12b",
@@ -170,12 +325,16 @@ def main() -> None:
     parser.add_argument("--port", type=int, default=7110)
     parser.add_argument("--host", default="127.0.0.1",
                         help="0.0.0.0 to serve the local network, behind a bearer token")
+    parser.add_argument("--engine", default="tavily", help="the search engine `task` uses: tavily, keenable")
+    parser.add_argument("--tools", choices=["two", "all"], default="two",
+                        help="two: the agent sees `say` and `ask` only; all: every call, for experiments")
     parser.add_argument("--no-world", action="store_true",
                         help="keep the journal and the index only: no world said into, nothing read")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
     where = base.ROOT / "var" / "proto" / args.name
+    name, engine = args.name, args.engine
     base.facts, base.model = where / "facts.md", args.model
     structure = Structure(where / "structure.jsonl", base._keep, held)
     if not args.no_world:
@@ -187,6 +346,23 @@ def main() -> None:
     search = Search(structure, lambda: {n: t for n, _, t in base._entries(base._memory())},
                     where / "vectors.jsonl", image=(lambda: world.image) if world else None)
     base.narrow = lambda question: search.find(question, limit=12)
+    base.confirm_forget = confirm_forget
+    from proto.listen import Listener
+    listener = Listener(base, base._keep, base.context, base.ask, _solve, _journal_changed,
+                        interests_path=where / "interests.jsonl", heard_path=where / "heard.jsonl",
+                        embed=lambda texts: search._encoder().embed(texts))
+    listener.load_interests()
+    # Two doors (docs/decisions.md, 2026-10-27): the conversation goes in by `say` — from a hook,
+    # where the agent has hooks, or from the agent — and the agent asks by `ask`. The rest stays
+    # for experiments and tests, behind --tools all.
+    if args.tools == "two":
+        for tool in [t.name for t in asyncio.run(base.server.list_tools())]:
+            base.server.remove_tool(tool)
+        base.server._lowlevel_server.instructions = TWO_DOORS
+    else:
+        base.server.remove_tool("ask")
+    base.server.add_tool(say, name="say")
+    base.server.add_tool(ask, name="ask")
     base.serve(args.port, args.host)
 
 

@@ -1,0 +1,3 @@
+Is the question below something the user asks in their last message — all of it, or one of the things they ask?
+yes, the user asks it
+no, the user does not ask it

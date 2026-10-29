@@ -1,51 +1,35 @@
 ---
 name: personal-memory
-description: The user's personal memory — the system where everything about the user is kept. Anything directly about the user goes through it, always — who they are, the people in their life, health, plans and dates, home, work commitments, preferences, what happened — including things said in passing in the middle of an unrelated task. Save such facts the moment they come up with the memory's `run` tool, naming the people, places and events as variables; look things up before answering anything that could depend on who the user is.
+description: The user's personal memory — the system where everything about the user is kept: who they are, the people in their life, health, plans and dates, home, work, preferences, what happened. In the personal world it hears this whole conversation by itself and puts what it holds beside each message; ask it with `ask` whenever something you need could depend on who the user is, or when the user wants something found for them.
 ---
 
-# Personal memory, by code
+# Personal memory
 
-The memory's `run(code, now)` tool runs Python in which you name what the user talks about and
-say what is true of it. Variables last between your runs in this conversation, so a person you
-made once is `anna` from then on. Pass `now` with every run: the current date and time as you know
-them (`"2026-10-15T14:30"`), which is when the facts were said.
+In the personal world (`/personal`, or a session started with `claude-personal`) the memory hears
+the conversation by itself: every message of the user's and every reply of yours goes to it, it
+keeps what matters about the user, and what it holds about each message is put beside it, marked
+"From the user's personal memory". You don't pass anything and you don't decide what is kept:
+never call `say` — the memory refuses it from you, since the hooks have passed the message already.
 
-```python
-anna = entity("Anna", "Anna is the user's sister.", kind="person")   # kind: any word, optional
-olga = entity("Olga")
-anna.say("Anna moved from Lisbon to Porto in September 2026.")
-link(anna, olga, "Anna and Olga work together at Brightwork.", as_="colleague")
-event("Anna's wedding", "Anna marries Tom on 2027-06-12 in Porto.", when="2027-06-12", who=[anna, tom])
-print(anna.about())                     # every entry about Anna, as told
-```
+**Ask it** with `ask(question)` when you need something it did not give: "what is Tom's surname?",
+"what limits a purchase for the flat?". And when the user wants something found or picked — "pick
+me a robot vacuum", "what's that concert my wife mentioned, and when could we go" — `ask` it in
+words that stand alone ("candlelight concerts in Belgrade this winter"): it gathers from what it
+holds and from the web, which takes a few minutes. The user's questions it keeps only as what they
+care about; it answers you, not them.
 
-| Call | What it is |
-|---|---|
-| `entity(name, text=None, kind=None)` | a person, place, thing; `text` is a first fact about it |
-| `event(name, text, when=None, who=[...])` | something that happened or will |
-| `link(a, b, text, as_=None)` | what joins two things; `as_` is any word for it |
-| `x.say(text)` | a fact about one thing |
-| `x.about()` | what the memory holds about it |
-| `same(a, b)` / `different(a, b)` | your answer when the memory asks who is who |
-| `thing("t3")` | a thing the memory holds, by its id |
+**The memory gives facts, not decisions.** Its answers are what it holds and what it found, each
+with the words it stands on, and the user's own limits and wishes as they said them. Deciding is
+yours, with the user: choose from what it gave, say why in its terms, and name nothing it does not
+hold. Where the user's latest word contradicts the memory, the user wins — the memory heard it too.
 
-Every call that says something takes `source=`: `"conversation"` (the default) for what the user
-said, otherwise a file, a page, "email from Olga, 2026-10-09".
+**What you read.** An email, a file, a calendar, a page is not the user's word, and is not passed
+on by itself. Tell the user what bears on them; their answer reaches the memory, understood by
+your message before it.
 
-**The text is the fact.** Name the words as you like — `kind`, `as_`, the names — the memory
-sorts them out. What it cannot sort out is a sentence that does not stand alone: every text names
-what it is about ("Anna moved…", not "she moved…"), with absolute dates, as the user said it.
-Changes as changes: "Anna moved from Lisbon to Porto", not only "Anna lives in Porto".
+**When the memory asks.** Its answer may carry a question for the user ("Is Tom from the flat the
+same person as Tom Becker?") or ask to confirm a forget ("these entries would be taken out —
+confirm?"). Put it to the user at a natural point; their answer reaches the memory by itself.
 
-**The memory may ask you.** A run's answer can end with "The memory asks:" — most often whether a
-new `Anna` is one it already holds. Answer in your next run with `same(...)` or `different(...)`
-as the question gives them; if you cannot tell from the conversation, leave it, and the memory
-will ask the user.
-
-**Reading.** The other tools stay: `context` with the user's message before answering anything
-about their life, `ask` for one specific thing, `search_memory` for the entries themselves,
-`forget` when the user asks for something to be forgotten (it waits in a bin, and `forgotten`
-lists it until it is deleted for good), `questions` at a natural pause.
-
-What not to keep: passwords, keys, card numbers; details of the task at hand that say nothing
-about the user's life; what the memory just gave you back.
+Never pass passwords, keys, tokens or card numbers; the memory withholds them, but they should not
+leave the conversation at all.

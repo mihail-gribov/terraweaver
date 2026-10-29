@@ -45,8 +45,14 @@ Example. Text: "My manager at Lumen is Olga; she lives in Porto."
 "works_at", "says": "Olga works at Lumen", "quote": "My manager at Lumen is Olga"}}, {{"from": "Olga", "to": \
 "Porto", "as": "lives_in", "says": "Olga lives in Porto", "quote": "she lives in Porto"}}]}}
 
-{fields}Text{source}:
+{fields}{context}Text{source}:
 {text}"""
+
+CONTEXT = """What came before, and what is already known — to understand the text by (who "she", "my \
+team", "our office" are), not to read: take nothing from it, and quote only the text.
+{context}
+
+"""
 
 FIELDS = """Values: use exactly these attribute names, and no others —
 {listed}
@@ -85,13 +91,16 @@ def claim(name: str, meant: str, value) -> str:
     return f"{name} — {meant}: {value}"
 
 
-def read(text: str, want: str = "", source: str = "", fields: dict | None = None) -> dict:
-    """What the text states, checked: {"things": [...], "links": [...], "dropped": [...]}."""
+def read(text: str, want: str = "", source: str = "", fields: dict | None = None, context: str = "") -> dict:
+    """What the text states, checked: {"things": [...], "links": [...], "dropped": [...]}.
+    `context` — earlier entries and known things — is shown apart, to understand the text by; a
+    quote must stand in `text`, so nothing is kept on the context's words."""
     writer, decider = _models()
     said = writer.say("Answer exactly in the form asked.",
                       READ.format(want=f", about {want}" if want else "", source=f" ({source})" if source else "",
                                   fields=FIELDS.format(listed="\n".join(f"  {k}: {v}" for k, v in fields.items()))
-                                  if fields else "", text=text[:16000]), room=12000, thinking=False)
+                                  if fields else "", context=CONTEXT.format(context=context[:6000]) if context else "",
+                                  text=text[:16000]), room=12000, thinking=False)
     try:
         got = json.loads(said[said.find("{"):said.rfind("}") + 1])
     except ValueError:

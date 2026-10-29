@@ -4,16 +4,15 @@ Launched with PERSONAL_WORLD=on, the session is switched on at start. A session 
 mode is reminded of it after a compaction or a resume, since the line that said so may be gone.
 """
 import json
-import os
 import sys
 
-from common import ENTERED, is_on, say, switch
+from common import ENTERED, is_on, launched_on, say, switch
 
 
 def main() -> None:
     event = json.load(sys.stdin)
     session = event.get("session_id", "")
-    if event.get("source") == "startup" and os.environ.get("PERSONAL_WORLD", "").lower() in ("on", "1", "yes"):
+    if event.get("source") == "startup" and launched_on():
         switch(session, True)
     if is_on(session):
         say("SessionStart", ENTERED)

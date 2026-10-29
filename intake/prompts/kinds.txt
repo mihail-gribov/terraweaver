@@ -1,0 +1,4 @@
+What kind of request is it?
+know: to know or find something — a question, a search, a pick
+memory: to the memory itself — forget something, or don't keep something
+action: an action for the assistant — book, write, send, change something

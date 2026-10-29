@@ -340,6 +340,9 @@ async def search_memory(query: str, limit: int = 10) -> str:
 # takes out it puts in the bin first, with `to_bin([{...}])`, beside the entries, and returns
 # the lines to add to the answer. The journal knows nothing of what holds them.
 on_forget: list = []
+# confirm_forget(what, entry_text) -> bool: whether an entry the reader chose is what the user asked
+# to forget. None takes the reader's choice as it is.
+confirm_forget = None
 
 
 @server.tool()
@@ -350,10 +353,18 @@ async def forget(what: str, now: str | None = None) -> str:
     deleted for good after a set time (30 days by default). The request itself is kept, dated, in `what`'s words — so
     name what to forget by what it is, not by the detail to be dropped. `now` is the current date
     and time as you know them (2026-10-15T14:30): when the user asked."""
+    gone = await choose_forget(what)
+    if not gone:
+        return "Nothing was forgotten."
+    return await take_forget(gone, what, now)
+
+
+async def choose_forget(what: str) -> list[int]:
+    """The entries a forget request in words, or by numbers, would take out — nothing taken yet."""
     what = what.strip()
     held = {n for n, _, _ in _entries(_memory())}
     if not what or not held:
-        return "Nothing was forgotten."
+        return []
     # Numbers are taken as numbers, by code: the agent that read them from `search_memory`
     # knows exactly which entries it means, and a model has nothing to add to that.
     if re.fullmatch(r"(#\d+[\s,;]*(and\s+)?)+", what):
@@ -367,8 +378,18 @@ async def forget(what: str, now: str | None = None) -> str:
                          if n not in requests)
         said = await _read(FORGET.format(memory=_for_the_model(memory), what=what))
         gone = _numbers(said, held - requests, len(held))
-    if not gone:
-        return "Nothing was forgotten."
+        if confirm_forget is not None and gone:
+            # Each entry the reader chose is confirmed one by one: asked to forget "Olga, the
+            # user's former manager at Lumen", it took three entries about the user at Lumen with
+            # no Olga in them (2026-10-27).
+            texts = {n: text for n, _, text in _entries(_memory())}
+            gone = [n for n in gone if await asyncio.to_thread(confirm_forget, what, texts.get(n, ""))]
+    return list(gone)
+
+
+async def take_forget(gone, what: str, now: str | None = None) -> str:
+    """Take these entries out, into the bin, with what holds their words; the request is kept."""
+    what = what.strip()
     async with writing:
         # Read again under the lock: a `tell` may have landed while the model was reading.
         kept, taken = [], []

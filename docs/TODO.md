@@ -19,8 +19,87 @@ submission".
 where the typecastlm training recipe lives (`typecastlm/package/scripts` has `export_head.py` and
 conversion, not the training).
 
+**After submission: apply for a Nebius AI Builder Program compute grant.** Announced 2026-10-19
+(https://nebius.com/blog/posts/ai-builder-program-in-europe): compute grants for independent
+developers, open-source builders, researchers and small teams in Europe, part of a $10M package
+with NVIDIA and Accel (also VC introductions, hackathons, demo days). Areas named: open models,
+coding agents, agent runtimes, inference tooling, post-training, RL, evaluations. The form is on
+the Builder Program pages (dev.nebius.com/builders).
+
 Ordered by what currently blocks progress. The focus is reading the world; write tasks are
 deliberately parked (see below).
+
+## Sorting what the user says (queued 2026-10-27, built 2026-10-28 in `intake/`)
+
+Agreed with the user, simple for now. The rewrite sees two messages, the agent's and the user's
+after it — what came earlier the memory already holds. Prompts in `intake/prompts/`.
+
+1. **The decision model, on the last four messages:** anything personal, or a request? No — done.
+2. **The big Nemotron (Super, thinking)**, the rewrite worded by the user: a new-topic flag; the
+   message rewritten to stand alone, references resolved from the agent's message only, a word
+   left as it is when the agent's message does not say what it means; the questions copied out.
+   No agent's message before it — the message as said.
+3. **Each question** by the decision model: the user's? Its kind: know or find, the memory, an
+   action.
+
+Measured 2026-10-28 on the three dialogues of `experiments/13_dialogues`, 16 hand checks, six
+runs: 14, 16, 14, 13, 15, 14. Unsteady: "Which of those" gets the concert the agent named in 2 of
+6 (the user: not critical); a question now and then not copied out.
+
+Subtasks:
+1. **Forget — left for later (the user, 2026-10-28); so is "don't keep this": personal data beyond the `SECRETS` regex is the agent's for now.** "Please forget everything about Olga" is
+   reworded in 4 of 6 runs (once to "everything you told me about Olga", which narrows it) and
+   not copied out as a request in 4 of 6.
+2. **The personal gate's wording**, measured on a labelled set. Hard cases: a personal aside in a
+   work task, work facts that are the user's life ("I started at Brightwork in March"), general
+   questions with a personal reason, pasted text with a name in it. The three dialogues hold no
+   work message, so the gate's "no" is untested.
+3. **The new-topic flag**, measured on `data/contexts/history.py` against the embedding gap (F1
+   0.73).
+4. **A labelled set:** about 100 user messages, each with the agent's message before it, with what
+   they hold; MemOps and LongMemEval through `intake/sources.py`.
+5. ~~**Into `say`**~~ — done 2026-10-28: `proto/listen.py` reads through the intake.
+
+## Preparing by the user's interests (queued 2026-10-28, the world's — f8)
+
+The user's questions are kept in `interests.jsonl` beside the journal (`proto/listen.py`):
+`{"id", "asked", "by": "user", "at"}`, and `{"id", "asked_again"}` for each repeat. They are not
+answered or searched for (docs/decisions.md, 2026-10-28). They should order what the world reads
+and structures in the quiet: the texts a frequent or recent interest bears on first, so that the
+agent's next `ask` about it finds them ready. Only what the memory holds; no web from here.
+Measure: the same `ask` before and after the world prepared it — time and what it gives.
+
+## The host's own web search beside the memory's (queued 2026-10-28, to think through)
+
+`experiments/13_dialogues` turns the host's WebSearch/WebFetch off, so all finding goes through
+`ask`. A real host has its own search. Open: does it search itself, ask the memory, or both; and
+what it finds — a page the agent read — reaches the memory only through the user's answer.
+
+## Cutting the journal into contexts, and joining a context across sessions (queued 2026-10-27)
+
+What is said together should be read together: work with work, the cats with the cats, even when
+both pass in one session, and a context left yesterday and taken up today is one context. Neither
+a session nor a message is that unit, so neither is the truth to measure by. Material:
+`data/contexts/` — `history.py`, 64 entries over 12 sessions in the agent's style, each tagged at
+writing with its context (8: job, cats, flat, trip, health, vacuum, sister, running);
+`contexts.py` measures on it; `topics.py` measured the same on the dialogue journals, by message.
+
+Measured 2026-10-27 (bge-small, the vectors search already keeps beside the journal):
+- **cut** where two neighbouring entries are less alike than 0.6: precision 0.71, recall 0.75 on
+  the labelled history (0.84 / 0.72 against messages in experiments/13_dialogues). Work → cats is
+  cut every time (0.35–0.43).
+- **link** a fragment to the most alike earlier fragment: its own context 13/13. Embeddings rank well.
+- **join** by a threshold ("same context, or new?"): pair F1 at most 0.68 — no threshold separates
+  them; inside one context similarity drops to 0.43, across two it reaches 0.73.
+
+To do: embeddings propose, the judge settles. Cut below 0.5, keep above 0.7, and ask the judge in
+between: "does this entry go on the same conversation?". Join each fragment to its nearest earlier
+one only when the judge says "it goes on that one". Measure on `data/contexts`, then on a second
+history written apart. Then use it: the world reads by context instead of by size (`proto/world.py`,
+f8's), a name's identity is judged against the contexts it was said in ("Tom" the flatmate and
+"Tom Becker" the manager are in the labelled history on purpose), and a task gets its facts with
+their contexts. Open: whether my own labels at the edges are right — knee pain after a run is
+"running" or "health"?
 
 ## Skill tests: what the world must be able to do, with a real agent, three times each (queued 2026-10-05)
 
