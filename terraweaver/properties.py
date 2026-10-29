@@ -20,7 +20,7 @@ From that come two lists, and the second is the more valuable:
   property, with the number of cases behind it — evidence, not proof. Nobody's world has two
   mothers in it, but nor does it have many mothers at all, and "never seen twice in eleven cases"
   is a proposal, not a law. What settles it is knowledge about the world in general, which is the
-  model's to bring (docs/architecture.md: a judgement about language or the world, kept once and
+  model's to bring (docs/engine/architecture.md: a judgement about language or the world, kept once and
   used for everyone) — and it lands as a proposal that is applied only after a rebuild shows
   nothing broke.
 - **contradicted**: the type declares it and the data breaks it. That is a rule this world would
@@ -95,7 +95,7 @@ class Observed:
             out.append(f"declared irreflexive, but {self.self_links} point at themselves")
         # Through `rule`, not off the spec: a `part_of` or `kind_of` nature is acyclic by what it
         # means, and read from the key alone a part that contains its own whole went unremarked
-        # (docs/code-review-2026-09-30.md 3.2.16).
+        # (docs/archive/code-review-2026-09-30.md 3.2.16).
         if relations.rule(spec, "acyclic") and self.cycles:
             out.append(f"declared acyclic, but {self.cycles} cycle(s) exist")
         for role, most in sorted(self.per_role.items()):
@@ -176,7 +176,7 @@ def _at_once(links: list) -> int:
     # handover — one link ends the day the next begins — counts as two held at once, and
     # `contradicts()` then reports every handover the world itself made as a broken
     # one-at-a-time rule, which is what `findings()` puts on the agenda
-    # (docs/code-review-2026-09-30.md 3.2.1).
+    # (docs/archive/code-review-2026-09-30.md 3.2.1).
     for _, change in sorted(moments, key=lambda pair: (pair[0], pair[1])):
         held += change
         most = max(most, held)

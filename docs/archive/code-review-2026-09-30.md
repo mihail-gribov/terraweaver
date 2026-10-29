@@ -1,7 +1,7 @@
 # Code review, 2026-09-30
 
 A review of the whole `terraweaver/` package (54 modules, ~20k lines), `benchmarks/`, `scripts/`
-and `tests/`, against `docs/architecture.md` and the rules in `docs/decisions.md`. Branch
+and `tests/`, against `docs/engine/architecture.md` and the rules in `docs/decisions.md`. Branch
 `facts` at commit `9045ab8`.
 
 **Method.** Every module was read in full. Every finding marked *(reproduced)* was reproduced on
@@ -226,7 +226,7 @@ engineer emits an extra attribute key) and an `ImportError` in procedures into s
 
 ### 2.10 Documentation versus code
 
-`docs/architecture.md` was written "before the work rather than after it" and has not been
+`docs/engine/architecture.md` was written "before the work rather than after it" and has not been
 brought back to what was built. Contradictions a reader will trip on:
 
 - **Two databases.** The doc promises `var/world.db` + `var/agenda.db` and "the agenda refers, it
@@ -284,7 +284,7 @@ one-line pointer in the code. Inline, it makes a 154-line method out of 40 lines
 ### 2.12 Tests
 
 - 26 scripts, all passing, each its own runner with its own `check()`; there is no `pytest` or
-  `unittest` entry point, so nothing runs them all, and `docs/DEV.md` lists a loop over four of
+  `unittest` entry point, so nothing runs them all, and `docs/archive/DEV.md` lists a loop over four of
   them.
 - Eight modules are referenced by no test: `agentfile`, `inspector`, `llm`, `onboarding`,
   `restructure`, `selecting`, `sentences`, `ticks`. `sandbox`, `server`, `portraits`, `graph`,
@@ -536,7 +536,7 @@ In order; the first four are each under a day and remove a class of bug rather t
    with the engineer contract (3.4.1) and the four runtime highs (3.3.1–3.3.4).
 5. **Sessions own their state**: clock, sandbox module namespace, and the current world bound
    per class or via `contextvars` (2.2).
-6. **Bring `docs/architecture.md` back to the code** (2.10): one database, `Task` not tickets,
+6. **Bring `docs/engine/architecture.md` back to the code** (2.10): one database, `Task` not tickets,
    the 54 modules, whole-file growth, `history.py`'s status. Move inline decision logs to
    `docs/decisions.md` with a pointer.
 7. **Split the three god modules** along the seams named in 2.6; make `WorldView` a mechanical

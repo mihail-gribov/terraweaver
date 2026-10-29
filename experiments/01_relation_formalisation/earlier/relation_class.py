@@ -124,7 +124,7 @@ class Relation:
     word. No `over_time`: a period belongs to the statement, not to the type. No cardinality:
     "how many were there ever" is not a question about a type — history always accumulates,
     because the record is only ever added to. The one question about how many is about a
-    moment (`docs/relation-properties.md`, part three).
+    moment (`docs/archive/relation-properties.md`, part three).
     """
     subject_is: str = ""          # what the subject IS in this link: "capital", "mother"
     object_is: str = ""           # and the other end: "country", "child"

@@ -64,7 +64,7 @@ def lines(engineer, asked: str) -> tuple:
         # Whatever word the fence was opened with, and there are several: "python", "py", "py3",
         # sometimes the language of the day. Stripping only "python" left `py` standing as the
         # first line of the block, which is a `NameError` on line one and the whole block unwritten
-        # (docs/code-review-2026-09-30.md 3.4.11).
+        # (docs/archive/code-review-2026-09-30.md 3.4.11).
         first, newline, rest = said.partition("\n")
         if first.strip() and first.strip().isalnum() and len(first.strip()) <= 12 and newline:
             said = rest

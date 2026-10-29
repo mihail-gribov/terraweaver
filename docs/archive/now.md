@@ -14,7 +14,7 @@ time it appears, with what it was, or it will be diagnosed from scratch again.
 ## Why we circled (2026-09-30, written after a day of it)
 
 1. **Fixed what a reader found, not what the data said.** Thirty-odd defects out of
-   `docs/code-review-2026-09-30.md`, every one real and every one tested — and not one of them
+   `docs/archive/code-review-2026-09-30.md`, every one real and every one tested — and not one of them
    was known to cost a fact. The measurement of *why facts are missing*
    (`experiments/why_it_failed.py`) was written at the end of the day. It should have been first:
    it takes minutes, costs nothing, and it names the causes in order of size.
@@ -70,7 +70,7 @@ State on 2026-10-02. Three of the world's own causes are closed, worth about 62 
    its number, and grep its server log for the name guard.
 
 Not on this list until the number moves: the picker on Nemotron, research as "pick it for me", the
-demo. And `docs/architecture.md`, `contextvars`, the god modules — all argued in `decisions.md`.
+demo. And `docs/engine/architecture.md`, `contextvars`, the god modules — all argued in `decisions.md`.
 
 ---
 

@@ -244,7 +244,7 @@ class Meanings:
         Skipped outright when nothing has been said since the last refresh. The embedding was
         already incremental — a digest per text — but *finding out* what to embed walks every
         class of the world twice, and that walk ran on every `like()`, `entities()` and
-        `similar()` (docs/code-review-2026-09-30.md 2.4). Everything it reads is derived from the
+        `similar()` (docs/archive/code-review-2026-09-30.md 2.4). Everything it reads is derived from the
         statements, so the record's own write count is the honest witness.
         """
         mark = getattr(getattr(world, "facts", None), "writes", None)
@@ -273,7 +273,7 @@ class Meanings:
 
         The index as a cache, which is what it is. `twins()` and `classes_like()` re-embedded
         every class name and description on every `define` — a network call proportional to the
-        vocabulary, inside a host's ten-second run (docs/code-review-2026-09-30.md 3.4.3, 3.3.15).
+        vocabulary, inside a host's ten-second run (docs/archive/code-review-2026-09-30.md 3.4.3, 3.3.15).
         Here the ones already known cost nothing and a new word costs one text.
         """
         known = {ref: (digest, model, raw) for ref, digest, model, raw in self.store.conn.execute(
@@ -463,7 +463,7 @@ class Meanings:
         # its validity. Listed here as well it was indexed twice: every hit came back twice and
         # ate the caller's `limit`, and the second copy was named `comment:N`, which `_holding`
         # does not filter, so a remark that had expired went on answering `like()`
-        # (docs/code-review-2026-09-30.md 3.4.7).
+        # (docs/archive/code-review-2026-09-30.md 3.4.7).
         #
         # Lists of texts come from the texts table, where each one has a name made from the
         # text itself. That name survives a rebuild and survives its neighbours being removed,

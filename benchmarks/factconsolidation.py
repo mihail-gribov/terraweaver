@@ -67,7 +67,7 @@ def load(hops: str = "sh", context: str = "6k") -> Variant:
             continue
         # One expression for "numbered line" and for what follows the number. Matched with `\s`
         # and split on ". ", a line numbered with a tab — "12.\tfact", which this file has —
-        # matched and then raised IndexError on the split (docs/code-review-2026-09-30.md 3.4.16).
+        # matched and then raised IndexError on the split (docs/archive/code-review-2026-09-30.md 3.4.16).
         numbered = (re.match(r"^\d+\.\s+(.+)$", line) for line in row["context"].splitlines())
         facts = [m.group(1).strip() for m in numbered if m]
         questions = [Question(qid, text, list(gold))

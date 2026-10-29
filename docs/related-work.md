@@ -45,7 +45,7 @@ belong in the same conversation, against the atomicity rule that the user set de
 
 ## 2. Our contradiction machinery has established names
 
-Everything in `docs/questions.md` turns out to be a known mechanism. Using the standard names
+Everything in `docs/archive/questions.md` turns out to be a known mechanism. Using the standard names
 costs nothing and buys the right to reuse their results:
 
 | what we built | what it is called |
@@ -199,7 +199,7 @@ anchored in a probe that was actually run.**
 - `pass^k` is what the runner reports for repeated runs, with the rollback rate beside it.
 - The passive `[open questions]` block no longer repeats on every contact: a doubt surfaces when
   a read depends on it, and once more as a batch when the task ends.
-- `docs/questions.md` and `docs/TODO.md` now carry the established names, so the next change
+- `docs/archive/questions.md` and `docs/TODO.md` now carry the established names, so the next change
   starts from what is known rather than from scratch.
 
 Still open, in order: a pre-commit check that reports all violations at once; a proposed-vs-

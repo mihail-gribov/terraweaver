@@ -156,7 +156,7 @@ class Facts:
         # read because there was no way to ask "has anything changed"; this is that way. A number
         # in memory and not in the database on purpose: a fresh process starts at zero and every
         # derivation rebuilds once, which is exactly right, and two processes never have to agree
-        # on anything (docs/code-review-2026-09-30.md 2.4).
+        # on anything (docs/archive/code-review-2026-09-30.md 2.4).
         self.writes = 0
         # Every subject something has been said about since this was last asked: what the images
         # that follow from the record have to be assembled again for (`rebuild.refresh`). Kept by
@@ -228,7 +228,7 @@ class Facts:
             # older `stated_at` than the row already has — a file re-read with the date it was
             # written on, a run under `set_now` — used to move `restated_at` back with it, and
             # `restated_at` is what "the later one" is resolved by, so an old telling could
-            # unseat a newer correction (docs/code-review-2026-09-30.md 3.1.5).
+            # unseat a newer correction (docs/archive/code-review-2026-09-30.md 3.1.5).
             #
             # Not fixed here, and named so it is not forgotten: the match ignores `run_id`, so if
             # run B says what run A already said, B's telling lands on A's row and
@@ -254,7 +254,7 @@ class Facts:
         due again."""
         # A basis given as an id is looked up, not taken on trust. Checked only on the objects
         # passed in, "never from conclusions" was bypassed by passing the id string of one, which
-        # is the shape every caller that keeps ids uses (docs/code-review-2026-09-30.md 3.1.10).
+        # is the shape every caller that keeps ids uses (docs/archive/code-review-2026-09-30.md 3.1.10).
         given = list(basis)
         for n, one in enumerate(given):
             if not isinstance(one, Statement):
@@ -365,7 +365,7 @@ class Facts:
             return False
         # Every basis looked up where it is, not among the conclusion's own subject's statements:
         # a basis about somebody else was never in that set, so it counted as retracted and the
-        # conclusion was stale the moment it was made (docs/code-review-2026-09-30.md 3.1.10).
+        # conclusion was stale the moment it was made (docs/archive/code-review-2026-09-30.md 3.1.10).
         live = {i for i in statement.basis if self._standing(i)}
         return _digest(sorted(live)) != statement.basis_digest
 
@@ -399,7 +399,7 @@ class Facts:
         By id, across every table and every subject. Read off the conclusion's own subject, a
         basis about somebody else was simply absent — and then `stale()` saw a basis it could not
         find and called the conclusion stale from the moment it was made
-        (docs/code-review-2026-09-30.md 3.1.10).
+        (docs/archive/code-review-2026-09-30.md 3.1.10).
         """
         if not statement.is_conclusion or not statement.basis:
             return []

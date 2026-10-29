@@ -74,7 +74,7 @@ class Procedures:
         # Checked, and compiled from what the check leaves — not from the text as written. The
         # check takes out the imports the world already offers, and the text still had them: the
         # procedure was defined without complaint and then raised `ImportError` on its first call,
-        # because host code has no `__import__` (docs/code-review-2026-09-30.md 3.3.11).
+        # because host code has no `__import__` (docs/archive/code-review-2026-09-30.md 3.3.11).
         runs = _as_it_will_run(body)     # raises SandboxViolation or SyntaxError, nothing stored
         compile(_as_a_function(signature, runs), f"<procedure {name}>", "exec")
         self.store.conn.execute(
@@ -162,7 +162,7 @@ class _Door:
     A procedure is the world's own code and is held to the same rules as the agent's — that is
     the promise at the top of this module, and it was not kept: `world` here was the real `World`,
     so `return world.store.conn` handed a procedure's caller the database connection
-    (docs/code-review-2026-09-30.md 3.3.11). What a procedure may reach is what the `run` door
+    (docs/archive/code-review-2026-09-30.md 3.3.11). What a procedure may reach is what the `run` door
     offers, which is `WorldView` — the same names, checked by the same list.
     """
 

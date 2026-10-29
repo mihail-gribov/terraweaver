@@ -55,7 +55,7 @@ def name_of(text: str) -> str:
 
 # What the table was built from, per connection: the number of writes the record had seen. A
 # rebuild is a DELETE and a walk over every statement in the world, and it ran on *every* search —
-# which is every `like()`, every `entities()`, every `similar()` (docs/code-review-2026-09-30.md
+# which is every `like()`, every `entities()`, every `similar()` (docs/archive/code-review-2026-09-30.md
 # 2.4). Keyed by the connection so two worlds in one process do not read each other's mark, and
 # held in memory so a fresh process always builds once.
 _BUILT_AT: dict[int, int] = {}

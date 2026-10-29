@@ -1,6 +1,6 @@
 # Library
 
-Papers kept locally because we refer back to them. One line per paper: file, what it is, why it is here.
+Papers we refer back to, with links; the PDFs stay local (not ours to redistribute). One line per paper: what it is, why it is here.
 
 - `2609.15779-evoontology.pdf` — Chong, Zhang, Fan, Du (Renmin U.), *EvoOntology: A Self-Evolving
   Ontology Layer for Data Agents*, arXiv 2609.15779, 14 Sep 2026. Code: https://github.com/ruc-datalab/EvoOntology.

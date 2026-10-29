@@ -61,7 +61,7 @@ def canonical(tag: str) -> str:
     """The form a tag is compared in — not the form it is stored in."""
     text = _TIDY.sub("-", str(tag).strip().lower())
     # Every run of dashes to one, not one pass of "--" to "-": `"a - b"` came out `"a--b"` and
-    # then failed to match `"a-b"` (docs/code-review-2026-09-30.md 3.2.17).
+    # then failed to match `"a-b"` (docs/archive/code-review-2026-09-30.md 3.2.17).
     return _RUN_OF_DASHES.sub("-", text.strip("-•,.;:!?"))
 
 
@@ -94,7 +94,7 @@ def holding(world, entity, at=None) -> list[str]:
     # re-derivation over every statement in the world, and it was run on every read of one
     # entity's tags — measured 0.24 s at 100 entities and 0.84 s at 200, with `vocabulary`,
     # `tagged`, `due_for_review`, `merge` and `selecting._carries` all coming through here
-    # (docs/code-review-2026-09-30.md 3.2.3).
+    # (docs/archive/code-review-2026-09-30.md 3.2.3).
     periods.rebuild_for(world, subject)
     return tidy(periods.holding(world, subject, "tags", at))
 
@@ -136,7 +136,7 @@ def tagged(world, tag: str, at=None, any_time: bool = False) -> list:
 
     Reads as everything else does: what holds now by default, `at=` for a moment in the past,
     `any_time=True` for anything that ever held it. The words are the same because the mechanism
-    is the same — a period on a statement (docs/time.md)."""
+    is the same — a period on a statement (docs/engine/time.md)."""
     entry = vocabulary(world, at, any_time).get(canonical(tag))
     return list(entry["entities"]) if entry else []
 

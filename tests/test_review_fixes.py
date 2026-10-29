@@ -1,4 +1,4 @@
-"""Tests for the findings of docs/code-review-2026-09-30.md, one test per finding.
+"""Tests for the findings of docs/archive/code-review-2026-09-30.md, one test per finding.
 
 Every high finding in that review sat on a path no test touched, which is why each of them
 survived a hundred runs. The fixes go in with a test here, named by the finding, so the next
@@ -926,7 +926,7 @@ def a_thing_made_by_hand_is_in_the_record_as_well_as_the_image() -> None:
 def what_a_run_changed_is_shown_as_the_record_says_it() -> None:
     """At the end of a run, the image of what it changed is the record's reading, not the object's.
 
-    Rule 4 of docs/architecture.md. A door that changes an object without saying it — the shell a
+    Rule 4 of docs/engine/architecture.md. A door that changes an object without saying it — the shell a
     failed load left, which nulled 31 names in a 455-fact world — must not reach the image.
     """
     from terraweaver import ontology

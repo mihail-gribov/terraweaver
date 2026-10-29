@@ -1124,7 +1124,7 @@ class World:
         # A bare string where a list was expected is taken as the one tag it plainly is. The
         # constructor tidies the image either way, so `Person(tags="vip")` looked right and then
         # lost the tag on the next rebuild, because nothing here stated it
-        # (docs/code-review-2026-09-30.md 3.2.7).
+        # (docs/archive/code-review-2026-09-30.md 3.2.7).
         told = attrs.get("tags")
         if isinstance(told, str) and told.strip():
             told = [told]

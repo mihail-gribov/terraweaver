@@ -194,7 +194,7 @@ def main() -> int:
           sorted(names(asked.similar)) == ["Anna Peterson", "Anna Sullivan"], str(names(asked.similar)))
     check("and it doesn't read as nothing at all", bool(asked) is True and list(asked) == [])
 
-    # --- when there is no answer, say what was probably meant (docs/architecture.md) ---
+    # --- when there is no answer, say what was probably meant (docs/engine/architecture.md) ---
     def refusal(action):
         try:
             action()

@@ -110,7 +110,7 @@ def _links_without_rules(world) -> str | None:
 
     Finding the candidates is deterministic and cheap, so it happens here. Working out the
     properties is not: it needs the model and a look at how the label is used, which is work for
-    the agenda (docs/architecture.md) and is stated as a proposal, never applied silently.
+    the agenda (docs/engine/architecture.md) and is stated as a proposal, never applied silently.
     """
     if "Related" not in world.classes:
         return None
@@ -218,7 +218,7 @@ def _tags_worth_reviewing(world) -> str | None:
 
 def _unused_attributes(world) -> str | None:
     """What the class offers and nobody fills. Not removed — counted: a schema grows and shrinks
-    on evidence, and this is where the evidence accumulates (docs/schema-growth.md)."""
+    on evidence, and this is where the evidence accumulates (docs/engine/schema-growth.md)."""
     idle = []
     for name, cls in world.classes.items():
         if "relation" in cls._spec:

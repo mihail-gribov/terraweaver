@@ -12,7 +12,7 @@ three things in order:
 
 The first "no" is the stage. Written down on 2026-10-02 after a day of laying run9's answers out by
 hand: the first version of that table was wrong because it read three copies of Germany as one
-(docs/now.md), so the copies of a name are counted before its links are read.
+(docs/archive/now.md), so the copies of a name are counted before its links are read.
 """
 import argparse
 import collections

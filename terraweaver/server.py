@@ -366,7 +366,7 @@ def main() -> None:
                         help="hide define_relation: the host says facts in words and the world "
                              "works out the types (an experiment; see authoring.install)")
     parser.add_argument("--blank", action="store_true",
-                        help="no classes at all: the host defines the ontology (docs/open-ontology.md)")
+                        help="no classes at all: the host defines the ontology (docs/engine/open-ontology.md)")
     parser.add_argument("--specs", default=None,
                         help="a directory of class specs to open a host-built world with")
     parser.add_argument("--reading-at-close", type=float, default=None,
@@ -390,7 +390,7 @@ def main() -> None:
         # it is opened the way `open_world` opens one — a bare name is a world's name and becomes
         # `<worlds>/<name>/world.db`, not a file called `mike` in whatever directory the server
         # was started from — and either way it is given an engineer, which these two branches
-        # never did (docs/code-review-2026-09-30.md 3.3.13).
+        # never did (docs/archive/code-review-2026-09-30.md 3.3.13).
         from terraweaver import authoring, where
 
         db, home = args.db, None

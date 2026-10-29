@@ -49,7 +49,7 @@ ones that aren't. Three things can close a question, and they are not interchang
 
 The world may ask the host to check something with the user; it may equally settle a matter of
 form from a reliable source instead of asking. Reaching those sources is the deferred work in
-`docs/ideas-research.md`; the record keeps room for it now so it isn't bolted on later.
+`docs/archive/ideas-research.md`; the record keeps room for it now so it isn't bolted on later.
 
 ## Three moments to ask, and only three
 

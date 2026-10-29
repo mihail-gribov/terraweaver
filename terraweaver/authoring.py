@@ -172,7 +172,7 @@ class Authoring:
         if parent and str(parent).strip() and str(parent).strip() not in self.world.classes:
             # Dropped in silence, the class was made at the top of the tree and nothing said so —
             # and where a class sits is what every later walk down the tree reads
-            # (docs/code-review-2026-09-30.md 3.4.13).
+            # (docs/archive/code-review-2026-09-30.md 3.4.13).
             from terraweaver.ontology import did_you_mean
 
             near = did_you_mean(str(parent).strip(), list(self.world.classes))
@@ -428,7 +428,7 @@ class Authoring:
         # Given, it is still read; not given, the type claims nothing beyond the link itself.
         # The paper's word for a nature is the same nature. `AS_WRITTEN` exists for exactly this
         # and `Type.nature = "composition"` already goes through it, while this door refused it
-        # (docs/code-review-2026-09-30.md 3.4.13).
+        # (docs/archive/code-review-2026-09-30.md 3.4.13).
         if nature is not None:
             nature = AS_WRITTEN.get(str(nature).strip().lower(), nature)
         if nature is not None and nature not in NATURES:
@@ -638,7 +638,7 @@ class Authoring:
         # The name, which is what the keys are, and not the description that follows it. Callers
         # pass "<name>. <description>", and `[-1]` took everything after the last full stop — so
         # the spelling check compared a sentence against a list of class names and never matched
-        # (docs/code-review-2026-09-30.md 3.4.13).
+        # (docs/archive/code-review-2026-09-30.md 3.4.13).
         guess = did_you_mean(wanted.split(". ", 1)[0], list(known))
         if guess:
             found.append((guess, known[guess]))
@@ -646,7 +646,7 @@ class Authoring:
             # Through the index, and on a deadline. The known words are embedded once and kept, so
             # this pays for the one text it is asking about — and even that is bounded, because
             # this runs inside the host's own ten-second run and a block of defines on a busy
-            # machine lost the whole block to the wait (docs/code-review-2026-09-30.md 3.4.3).
+            # machine lost the whole block to the wait (docs/archive/code-review-2026-09-30.md 3.4.3).
             # Not answered in time, the meaning check is left to the pass at the close.
             from terraweaver import meaning
 
@@ -676,7 +676,7 @@ class Authoring:
         written with the old rules. And a new word could be another type's reverse — `founded_by`
         is made with reverse `founded`, and then `define_relation("founded", …)` gave two types
         answering to one word, with `resolve_kind` returning whichever it reached first
-        (docs/code-review-2026-09-30.md 3.4.5, 3.4.6).
+        (docs/archive/code-review-2026-09-30.md 3.4.5, 3.4.6).
 
         Neither is refused outright, because a host that says a word twice is not making a mistake
         worth a run: what it asked for exists, so it is handed the type that holds it and told

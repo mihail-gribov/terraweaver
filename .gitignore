@@ -13,3 +13,4 @@ data/longmemeval/
 data/memoryagentbench/
 benchmarks/results/
 machine/
+docs/library/*.pdf

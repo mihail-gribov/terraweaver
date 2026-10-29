@@ -3,7 +3,7 @@
 #
 # Logs every run to var/hackathon-check.log and raises a desktop notification
 # only when the pages actually moved. Snapshots are NOT auto-updated: the diff
-# has to be read by a human (and logged in docs/about.md) before it is accepted.
+# has to be read by a human (and logged in docs/archive/about.md) before it is accepted.
 
 set -uo pipefail
 

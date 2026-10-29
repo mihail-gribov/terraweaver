@@ -159,7 +159,7 @@ def spoken_of(world, subjects) -> list:
 def refresh(world, entities) -> int:
     """The images of these things assembled from the record, into the objects already held.
 
-    Rule 4 of docs/architecture.md, after every run rather than only at the close: whatever a door
+    Rule 4 of docs/engine/architecture.md, after every run rather than only at the close: whatever a door
     put on an object, what the image holds when the run ends is what the statements say. Into the
     same objects, so every variable a host holds still holds the thing; from the subjects each was
     already made of, so nothing is glued or split here. The two parties are left alone — the tie

@@ -92,7 +92,7 @@ def main() -> int:
         print("\n".join(diff))
 
     if changed:
-        print("\nReview the diff, then run with --update and log the check in docs/about.md.")
+        print("\nReview the diff, then run with --update and log the check in docs/archive/about.md.")
     return 1 if changed else 0
 
 

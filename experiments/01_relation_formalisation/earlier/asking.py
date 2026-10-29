@@ -6,7 +6,7 @@ record this link** is open and goes to the engineer.
 
 What is asked for is **code**, not a description the world then renders. That is the argument this
 experiment exists to settle: the relation door in the working code asks for data because the shape
-of what is written is ours (`docs/relation-properties.md`, part seven), the entity door asks for a
+of what is written is ours (`docs/archive/relation-properties.md`, part seven), the entity door asks for a
 class and the code to fill a thing in, and the entity door ran better. Code is asked for here for
 the reason it is asked for there — it runs through the door a host's code runs through, so every
 refusal the world makes of a host it makes of this, and a reading can express whatever a host could

@@ -199,7 +199,7 @@ def main() -> int:
     # back newest first by the day the thing happened, falling back to the day it was recorded —
     # so a `when` that has since *become* today sorts behind a remark recorded at 02:21 today, and
     # the order flips. Written as 2026-10-01, this test passed for months and began failing on
-    # 2026-10-01 (docs/now.md, flickers).
+    # 2026-10-01 (docs/archive/now.md, flickers).
     ada.describe("might move to Berlin", when=date.today() + timedelta(days=30), tentative=True)
     texts = [c.text for c in ada.described()]
     check("remarks come back newest first", texts == ["might move to Berlin", "allergic to nuts"], str(texts))

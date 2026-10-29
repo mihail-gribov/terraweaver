@@ -200,7 +200,7 @@ def clusters(facts, rule: Callable[[list, list], bool] = same_name) -> dict[str,
         # And a rule's match may not undo what the user separated. `told_apart` was honoured for
         # the direct pair only, so "a is b" told plus a rule match between b and c joined a and c
         # — two people the user had said were different, in one image
-        # (docs/code-review-2026-09-30.md 3.1.6). `_kept_apart` was written for this and had no
+        # (docs/archive/code-review-2026-09-30.md 3.1.6). `_kept_apart` was written for this and had no
         # caller; it asks the question of the groups as they stand, which is the only place the
         # answer is knowable.
         if _kept_apart(told_apart, find, a, b):
@@ -272,7 +272,7 @@ def holds_many(specs: dict | None, class_name: str | None, slot: str) -> bool:
 
     Two email addresses are not a disagreement — they are two addresses. Two employers at once
     are. Which is which is not for the assembler to guess: the class says so, by declaring the
-    slot a list or not, and that is a level-2 decision (`docs/architecture.md`)."""
+    slot a list or not, and that is a level-2 decision (`docs/engine/architecture.md`)."""
     spec = (specs or {}).get(class_name or "", {})
     declared = next((a.get("type", "") for a in spec.get("attributes", []) if a["name"] == slot), "")
     return declared.startswith("list[")
@@ -295,7 +295,7 @@ def resolve(statements: list, at: datetime | None = None):
     # made in the same moment used to be separated by the *string* id, where `facts_Person:10`
     # sorts before `facts_Person:9`, and a reverse sort is stable, so the earlier of the two won.
     # Under `set_now` — the replay the record exists for — every correction in a run has the same
-    # `last_said` and the first one written kept the slot (docs/code-review-2026-09-30.md 3.1.3).
+    # `last_said` and the first one written kept the slot (docs/archive/code-review-2026-09-30.md 3.1.3).
     standing.sort(key=lambda s: (facts_module.trust(s.source), s.last_said, _row_of(s)),
                   reverse=True)
     best = standing[0]
@@ -335,7 +335,7 @@ def assemble(facts, rule: Callable[[list, list], bool] = same_name, at: datetime
     The moment is settled once, here, and on the world's clock. Read three times from
     `datetime.utcnow()` further down, the images resolved at the wall clock while `happening()`
     answered on the world's `now`, so the two disagreed under `set_now` — which is the mode the
-    record was built to be replayed in (docs/code-review-2026-09-30.md 3.1.4).
+    record was built to be replayed in (docs/archive/code-review-2026-09-30.md 3.1.4).
     """
     from terraweaver import timeutil
 

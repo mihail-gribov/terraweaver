@@ -381,7 +381,7 @@ to them, and make them present in every world, not only in `job_search`.
 
 The world is served over MCP; the host agent writes code against the object model through
 `describe_world()` and `run(code)`. Everything else — procedural memory
-(`docs/procedural-memory.md`), `remember`, `research`, `extend` — builds on this loop, so it
+(`docs/engine/procedural-memory.md`), `remember`, `research`, `extend` — builds on this loop, so it
 comes first.
 
 ## A scenario needs its own world, not the fixture underneath
@@ -453,7 +453,7 @@ not have yet) or something looser, and how much of a page is worth keeping versu
 
 ## Giving a new link its rules: the parts not built
 
-The chain is described in `docs/architecture.md`. What exists: the trigger (`ticks.py`,
+The chain is described in `docs/engine/architecture.md`. What exists: the trigger (`ticks.py`,
 *loose-links* — a `related` label used three times or more) and the evidence
 (`properties.py` — what the links have ever done, and which declared rules the data breaks).
 What is missing is the middle: a ticket that asks whether the type already exists, brings the
@@ -478,7 +478,7 @@ The layer itself works — `facts.conclude(...)` with a basis, staleness when th
 
 - **the forms**: `ontology/judgements/` — what a judgement is *about*, what it is drawn from,
   what fields it has, and what work produces it. The third structure of classes
-  (`docs/architecture.md`), still only described.
+  (`docs/engine/architecture.md`), still only described.
 - **the machinery**: what to re-derive, when, on what budget. This is work for the agenda: one
   expensive job at a time, ordered by who is actually asked about.
 - **"why do you think that" reaching the ticket.** Today the answer is the judgement plus its
@@ -524,7 +524,7 @@ wired in: the write path comes first. (`USER.md` and `soul.md` are live — see 
 ## A hint the host ignores, a question the host answers itself
 
 Partly addressed: contradictions are now kept as open questions on the entity
-(`docs/questions.md`), so a doubt outlives the run that noticed it and comes back every time
+(`docs/archive/questions.md`), so a doubt outlives the run that noticed it and comes back every time
 anyone works with that entity. What is still open is below.
 
 Two failures from the same run, both host behaviour that the world can see but not prevent:

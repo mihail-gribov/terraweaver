@@ -2527,7 +2527,7 @@ answers. Found by reading, not by the run — the run never reached it, because 
 
 ## 2026-09-25 — `over_time` is gone: cardinality says how many, and it says it about a moment
 
-Decided long ago in `docs/relation-properties.md` (part three) and carried out now, because
+Decided long ago in `docs/archive/relation-properties.md` (part three) and carried out now, because
 experiment 01 measured what it cost. One axis, per end, about one moment:
 
     cardinality="many-to-one"    this thing has one of those at a time   -> functional
@@ -3891,7 +3891,7 @@ engineer returned no code at all.
 
 ## 2026-09-30 — the review's findings, fixed: eleven highs, and the two that were losing facts
 
-`docs/code-review-2026-09-30.md` is a read-only review of the whole package, written today at
+`docs/archive/code-review-2026-09-30.md` is a read-only review of the whole package, written today at
 `9045ab8`. It changed nothing, so nothing in this week's measurements was induced by it — that
 question is answered in its own section 5, with what the runs bear out and what they measured out.
 This entry is the other half: everything it found that was plainly wrong is now fixed, each with a
@@ -4005,7 +4005,7 @@ B also stated; keying on the run would make one row per run for every repeated f
 the dedup exists to prevent, and doing it properly needs a column that holds the runs — a schema
 change, and a schema change needs a gate. Both are named in the code where they live.
 
-**Not done, and deliberately.** `docs/architecture.md` still describes two databases, fifteen
+**Not done, and deliberately.** `docs/engine/architecture.md` still describes two databases, fifteen
 modules and tickets; bringing it back to the code is its own piece of work. The whole-file grown
 override of a preset class (2.10) is a design decision to argue, not a defect to patch. Splitting
 the three god modules and the five benchmark `main()`s is refactoring, and refactoring on the way
@@ -4156,7 +4156,7 @@ reading, which is a lesson this codebase had already learned and paid for once.
 `experiments/why_it_failed.py` is new and should have existed first: it reads the same expectations
 `check_expected` does and says, for each fact the world does not hold, which *shape* the failure
 is. On `var/run8/world` — 455 facts, 210 of 316 as owed, 66% — the other 105 came out as seven
-shapes, and three of them were the world's own. `docs/now.md` carries the table and the plan;
+shapes, and three of them were the world's own. `docs/archive/now.md` carries the table and the plan;
 `docs/decisions.md` carries why each fix is the shape it is.
 
 **29 facts — a failed load left a shell where the next lookup finds it.** `store._load` registers
@@ -4210,7 +4210,7 @@ and returns a moment rather than a string; the reading types a fact **as of when
 stands the earlier one. A fourth change — guarding the undated branch of `_hand_over` the way the
 dated branch is guarded — **was reverted**, because it turns correct supersession off entirely:
 both tellings stand in both orders, and losing supersession is worse than losing the 27. What it
-needs first is an answer to which branch of `_check_functional` ends what; `docs/now.md` holds that
+needs first is an answer to which branch of `_check_functional` ends what; `docs/archive/now.md` holds that
 as the open question.
 
 ## 2026-10-02 — the later telling stands whichever order it is read in, and the guard that was reverted was right
@@ -4405,7 +4405,7 @@ event appears on several sites, and a web fact goes stale.
 interests, a selection, a moment — with the profile owned by the person and nobody paying for a
 place in it. A mention nobody asked for needs an occasion in the conversation and always says why;
 the same for things to buy, where "don't, this is no better than yours" is a legitimate outcome.
-Scenarios in `docs/ideas-research.md`; the experiment is `experiments/04_web_search`.
+Scenarios in `docs/archive/ideas-research.md`; the experiment is `experiments/04_web_search`.
 
 **Open: interests leak through queries.** "Jazz, Berlin, Saturday" names no one, but thirty
 queries about the same interests make a profile at the search provider. It keeps the letter of

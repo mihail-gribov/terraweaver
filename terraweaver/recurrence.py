@@ -77,7 +77,7 @@ def read(every) -> Every | None:
     how_many = int(match.group(1) or 1)
     if how_many < 1:
         # "0 weeks" is not a step. It parsed, and then `which()` and `covers()` divided by it
-        # (docs/code-review-2026-09-30.md 3.1.13).
+        # (docs/archive/code-review-2026-09-30.md 3.1.13).
         raise ValueError(f"{every!r} steps by nothing: a repeat needs a step of one or more.")
     return Every(size * how_many, unit)
 

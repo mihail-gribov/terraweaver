@@ -284,7 +284,7 @@ def engineer_of(world):
     `outside.Open`. It is not a function, and anything here that wants a question asked wraps it
     in the asker for that question (`outside.namer` for the ends of a type). Calling it directly
     raises `TypeError`, which is how this whole pass was dead in the served world until
-    2026-09-30 — see docs/code-review-2026-09-30.md, finding 3.4.1.
+    2026-09-30 — see docs/archive/code-review-2026-09-30.md, finding 3.4.1.
     """
     return getattr(world, "engineer", None)
 
@@ -400,7 +400,7 @@ def name_the_ends(world, name: str, subject_is: str, object_is: str,
     rel = cls._spec.get("relation") if cls else None
     # Not the free type. It is what a bare link is an instance of — anything to anything, by
     # construction — so names for its two ends say nothing and would be read as a rule for
-    # checking every untyped link in the world (docs/code-review-2026-09-30.md 3.4.12).
+    # checking every untyped link in the world (docs/archive/code-review-2026-09-30.md 3.4.12).
     if not rel or rel.get("free") or rel.get("roles") or not (subject_is and object_is):
         return False
     # Who said it, kept beside it. Not so the class can be treated as a lesser kind — a class
@@ -536,7 +536,7 @@ def twins(world, close: float = 0.82) -> list[tuple]:
     # Through the index, so a word already seen costs nothing, and on a deadline, because this
     # runs from `on_new_type` inside the host's own ten-second run. Re-embedding the whole
     # vocabulary there was a network call per `define_relation`, and the wait could take the
-    # host's whole block with it (docs/code-review-2026-09-30.md 3.4.3). Not answered in time,
+    # host's whole block with it (docs/archive/code-review-2026-09-30.md 3.4.3). Not answered in time,
     # nothing is reported and the types stay marked unread for the pass at the close.
     from terraweaver import meaning
 

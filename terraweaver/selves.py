@@ -157,7 +157,7 @@ def _read_into(world, files: "SelfFiles", role: str, entity, path: Path) -> str:
         world.facts.state(entity.id, name, value, source=source,
                           class_name=type(entity).__name__)
     # Until images are built from statements, the file also writes through to the entity;
-    # when assembly takes over (docs/architecture.md, step 2) this half goes away.
+    # when assembly takes over (docs/engine/architecture.md, step 2) this half goes away.
     with ontology.trusted_writes():
         for name in said_before - set(stated):  # a line taken out of the file takes its value
             setattr(entity, name, None)

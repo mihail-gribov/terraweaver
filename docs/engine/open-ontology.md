@@ -40,7 +40,7 @@ of the exercise.
 **Relation types are defined the same way.** A name, a description, what may stand on each side,
 and how many may stand there: one-to-one, one-to-many, many-to-many. A relation type may carry
 attributes of its own and be worked with like a class. To the existing characteristics
-(`docs/relations.md`) this adds nothing new in kind — it makes them writable at runtime.
+(`docs/engine/relations.md`) this adds nothing new in kind — it makes them writable at runtime.
 
 Cardinality alone is not enough to make the benchmark's kind of question work. What decides
 "who is the CEO *now*" is **functional at a point in time**: at most one holder at any moment,

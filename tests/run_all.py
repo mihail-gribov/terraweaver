@@ -2,7 +2,7 @@
 
 Each script here is its own runner with its own `check()` — deliberately, because a test that
 needs no framework is a test anybody can read top to bottom. What was missing was something that
-ran them all: `docs/DEV.md` listed a loop over four of the twenty-seven, so "the suite passes"
+ran them all: `docs/archive/DEV.md` listed a loop over four of the twenty-seven, so "the suite passes"
 meant whatever the person typing it had remembered to type.
 
 One process per script, because the world binds itself to the process (`ontology._WORLD`) and two

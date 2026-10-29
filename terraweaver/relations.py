@@ -21,7 +21,7 @@ ontology with a `relation` section that says how the link behaves; the world che
     free                   Related: no characteristics, label and description required
 
 "At any time" is checked by overlapping validity periods, not by "now": divorced in 2020 and
-married in 2022 is no conflict. Design: docs/relations.md.
+married in 2022 is no conflict. Design: docs/engine/relations.md.
 """
 
 import difflib
@@ -340,7 +340,7 @@ def _check_roles(world, name, cls, subject, obj, role, start, end) -> None:
         # against — the same substitution `_check_functional` makes two screens down. Without it
         # `_overlaps` was called with no dates at all, which is true of everything, so a mother
         # link that ended in 2015 still blocked recording a mother in 2026 — and blocked it at the
-        # write door, with a hard refusal (docs/code-review-2026-09-30.md 3.2.9).
+        # write door, with a hard refusal (docs/archive/code-review-2026-09-30.md 3.2.9).
         at = start if start is not None else timeutil.now()
         for r in world.all(name, limit=None, history=True):
             if not _overlaps(r, at, end):
@@ -1077,7 +1077,7 @@ def _which_is_later(standing, start):
     fact *held* in the world, if somebody said; `created_at` is when it was *told*. Setting one
     against the other is what closed "Gennady Rozhdestvensky died in United States of America" —
     told second, dated 2020 — as the older of two, against "…in Moscow", told first and undated,
-    whose only moment was 2026 (2026-10-02; docs/now.md). Like with like:
+    whose only moment was 2026 (2026-10-02; docs/archive/now.md). Like with like:
 
     - both carry a date somebody said → the dates decide;
     - otherwise → the order they were told in decides.
@@ -1130,7 +1130,7 @@ def _hand_over(world, standing, held, start, name: str, at=None):
         # A link cannot end before it began. The standing one holds from `valid_from` or, where
         # nothing was said, from when it was recorded, and ending it at an earlier `start` wrote
         # periods that read "from None until 2010, created 2026" — a link that was never true
-        # (docs/code-review-2026-09-30.md 3.2.10). When the new one starts before the old one
+        # (docs/archive/code-review-2026-09-30.md 3.2.10). When the new one starts before the old one
         # began, the old one is left alone and the two dates are put to whoever knows.
         ends = timeutil.as_datetime(start)
         later, began = _which_is_later(standing, start)
@@ -1267,7 +1267,7 @@ def _check_functional(world, name, rel, subject, obj, start, end, attrs):
                     # Not `involves=[r.subject, subject]`. What makes two of these doubts the same
                     # doubt is the thing and the word — "does this have one at a time?" — and with
                     # the pair in the key every further holder asked it again: measured 9 questions
-                    # on one organisation with 10 employees (docs/code-review-2026-09-30.md 3.2.2).
+                    # on one organisation with 10 employees (docs/archive/code-review-2026-09-30.md 3.2.2).
                     # The two holders are still named in the text, where they are of use.
                     touches=[f"relation:{rel['kind']}"],
                 )
@@ -1583,7 +1583,7 @@ def _chain(world, name: str, start) -> list:
 
     Every branch, not the first one. A thing may be part of two wholes and a kind of two kinds —
     the type says it is transitive, not that it is single-file — and following `nxt[0]` dropped
-    the second one and everything above it (docs/code-review-2026-09-30.md 3.2.13).
+    the second one and everything above it (docs/archive/code-review-2026-09-30.md 3.2.13).
     """
     links = [r for r in world.all(name, limit=None)]
     out, seen, queue = [], {getattr(start, "id", None)}, [start]

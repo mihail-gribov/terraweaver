@@ -151,7 +151,7 @@ def formalise_one(runtime, link, engineer, picker) -> dict:
         # the host wrote `label=` where the fact in words was wanted. Asked anyway, the check
         # refuses whatever was written (217 readings carry `not_in_it`, up to 0.99), the goes run
         # out, and the link is taken back: the fact is lost to a question nobody could answer.
-        # So it is not asked, and the trace says why (docs/now.md, item 2).
+        # So it is not asked, and the trace says why (docs/archive/now.md, item 2).
         if only_a_word(words):
             unsupported, about = "", {"asked": False, "why": "the words are a label, not a fact: "
                                                              "nothing can bear a claim out"}

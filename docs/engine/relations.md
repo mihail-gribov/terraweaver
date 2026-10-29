@@ -211,7 +211,7 @@ Three more things the world says rather than decides:
 - a label that belongs to another type is refused with a pointer — "wife" under `kin` says it is
   a `partner` relation, because recording it as kin loses every check Partner would do;
 - a current read that hid an ended or not-yet-started relation adds a `[hint]` naming what it hid
-  (see `docs/time.md`);
+  (see `docs/engine/time.md`);
 - a second relation with the same label to the same person, overlapping in time, is hinted at —
   two dentists at once is allowed, but "the new dentist instead of the old one" is usually meant,
   and the old one stays current until someone ends it.

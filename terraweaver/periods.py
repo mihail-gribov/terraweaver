@@ -332,7 +332,7 @@ def rebuild_for(world, subject: str, slot: str | None = None) -> int:
     # The repeat rows too, because this delete took them out. `_from_statements` derives stretches
     # and knows nothing about a cycle, so a one-subject rebuild used to leave that subject with no
     # repeats at all until the next whole-table rebuild — and every tags write and every `spells`
-    # read goes through here. Measured 2026-09-30 (docs/code-review-2026-09-30.md 3.1.2):
+    # read goes through here. Measured 2026-09-30 (docs/archive/code-review-2026-09-30.md 3.1.2):
     # `cycles()` came back empty after one `rebuild_for`.
     for rule in _repeat_rules(world, only=subject):
         if slot and rule["nature"] != slot:

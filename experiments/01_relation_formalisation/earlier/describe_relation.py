@@ -7,7 +7,7 @@ in the image, never a fact in the record.
 
     "Sasha is Masha's husband"  ->  husband <-> wife, one each way, not transitive
 
-Six fields, the ones the argument settled on (`docs/relation-properties.md`). No `kind`: the
+Six fields, the ones the argument settled on (`docs/archive/relation-properties.md`). No `kind`: the
 word is read off the roles. No `symmetric`: it is `subject_is == object_is`. No `over_time`: a
 period belongs to the statement, not to the relation.
 """

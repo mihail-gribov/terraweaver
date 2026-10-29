@@ -1,7 +1,7 @@
 # The world, assembled
 
 What the world is, after the rethink of 2026-09-20. This is the picture to build against;
-`docs/about.md` is the project spec it serves, and the documents named below each hold one part
+`docs/archive/about.md` is the project spec it serves, and the documents named below each hold one part
 in detail. Written before the work rather than after it, so the order below is the plan.
 
 ## What the world is for
@@ -337,7 +337,7 @@ behind a trading name — plus anything the person asked us to look into, in the
 for one of our own purposes is read against what this world holds, and if a name, an address or
 a number from it turns up, the lookup doesn't happen.
 
-The work of reaching out is deferred and belongs to the agenda (`docs/ideas-research.md`): a
+The work of reaching out is deferred and belongs to the agenda (`docs/archive/ideas-research.md`): a
 ticket, one at a time, on a budget — not something that happens in the middle of answering
 someone.
 
@@ -441,7 +441,7 @@ cleanly is in the wrong layer, and that is the test to apply before adding to it
 ## Doubts, and who settles them
 
 The world takes what it is told even when it doesn't add up, and records what doesn't
-(`docs/questions.md`). While a doubt is open there is always one standing reading, the same for
+(`docs/archive/questions.md`). While a doubt is open there is always one standing reading, the same for
 every host, decided by rule — so a host can always answer, by saying which reading it used.
 
 Three things can settle a doubt, and they are not interchangeable: a **rule** (the reason went

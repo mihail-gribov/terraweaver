@@ -93,7 +93,7 @@ def set_now(moment) -> datetime | None:
     A moment written as words is read as one. `as_datetime` wanted a date or a datetime and a
     string went into it and raised `AttributeError: 'str' object has no attribute 'year'` four
     frames down, although what the host had written — `world.now = "2020-01-20"` — is exactly
-    what the docstring on that door invites (docs/code-review-2026-09-30.md 3.3.8).
+    what the docstring on that door invites (docs/archive/code-review-2026-09-30.md 3.3.8).
     """
     global _MOMENT
     if isinstance(moment, str):
@@ -115,7 +115,7 @@ def as_of(moment):
     What `set_now` does, scoped. The reading uses it: a fact typed a day after it was said has to
     take its place in time where it was said, or a one-at-a-time word ends the wrong link. The
     deferred reading is resumable by design, so links are typed in whatever order the passes fall
-    in — and arrival order is not telling order (docs/now.md, item 2).
+    in — and arrival order is not telling order (docs/archive/now.md, item 2).
     """
     was = _MOMENT
     try:

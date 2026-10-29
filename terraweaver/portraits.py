@@ -30,7 +30,7 @@ from terraweaver.store import run_script
 
 # One failure must not stop the world, and that is not the same as nobody hearing about it.
 # Measured 2026-09-30: a TypeError from one extra key in what the engineer wrote lost a whole
-# class, silently, for as long as the pass has existed (docs/code-review-2026-09-30.md 2.9).
+# class, silently, for as long as the pass has existed (docs/archive/code-review-2026-09-30.md 2.9).
 log = logging.getLogger("terraweaver")
 
 SCHEMA = """
@@ -487,7 +487,7 @@ def _as_attribute(said: dict) -> dict:
     it thinks belongs on an attribute — `unit`, `example`, `source` — and one extra key took the
     whole class down: the raise landed in the "name already taken" branch, which read it as a
     class to join, so the thing stayed a bare Thing and every later one of its kind had nowhere to
-    go (docs/code-review-2026-09-30.md 3.4.4).
+    go (docs/archive/code-review-2026-09-30.md 3.4.4).
     """
     out = {"name": said["name"], "description": str(said.get("description") or "")}
     if isinstance(said.get("type"), str) and said["type"].strip():

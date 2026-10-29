@@ -65,7 +65,7 @@ def now_utc() -> datetime:
     Not `datetime.now` any more. `created_at` is written from here, and `created_at` is what
     "when did this link begin" falls back to when nobody said: read off the wall clock while the
     world was recording a fact as of 2020, every such comparison was against a moment six years
-    later, so nothing could be ordered against it (docs/now.md, item 2).
+    later, so nothing could be ordered against it (docs/archive/now.md, item 2).
     """
     from terraweaver import timeutil
 
@@ -425,7 +425,7 @@ class Entity:
         # the world's clock: it is what "when did this begin" falls back to when nobody said, and
         # that is compared against `valid_from`, which is the world's time. Read off the wall
         # while the world recorded facts as of 2020, every such comparison was against 2026, and
-        # the hand-over could not tell an earlier telling from a later one (docs/now.md, item 2).
+        # the hand-over could not tell an earlier telling from a later one (docs/archive/now.md, item 2).
         # `accessed_at` is when *we* last worked with it — attention, not history — and is only
         # ever compared with itself, so it stays on the wall clock that `touch` uses.
         self.created_at = kwargs.pop("created_at", None) or now_utc()
@@ -1793,7 +1793,7 @@ def _reopen_what_the_world_ended(cls, side: str) -> None:
             link.valid_until = None
             # And how that bound was meant. `_hand_over` writes `until_is = BEFORE` when nothing
             # said the day, and left behind it says a link with no end ends "some time before" —
-            # a side to a bound that is not there (docs/code-review-2026-09-30.md 3.2.14).
+            # a side to a bound that is not there (docs/archive/code-review-2026-09-30.md 3.2.14).
             if getattr(link, "until_is", None) is not None:
                 link.until_is = None
             world.save(link)
@@ -2033,7 +2033,7 @@ def _relation_role(type_name: str, rel: dict, backwards: bool):
         # `inverse_functional` says an object has one subject — and either can be changed while
         # the world runs (`Type.one_per_subject = False`), after which two links stand and this
         # went on handing back the first of them as if it were the only one
-        # (docs/code-review-2026-09-30.md 3.2.5).
+        # (docs/archive/code-review-2026-09-30.md 3.2.5).
         got = self.related(word)
         if rel.get("inverse_functional") if backwards else rel.get("functional"):
             return got[0] if got else None

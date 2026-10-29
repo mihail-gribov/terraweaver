@@ -128,7 +128,7 @@ class Comments:
         # the moment the *text* started holding: a remark about something next month was hidden
         # from `descriptions` and `like()` while `described()` showed it, and a `ttl` measured from
         # a date last year had run out before the remark was made
-        # (docs/code-review-2026-09-30.md 3.4.10). The day it happened is kept where it belongs,
+        # (docs/archive/code-review-2026-09-30.md 3.4.10). The day it happened is kept where it belongs,
         # in `happened_at`.
         explicit = timeutil.period_end(until, ttl, permanent, base=_now())
         default = explicit is timeutil.NO_END_GIVEN

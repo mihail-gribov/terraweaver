@@ -86,7 +86,7 @@ class Connection(sqlite3.Connection):
     The host's promise is "a run that raises keeps nothing it wrote", and `Store.transaction`
     implements it with commit-on-success and rollback-on-failure. There is one connection, so any
     module that commits on its own ends the transaction it happens to be inside and the promise is
-    void. Measured 2026-09-30 (docs/code-review-2026-09-30.md 2.3): thirty such calls in seventeen
+    void. Measured 2026-09-30 (docs/archive/code-review-2026-09-30.md 2.3): thirty such calls in seventeen
     modules, and `x = [Person.new(name="Ann", tags=["friend"]), 1/0]` kept Ann, because the
     tags write goes through `periods.rebuild_for`, which committed.
 
@@ -157,7 +157,7 @@ class Store:
             for obj in self._tx_new_ids:
                 obj.id = None
             # And out of what this run made, or a rolled-back statement's entities were still
-            # reported to the host as created (docs/code-review-2026-09-30.md 3.1.9). `made` is
+            # reported to the host as created (docs/archive/code-review-2026-09-30.md 3.1.9). `made` is
             # per run and the ids are gone, so they are matched by identity.
             undone = {id(obj) for obj in self._tx_new_ids}
             self.made = [obj for obj in self.made if id(obj) not in undone]
@@ -315,7 +315,7 @@ class Store:
             # mistake and not a missing row, so it says which class and that the world was opened
             # without it — `KeyError: 'AIAgent'` from four frames down killed a server at startup
             # and a hundred questions were then put to a host that had no tools at all
-            # (docs/code-review-2026-09-30.md 3.4.9).
+            # (docs/archive/code-review-2026-09-30.md 3.4.9).
             raise RuntimeError(
                 f"this world holds a {row[0]} and was opened without that class. Open it the way "
                 f"it was built: `open_world(<name>)` for a world with the base classes, "
@@ -372,7 +372,7 @@ class Store:
             # mistake — `ValueError` for a period that is not a moment, `AttributeError` for a
             # word the class no longer has — and which exception it picked is not something the
             # loading of an image should depend on. What is said is kept, and the row that cannot
-            # be read is the one thing missing (docs/code-review-2026-09-30.md 3.1.9).
+            # be read is the one thing missing (docs/archive/code-review-2026-09-30.md 3.1.9).
             try:
                 self._fill(obj, attr_name, _decode(raw), classes, memo)
             except (TypeError, ValueError, AttributeError) as wrong:

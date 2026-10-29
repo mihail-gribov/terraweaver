@@ -3,7 +3,7 @@
 Hosts reach the world through two operations — `describe()` tells them what exists, `run()`
 executes their Python against it. Everything a run does is recorded in the `runs` table, so
 what a host wrote, what it saw and what it changed can be inspected afterwards. That log is
-also the raw material for procedural memory (docs/procedural-memory.md).
+also the raw material for procedural memory (docs/engine/procedural-memory.md).
 
 Each run is one transaction: if the code raises, nothing it wrote stays in the world.
 """
@@ -361,7 +361,7 @@ class NotClosed(str):
     adds is that a caller can tell a refusal from the note that follows a close — the MCP tool
     could not, and prefixed "Task closed: the namespace is clean" to every one of these, so the
     host was told in one breath that the task was closed and that it was not
-    (docs/code-review-2026-09-30.md 3.3.10).
+    (docs/archive/code-review-2026-09-30.md 3.3.10).
     """
 
 
@@ -387,7 +387,7 @@ class WorldRuntime:
         # Every name the namespace binds is taken, `ALWAYS` included — `user` and `agent` were
         # missing from it, so `world.pin("agent", 5, "...", keep=True)` was allowed and shadowed
         # the assistant in every session that opened afterwards
-        # (docs/code-review-2026-09-30.md 3.3.2).
+        # (docs/archive/code-review-2026-09-30.md 3.3.2).
         reserved = set(self.classes) | set(sandbox.MODULE_NAMES) | set(ALWAYS) | {
             "world", "owner", "me", "NeedsResolution", "NotInWorld", "print", "report", "run_skill"}
         self.variables = WorldVariables(self.store, self.classes, reserved | set(sandbox.BUILTINS))
@@ -404,7 +404,7 @@ class WorldRuntime:
             # the namespace: the names pinned for it go with it, and a task left open is closed
             # as what it was. Deleting the dict entry did neither, so the variables stayed bound
             # to a key nobody was using and the Task stood open forever
-            # (docs/code-review-2026-09-30.md 3.3.9).
+            # (docs/archive/code-review-2026-09-30.md 3.3.9).
             if existing.task_id is not None:
                 try:
                     self.finish_task(key, closing="left_idle")
@@ -760,7 +760,7 @@ class WorldRuntime:
         # passes "abandoned" when the host opens a new task over an old one. The gates below can
         # refuse to close, and a refusal there left the old task open with `closed_as` unset while
         # the new one was opened anyway: its `touched` set and its namespace then leaked into the
-        # new task (docs/code-review-2026-09-30.md 3.3.3). A close that somebody else decided is
+        # new task (docs/archive/code-review-2026-09-30.md 3.3.3). A close that somebody else decided is
         # not a close to argue with.
         elif closing is None and task is not None and getattr(task, "mode", None) == "recording":
             # A recording task that recorded nothing is the failure that reports itself as a
@@ -962,7 +962,7 @@ class WorldRuntime:
             # `+=`, not `=`. Written as an assignment this threw away everything the close had
             # assembled above it — the reading, the links turned round, what was read from
             # outside — and a base world always has a type with no named ends, so it threw it
-            # away on every close (docs/code-review-2026-09-30.md 3.3.6).
+            # away on every close (docs/archive/code-review-2026-09-30.md 3.3.6).
             asked += (f"\n\nOne thing to come back to when you can: {len(unnamed)} link type(s) "
                      f"here have no names for their two ends — {shown}{more}. Without them "
                      f"nothing can later tell a link written backwards from one written right, "
@@ -971,7 +971,7 @@ class WorldRuntime:
                      f"object_is=\"…\").")
         # The world's clock is one clock for the process, so a moment set in this task is still
         # set in the next one and in every other session — which is the design item in
-        # docs/code-review-2026-09-30.md 2.2, and not something to change under a measurement that
+        # docs/archive/code-review-2026-09-30.md 2.2, and not something to change under a measurement that
         # depends on it. What can be done now is to stop it being silent: a task closing says what
         # the world thinks the time is, so the next one is not stamping 2020 without knowing.
         told = timeutil.shifted()
@@ -1114,7 +1114,7 @@ class WorldRuntime:
 
         Each statement of the run wrote its image from the object it held, so the next line could
         read what the last one made; this puts the record's reading in place of that before
-        anybody else sees it (docs/architecture.md, rule 4).
+        anybody else sees it (docs/engine/architecture.md, rule 4).
         """
         from terraweaver import rebuild
 
@@ -1129,7 +1129,7 @@ class WorldRuntime:
     def _assemble_from_the_record(self) -> None:
         """The images built again from what was said, at the end of a piece of recording work.
 
-        The image is a cache of the record (docs/architecture.md, rule 4). Between closes a run
+        The image is a cache of the record (docs/engine/architecture.md, rule 4). Between closes a run
         still writes the images it changed, so they are warm; at a close they are assembled from
         the statements, and whatever a door wrote into an image without saying it goes, while what
         the identity rule glues — the second Microsoft a host made beside the first — is glued.
@@ -1429,7 +1429,7 @@ class WorldRuntime:
         name goes in as a string and `keep` goes in at all: written as `world.pin({name}, ...)`
         this passed the *value* under the name's identifier and left `keep` out, and `pin` has no
         default for it on purpose — so the tool raised `TypeError` every single time it was called
-        (docs/code-review-2026-09-30.md 3.3.1). `keep=False` is the default here because a name
+        (docs/archive/code-review-2026-09-30.md 3.3.1). `keep=False` is the default here because a name
         set through a tool call is this piece of work's, unless the caller says otherwise.
         """
         import ast
@@ -2091,7 +2091,7 @@ def _exec_by_statement(tree, namespace: dict, store) -> None:
     # Carried out on the exception, because the whole block is echoed back to the host afterwards
     # and the echo used to say "from here on, nothing ran" over lines that had run and written
     # — so the host sent them again and the world recorded them twice
-    # (docs/code-review-2026-09-30.md 3.3.7).
+    # (docs/archive/code-review-2026-09-30.md 3.3.7).
     outcome: list[tuple[int, int, bool]] = []
     # And where every top-level statement sits, attempted or not — the difference between a line
     # nothing ever reached and a line that is not code at all (a comment, a blank) is knowable
@@ -2289,7 +2289,7 @@ def _reads_like(runtime, proposed: list) -> list[str]:
         # Through the index and on a deadline: this runs before a `define` in the host's own block
         # and it re-embedded every class, every relation type and every attribute in the world for
         # each name proposed — measured 2026-09-30, 6.4 s for one `world.define` on a base world,
-        # inside a run the sandbox stops after ten (docs/code-review-2026-09-30.md 3.3.15).
+        # inside a run the sandbox stops after ten (docs/archive/code-review-2026-09-30.md 3.3.15).
         held = runtime.world.meanings.vectors_for(
             [(f"word:{known[k][0]}", known[k][1]) for k in theirs], within=meaning.INLINE_SECONDS)
         asked = runtime.world.meanings.vector_of(text, within=meaning.INLINE_SECONDS)
@@ -2329,7 +2329,7 @@ def _host_traceback(exc: BaseException, code: str = "") -> str:
         if 0 < where <= len(source) and by:
             # A statement that raises does not end the block, so "after it never ran" was a lie
             # about lines that had run and written. Counted from what happened, not from where
-            # the first failure was (docs/code-review-2026-09-30.md 3.3.7).
+            # the first failure was (docs/archive/code-review-2026-09-30.md 3.3.7).
             ran = sum(len([l for l in source[start - 1:end] if l.strip()])
                       for start, end, ok in by if ok)
             failed = sum(1 for _, _, ok in by if not ok)

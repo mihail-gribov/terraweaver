@@ -24,7 +24,7 @@ from terraweaver.store import run_script
 
 # One failure must not stop the world, and that is not the same as nobody hearing about it.
 # Measured 2026-09-30: a TypeError from one extra key in what the engineer wrote lost a whole
-# class, silently, for as long as the pass has existed (docs/code-review-2026-09-30.md 2.9).
+# class, silently, for as long as the pass has existed (docs/archive/code-review-2026-09-30.md 2.9).
 log = logging.getLogger("terraweaver")
 
 SCHEMA = """

@@ -128,7 +128,7 @@ def main() -> int:
     # --- periods compare with plain dates ---
     # Dates relative to the run, not written down once: as `starts=date(2026, 10, 1)` with
     # `r.starts < today()` expected False, this passed until 2026-10-01 and failed from the day
-    # after (docs/now.md, flickers — the second of the armed ones to go off).
+    # after (docs/archive/now.md, flickers — the second of the armed ones to go off).
     ahead = date.today() + timedelta(days=30)
     before = ahead - timedelta(days=30)
     dates = rt.run(f'r = Person.new(name="Nina Patel").set_dentist_of(user, '

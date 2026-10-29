@@ -1,7 +1,7 @@
 """Stage A queries, by scenario kind.
 
 Each query names only kinds of thing and public entities — the boundary in
-docs/ideas-research.md. `place` is the place the query is about, so a result
+docs/archive/ideas-research.md. `place` is the place the query is about, so a result
 from another place with the same name can be counted.
 """
 

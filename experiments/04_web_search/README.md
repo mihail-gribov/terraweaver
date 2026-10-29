@@ -6,7 +6,7 @@ Started 2026-10-05 by the user.
 
 A personal assistant's user cares about events, news, articles, places, things to buy. Can the
 chain **search → fetch → page into items → `formalise` → check against the page** turn the web into
-sourced candidates the world can hold, for the scenarios in `docs/ideas-research.md` ("Scenarios,
+sourced candidates the world can hold, for the scenarios in `docs/archive/ideas-research.md` ("Scenarios,
 2026-10-05")? And what object model do those candidates end up in?
 
 What counts as an answer, per scenario:

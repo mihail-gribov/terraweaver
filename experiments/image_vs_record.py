@@ -2,7 +2,7 @@
 
     .venv/bin/python experiments/image_vs_record.py <a run directory> [--show 5]
 
-The image is meant to be a cache of the record (docs/architecture.md, "How a world serves an
+The image is meant to be a cache of the record (docs/engine/architecture.md, "How a world serves an
 agent", rule 4): assembled from the statements and nothing else. So a world whose images are right
 rebuilds into itself. Whatever comes out different was written into an image without being said,
 or said and never shown — and which attributes differ says which door did it. Free, no models, on

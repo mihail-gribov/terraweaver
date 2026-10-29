@@ -96,7 +96,7 @@ single reading can answer:
 1. **Does the look hold the vocabulary together?** Measured as: words defined vs words joined.
 2. **Code or data?** The relation door in the working code asks for data and renders the call
    itself, on the argument that the shape of what is written is ours
-   (`docs/relation-properties.md`, part seven). The entity door asks for a class and the code to
+   (`docs/archive/relation-properties.md`, part seven). The entity door asks for a class and the code to
    fill a thing in, and it ran better. This asks for code on the relation door, against the same
    world, so the argument is settled by measurement rather than by assertion.
 3. **How much of a relation can be read out of one sentence?** The roles as role words and not as

@@ -194,7 +194,7 @@ def _getattr(obj, name, *default):
     # `format` on a string is checked when the code is read — the field of a format string can
     # name attributes, and `"{0.__class__}".format(x)` walks past every other guard here. Fetched
     # through `getattr` there is no literal to check, so the fetch itself is refused
-    # (docs/code-review-2026-09-30.md 3.3.14).
+    # (docs/archive/code-review-2026-09-30.md 3.3.14).
     if isinstance(obj, str) and name in ("format", "format_map"):
         raise SandboxViolation(
             f"str.{name} taken through getattr cannot be checked — its fields can name "
@@ -261,7 +261,7 @@ def modules() -> dict:
     Built, not shared. A `SimpleNamespace` is an ordinary object and the sandbox allows attribute
     assignment, so one dict handed to every namespace made `math.sqrt = 7` in one session
     `math.sqrt = 7` in every session and every world in the process — reproduced
-    (docs/code-review-2026-09-30.md 3.3.4). The immutable ones (`date`, `timedelta`, `timezone`)
+    (docs/archive/code-review-2026-09-30.md 3.3.4). The immutable ones (`date`, `timedelta`, `timezone`)
     cannot be touched and could be shared; they are rebuilt here anyway so there is one rule.
     """
     return {

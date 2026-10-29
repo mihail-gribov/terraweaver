@@ -58,7 +58,7 @@ Suggested order when this becomes work: research → jobs → watch → deep res
 
 ## Settling questions from sources, not only from the user
 
-Open questions (`docs/questions.md`) can be closed by three things: a rule, the user, or a
+Open questions (`docs/archive/questions.md`) can be closed by three things: a rule, the user, or a
 source that can be checked. The third is this document's job. A doubt about a matter of form —
 a company's registered name, a domain that belongs to it, the standard spelling of a city, the
 usual shape of a job title — is not the user's to settle: the world can look it up against an
