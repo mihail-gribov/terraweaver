@@ -155,7 +155,7 @@ def filled_from_messages() -> None:
     entries = [(1, "2026-03-01 10:00:00", "My wife loves jazz, I want to get her concert tickets."),
                (2, "2026-03-05 10:00:00", "My wife's birthday is on 3 May."),
                (3, "2026-03-20 10:00:00", "Mila, my wife, prefers small venues.")]
-    readings = [{}, {"links": [{"from": "the user's wife", "relation": "born_on", "to": "3 May", "quote": "birthday is on 3 May"}]},
+    readings = [{}, {"links": [{"from": "my wife", "relation": "born_on", "to": "3 May", "quote": "birthday is on 3 May"}]},
                 {"entities": [{"name": "Mila", "kind": "person", "as": "Mila"}]}]
     with tempfile.TemporaryDirectory() as tmp:
         g = Graph(Path(tmp), journal(entries[:2]), reader=told(readings), decide=first, goes_on=lambda m, t: 0.0, about=nobody)

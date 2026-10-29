@@ -117,6 +117,16 @@ PART_WORDS = {
     "health": "an allergy, illness, condition or diet", "likes": "something someone likes, loves or prefers",
     "dislikes": "something someone dislikes",
 }
+# The reader's other words for a part of the world: "owned", "loves", "worked_at".
+SAME_AS = {
+    "own": "owns", "owned": "owns", "has": "owns", "have": "owns", "had": "owns", "possesses": "owns",
+    "love": "likes", "loves": "likes", "like": "likes", "enjoys": "likes", "prefers": "likes",
+    "hate": "dislikes", "hates": "dislikes", "dislike": "dislikes", "speak": "speaks",
+    "lived_in": "lives_in", "live_in": "lives_in", "worked_at": "works_at", "work_at": "works_at",
+    "studied_at": "studies_at", "birthday": "born_on", "born": "born_on", "husband": "spouse", "wife": "spouse",
+    "son": "child", "daughter": "child", "mother": "parent", "father": "parent", "brother": "sibling", "sister": "sibling",
+}
+ANIMALS = {"animal", "pet", "cat", "dog", "bird", "fish", "rabbit", "hamster", "horse", "parrot", "turtle"}
 # The closing of a part is asked once, beside the groups.
 ENDED = "something that no longer holds: sold, gave away, replaced, left a job, moved out, broke up"
 # "The user is the parent of Lev" says Lev is the user's child.
@@ -191,7 +201,8 @@ Links: what the entry says joins two entities. A person's people, read "<from> i
 in the entry's own words (a date, a place, a skill): {own}. Use these names when they fit, for the \
 user and for anyone else. The relation is what <from> is to <to>: "our son Lev" is "Lev — child → \
 {user}", "my mother" is "<her name> — parent → {user}", "our dog Rex" is "Rex — pet → {user}"; \
-"Mila — born_on → 3 May", "{user} — owns → LG C4". Otherwise name the \
+"Mila — born_on → 3 May", "Lev is seven" is "Lev — age → seven", "{user} — owns → LG C4"; an animal \
+the user has is a pet, not a thing owned. Otherwise name the \
 relation in a word or two ("landlord", "coach", "gave the gift to"). When the entry says a link no \
 longer holds — sold, gave away, replaced, went with another instead, broke up, moved out, left the \
 job — give that link with "ended": true. Also link "{user}" to what the entry says the user did, got, has, likes or can do, plans, or how a thing stands for them now — "{user} — planted → tomato saplings", "{user} — wakes up at → 8:30 am on Saturdays", "{user} — owns → utensil holder" — with "to" in the entry's own words, and "when": the day it happened, YYYY-MM-DD, when the entry says when (today, last Saturday, two weeks ago — counted from the day the entry was said). Only what the entry says.
@@ -226,7 +237,7 @@ def _words(text: str) -> str:
 
 def _label(name: str) -> str:
     """"user's wife", "The user's wife" -> "the user's wife": one way to name someone not yet named."""
-    got = re.fullmatch(r"(?:the\s+)?user'?s\s+(\w+)", name.strip(), re.I)
+    got = re.fullmatch(r"(?:(?:the\s+)?user'?s|my|our)\s+(\w+)", name.strip(), re.I)
     return f"the user's {got.group(1).lower()}" if got else name
 
 
@@ -417,10 +428,12 @@ class Graph:
         named = ({k: ms[0]["entity"] for k, ms in self.by_entity.items()} | {m["entity"].lower(): m["entity"] for m in mentions}
                  | {USER: USER})
         links = []
+        kinds_here = {m["entity"].lower(): m["kind"] for m in mentions}
         for l in got.get("links") or []:
             relation = "_".join(_words(l.get("relation")).split()) if isinstance(l, dict) else ""
             if not relation:
                 continue
+            relation = SAME_AS.get(relation, relation)
             a, b = (named.get(self.canon(_named(l.get(end))).lower()) for end in ("from", "to"))
             to = re.sub(r"^(the|a|an|our|my|his|her|their)\s+", "", str(l.get("to") or "").strip(), flags=re.I)
             if a and relation in OWN:
@@ -436,6 +449,13 @@ class Graph:
                 b = to
                 if relation == "owns" or (a == USER and relation not in OWN):
                     mentions.append({"text": n, "dialogue": dialogue, "day": day, "entity": to, "kind": "thing", "as": to})
+            if relation == "owns" and b and (kinds_here.get(b.lower(), self.kinds.get(b, "")) in ANIMALS
+                                             or ANIMALS & set(_words(l.get("quote")).split())):
+                # "We have a cat, Biscuit": a pet, not a thing owned.
+                a, b, relation = b, a, "pet"
+            if relation == "pet" and a == USER and b:
+                # The user is nobody's pet: "the user — pet → Biscuit" is Biscuit, the user's pet.
+                a, b = b, a
             if a and b and a != b and _words(l.get("quote")) and _words(l["quote"]) in plain:
                 when = str(l.get("when") or "")
                 links.append({"from": a, "relation": relation, "common": relation in RELATIONS, "to": b, "text": n, "day": day,
@@ -444,13 +464,28 @@ class Graph:
         # "My wife Mila", "our son Lev", "Mila, my wife": the user's people, by code, whatever the
         # reader gave — the plainest fact of a personal memory, never left to a model's attention.
         have = {(l["from"], l["relation"], l["to"]) for l in links}
+        for relation, words in CALLED.items():
+            called = "|".join(sorted(words))
+            for said in list(re.finditer(rf"\b(?i:my|our)\s+(?:\w+\s+)?(?i:{called})(?!-)\s*,?\s*(?:called\s+|named\s+)?([A-Z][a-z]+)\b", text)) \
+                    + list(re.finditer(rf"\b([A-Z][a-z]+)\s*,\s*(?:is\s+)?(?i:my|our)\s+(?:\w+\s+)?(?i:{called})\b(?!-)", text)):
+                name = said.group(1)
+                if name.lower() in ("my", "our", "the", "and", "but", "so") or _words(name) in SELF:
+                    continue
+                name = next((m["entity"] for m in mentions if m["entity"].lower() == name.lower()), self.canon(name))
+                if not any(m["entity"] == name for m in mentions):
+                    mentions.append({"text": n, "dialogue": dialogue, "day": day, "entity": name,
+                                     "kind": "animal" if relation == "pet" else "person", "as": said.group(0)})
+                if (name, relation, USER) not in have:
+                    links.append({"from": name, "relation": relation, "common": True, "to": USER, "text": n,
+                                  "day": day, "quote": said.group(0)})
+                    have.add((name, relation, USER))
         for m in mentions:
             if m["entity"] == USER or m["kind"] not in ("person", "animal", "dog", "cat", "pet"):
                 continue
             name = re.escape(m["entity"])
             for relation, words in CALLED.items():
                 called = "|".join(sorted(words))
-                said = (re.search(rf"\b(?:my|our)\s+(?:\w+\s+)?(?:{called})\s*,?\s*(?:called\s+|named\s+)?{name}\b", text, re.I)
+                said = (re.search(rf"\b(?:my|our)\s+(?:\w+\s+)?(?:{called})(?!-)\s*,?\s*(?:called\s+|named\s+)?{name}\b", text, re.I)
                         or re.search(rf"\b{name}\s*,?\s*(?:is\s+)?(?:my|our)\s+(?:\w+\s+)?(?:{called})\b", text, re.I))
                 if said and (m["entity"], relation, USER) not in have:
                     links.append({"from": m["entity"], "relation": relation, "common": True, "to": USER, "text": n,
@@ -460,7 +495,7 @@ class Graph:
         # She is "the user's wife" until an entry names her; then the two are joined (_settle_people).
         for relation, words in CALLED.items():
             for word in sorted(words):
-                for said in re.finditer(rf"\b(?i:my|our)\s+(?:\w+\s+)?(?i:{word})\b(?!\s*,?\s*(?:called\s+|named\s+)?[A-Z])", text):
+                for said in re.finditer(rf"\b(?i:my|our)\s+(?:\w+\s+)?(?i:{word})\b(?!-)(?!\s*,?\s*(?:called\s+|named\s+)?[A-Z])", text):
                     label = f"the user's {word.lower()}"
                     # "Mila, my wife": the wife is named in this very entry.
                     if any(l["relation"] == relation and l["to"] == USER and (l["from"] == label or not unnamed(l["from"]))
