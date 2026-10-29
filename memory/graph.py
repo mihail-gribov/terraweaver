@@ -12,7 +12,10 @@ text mentions, and in what words — so every entity is reached through the text
     mention    a text naming an entity, with the words it names it by ("my wife")
     link       a relation between two entities, with the entry and the words it stands on; a few
                plain, common ones (spouse, parent, friend, works at…) are named the same way every
-               time — a skeleton, not a fence: any other relation the entry states is kept too
+               time — a skeleton, not a fence: any other relation the entry states is kept too;
+               a link from the user to what they did, have, like, plan or how a thing stands for
+               them now carries the day it happened when said, and one of five classes (CLASSES)
+               the decision model gives it — the same skeleton, over what the user says of themselves
 
 The texts are the flesh, the entities and links the skeleton: the skeleton finds the texts, and an
 answer is made from the texts. What is hard to formalise is never forced into a field; it stays
@@ -58,6 +61,25 @@ RELATIONS = {
     "manager": "manager or boss", "works_at": "works at or for (to: an organisation)",
     "studies_at": "studies at", "lives_in": "lives in (to: a place)", "pet": "pet",
 }
+# What the user says of themselves, in five classes: a question asks for one of them — what happened
+# in a window, how many, how it stands now, what a suggestion should take into account. The relation
+# stays the reader's own word ("planted"); the class is a closed question to the decision model.
+CLASSES = {
+    "did": "something the user did, got, bought, made or went to, or that happened to them",
+    "has": "something the user has or owns",
+    "likes": "what the user likes or prefers, can do, or how something went for them",
+    "plans": "what the user plans, wants or means to do",
+    "now": "how something stands for the user now and may change later: a habit, a time, an amount, a state",
+}
+# A topic's kind says what an answer takes from it: a choice — what was chosen and ruled out; a
+# habit — how it stands now; an interest — what a suggestion should take into account.
+TOPIC_KINDS = {
+    "choice": "choosing something: a product, a place, an option",
+    "problem": "a problem the user deals with: health, money, a conflict",
+    "project": "a project or plan: a business, a trip, a move, an event",
+    "habit": "a habit or routine: sleep, food, exercise, spending",
+    "interest": "a hobby or interest the user keeps up",
+}
 
 READ = """You keep a personal memory. Below is one new entry: what the user just said, rewritten \
 to stand alone. Say which entities it mentions and which topics it belongs to.
@@ -80,7 +102,7 @@ The new entry, said on {day}:
 
 Answer with JSON only:
 {{"entities": [{{"name": "...", "kind": "...", "as": "the entry's exact words that name it"}}],
- "links": [{{"from": "<entity>", "relation": "...", "to": "<entity>", "quote": "the entry's exact words that say it"}}],
+ "links": [{{"from": "<entity>", "relation": "...", "to": "<entity>", "quote": "the entry's exact words that say it", "when": "YYYY-MM-DD, only when said"}}],
  "topics": [{{"topic": <id, or "new">, "name": "a short name", "text": "the topic's whole new text"}}]}}
 
 Entities: the people, places, things, organisations and events the entry names. "I", "me", "my" \
@@ -93,7 +115,7 @@ one ("TV"). Take a kind in use before \
 making a new one; a kind is one or two plain words.
 Links: what the entry says joins two entities, read "<from> is the <relation> of <to>". When one \
 of these fits, use its name: {relations}. Otherwise name the relation in a word or two ("landlord", \
-"coach", "gave the gift to"). Only what the entry says.
+"coach", "gave the gift to"). Also link "{user}" to what the entry says the user did, got, has, likes or can do, plans, or how a thing stands for them now — "{user} — planted → tomato saplings", "{user} — wakes up at → 8:30 am on Saturdays", "{user} — owns → utensil holder" — with "to" in the entry's own words, and "when": the day it happened, YYYY-MM-DD, when the entry says when (today, last Saturday, two weeks ago — counted from the day the entry was said). Only what the entry says.
 Topics: the matters the user keeps coming back to and adding to — a personal problem, choosing a \
 product, starting a business, a trip, a family event — named as one would name it a month later \
 ("choosing a TV", "starting the bakery", "back pain"). When the entry goes on with a topic above, \
@@ -110,7 +132,8 @@ Japan in spring with Tom. Looked at Kyoto and Osaka. Osaka ruled out, too crowde
 (2026-03-20)." """
 
 IMAGE_HEAD = ("What the memory has read of {names}, from the facts that mention them (fact numbers "
-              "and days; the newest says what holds now):")
+              "and days; the newest says what holds now). A topic's text is the memory's summary: where "
+              "it and a fact disagree, the fact holds:")
 
 
 def _day(heading: str) -> str:
@@ -132,11 +155,13 @@ class Graph:
     """The mentions and topics of one memory, under `where`; `entries()` gives the journal as
     (number, heading, text). `wake()` after every kept entry; `wait()` before reading the graph."""
 
-    def __init__(self, where: Path, entries, reader=None, embed=None):
+    def __init__(self, where: Path, entries, reader=None, embed=None, decide=None):
         self.where = Path(where)
         self.where.mkdir(parents=True, exist_ok=True)
         self.entries = entries
         self.reader = reader or (lambda system, prompt: role("reader").json(system, prompt, room=8000))
+        # A closed question over named options -> the option: the decision model, one token.
+        self.decide = decide or (lambda state, question, options: role("judge").choice(state, question, options)["choice"])
         # Texts -> vectors, to find topics by meaning; without it, by the words they share.
         self.embed = embed
         self._vectors: dict[tuple, list] = {}
@@ -230,7 +255,9 @@ class Graph:
             dialogue="\n".join(f"{m}. {t}" for m, t in earlier) or "nothing yet", day=_day(heading)[:10], entry=text,
             user=USER, relations="; ".join(f"{k} ({v})" for k, v in RELATIONS.items()))) or {}
         with self.lock:
-            self._keep_reading(n, heading, text, dialogue[0], got)
+            links, versions = self._keep_reading(n, heading, text, dialogue[0], got)
+        self._classify(text, links, versions)
+        with self.lock:
             self.read_upto = n
             (self.where / "state.json").write_text(json.dumps({"read_upto": n}))
         return True
@@ -257,9 +284,15 @@ class Graph:
             if not relation:
                 continue
             a, b = (named.get(_named(l.get(end)).lower()) for end in ("from", "to"))
+            to = str(l.get("to") or "").strip()
+            if a == USER and not b and _words(to) and _words(to) in plain:
+                # What the user did, has or likes is named in the entry's own words: a mention of it.
+                b = to
+                mentions.append({"text": n, "dialogue": dialogue, "day": day, "entity": to, "kind": "thing", "as": to})
             if a and b and a != b and _words(l.get("quote")) and _words(l["quote"]) in plain:
+                when = str(l.get("when") or "")
                 links.append({"from": a, "relation": relation, "common": relation in RELATIONS, "to": b, "text": n, "day": day,
-                              "quote": l["quote"]})
+                              "quote": l["quote"], **({"when": when} if re.fullmatch(r"\d{4}-\d{2}-\d{2}", when) else {})})
         latest = dict(self.latest)
         versions = []
         for t in got.get("topics") or []:
@@ -270,14 +303,37 @@ class Graph:
             versions.append({"topic": topic, "name": str(t.get("name") or (before or {}).get("name") or "").strip(),
                              "text": str(t["text"]).strip(), "day": day,
                              "entries": sorted(set((before or {}).get("entries", [])) | {n}),
-                             "version": (before or {}).get("version", 0) + 1})
+                             "version": (before or {}).get("version", 0) + 1,
+                             **({"kind": before["kind"]} if before and before.get("kind") else {})})
         self.mentions += mentions
-        self.links += links
-        self.topics += versions
-        self._index(mentions, links, versions)
+        self._index(mentions, [], [])
         self._append("mentions.jsonl", mentions)
-        self._append("links.jsonl", links)
-        self._append("topics.jsonl", versions)
+        return links, versions
+
+    def _classify(self, text: str, links: list[dict], versions: list[dict]) -> None:
+        """The closed questions, to the decision model and outside the lock: the class of each thing
+        the user says of themselves, the kind of each new topic. Then the links and topics are kept."""
+        for l in links:
+            if l["from"] == USER and not l["common"]:
+                try:
+                    l["class"] = self.decide(
+                        f'What the user said: "{text}"\n\nRead from it: the user {l["relation"].replace("_", " ")} {l["to"]} '
+                        f'("{l["quote"]}")', "Which is this, of what the user says of themselves?", list(CLASSES.items()))
+                except Exception:  # noqa: BLE001 - a link without a class is still a link
+                    log.exception("classifying a link failed")
+        for t in versions:
+            if "kind" not in t:
+                try:
+                    t["kind"] = self.decide(f'A topic the user keeps coming back to: "{t["name"]}": {t["text"]}',
+                                            "Which kind of topic is this?", list(TOPIC_KINDS.items()))
+                except Exception:  # noqa: BLE001 - a topic without a kind is still a topic
+                    log.exception("classifying a topic failed")
+        with self.lock:
+            self.links += links
+            self.topics += versions
+            self._index([], links, versions)
+            self._append("links.jsonl", links)
+            self._append("topics.jsonl", versions)
 
     # --- what is read from it -------------------------------------------------------------------
 
@@ -375,8 +431,10 @@ class Graph:
             return ""
         lines = []
         for t in topics:
-            lines.append(f'Topic "{t["name"]}" (as of {t["day"][:10]}, version {t["version"]}, from facts '
+            kind = f'{t["kind"]}, ' if t.get("kind") else ""
+            lines.append(f'Topic "{t["name"]}" ({kind}as of {t["day"][:10]}, version {t["version"]}, from facts '
                          f'{", ".join(map(str, t["entries"][-30:]))}): {t["text"]}')
+        lines += self._said_of_self(set(numbers) | {n for t in topics for n in t["entries"]})
         for name in sorted(names)[:20]:
             image = self.image(name)
             if not image["entries"]:
@@ -388,3 +446,45 @@ class Graph:
                 lines.append(f'  {l["from"]} is the {l["relation"].replace("_", " ")} of {l["to"]} '
                              f'(fact {l["text"]} [{l["day"][:10]}]: "{l["quote"]}")')
         return IMAGE_HEAD.format(names="what the question bears on") + "\n" + "\n".join(lines) if lines else ""
+
+    def recall(self, message: str, numbers=(), limit: int = 2) -> str:
+        """For the agent, beside the user's message: the topics it goes on with — those of this
+        dialogue's entries and of the entries found for it, the nearest first — each with what it
+        has come to and what the user said of themselves in it. Never waits for the reading: what
+        is read by now is what is given, so the message is never held up."""
+        held = self.entries()
+        recent = self.dialogue_of(held[-1][0], held) if held else []
+        if held and _day(held[-1][1]):
+            # The dialogue of the last entry only while it is going on.
+            if datetime.now() - datetime.fromisoformat(_day(held[-1][1])) > PAUSE:
+                recent = []
+        touched = set(numbers) | set(recent)
+        with self.lock:
+            mine = [t for t in self.near_topics(message, limit, touched=touched) if touched & set(t["entries"])][:limit]
+            if not mine:
+                return ""
+            lines = []
+            for t in mine:
+                kind = f'{t["kind"]}, ' if t.get("kind") else ""
+                lines.append(f'This goes on with the topic "{t["name"]}" ({kind}as of {t["day"][:10]}, from facts '
+                             f'{", ".join(map(str, t["entries"][-30:]))}): {t["text"]}')
+            said = self._said_of_self(set(n for t in mine for n in t["entries"]), limit=15)
+        return "\n".join(lines + said)
+
+    def _said_of_self(self, texts: set[int], limit: int = 80) -> list[str]:
+        """What the user said of themselves in these facts, by class, the newest first: every one, not
+        the few most alike to the question — so "how many" counts them all and "two weeks ago" finds
+        the day. Each with the entry's own words; a topic's text cannot stand in for them."""
+        own = [l for l in self.links_of.get(USER, []) if l["from"] == USER and l["text"] in texts and not l["common"]]
+        if not own:
+            return []
+        out = ["What the user said of themselves in these facts (the entry's words; the newest first):"]
+        for name, what in list(CLASSES.items()) + [("other", "not classed")]:
+            these = sorted((l for l in own if l.get("class", "other") == name), key=lambda l: l["text"], reverse=True)
+            if these:
+                out.append(f"  {name} — {what}:")
+            for l in these[:limit]:
+                when = f', happened {l["when"]}' if l.get("when") else ""
+                out.append(f'  - {l["relation"].replace("_", " ")} {l["to"]}: "{l["quote"]}" (fact {l["text"]}, '
+                           f'said {l["day"][:10]}{when})')
+        return out

@@ -16,7 +16,7 @@ agent's messages by design (`--with-assistant` puts them back).
 - **context:** the same model with every session in its prompt — what the memory is measured against.
 
 In both, Nemotron Super words the final answer from what it was given, and the same judge
-(`benchmarks/judge.py`, LongMemEval's rubrics, Claude Haiku) grades it. Kept per question in
+(`benchmarks/judge.py`, LongMemEval's rubrics, Claude Sonnet; `--judge`) grades it. Kept per question in
 experiments/results/14_longmemeval/<stamp>/: what was asked, what the memory answered, the final
 answer, the verdict; the memory's own journal beside it.
 """
@@ -69,6 +69,8 @@ GRAPH = False
 # measures finding in a long history, not the rewrite.
 RAW = False
 DATA = "oracle"
+# Haiku judged 3 of 30 verdicts wrong, both ways, on LongMemEval_S (2026-10-29): Sonnet.
+JUDGE = "sonnet"
 
 
 def by_memory(instance, port: int, out: Path) -> dict:
@@ -128,7 +130,7 @@ def one(instance, modes: list[str], ports: "queue.Queue", out: Path) -> dict:
                     ports.put(port)
             else:
                 got = by_context(instance)
-            got["judged"] = judge(instance, got["answer"])
+            got["judged"] = judge(instance, got["answer"], model=JUDGE)
         except Exception as wrong:  # noqa: BLE001 - one question failing is a wrong answer, kept with why
             got = {"error": repr(wrong), "judged": {"correct": False, "how": "error"}}
         row[mode] = got
@@ -136,6 +138,32 @@ def one(instance, modes: list[str], ports: "queue.Queue", out: Path) -> dict:
     print(f"{instance.kind:28} {instance.id:22} " + "  ".join(
         f"{m}: {'ok ' if row[m]['judged']['correct'] else 'BAD'}" for m in modes), flush=True)
     return row
+
+
+def rejudge(folder: Path) -> int:
+    """The kept answers graded again by JUDGE; each verdict goes beside the old one, as judged_<model>."""
+    summary = json.loads((folder / "summary.json").read_text())
+    instances = {i.id: i for i in lme.load(summary.get("slice", "oracle"))}
+    totals = defaultdict(list)
+    for path in sorted(folder.glob("*.json")):
+        if path.name == "summary.json":
+            continue
+        row = json.loads(path.read_text())
+        marks = []
+        for mode in ("memory", "context"):
+            got = row.get(mode)
+            if not got:
+                continue
+            if "answer" in got:
+                got[f"judged_{JUDGE}"] = judge(instances[row["id"]], got["answer"], model=JUDGE)
+            correct = got.get(f"judged_{JUDGE}", got["judged"])["correct"]
+            totals[mode].append(correct)
+            marks.append(f"{mode}: {'ok ' if correct else 'BAD'} (was {'ok ' if got['judged']['correct'] else 'BAD'})")
+        path.write_text(json.dumps(row, indent=1, ensure_ascii=False))
+        print(f"{row['kind']:28} {row['id']:22} " + "  ".join(marks), flush=True)
+    for mode, marks in totals.items():
+        print(f"{mode}: {sum(marks)}/{len(marks)} by {JUDGE}")
+    return 0
 
 
 def main() -> int:
@@ -152,9 +180,13 @@ def main() -> int:
     parser.add_argument("--data", choices=["oracle", "s"], default="oracle",
                         help="oracle: the evidence sessions only; s: ~40 sessions a question, ~115k tokens")
     parser.add_argument("--raw", action="store_true", help="user turns kept as said, no gate and rewrite")
+    parser.add_argument("--judge", default="sonnet", help="the Claude model that grades: sonnet, haiku, opus")
+    parser.add_argument("--rejudge", type=Path, help="grade again the answers kept in this results folder, nothing run")
     args = parser.parse_args()
-    global GRAPH, RAW, DATA
-    GRAPH, RAW, DATA = args.graph, args.raw, args.data
+    global GRAPH, RAW, DATA, JUDGE
+    GRAPH, RAW, DATA, JUDGE = args.graph, args.raw, args.data, args.judge
+    if args.rejudge:
+        return rejudge(args.rejudge)
     if not os.environ.get("NEBIUS_API_KEY"):
         raise SystemExit("NEBIUS_API_KEY is not set: set -a; . ./.env; set +a")
 
@@ -174,7 +206,7 @@ def main() -> int:
         rows = list(pool.map(lambda instance: one(instance, modes, ports, out), picked))
 
     summary = {"slice": args.data, "raw": args.raw, "count": len(rows), "seed": args.seed, "with_assistant": args.with_assistant, "answerer": role("reader").model,
-               "judge": "haiku", "memory": f"memory.server{'' if args.graph else ' --no-world'}, /ask gather=false"}
+               "judge": JUDGE, "memory": f"memory.server{'' if args.graph else ' --no-world'}, /ask gather=false"}
     for mode in modes:
         by_kind = defaultdict(list)
         for r in rows:

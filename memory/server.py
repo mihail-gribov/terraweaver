@@ -387,6 +387,7 @@ def main() -> None:
         graph = Graph(where / "graph", lambda: base._entries(base._memory()),
                       embed=lambda texts: search._encoder().embed(texts))
         base.graph_facts = graph.facts_for
+        base.graph_recall = graph.recall
     base.confirm_forget = confirm_forget
     from memory.listen import Listener
     listener = Listener(base, base._keep, base.context, base.ask, _solve, _journal_changed,

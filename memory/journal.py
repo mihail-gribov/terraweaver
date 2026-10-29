@@ -136,6 +136,8 @@ narrow = None
 # What the graph read of the entries an answer is shown (memory/graph.py): (entry numbers,
 # question) -> the topics and entities they bear on, as text; None where there is no graph.
 graph_facts = None
+# The topic a user's message goes on with, for `say` (memory/graph.py `recall`); set by the server.
+graph_recall = None
 
 
 def _for(question: str) -> str:

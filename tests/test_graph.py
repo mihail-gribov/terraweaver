@@ -40,6 +40,53 @@ def told(answers):
     return lambda system, prompt: queue.pop(0) if queue else {}
 
 
+def first(state, question, options):
+    """A decision model that answers as the state says, else the first option."""
+    return next((name for name, _ in options if f"[{name}]" in question + state), options[0][0])
+
+
+def said_of_self() -> None:
+    """What the user says of themselves: a link from the user, in the entry's words, with the day it
+    happened and a class from the decision model; an answer gets every one in the found topics."""
+    entries = [(1, "2023-05-05 10:00:00", "By the way, two weeks ago I planted 12 tomato saplings."),
+               (2, "2023-05-06 10:00:00", "I wake up at 8:30 am on Saturdays."),
+               (3, "2023-05-20 10:00:00", "Last Saturday I woke up at 7:30 am, a good start.")]
+    readings = [
+        {"links": [{"from": "I", "relation": "planted", "to": "12 tomato saplings", "quote": "I planted 12 tomato saplings",
+                    "when": "2023-04-21"}],
+         "topics": [{"topic": "new", "name": "gardening", "text": "Planted tomatoes (2023-04-21)."}]},
+        {"links": [{"from": "the user", "relation": "wakes up at", "to": "8:30 am on Saturdays",
+                    "quote": "I wake up at 8:30 am on Saturdays", "when": "last week"}],
+         "topics": [{"topic": "new", "name": "wake-up time", "text": "Wakes at 8:30 on Saturdays."}]},
+        {"links": [{"from": "the user", "relation": "woke up at", "to": "7:30 am", "quote": "I woke up at 7:30 am",
+                    "when": "2023-05-13"}],
+         "topics": [{"topic": 2, "name": "wake-up time", "text": "Wakes at 8:30 on Saturdays; 7:30 last Saturday."}]},
+    ]
+    classes = {"planted": "did", "wakes up at": "now", "woke up at": "did", "gardening": "interest", "wake-up": "habit"}
+    decide = lambda state, question, options: next(c for k, c in classes.items() if k in state)  # noqa: E731
+    with tempfile.TemporaryDirectory() as tmp:
+        g = Graph(Path(tmp), journal(entries), reader=told(readings), decide=decide)
+        g.wait(10)
+        own = {(l["relation"], l["to"], l.get("when"), l.get("class")) for l in g.links if l["from"] == USER}
+        check("the user's own links, in the entry's words, with the day it happened and a class",
+              ("planted", "12 tomato saplings", "2023-04-21", "did") in own, str(own))
+        check("a 'when' that is not a day is not kept", ("wakes_up_at", "8:30 am on Saturdays", None, "now") in own, str(own))
+        check("a topic gets a kind", {t["topic"]: t.get("kind") for t in g.latest_topics()} == {1: "interest", 2: "habit"},
+              str(g.latest_topics()))
+        facts = g.facts_for([1], "what did I do in the garden two weeks ago?")
+        check("an answer gets what the user said of themselves, by class, with days",
+              'planted 12 tomato saplings: "I planted 12 tomato saplings" (fact 1, said 2023-05-05, happened 2023-04-21)'
+              in facts and "did —" in facts, facts)
+        recalled = g.recall("I want to plant peppers next", [1])
+        check("beside a message: the topic it goes on with, and what the user said in it",
+              recalled.startswith('This goes on with the topic "gardening"') and "planted 12 tomato saplings" in recalled
+              and "wake" not in recalled, recalled)
+        check("no topic touched, nothing recalled", g.recall("what's the weather?", []) == "")
+        facts = g.facts_for([2], "what time do I wake up on Saturdays?")
+        check("every fact of a found topic, not only the found ones, the newest first",
+              facts.index("fact 3") < facts.index("fact 2"), facts)
+
+
 READINGS = [
     {"entities": [{"name": "the user", "kind": "person", "as": "I"},
                   {"name": "Mila", "kind": "person", "as": "My wife Mila"},
@@ -63,7 +110,7 @@ READINGS = [
 
 def offline() -> None:
     with tempfile.TemporaryDirectory() as tmp:
-        g = Graph(Path(tmp), journal(TV), reader=told(READINGS))
+        g = Graph(Path(tmp), journal(TV), reader=told(READINGS), decide=first)
         check("every entry is read", g.wait(10) and g.read_upto == 5, f"read_upto={g.read_upto}")
 
         check("a pause longer than an hour ends a dialogue", g.dialogue_of(2) == [1, 2, 3, 4] and g.dialogue_of(5) == [5],
@@ -100,7 +147,7 @@ def offline() -> None:
         check("rebuilt from the journal", g.wait(10) and len(g.latest_topics()) == 1 and g.read_upto == 5)
 
         # Kept across a restart.
-        again = Graph(Path(tmp), journal(TV), reader=told([]))
+        again = Graph(Path(tmp), journal(TV), reader=told([]), decide=first)
         check("what was read is kept on disk", again.read_upto == 5 and len(again.topics) == 5 and again.links)
 
 
@@ -123,7 +170,7 @@ def at_scale() -> None:
         return readings.pop(0) if readings else {}
 
     with tempfile.TemporaryDirectory() as tmp:
-        g = Graph(Path(tmp), journal(entries[:-1]), reader=reader)
+        g = Graph(Path(tmp), journal(entries[:-1]), reader=reader, decide=first)
         g.wait(30)
         g.topics.append({"topic": 999, "name": "starting the bakery", "text": "Plans a bakery in Lisbon.",
                          "day": "2026-05-01", "entries": [1], "version": 1})
@@ -157,6 +204,7 @@ def live() -> None:
 def main() -> int:
     offline()
     at_scale()
+    said_of_self()
     if "--live" in sys.argv:
         live()
     print(f"\n{len(failures)} failed" if failures else "\nall passed")

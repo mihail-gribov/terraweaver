@@ -156,6 +156,15 @@ class Listener:
         found = await self._context(message, 10)
         if found and found.strip().lower().strip(".") != "nothing":
             parts.append("What the memory holds that bears on this:\n" + found)
+        recall = getattr(self.base, "graph_recall", None)
+        if recall is not None:
+            # The topic the message goes on with: where the matter stood, so nothing ruled out is
+            # offered again. Only what the graph has read by now; never waited for.
+            narrow = getattr(self.base, "narrow", None)
+            numbers = (await asyncio.to_thread(narrow, message))[:3] if narrow else []
+            topic = await asyncio.to_thread(recall, message, numbers)
+            if topic:
+                parts.append(topic)
         # Every question of the user's is a wish to know: kept as one. An action is the agent's.
         for request in got.requests:
             if request["kind"] == "know":
