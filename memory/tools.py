@@ -23,8 +23,11 @@ Those have no TTL. What is past its TTL is removed, its texts with it, by the cl
 """
 import asyncio
 import json
+import os
 import re
+import shutil
 import subprocess
+import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -36,6 +39,21 @@ from memory.ttl import TTL
 
 ENGINE = "tavily"
 # What holds for every thing of a class, whatever the task: its fields, and which must be known.
+TAVILY = "https://api.tavily.com/search"
+
+
+def tavily(query: str, pages: int) -> list[dict]:
+    """Pages for a query straight from Tavily, with their text: what `ait-search` (the author's own
+    search tool, which also keeps every page it found) does through Tavily, for a machine without it."""
+    body = json.dumps({"query": query, "max_results": max(pages, 5), "include_raw_content": True}).encode()
+    request = urllib.request.Request(TAVILY, data=body, headers={
+        "Content-Type": "application/json", "Authorization": f"Bearer {os.environ['TAVILY_API_KEY']}"})
+    with urllib.request.urlopen(request, timeout=120) as answer:
+        found = json.loads(answer.read()).get("results", [])
+    return [{"url": r["url"], "title": r.get("title"), "published": r.get("published_date"),
+             "text": r.get("raw_content") or r.get("content") or ""} for r in found if r.get("url")][:pages]
+
+
 CLASSES = json.loads((Path(__file__).with_name("classes.json")).read_text())
 # What a task chooses from: what was found within this long. A day old, a price or a date still
 # holds for a few days; older, it may not.
@@ -510,6 +528,8 @@ class Tools:
         if leaked:
             raise Mistake(f"the query {query!r} names {', '.join(sorted(leaked))} from the user's memory",
                           "kinds of thing, the market and the date only", 'web.search_pages("light student laptop under 800 euro")')
+        if not shutil.which("ait-search"):
+            return tavily(query, pages)
         run = subprocess.run(["ait-search", "--engine", self.engine, "search", query, "--limit", str(max(pages, 10)),
                               "--fetch", str(pages), "--tag", "terraweaver"], capture_output=True, text=True, timeout=600)
         try:
