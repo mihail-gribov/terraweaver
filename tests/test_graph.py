@@ -41,6 +41,11 @@ def told(answers):
     return lambda system, prompt: queue.pop(0) if queue else {}
 
 
+def nobody(text, what):
+    """A decision model that finds no part of anyone's world in any entry."""
+    return 0.0
+
+
 def first(state, question, options):
     """A decision model that answers as the state says, else the first option."""
     return next((name for name, _ in options if f"[{name}]" in question + state), options[0][0])
@@ -68,7 +73,7 @@ def said_of_self() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         goes_on = lambda message, t: (0.9 if "plant" in message and t["name"] == "gardening"  # noqa: E731
                                       else 0.5 if "Saturday" in message and t["name"] == "wake-up time" else 0.1)
-        g = Graph(Path(tmp), journal(entries), reader=told(readings), decide=decide, goes_on=goes_on)
+        g = Graph(Path(tmp), journal(entries), reader=told(readings), decide=decide, goes_on=goes_on, about=nobody)
         g.wait(10)
         own = {(l["relation"], l["to"], l.get("when"), l.get("class")) for l in g.links if l["from"] == USER}
         check("the user's own links, in the entry's words, with the day it happened and a class",
@@ -121,10 +126,10 @@ def personal_world() -> None:
                    {"from": "I", "relation": "owns", "to": "LG C4", "quote": "got an LG C4"}]},
     ]
     with tempfile.TemporaryDirectory() as tmp:
-        g = Graph(Path(tmp), journal(entries), reader=told(readings), decide=first, goes_on=lambda m, t: 0.0)
+        g = Graph(Path(tmp), journal(entries), reader=told(readings), decide=first, goes_on=lambda m, t: 0.0, about=nobody)
         g.wait(10)
         g2 = Graph(Path(tmp) / "bycode", journal(entries[:1]), reader=told([{"entities": [{"name": "Mila", "kind": "person", "as": "Mila"}]}]),
-                   decide=first, goes_on=lambda m, t: 0.0)
+                   decide=first, goes_on=lambda m, t: 0.0, about=nobody)
         g2.wait(10)
         check("'my wife Mila' is the user's spouse by code, whatever the reader gave",
               [(l["from"], l["relation"], l["to"]) for l in g2.links] == [("Mila", "spouse", USER)], str(g2.links))
@@ -153,7 +158,7 @@ def filled_from_messages() -> None:
     readings = [{}, {"links": [{"from": "the user's wife", "relation": "born_on", "to": "3 May", "quote": "birthday is on 3 May"}]},
                 {"entities": [{"name": "Mila", "kind": "person", "as": "Mila"}]}]
     with tempfile.TemporaryDirectory() as tmp:
-        g = Graph(Path(tmp), journal(entries[:2]), reader=told(readings), decide=first, goes_on=lambda m, t: 0.0)
+        g = Graph(Path(tmp), journal(entries[:2]), reader=told(readings), decide=first, goes_on=lambda m, t: 0.0, about=nobody)
         g.wait(10)
         world = "\n".join(g.world_lines(USER, gaps=True))
         check("'my wife' with no name: the user has a wife, her name not known yet",
@@ -170,7 +175,7 @@ def filled_from_messages() -> None:
         check("the world is kept as a structure: every part, filled or empty",
               kept[USER]["parts"]["spouse"]["now"][0]["value"] == "Mila" and kept[USER]["parts"]["born_on"]["now"] == []
               and kept["Mila"]["known_as"] == ["the user's wife"], json.dumps(kept[USER]["parts"]["spouse"]))
-        again = Graph(Path(tmp), journal(entries), reader=told([]), decide=first)
+        again = Graph(Path(tmp), journal(entries), reader=told([]), decide=first, about=nobody)
         check("the join holds across a restart", "spouse: Mila" in "\n".join(again.world_lines(USER)))
 
 
@@ -197,7 +202,7 @@ READINGS = [
 
 def offline() -> None:
     with tempfile.TemporaryDirectory() as tmp:
-        g = Graph(Path(tmp), journal(TV), reader=told(READINGS), decide=first)
+        g = Graph(Path(tmp), journal(TV), reader=told(READINGS), decide=first, about=nobody)
         check("every entry is read", g.wait(10) and g.read_upto == 5, f"read_upto={g.read_upto}")
 
         check("a pause longer than an hour ends a dialogue", g.dialogue_of(2) == [1, 2, 3, 4] and g.dialogue_of(5) == [5],
@@ -241,7 +246,7 @@ def offline() -> None:
         check("rebuilt from the journal", g.wait(10) and len(g.latest_topics()) == 1 and g.read_upto == 5)
 
         # Kept across a restart.
-        again = Graph(Path(tmp), journal(TV), reader=told([]), decide=first)
+        again = Graph(Path(tmp), journal(TV), reader=told([]), decide=first, about=nobody)
         check("what was read is kept on disk", again.read_upto == 5 and len(again.topics) == 5 and again.links)
 
 
@@ -264,7 +269,7 @@ def at_scale() -> None:
         return readings.pop(0) if readings else {}
 
     with tempfile.TemporaryDirectory() as tmp:
-        g = Graph(Path(tmp), journal(entries[:-1]), reader=reader, decide=first)
+        g = Graph(Path(tmp), journal(entries[:-1]), reader=reader, decide=first, about=nobody)
         g.wait(30)
         g.topics.append({"topic": 999, "name": "starting the bakery", "text": "Plans a bakery in Lisbon.",
                          "day": "2026-05-01", "entries": [1], "version": 1})

@@ -89,6 +89,36 @@ OWN = {
     "likes": ("many", "likes or loves"), "dislikes": ("many", "dislikes"),
 }
 RELATIONS = {k: v for k, (_, v) in (PEOPLE | OWN).items()}
+# Which parts of a person's world an entry speaks of, asked of the decision model down a tree: a group
+# first, then the parts of the groups it says yes to — about ten closed questions for an entry instead
+# of one for every part. The reader is then told which parts to fill: what it is not pointed at, it
+# misses ("My wife Mila's birthday…" gave the birthday and lost the wife).
+GROUPS = {
+    "family": ("family or pets: a husband or wife, a partner, children, parents, brothers or sisters, other "
+               "relatives, a pet", ["spouse", "partner", "child", "parent", "sibling", "relative", "pet"]),
+    "people": ("friends, colleagues or a boss", ["friend", "colleague", "manager"]),
+    "work": ("work or study: where someone works or studies, or someone's job", ["works_at", "job", "studies_at"]),
+    "home": ("where someone lives or moved to live", ["lives_in"]),
+    "things": ("things someone has: bought, got, owns, sold or gave away", ["owns"]),
+    "self": ("personal details of anyone, the user included: a birthday, an age, skills, languages, hobbies, "
+             "health, diet, what they like, love, prefer or dislike",
+             ["born_on", "age", "skill", "speaks", "hobby", "health", "likes", "dislikes"]),
+}
+# How each part is asked about, in plain words.
+PART_WORDS = {
+    "spouse": "a husband or wife", "partner": "a partner, boyfriend or girlfriend", "child": "a son or daughter",
+    "parent": "a mother or father", "sibling": "a brother or sister",
+    "relative": "another relative: a grandparent, cousin, aunt, uncle, in-law", "pet": "a pet animal",
+    "friend": "a friend", "colleague": "a colleague", "manager": "a boss or manager",
+    "works_at": "where someone works", "job": "someone's job or occupation", "studies_at": "where someone studies",
+    "lives_in": "where someone lives", "owns": "something someone has, bought, got, sold or gave away",
+    "born_on": "someone's birthday or date of birth", "age": "someone's age", "skill": "something someone can do",
+    "speaks": "a language someone speaks", "hobby": "a hobby or pastime",
+    "health": "an allergy, illness, condition or diet", "likes": "something someone likes, loves or prefers",
+    "dislikes": "something someone dislikes",
+}
+# The closing of a part is asked once, beside the groups.
+ENDED = "something that no longer holds: sold, gave away, replaced, left a job, moved out, broke up"
 # "The user is the parent of Lev" says Lev is the user's child.
 INVERSE = {"child": "parent", "parent": "child", "spouse": "spouse", "partner": "partner", "sibling": "sibling",
            "friend": "friend", "colleague": "colleague", "relative": "relative"}
@@ -154,6 +184,8 @@ relation to the user ("the user's sister") only when no name is said. A particul
 brand, place or event is its own entity ("Sony TV", "Samsung S90D"), never folded into a general \
 one ("TV"). Take a kind in use before \
 making a new one; a kind is one or two plain words.
+The parts of a person's world this entry speaks of, as a first reading found: {parts}. Give a link \
+for each of them that the entry says, for whoever it says it of.
 Links: what the entry says joins two entities. A person's people, read "<from> is the <relation> of \
 <to>": {people}. What a person has and is, read "<from> <relation> <to>", where "to" may be a value \
 in the entry's own words (a date, a place, a skill): {own}. Use these names when they fit, for the \
@@ -213,13 +245,18 @@ class Graph:
     """The mentions and topics of one memory, under `where`; `entries()` gives the journal as
     (number, heading, text). `wake()` after every kept entry; `wait()` before reading the graph."""
 
-    def __init__(self, where: Path, entries, reader=None, embed=None, decide=None, goes_on=None):
+    def __init__(self, where: Path, entries, reader=None, embed=None, decide=None, goes_on=None, about=None):
         self.where = Path(where)
         self.where.mkdir(parents=True, exist_ok=True)
         self.entries = entries
         self.reader = reader or (lambda system, prompt: role("reader").json(system, prompt, room=8000))
         # A closed question over named options -> the option: the decision model, one token.
         self.decide = decide or (lambda state, question, options: role("judge").choice(state, question, options)["choice"])
+        # How likely the entry speaks of this — a group or a part of a person's world: the decision
+        # model, yes or no, the entry first so that every question about it shares its beginning.
+        self.about = about or (lambda text, what: role("judge").noul(
+            f'What the user said: "{text}"', f"Does what the user said mention {what}?",
+            "yes, it mentions that", "no, it does not")["p"]["yes"])
         # How likely this message goes on with this topic: the decision model, yes or no.
         self.goes_on = goes_on or (lambda message, t: role("judge").noul(
             f'A topic the user talked about before, "{t["name"]}": {t["text"]}\n\nThe user now says: "{message}"',
@@ -328,13 +365,15 @@ class Graph:
         earlier = [(m, t) for m, _, t in held if m in dialogue and m < n][-20:]
         topics = self.near_topics(text, SHOWN_TOPICS, touched=[m for m, _ in earlier])
         entities = self.near_entities(text + " " + " ".join(t for _, t in earlier), [m for m, _ in earlier])
+        parts = self.parts_of(text)
         got = self.reader("Answer with JSON only.", READ.format(
             entities="\n".join(f"- {name} — {kind}" for name, kind in entities) or "none yet",
             kinds=", ".join(sorted(set(self.kinds.values()))[:60]) or "none yet",
             topics="\n".join(f"{t['topic']}. {t['name']}: {t['text']}" for t in topics) or "none yet",
             dialogue="\n".join(f"{m}. {t}" for m, t in earlier) or "nothing yet", day=_day(heading)[:10], entry=text,
             user=USER, people="; ".join(f"{k} ({v})" for k, (_, v) in PEOPLE.items()),
-            own="; ".join(f"{k} ({v})" for k, (_, v) in OWN.items()))) or {}
+            own="; ".join(f"{k} ({v})" for k, (_, v) in OWN.items()),
+            parts=(", ".join(parts) if parts else "none of them") + "")) or {}
         with self.lock:
             links, versions = self._keep_reading(n, heading, text, dialogue[0], got)
         self._classify(text, links, versions)
@@ -342,6 +381,24 @@ class Graph:
             self.read_upto = n
             (self.where / "state.json").write_text(json.dumps({"read_upto": n}))
         return True
+
+    def parts_of(self, text: str) -> list[str]:
+        """The parts of a person's world the entry speaks of, down the tree: the groups, then the parts
+        of those it says yes to; and whether something ended. Asked at once, each a closed question."""
+        def ask(what):
+            try:
+                return float(self.about(text, what))
+            except Exception:  # noqa: BLE001 - unasked is not a part
+                log.exception("asking about a part failed")
+                return 0.0
+        with ThreadPoolExecutor(8) as pool:
+            questions = [g for g, _ in GROUPS.values()] + [ENDED]
+            said = dict(zip(list(GROUPS) + ["ended"], pool.map(ask, questions)))
+            asked = [part for g, (_, ps) in GROUPS.items() if said[g] >= 0.5 for part in ps]
+            if not asked:
+                return ["ended"] if said["ended"] >= 0.5 else []
+            got = dict(zip(asked, pool.map(ask, [PART_WORDS[p] for p in asked])))
+        return [p for p in asked if got[p] >= 0.5] + (["something that ended"] if said["ended"] >= 0.5 else [])
 
     def _keep_reading(self, n: int, heading: str, text: str, dialogue: int, got: dict) -> None:
         plain, day = _words(text), _day(heading)
