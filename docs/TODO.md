@@ -109,8 +109,11 @@ updates its summary (the summary so far plus what was just said — "we chose th
 Gion", "the trip moved to May"), so what the talk has come to is the latest; and now and then it
 is rebuilt from all the topic's entries, so updates on updates do not drift. Derived like the
 world's image, never written over the user's words: a wrong summary is rebuilt, not a memory
-spoiled. What the assistant said in those talks is another subject (working with dialogues), not
-this one.
+spoiled. The case to build it on (the user): "which TV did we choose in the end, last time?" The choice is
+said by the user — "ok, the first one" after the agent listed two — and the intake already keeps it
+as "Let's take the LG C4 55\" for 1199", dated; the topic's summary holds the latest such choice,
+and a later change of mind replaces it there. What the assistant said in those talks is another
+subject (working with dialogues), not this one.
 
 ## Skill tests: what the world must be able to do, with a real agent, three times each (queued 2026-10-05)
 
