@@ -95,6 +95,54 @@ def said_of_self() -> None:
               facts.index("fact 3") < facts.index("fact 2"), facts)
 
 
+def personal_world() -> None:
+    """The user's world, half fixed: the same parts for every person, one value or a list, the newest
+    holding, an item ended by an entry kept as was; values in the entry's own words."""
+    entries = [(1, "2026-03-01 10:00:00", "My wife Mila's birthday is on 3 May."),
+               (2, "2026-03-01 10:05:00", "I am the father of Lev, he is seven."),
+               (3, "2026-03-02 10:00:00", "I work at Acme as a designer and I bought a Samsung TV."),
+               (4, "2026-06-01 10:00:00", "I moved to Globex, and we sold the Samsung and got an LG C4.")]
+    readings = [
+        {"entities": [{"name": "Mila", "kind": "person", "as": "wife Mila"}],
+         "links": [{"from": "Mila", "relation": "spouse", "to": "I", "quote": "My wife Mila"},
+                   {"from": "Mila", "relation": "born_on", "to": "3 May", "quote": "birthday is on 3 May"}]},
+        {"entities": [{"name": "Lev", "kind": "person", "as": "Lev"}],
+         "links": [{"from": "I", "relation": "parent", "to": "Lev", "quote": "I am the father of Lev"},
+                   {"from": "Lev", "relation": "age", "to": "seven", "quote": "he is seven"}]},
+        {"entities": [{"name": "Acme", "kind": "organisation", "as": "Acme"}, {"name": "Samsung TV", "kind": "TV", "as": "Samsung TV"}],
+         "links": [{"from": "I", "relation": "works_at", "to": "Acme", "quote": "I work at Acme"},
+                   {"from": "I", "relation": "job", "to": "designer", "quote": "as a designer"},
+                   {"from": "I", "relation": "owns", "to": "Samsung TV", "quote": "I bought a Samsung TV"}]},
+        {"entities": [{"name": "Globex", "kind": "organisation", "as": "Globex"}, {"name": "LG C4", "kind": "TV", "as": "LG C4"},
+                      {"name": "Samsung TV", "kind": "TV", "as": "the Samsung"}],
+         "links": [{"from": "I", "relation": "works_at", "to": "Globex", "quote": "I moved to Globex"},
+                   {"from": "I", "relation": "owns", "to": "Samsung TV", "quote": "we sold the Samsung", "ended": True},
+                   {"from": "I", "relation": "owns", "to": "LG C4", "quote": "got an LG C4"}]},
+    ]
+    with tempfile.TemporaryDirectory() as tmp:
+        g = Graph(Path(tmp), journal(entries), reader=told(readings), decide=first, goes_on=lambda m, t: 0.0)
+        g.wait(10)
+        g2 = Graph(Path(tmp) / "bycode", journal(entries[:1]), reader=told([{"entities": [{"name": "Mila", "kind": "person", "as": "Mila"}]}]),
+                   decide=first, goes_on=lambda m, t: 0.0)
+        g2.wait(10)
+        check("'my wife Mila' is the user's spouse by code, whatever the reader gave",
+              [(l["from"], l["relation"], l["to"]) for l in g2.links] == [("Mila", "spouse", USER)], str(g2.links))
+        world = "\n".join(g.world_lines(USER, gaps=True))
+        check("the user's people: a spouse, a child said the other way round", "spouse: Mila (fact 1" in world
+              and "child: Lev (fact 2" in world, world)
+        check("one value: the newest holds, the older was", "works at: Globex [organisation] (fact 4" in world and "was: Acme" in world, world)
+        check("a list: an item ended by an entry is kept as was", "owns: LG C4 [tv] (fact 4" in world
+              and "was: Samsung TV [tv] (fact 4, 2026-06-01) — ended" in world, world)
+        check("what is not known yet is said", "not known yet: born on, lives in" in world, world)
+        mila = "\n".join(g.world_lines("Mila"))
+        check("every person has the same parts, values in the entry's words", "born on: 3 May (fact 1" in mila
+              and "spouse: the user" in mila, mila)
+        said = g.recall("What should I get my wife for her birthday? And is the TV ok for games?", [])
+        check("beside a message: the parts of the user's world it speaks of, and the people's worlds",
+              "owns: LG C4" in said and "spouse: Mila" in said and "born on: 3 May" in said and "works at" not in said, said)
+        check("an answer gets the user's world", "works at: Globex" in g.facts_for([4], "where do I work?"))
+
+
 READINGS = [
     {"entities": [{"name": "the user", "kind": "person", "as": "I"},
                   {"name": "Mila", "kind": "person", "as": "My wife Mila"},
@@ -152,7 +200,7 @@ def offline() -> None:
         g.goes_on = lambda message, t: 0.0
         known = g.recall("My wife wants a soundbar too", [])
         check("beside a message: a person it names as the user calls them, known from before",
-              known.startswith("Known from before:") and "- Mila (person): Mila is the spouse of the user" in known
+              "Known from before:" in known and "- Mila (person): Mila is the spouse of the user" in known
               and "last on 2026-10-26" in known, known)
         check("by name too", "- LG TV (tv)" in g.recall("is the LG TV any good for games?", []))
 
@@ -216,12 +264,33 @@ def live() -> None:
               bool(tv) and "LG" in tv[0]["text"] and "Sony" in tv[0]["text"], str(tv))
 
 
+def live_world() -> None:
+    entries = [(1, "2026-03-01 10:00:00", "My wife Mila's birthday is on 3 May."),
+               (2, "2026-03-01 10:05:00", "Our son Lev is seven, and we have a beagle called Rex."),
+               (3, "2026-03-02 10:00:00", "I work at Acme as a designer. I speak Serbian and some German."),
+               (4, "2026-03-02 10:05:00", "We bought a Samsung TV last week."),
+               (5, "2026-06-01 10:00:00", "In May I left Acme for a job at Globex, and we sold the Samsung and got an LG C4 instead.")]
+    with tempfile.TemporaryDirectory() as tmp:
+        g = Graph(Path(tmp), journal(entries))
+        g.wait(600)
+        world = "\n".join(g.world_lines(USER, gaps=True))
+        print(world)
+        print("\n".join(g.world_lines("Mila")))
+        check("live world: wife, son, pet", all(w in world for w in ("spouse: Mila", "child: Lev", "pet: Rex")), world)
+        check("live world: works at Globex now, Acme was", "works at: Globex" in world and "Acme" in world.split("works at:")[1].split("\n")[0], world)
+        check("live world: owns the LG C4, the Samsung ended", "LG C4" in world.split("owns:")[1].split("was:")[0]
+              and "Samsung" in world.split("owns:")[1].split("\n")[0].split("was:")[-1], world)
+        check("live world: Mila's birthday", "born on: 3 May" in "\n".join(g.world_lines("Mila")))
+
+
 def main() -> int:
     offline()
     at_scale()
     said_of_self()
+    personal_world()
     if "--live" in sys.argv:
         live()
+        live_world()
     print(f"\n{len(failures)} failed" if failures else "\nall passed")
     return 1 if failures else 0
 

@@ -64,15 +64,43 @@ CALLED = {
 SURE, POSSIBLE = 0.7, 0.3
 # The words a reader may write for the user; every one of them is the user, by code.
 SELF = {"the user", "user", "i", "me", "myself", "we", "us", "the user s"}
-# The plainest and most frequent relations in a person's life, named the same way every time so that
-# they can be followed: "<from> is the <relation> of <to>". The reader takes one of these when it
-# fits and names any other relation itself; nothing is dropped for not being on the list.
-RELATIONS = {
-    "spouse": "husband or wife", "partner": "partner, boyfriend or girlfriend",
-    "parent": "mother or father", "child": "son or daughter", "sibling": "brother or sister",
-    "relative": "another relative", "friend": "friend", "colleague": "colleague",
-    "manager": "manager or boss", "works_at": "works at or for (to: an organisation)",
-    "studies_at": "studies at", "lives_in": "lives in (to: a place)", "pet": "pet",
+# The user's personal world, half fixed: what every person can have, the same for the user and for
+# each of their people, each a link the reader names the same way every time, so that it can be
+# followed and gathered into a person's image. One value at a time (the newest holds, the older kept
+# as was), or a list (each item holds until an entry ends it). Whatever does not fit is kept too,
+# under the reader's own name for it: a skeleton, not a fence.
+#
+# A person's people, read "<from> is the <relation> of <to>".
+PEOPLE = {
+    "spouse": ("one", "husband or wife"), "partner": ("one", "partner, boyfriend or girlfriend"),
+    "child": ("many", "son or daughter"), "parent": ("many", "mother or father"),
+    "sibling": ("many", "brother or sister"), "relative": ("many", "another relative"),
+    "friend": ("many", "friend"), "colleague": ("many", "colleague"),
+    "manager": ("one", "manager or boss"), "pet": ("many", "pet animal"),
+}
+# What a person has and is, read "<from> <relation> <to>"; "to" may be a value in the entry's words.
+OWN = {
+    "born_on": ("one", "birthday or date of birth (to: the date as said)"),
+    "age": ("one", "age (to: as said)"), "lives_in": ("one", "lives in (to: a place)"),
+    "works_at": ("one", "works at or for (to: an organisation)"), "job": ("one", "occupation or role"),
+    "studies_at": ("one", "studies at"), "owns": ("many", "has or owns (to: the thing)"),
+    "skill": ("many", "can do, a skill"), "speaks": ("many", "speaks a language"),
+    "hobby": ("many", "a hobby or pastime"), "health": ("many", "an allergy, condition or diet"),
+    "likes": ("many", "likes or loves"), "dislikes": ("many", "dislikes"),
+}
+RELATIONS = {k: v for k, (_, v) in (PEOPLE | OWN).items()}
+# "The user is the parent of Lev" says Lev is the user's child.
+INVERSE = {"child": "parent", "parent": "child", "spouse": "spouse", "partner": "partner", "sibling": "sibling",
+           "friend": "friend", "colleague": "colleague", "relative": "relative"}
+# The words a message speaks of a part of a person's world by, beside the names of what fills it.
+SLOT_WORDS = {
+    "born_on": {"birthday", "born"}, "age": {"age", "old"},
+    "lives_in": {"live", "lives", "home", "flat", "apartment", "house", "city", "move", "moving"},
+    "works_at": {"work", "works", "job", "office", "company", "employer"}, "job": {"job", "work", "career"},
+    "studies_at": {"study", "studies", "school", "university", "course"}, "skill": {"skill", "skills", "learn"},
+    "speaks": {"language", "languages", "speak"}, "hobby": {"hobby", "hobbies"},
+    "health": {"allergy", "allergic", "diet", "health", "doctor"},
+    "likes": {"gift", "present", "favourite", "favorite"}, "dislikes": {"gift", "present"},
 }
 # What the user says of themselves, in five classes: a question asks for one of them — what happened
 # in a window, how many, how it stands now, what a suggestion should take into account. The relation
@@ -115,7 +143,7 @@ The new entry, said on {day}:
 
 Answer with JSON only:
 {{"entities": [{{"name": "...", "kind": "...", "as": "the entry's exact words that name it"}}],
- "links": [{{"from": "<entity>", "relation": "...", "to": "<entity>", "quote": "the entry's exact words that say it", "when": "YYYY-MM-DD, only when said"}}],
+ "links": [{{"from": "<entity>", "relation": "...", "to": "<entity>", "quote": "the entry's exact words that say it", "when": "YYYY-MM-DD, only when said", "ended": false}}],
  "topics": [{{"topic": <id, or "new">, "name": "a short name", "text": "the topic's whole new text"}}]}}
 
 Entities: the people, places, things, organisations and events the entry names. "I", "me", "my" \
@@ -126,9 +154,15 @@ relation to the user ("the user's sister") only when no name is said. A particul
 brand, place or event is its own entity ("Sony TV", "Samsung S90D"), never folded into a general \
 one ("TV"). Take a kind in use before \
 making a new one; a kind is one or two plain words.
-Links: what the entry says joins two entities, read "<from> is the <relation> of <to>". When one \
-of these fits, use its name: {relations}. Otherwise name the relation in a word or two ("landlord", \
-"coach", "gave the gift to"). Also link "{user}" to what the entry says the user did, got, has, likes or can do, plans, or how a thing stands for them now — "{user} — planted → tomato saplings", "{user} — wakes up at → 8:30 am on Saturdays", "{user} — owns → utensil holder" — with "to" in the entry's own words, and "when": the day it happened, YYYY-MM-DD, when the entry says when (today, last Saturday, two weeks ago — counted from the day the entry was said). Only what the entry says.
+Links: what the entry says joins two entities. A person's people, read "<from> is the <relation> of \
+<to>": {people}. What a person has and is, read "<from> <relation> <to>", where "to" may be a value \
+in the entry's own words (a date, a place, a skill): {own}. Use these names when they fit, for the \
+user and for anyone else. The relation is what <from> is to <to>: "our son Lev" is "Lev — child → \
+{user}", "my mother" is "<her name> — parent → {user}", "our dog Rex" is "Rex — pet → {user}"; \
+"Mila — born_on → 3 May", "{user} — owns → LG C4". Otherwise name the \
+relation in a word or two ("landlord", "coach", "gave the gift to"). When the entry says a link no \
+longer holds — sold, gave away, replaced, went with another instead, broke up, moved out, left the \
+job — give that link with "ended": true. Also link "{user}" to what the entry says the user did, got, has, likes or can do, plans, or how a thing stands for them now — "{user} — planted → tomato saplings", "{user} — wakes up at → 8:30 am on Saturdays", "{user} — owns → utensil holder" — with "to" in the entry's own words, and "when": the day it happened, YYYY-MM-DD, when the entry says when (today, last Saturday, two weeks ago — counted from the day the entry was said). Only what the entry says.
 Topics: the matters the user keeps coming back to and adding to — a personal problem, choosing a \
 product, starting a business, a trip, a family event — named as one would name it a month later \
 ("choosing a TV", "starting the bakery", "back pain"). When the entry goes on with a topic above, \
@@ -271,7 +305,8 @@ class Graph:
             kinds=", ".join(sorted(set(self.kinds.values()))[:60]) or "none yet",
             topics="\n".join(f"{t['topic']}. {t['name']}: {t['text']}" for t in topics) or "none yet",
             dialogue="\n".join(f"{m}. {t}" for m, t in earlier) or "nothing yet", day=_day(heading)[:10], entry=text,
-            user=USER, relations="; ".join(f"{k} ({v})" for k, v in RELATIONS.items()))) or {}
+            user=USER, people="; ".join(f"{k} ({v})" for k, (_, v) in PEOPLE.items()),
+            own="; ".join(f"{k} ({v})" for k, (_, v) in OWN.items()))) or {}
         with self.lock:
             links, versions = self._keep_reading(n, heading, text, dialogue[0], got)
         self._classify(text, links, versions)
@@ -302,15 +337,40 @@ class Graph:
             if not relation:
                 continue
             a, b = (named.get(_named(l.get(end)).lower()) for end in ("from", "to"))
-            to = str(l.get("to") or "").strip()
-            if a == USER and not b and _words(to) and _words(to) in plain:
-                # What the user did, has or likes is named in the entry's own words: a mention of it.
+            to = re.sub(r"^(the|a|an|our|my|his|her|their)\s+", "", str(l.get("to") or "").strip(), flags=re.I)
+            if a and relation in OWN:
+                # "the Samsung" for the "Samsung TV" the person already has: the item it names.
+                items = {x["to"] for x in self.links_of.get(a.lower(), []) + links if x["from"] == a and x["relation"] == relation}
+                words = set(_words(b or to).split())
+                same = next((x for x in items if words and words <= set(_words(x).split())), None)
+                if same and b not in items:
+                    b = same
+            if a and not b and _words(to) and _words(to) in plain and (a == USER or relation in OWN):
+                # What a person has or is, and what the user did or likes, is named in the entry's own
+                # words: a thing is a mention of it; a date or an age is a value only.
                 b = to
-                mentions.append({"text": n, "dialogue": dialogue, "day": day, "entity": to, "kind": "thing", "as": to})
+                if relation == "owns" or (a == USER and relation not in OWN):
+                    mentions.append({"text": n, "dialogue": dialogue, "day": day, "entity": to, "kind": "thing", "as": to})
             if a and b and a != b and _words(l.get("quote")) and _words(l["quote"]) in plain:
                 when = str(l.get("when") or "")
                 links.append({"from": a, "relation": relation, "common": relation in RELATIONS, "to": b, "text": n, "day": day,
-                              "quote": l["quote"], **({"when": when} if re.fullmatch(r"\d{4}-\d{2}-\d{2}", when) else {})})
+                              "quote": l["quote"], **({"when": when} if re.fullmatch(r"\d{4}-\d{2}-\d{2}", when) else {}),
+                              **({"ended": True} if l.get("ended") is True else {})})
+        # "My wife Mila", "our son Lev", "Mila, my wife": the user's people, by code, whatever the
+        # reader gave — the plainest fact of a personal memory, never left to a model's attention.
+        have = {(l["from"], l["relation"], l["to"]) for l in links}
+        for m in mentions:
+            if m["entity"] == USER or m["kind"] not in ("person", "animal", "dog", "cat", "pet"):
+                continue
+            name = re.escape(m["entity"])
+            for relation, words in CALLED.items():
+                called = "|".join(sorted(words))
+                said = (re.search(rf"\b(?:my|our)\s+(?:\w+\s+)?(?:{called})\s*,?\s*(?:called\s+|named\s+)?{name}\b", text, re.I)
+                        or re.search(rf"\b{name}\s*,?\s*(?:is\s+)?(?:my|our)\s+(?:\w+\s+)?(?:{called})\b", text, re.I))
+                if said and (m["entity"], relation, USER) not in have:
+                    links.append({"from": m["entity"], "relation": relation, "common": True, "to": USER, "text": n,
+                                  "day": day, "quote": said.group(0)})
+                    have.add((m["entity"], relation, USER))
         latest = dict(self.latest)
         versions = []
         for t in got.get("topics") or []:
@@ -415,7 +475,7 @@ class Graph:
         plain = f" {_words(text)} "
         out = {USER: "person"}
         for l in self.links_of.get(USER, []):
-            if l["common"]:
+            if l["relation"] in PEOPLE:
                 other = l["to"] if l["from"] == USER else l["from"]
                 out[other] = self.kinds.get(other, "person")
         for n in dialogue:
@@ -427,6 +487,63 @@ class Graph:
             if f" {_words(key)} " in plain:
                 out[ms[0]["entity"]] = ms[0]["kind"]
         return list(out.items())[:SHOWN_ENTITIES]
+
+    def world_of(self, name: str) -> dict:
+        """A person's world as the memory knows it now, by the fixed parts every person has: for each,
+        what holds (the newest for a one-value part; every item not ended for a list) and what was,
+        each with the fact and the day it stands on. Built when asked for, never stored."""
+        key = name.lower()
+        parts = {}
+        for relation, (size, _) in (PEOPLE | OWN).items():
+            said = []
+            for l in self.links_of.get(key, []):
+                if l["relation"] == relation and relation in PEOPLE and l["to"].lower() == key:
+                    said.append((l["from"], l))
+                elif relation in OWN and l["relation"] == relation and l["from"].lower() == key:
+                    said.append((l["to"], l))
+                elif relation in INVERSE and l["relation"] == INVERSE[relation] and l["from"].lower() == key:
+                    said.append((l["to"], l))
+            if not said:
+                continue
+            newest = {}
+            for other, l in sorted(said, key=lambda x: x[1]["text"]):
+                newest[other.lower()] = (other, l)
+            ordered = sorted(newest.values(), key=lambda x: x[1]["text"], reverse=True)
+            now = [x for x in ordered if not x[1].get("ended")]
+            was = [x for x in ordered if x[1].get("ended")]
+            if size == "one":
+                now, was = now[:1], now[1:] + was
+            parts[relation] = {"now": now, "was": was}
+        # A pet or a person is not a thing owned, though "we have a beagle" says both.
+        people = {o.lower() for r in PEOPLE if r in parts for o, _ in parts[r]["now"] + parts[r]["was"]}
+        if "owns" in parts:
+            parts["owns"] = {k: [x for x in v if x[0].lower() not in people] for k, v in parts["owns"].items()}
+            if not parts["owns"]["now"] and not parts["owns"]["was"]:
+                del parts["owns"]
+        return parts
+
+    def world_lines(self, name: str, only=None, gaps: bool = False) -> list[str]:
+        """The person's world as lines for a reader; `only` some parts of it."""
+        parts = self.world_of(name)
+
+        def item(other, l):
+            kind = self.kinds.get(other)
+            return f'{other}{f" [{kind}]" if kind and kind not in ("thing", "person") else ""} (fact {l["text"]}, {l["day"][:10]})'
+        lines = []
+        for relation, got in parts.items():
+            if only is not None and relation not in only:
+                continue
+            line = f'  {relation.replace("_", " ")}: ' + ("; ".join(item(o, l) for o, l in got["now"][:8]) or "none now")
+            if got["was"]:
+                line += "; was: " + "; ".join(item(o, l) + (" — ended" if l.get("ended") else "") for o, l in got["was"][:4])
+            lines.append(line)
+        if gaps and only is None:
+            missing = [r.replace("_", " ") for r in ("spouse", "child", "born_on", "lives_in", "works_at", "job") if r not in parts]
+            if missing:
+                lines.append("  not known yet: " + ", ".join(missing))
+        if not lines:
+            return []
+        return [f"{name}'s world as the memory knows it now (the newest holds; what ended or was replaced is under \"was\"):"] + lines
 
     def image(self, name: str) -> dict:
         """One entity as the memory knows it now: every text that mentions it, the newest first."""
@@ -449,7 +566,7 @@ class Graph:
         names |= {ms[0]["entity"] for key, ms in self.by_entity.items()
                   if key != USER and _words(key) and f" {_words(key)} " in asked}
         topics = self.near_topics(question, 5, touched=numbers)
-        if not names and not topics:
+        if not names and not topics and not self.links_of.get(USER):
             return ""
         lines = []
         for t in topics:
@@ -457,6 +574,10 @@ class Graph:
             lines.append(f'Topic "{t["name"]}" ({kind}as of {t["day"][:10]}, version {t["version"]}, from facts '
                          f'{", ".join(map(str, t["entries"][-30:]))}): {t["text"]}')
         lines += self._said_of_self(set(numbers) | {n for t in topics for n in t["entries"]})
+        lines += self.world_lines(USER, gaps=True)
+        for name in sorted(names):
+            if self.kinds.get(name) == "person":
+                lines += self.world_lines(name)
         for name in sorted(names)[:20]:
             image = self.image(name)
             if not image["entries"]:
@@ -506,11 +627,27 @@ class Graph:
                 lines += self._said_of_self(set(n for t in sure for n in t["entries"]), limit=15)
         for t in possible:
             lines.append(f'Possibly related: "{t["name"]}", last on {t["day"][:10]} — ask the memory if it matters.')
+        lines += self._world_spoken_of(message)
         lines += self._known_of(message, set(recent))
         if not lines:
             return ""
         lines.append("How and whether to bring this up with the user is yours to decide.")
         return "\n".join(lines)
+
+    def _world_spoken_of(self, message: str) -> list[str]:
+        """The parts of the user's world the message speaks of: "my car", "the TV", "my birthday",
+        "work" — by the part's own words or by the kinds and names of what fills it."""
+        plain = f" {_words(message)} "
+        with self.lock:
+            parts = self.world_of(USER)
+            spoken = set()
+            for relation, got in parts.items():
+                words = SLOT_WORDS.get(relation, set()) | {w for r, ws in CALLED.items() if r == relation for w in ws}
+                for other, _ in got["now"] + got["was"]:
+                    words |= {_words(other)} | ({_words(self.kinds[other])} if other in self.kinds else set())
+                if any(w and f" {w} " in plain for w in words):
+                    spoken.add(relation)
+            return self.world_lines(USER, only=spoken) if spoken else []
 
     def _known_of(self, message: str, now_said: set[int], limit: int = 4) -> list[str]:
         """The people and things the message names that the memory knows from before — by their name,
@@ -541,6 +678,9 @@ class Graph:
             links = [f'{l["from"]} is the {l["relation"].replace("_", " ")} of {l["to"]}' for l in image["links"][:4]]
             out.append(f'- {name} ({self.kinds.get(name, "thing")})' + (f': {"; ".join(links)}' if links else "")
                        + f'. Spoken of {len(before)} time{"s" if len(before) > 1 else ""}, last on {day}: "{text}" (fact {n})')
+            if self.kinds.get(name) == "person":
+                with self.lock:
+                    out += ["  " + line for line in self.world_lines(name)[1:]]
         return out
 
     def _said_of_self(self, texts: set[int], limit: int = 80) -> list[str]:

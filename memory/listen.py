@@ -187,6 +187,9 @@ class Listener:
             note = await self._fitted(message, gathered)
             if note:
                 parts.append(note)
+            else:
+                # The user's own question, answered from the memory, is never fitted away.
+                parts += [a for a in answers if a]
         # Every question of the user's is a wish to know: kept as one. An action is the agent's.
         for request in got.requests:
             if request["kind"] == "know":
