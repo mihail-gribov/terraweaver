@@ -133,6 +133,9 @@ def _memory() -> str:
 # What a reader is shown, if not the whole journal: question -> the entry numbers to show. None
 # here, so the baseline reads everything; the proto sets its search (memory/search.py).
 narrow = None
+# What the graph read of the entries an answer is shown (memory/graph.py): (entry numbers,
+# question) -> the topics and entities they bear on, as text; None where there is no graph.
+graph_facts = None
 
 
 def _for(question: str) -> str:
@@ -334,8 +337,11 @@ async def ask(question: str, now: str | None = None) -> str:
         return "The memory is empty."
     memory = _for(question)
     today = (now or f"{datetime.now():%Y-%m-%d}")[:10]
-    return await _read(ASK.format(memory=_for_the_model(memory, dated=True), question=question, today=today),
-                       thinking=True)
+    shown = _for_the_model(memory, dated=True)
+    if graph_facts is not None:
+        read = await asyncio.to_thread(graph_facts, [n for n, _, _ in _entries(memory)], question)
+        shown += f"\n\n{read}" if read else ""
+    return await _read(ASK.format(memory=shown, question=question, today=today), thinking=True)
 
 
 @server.tool()

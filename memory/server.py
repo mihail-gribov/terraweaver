@@ -37,6 +37,8 @@ sessions: dict[str, dict] = {}
 # search the readers are shown entries by (memory/search.py).
 world = None
 search = None
+# The graph: the texts, the entities they mention and the links between them (memory/graph.py).
+graph = None
 # Which memory this is (var/memory/<name>), and the search engine tasks use.
 name, engine = "main", "tavily"
 
@@ -63,6 +65,9 @@ async def forgot(taken: list[tuple[int, str]], request: int, to_bin) -> list[str
     if world is not None:
         # Waited for: the words are out of the world before the user is told they are gone.
         world.send("forget", taken, wait=True)
+    if graph is not None:
+        # Derived from the journal: read again without what was forgotten.
+        graph.rebuild()
     candidates = structure.heard_candidates(taken)
     if not candidates:
         return []
@@ -238,6 +243,8 @@ def _solve(text: str) -> str:
 
 
 def _journal_changed() -> None:
+    if graph is not None:
+        graph.wake()
     if world is not None:
         world.send("sync", structure, held())
 
@@ -300,6 +307,13 @@ async def http_say(request):
     return PlainTextResponse(await listener.say(messages, body.get("now"), wait=bool(body.get("wait", False))))
 
 
+# The journal has an /ask of its own, the question alone; registered first, it took every call and
+# this one was never reached — `now` and `gather` were lost, so LongMemEval's memory answered as of
+# the machine's day (found 2026-10-29). The journal's goes; this one is the memory's.
+base.server._custom_starlette_routes[:] = [r for r in base.server._custom_starlette_routes
+                                           if getattr(r, "path", None) != "/ask"]
+
+
 @base.server.custom_route("/ask", ["POST"])
 async def http_ask(request):
     """`ask` over HTTP, for runners outside an agent: {"question": ..., "gather": false, "now": ...}
@@ -328,7 +342,7 @@ async def http_notes(request):
 
 
 def main() -> None:
-    global structure, world, search, name, engine, listener
+    global structure, world, graph, search, name, engine, listener
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--name", default="main", help="var/memory/<name>/: facts.md and structure.jsonl")
     parser.add_argument("--model", default="nvidia/nemotron-3-super-120b-a12b",
@@ -340,7 +354,9 @@ def main() -> None:
     parser.add_argument("--tools", choices=["two", "all"], default="two",
                         help="two: the agent sees `say` and `ask` only; all: every call, for experiments")
     parser.add_argument("--no-world", action="store_true",
-                        help="keep the journal and the index only: no world said into, nothing read")
+                        help="keep the journal and the index only: nothing read into a graph or a world")
+    parser.add_argument("--world", action="store_true",
+                        help="the older world (memory/world.py, the ontology engine) instead of the graph")
     args = parser.parse_args()
     if not os.environ.get("NEBIUS_API_KEY"):
         # Without it every read fails and the memory only keeps words as said: a run that looks
@@ -353,9 +369,13 @@ def main() -> None:
     name, engine = args.name, args.engine
     base.facts, base.model = where / "facts.md", args.model
     structure = Structure(where / "structure.jsonl", base._keep, held)
-    if not args.no_world:
+    if args.world:
         from memory.world import Worker
         world = Worker(where / "world")
+    elif not args.no_world:
+        from memory.graph import Graph
+        graph = Graph(where / "graph", lambda: base._entries(base._memory()))
+        base.graph_facts = graph.facts_for
     # Readers are shown what the search finds, not the whole journal: every entry about a thing
     # the question names, and twelve more by words and meaning (docs/decisions.md, 2026-10-20).
     from memory.search import Search
