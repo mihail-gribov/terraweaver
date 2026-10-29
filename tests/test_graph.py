@@ -65,7 +65,8 @@ def said_of_self() -> None:
     classes = {"planted": "did", "wakes up at": "now", "woke up at": "did", "gardening": "interest", "wake-up": "habit"}
     decide = lambda state, question, options: next(c for k, c in classes.items() if k in state)  # noqa: E731
     with tempfile.TemporaryDirectory() as tmp:
-        g = Graph(Path(tmp), journal(entries), reader=told(readings), decide=decide)
+        goes_on = lambda message, t: "plant" in message and t["name"] == "gardening"  # noqa: E731
+        g = Graph(Path(tmp), journal(entries), reader=told(readings), decide=decide, goes_on=goes_on)
         g.wait(10)
         own = {(l["relation"], l["to"], l.get("when"), l.get("class")) for l in g.links if l["from"] == USER}
         check("the user's own links, in the entry's words, with the day it happened and a class",
@@ -79,9 +80,12 @@ def said_of_self() -> None:
               in facts and "did —" in facts, facts)
         recalled = g.recall("I want to plant peppers next", [1])
         check("beside a message: the topic it goes on with, and what the user said in it",
-              recalled.startswith('This goes on with the topic "gardening"') and "planted 12 tomato saplings" in recalled
+              recalled.startswith('We discussed this before: "gardening", last on 2023-05-05') and "planted 12 tomato saplings" in recalled
               and "wake" not in recalled, recalled)
-        check("no topic touched, nothing recalled", g.recall("what's the weather?", []) == "")
+        check("a topic near by meaning that the message does not go on with is not recalled",
+              g.recall("what's the weather?", []) == "")
+        check("found by meaning alone, with no entry found: recalled when the message goes on with it",
+              g.recall("thinking of planting peppers", []).startswith('We discussed this before: "gardening"'))
         facts = g.facts_for([2], "what time do I wake up on Saturdays?")
         check("every fact of a found topic, not only the found ones, the newest first",
               facts.index("fact 3") < facts.index("fact 2"), facts)

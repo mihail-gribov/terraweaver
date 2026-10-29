@@ -156,13 +156,18 @@ class Graph:
     """The mentions and topics of one memory, under `where`; `entries()` gives the journal as
     (number, heading, text). `wake()` after every kept entry; `wait()` before reading the graph."""
 
-    def __init__(self, where: Path, entries, reader=None, embed=None, decide=None):
+    def __init__(self, where: Path, entries, reader=None, embed=None, decide=None, goes_on=None):
         self.where = Path(where)
         self.where.mkdir(parents=True, exist_ok=True)
         self.entries = entries
         self.reader = reader or (lambda system, prompt: role("reader").json(system, prompt, room=8000))
         # A closed question over named options -> the option: the decision model, one token.
         self.decide = decide or (lambda state, question, options: role("judge").choice(state, question, options)["choice"])
+        # Does this message go on with this topic? The decision model, yes or no.
+        self.goes_on = goes_on or (lambda message, t: role("judge").noul(
+            f'A topic the user talked about before, "{t["name"]}": {t["text"]}\n\nThe user now says: "{message}"',
+            "Does the user's message go on with this topic, the same matter?", "yes, the same matter",
+            "no, another matter")["p"]["yes"] >= 0.5)
         # Texts -> vectors, to find topics by meaning; without it, by the words they share.
         self.embed = embed
         self._vectors: dict[tuple, list] = {}
@@ -453,10 +458,12 @@ class Graph:
         return IMAGE_HEAD.format(names="what the question bears on") + "\n" + "\n".join(lines) if lines else ""
 
     def recall(self, message: str, numbers=(), limit: int = 2) -> str:
-        """For the agent, beside the user's message: the topics it goes on with — those of this
-        dialogue's entries and of the entries found for it, the nearest first — each with what it
-        has come to and what the user said of themselves in it. Never waits for the reading: what
-        is read by now is what is given, so the message is never held up."""
+        """For the agent, beside the user's message: the topics it goes on with, said as a talk had
+        before — where it stood and when it was last on — for the agent to bring up as it sees fit.
+        Candidates are the topics of this dialogue's entries and of the entries found for the
+        message, and the nearest by meaning, so a matter comes back in other words a month later;
+        the decision model keeps those the message goes on with, since the nearest topic by meaning
+        is always some topic. Never waits for the reading: what is read by now is what is given."""
         held = self.entries()
         recent = self.dialogue_of(held[-1][0], held) if held else []
         if held and _day(held[-1][1]):
@@ -465,16 +472,30 @@ class Graph:
                 recent = []
         touched = set(numbers) | set(recent)
         with self.lock:
-            mine = [t for t in self.near_topics(message, limit, touched=touched) if touched & set(t["entries"])][:limit]
-            if not mine:
-                return ""
-            lines = []
-            for t in mine:
-                kind = f'{t["kind"]}, ' if t.get("kind") else ""
-                lines.append(f'This goes on with the topic "{t["name"]}" ({kind}as of {t["day"][:10]}, from facts '
-                             f'{", ".join(map(str, t["entries"][-30:]))}): {t["text"]}')
-            said = self._said_of_self(set(n for t in mine for n in t["entries"]), limit=15)
-        return "\n".join(lines + said)
+            candidates = self.near_topics(message, len([t for t in self.latest.values() if touched & set(t["entries"])]) + 3,
+                                          touched=touched)
+        kept = []
+        for t in candidates:
+            if len(kept) >= limit:
+                break
+            try:
+                yes = self.goes_on(message, t)
+            except Exception:  # noqa: BLE001 - no decision model: the topics its entries are in
+                log.exception("deciding a topic failed")
+                yes = bool(touched & set(t["entries"]))
+            if yes:
+                kept.append(t)
+        if not kept:
+            return ""
+        lines = []
+        for t in kept:
+            lines.append(f'We discussed this before: "{t["name"]}", last on {t["day"][:10]} (facts '
+                         f'{", ".join(map(str, t["entries"][-30:]))}). Where it stood: {t["text"]}')
+        with self.lock:
+            said = self._said_of_self(set(n for t in kept for n in t["entries"]), limit=15)
+        lines += said
+        lines.append("How and whether to bring this up with the user is yours to decide.")
+        return "\n".join(lines)
 
     def _said_of_self(self, texts: set[int], limit: int = 80) -> list[str]:
         """What the user said of themselves in these facts, by class, the newest first: every one, not
