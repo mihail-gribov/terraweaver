@@ -50,6 +50,18 @@ PAUSE = timedelta(hours=1)
 # people bring — never everything, so a reading costs the same in the first week and the third year.
 SHOWN_TOPICS, SHOWN_ENTITIES = 8, 40
 USER = "the user"
+# The words a user calls their people by, to find "my wife" as the one the memory knows as the user's
+# spouse.
+CALLED = {
+    "spouse": {"wife", "husband"}, "partner": {"partner", "boyfriend", "girlfriend"},
+    "parent": {"mother", "father", "mom", "mum", "dad"}, "child": {"son", "daughter", "kid", "kids"},
+    "sibling": {"brother", "sister"}, "friend": {"friend"}, "colleague": {"colleague", "coworker"},
+    "manager": {"boss", "manager"}, "pet": {"dog", "cat", "pet"},
+}
+# Recalling a topic beside the user's message: sure enough to say where it stood, or only to name it
+# in a line, for the agent to `ask` if it needs it — as a person who is sure says "oh, I thought about
+# this", and one who is not keeps it in mind.
+SURE, POSSIBLE = 0.7, 0.3
 # The words a reader may write for the user; every one of them is the user, by code.
 SELF = {"the user", "user", "i", "me", "myself", "we", "us", "the user s"}
 # The plainest and most frequent relations in a person's life, named the same way every time so that
@@ -163,11 +175,11 @@ class Graph:
         self.reader = reader or (lambda system, prompt: role("reader").json(system, prompt, room=8000))
         # A closed question over named options -> the option: the decision model, one token.
         self.decide = decide or (lambda state, question, options: role("judge").choice(state, question, options)["choice"])
-        # Does this message go on with this topic? The decision model, yes or no.
+        # How likely this message goes on with this topic: the decision model, yes or no.
         self.goes_on = goes_on or (lambda message, t: role("judge").noul(
             f'A topic the user talked about before, "{t["name"]}": {t["text"]}\n\nThe user now says: "{message}"',
             "Does the user's message go on with this topic, the same matter?", "yes, the same matter",
-            "no, another matter")["p"]["yes"] >= 0.5)
+            "no, another matter")["p"]["yes"])
         # Texts -> vectors, to find topics by meaning; without it, by the words they share.
         self.embed = embed
         self._vectors: dict[tuple, list] = {}
@@ -474,28 +486,62 @@ class Graph:
         with self.lock:
             candidates = self.near_topics(message, len([t for t in self.latest.values() if touched & set(t["entries"])]) + 3,
                                           touched=touched)
-        kept = []
+        sure, possible = [], []
         for t in candidates:
-            if len(kept) >= limit:
-                break
             try:
-                yes = self.goes_on(message, t)
+                p = float(self.goes_on(message, t))
             except Exception:  # noqa: BLE001 - no decision model: the topics its entries are in
                 log.exception("deciding a topic failed")
-                yes = bool(touched & set(t["entries"]))
-            if yes:
-                kept.append(t)
-        if not kept:
-            return ""
+                p = 1.0 if touched & set(t["entries"]) else 0.0
+            if p >= SURE and len(sure) < limit:
+                sure.append(t)
+            elif p >= POSSIBLE and len(possible) < 3:
+                possible.append(t)
         lines = []
-        for t in kept:
+        for t in sure:
             lines.append(f'We discussed this before: "{t["name"]}", last on {t["day"][:10]} (facts '
                          f'{", ".join(map(str, t["entries"][-30:]))}). Where it stood: {t["text"]}')
-        with self.lock:
-            said = self._said_of_self(set(n for t in kept for n in t["entries"]), limit=15)
-        lines += said
+        if sure:
+            with self.lock:
+                lines += self._said_of_self(set(n for t in sure for n in t["entries"]), limit=15)
+        for t in possible:
+            lines.append(f'Possibly related: "{t["name"]}", last on {t["day"][:10]} — ask the memory if it matters.')
+        lines += self._known_of(message, set(recent))
+        if not lines:
+            return ""
         lines.append("How and whether to bring this up with the user is yours to decide.")
         return "\n".join(lines)
+
+    def _known_of(self, message: str, now_said: set[int], limit: int = 4) -> list[str]:
+        """The people and things the message names that the memory knows from before — by their name,
+        or as the user calls them ("my wife" is the user's spouse) — each with its links and the last
+        time it was spoken of, in the user's words. What this dialogue said, the agent has already."""
+        plain = f" {_words(message)} "
+        with self.lock:
+            names = [ms[0]["entity"] for key, ms in self.by_entity.items()
+                     if key != USER and _words(key) and f" {_words(key)} " in plain]
+            for l in self.links_of.get(USER, []):
+                other = l["from"] if l["to"] == USER else l["to"]
+                if l["common"] and other != USER and any(f" {w} " in plain for w in CALLED.get(l["relation"], ())):
+                    names.append(other)
+        held = {n: (h, t) for n, h, t in self.entries()}
+        out, seen = [], set()
+        for name in names:
+            if name in seen or len(seen) >= limit:
+                continue
+            seen.add(name)
+            with self.lock:
+                image = self.image(name)
+            before = [(n, day, text) for n, day, text in image["entries"] if n not in now_said and n in held]
+            if not before:
+                continue
+            if not out:
+                out.append("Known from before:")
+            n, day, text = before[0]
+            links = [f'{l["from"]} is the {l["relation"].replace("_", " ")} of {l["to"]}' for l in image["links"][:4]]
+            out.append(f'- {name} ({self.kinds.get(name, "thing")})' + (f': {"; ".join(links)}' if links else "")
+                       + f'. Spoken of {len(before)} time{"s" if len(before) > 1 else ""}, last on {day}: "{text}" (fact {n})')
+        return out
 
     def _said_of_self(self, texts: set[int], limit: int = 80) -> list[str]:
         """What the user said of themselves in these facts, by class, the newest first: every one, not

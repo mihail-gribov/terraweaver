@@ -29,7 +29,7 @@ def main() -> None:
     if not message or not is_on(session):
         return
     try:
-        found = call("/say", {"messages": [{"role": "user", "text": message}]}, timeout=60).strip()
+        found = call("/say", {"messages": [{"role": "user", "text": message}]}, timeout=110).strip()
     except Exception:  # noqa: BLE001 - no memory is no context, never a refused prompt
         return
     if not found or found.lower().rstrip(".") == "nothing":

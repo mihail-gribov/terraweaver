@@ -48,6 +48,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--model", default="sonnet", help="the agent: Claude Code's model")
     parser.add_argument("--port", type=int, default=7130)
+    parser.add_argument("--message", default=TODAY, help="what the user says today")
     args = parser.parse_args()
     if not os.environ.get("NEBIUS_API_KEY"):
         raise SystemExit("NEBIUS_API_KEY is not set: set -a; . ./.env; set +a")
@@ -73,16 +74,16 @@ def main() -> int:
         print("\n(the memory reads what it kept into its graph...)", flush=True)
         call(args.port, "/settle?wait=900", timeout=960)
 
-        print(f"\n== Today, a new session of Claude Code ({args.model}), the plugin on\n\n  user: {TODAY}\n", flush=True)
+        print(f"\n== Today, a new session of Claude Code ({args.model}), the plugin on\n\n  user: {args.message}\n", flush=True)
         cwd = where / "cwd"
         cwd.mkdir()
         env = {**os.environ, "PERSONAL_WORLD": "on", "PERSONAL_MEMORY_URL": f"http://127.0.0.1:{args.port}"}
         run = subprocess.run(["claude", "-p", "--model", args.model, "--plugin-dir", str(PLUGIN),
                               "--allowedTools", "mcp__plugin_personal-world_memory__ask"],
-                             input=TODAY, cwd=cwd, env=env, capture_output=True, text=True, timeout=900)
+                             input=args.message, cwd=cwd, env=env, capture_output=True, text=True, timeout=900)
         heard = [json.loads(l) for l in (where / "heard.jsonl").read_text().splitlines() if l.strip()]
         beside = next((h["answered"] for h in reversed(heard)
-                       if any(TODAY in (m.get("text") or "") for m in h["heard"])), "")
+                       if any(args.message in (m.get("text") or "") for m in h["heard"])), "")
         print("  what the memory put beside the message:\n")
         print("\n".join(f"    | {line}" for line in (beside or "(nothing)").splitlines()))
         print(f"\n  agent:\n\n" + "\n".join(f"    {line}" for line in run.stdout.strip().splitlines()))

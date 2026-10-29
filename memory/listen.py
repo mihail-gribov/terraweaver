@@ -153,23 +153,58 @@ class Listener:
                                   withheld=said != " ".join(message.split()))
             if kept:
                 parts.append(kept)
-        found = await self._context(message, 10)
-        if found and found.strip().lower().strip(".") != "nothing":
-            parts.append("What the memory holds that bears on this:\n" + found)
-        recall = getattr(self.base, "graph_recall", None)
-        if recall is not None:
-            # The topic the message goes on with: where the matter stood, so nothing ruled out is
-            # offered again. Only what the graph has read by now; never waited for.
-            narrow = getattr(self.base, "narrow", None)
+        # At once, beside each other: what bears on the message, the topic and people it goes on
+        # with, and the answer to each question of the user's, from the memory only.
+        recall, narrow = getattr(self.base, "graph_recall", None), getattr(self.base, "narrow", None)
+
+        async def recalled() -> str:
+            if recall is None:
+                return ""
+            # Only what the graph has read by now; never waited for.
             numbers = (await asyncio.to_thread(narrow, message))[:3] if narrow else []
-            topic = await asyncio.to_thread(recall, message, numbers)
-            if topic:
-                parts.append(topic)
+            return await asyncio.to_thread(recall, message, numbers)
+
+        async def answered(question: str) -> str:
+            # The memory answers what it holds; it never searches from here — a search raced the
+            # agent's own `ask` (2026-10-28). The web is the agent's to ask for.
+            try:
+                said = (await (self._ask(question, now) if now else self._ask(question))).strip()
+            except Exception:  # noqa: BLE001 - no answer is the agent's to seek
+                log.exception("answering the user's question failed")
+                return ""
+            if not said or "does not say" in said.lower() or said.lower().startswith("the memory is empty"):
+                return ""
+            return f'The user asks: "{question}". What the memory holds to answer it:\n{said}'
+
+        asked = [r["text"] for r in got.requests if r["kind"] == "know"]
+        found, topic, *answers = await asyncio.gather(self._context(message, 10), recalled(),
+                                                      *(answered(q) for q in asked))
+        gathered = ([f"What the memory holds that bears on this:\n{found}"]
+                    if found and found.strip().lower().strip(".") != "nothing" else [])
+        gathered += [topic] + list(answers)
+        gathered = [g for g in gathered if g]
+        if gathered:
+            note = await self._fitted(message, gathered)
+            if note:
+                parts.append(note)
         # Every question of the user's is a wish to know: kept as one. An action is the agent's.
         for request in got.requests:
             if request["kind"] == "know":
                 await self._wanted(request["text"])
         return parts
+
+    async def _fitted(self, message: str, gathered: list[str]) -> str:
+        """What was found, made into one note for this message: only what bears on it, adapted to it,
+        each line with the facts and days it stands on. A view for the agent, made anew for every
+        message; the facts in the memory stay as they are. Unread, the found is given as found."""
+        try:
+            said = (await self.base._read(FIT.format(message=message, found="\n\n".join(gathered)))).strip()
+        except Exception:  # noqa: BLE001 - not fitted: given as found
+            log.exception("fitting the note failed")
+            return "\n\n".join(gathered)
+        if not said or said.lower().strip(" .") == "nothing":
+            return ""
+        return "From before, for this message (fact numbers and days; the user's latest word wins):\n" + said
 
     def _heard_as(self, role: str, text: str) -> None:
         from memory.intake.intake import WINDOW
@@ -427,6 +462,28 @@ class Listener:
             return ""
         taken = await self.base.take_forget(waiting["entries"], waiting["what"], now)
         return "Forgotten, as the user confirmed — taken out:\n" + taken
+
+
+# What was found beside one message, fitted to it: the memory decides what bears on it, never what
+# to do about it.
+FIT = """The user has just written to their assistant:
+<message>
+{message}
+</message>
+
+Their personal memory found the following. Some of it may not bear on this message.
+
+{found}
+
+Bearing on it is whatever the assistant should know to answer it well: what the memory knows of \
+the things the message names or points to ("the TV" is the TV the user has), of the people it \
+names, and of the matter it goes on with. Write for the assistant only that, adapted to the \
+message: a few short lines, each \
+with the fact numbers and the days it stands on, the user's own words quoted where they matter. \
+Keep what was ruled out or changed, and when, where it bears on the message. When the user asked \
+something the memory answers, give that answer first. Say nothing the found text does not say, \
+and give no advice: deciding is the assistant's. If nothing bears on the message, answer with the \
+single word: nothing."""
 
 
 def _reply(parts: list[str]) -> str:

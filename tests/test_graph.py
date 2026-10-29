@@ -65,7 +65,8 @@ def said_of_self() -> None:
     classes = {"planted": "did", "wakes up at": "now", "woke up at": "did", "gardening": "interest", "wake-up": "habit"}
     decide = lambda state, question, options: next(c for k, c in classes.items() if k in state)  # noqa: E731
     with tempfile.TemporaryDirectory() as tmp:
-        goes_on = lambda message, t: "plant" in message and t["name"] == "gardening"  # noqa: E731
+        goes_on = lambda message, t: (0.9 if "plant" in message and t["name"] == "gardening"  # noqa: E731
+                                      else 0.5 if "Saturday" in message and t["name"] == "wake-up time" else 0.1)
         g = Graph(Path(tmp), journal(entries), reader=told(readings), decide=decide, goes_on=goes_on)
         g.wait(10)
         own = {(l["relation"], l["to"], l.get("when"), l.get("class")) for l in g.links if l["from"] == USER}
@@ -84,6 +85,9 @@ def said_of_self() -> None:
               and "wake" not in recalled, recalled)
         check("a topic near by meaning that the message does not go on with is not recalled",
               g.recall("what's the weather?", []) == "")
+        maybe = g.recall("busy Saturday ahead", [])
+        check("not sure: the topic only named, in a line, for the agent to ask",
+              maybe.startswith('Possibly related: "wake-up time", last on 2023-05-20') and "Where it stood" not in maybe, maybe)
         check("found by meaning alone, with no entry found: recalled when the message goes on with it",
               g.recall("thinking of planting peppers", []).startswith('We discussed this before: "gardening"'))
         facts = g.facts_for([2], "what time do I wake up on Saturdays?")
@@ -144,6 +148,13 @@ def offline() -> None:
         facts = g.facts_for([5], "which TV did we choose?")
         check("an answer gets the topic and the images the found entries name",
               'Topic "choosing a TV"' in facts and "LG TV" in facts and "facts 5 [2026-11-28], 3 [2026-10-26]" in facts, facts)
+
+        g.goes_on = lambda message, t: 0.0
+        known = g.recall("My wife wants a soundbar too", [])
+        check("beside a message: a person it names as the user calls them, known from before",
+              known.startswith("Known from before:") and "- Mila (person): Mila is the spouse of the user" in known
+              and "last on 2026-10-26" in known, known)
+        check("by name too", "- LG TV (tv)" in g.recall("is the LG TV any good for games?", []))
 
         # Derived, never the truth: read again from the journal, the same comes back.
         g.reader = told(READINGS)
