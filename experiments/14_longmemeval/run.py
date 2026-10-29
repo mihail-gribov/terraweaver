@@ -1,10 +1,12 @@
 """LongMemEval through the memory's two doors, against the same model given everything.
 
-    .venv/bin/python experiments/14_longmemeval/run.py                    # 30 questions, both modes
+    .venv/bin/python experiments/14_longmemeval/run.py                    # 25 questions, both modes
     .venv/bin/python experiments/14_longmemeval/run.py --count 6 --mode memory
     .venv/bin/python experiments/14_longmemeval/run.py --only gpt4_2655b836
 
-A stratified slice of LongMemEval `oracle` (the sessions that hold the answer; benchmarks/fetch.sh).
+A stratified slice of LongMemEval `oracle` (the sessions that hold the answer; benchmarks/fetch.sh),
+without single-session-assistant: those ask what the assistant said, and the memory drops the
+agent's messages by design (`--with-assistant` puts them back).
 
 - **memory:** a fresh memory per question (`python -m memory.server --no-world`). Every turn of
   every session goes in by `/say` as the hooks would pass it — the user's and the assistant's, with
@@ -124,7 +126,9 @@ def one(instance, modes: list[str], ports: "queue.Queue", out: Path) -> dict:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--count", type=int, default=30, help="questions, the same number of each type")
+    parser.add_argument("--count", type=int, default=25, help="questions, the same number of each type")
+    parser.add_argument("--with-assistant", action="store_true",
+                        help="keep single-session-assistant: what the agent said, which the memory drops")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--mode", choices=["memory", "context", "both"], default="both")
     parser.add_argument("--parallel", type=int, default=6)
@@ -136,7 +140,8 @@ def main() -> int:
 
     instances = lme.load("oracle")
     picked = ([i for i in instances if i.id in args.only] if args.only
-              else lme.slice_of(instances, args.count, seed=args.seed))
+              else lme.slice_of(instances, args.count, kinds=[k for k in lme.TYPES if args.with_assistant
+                                                              or k != "single-session-assistant"], seed=args.seed))
     modes = ["memory", "context"] if args.mode == "both" else [args.mode]
     out = ROOT / "experiments" / "results" / "14_longmemeval" / f"{datetime.now():%Y%m%d-%H%M%S}-seed{args.seed}"
     out.mkdir(parents=True)
@@ -148,7 +153,7 @@ def main() -> int:
     with concurrent.futures.ThreadPoolExecutor(args.parallel) as pool:
         rows = list(pool.map(lambda instance: one(instance, modes, ports, out), picked))
 
-    summary = {"slice": "oracle", "count": len(rows), "seed": args.seed, "answerer": role("reader").model,
+    summary = {"slice": "oracle", "count": len(rows), "seed": args.seed, "with_assistant": args.with_assistant, "answerer": role("reader").model,
                "judge": "haiku", "memory": "memory.server --no-world, /ask gather=false"}
     for mode in modes:
         by_kind = defaultdict(list)

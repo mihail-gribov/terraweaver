@@ -55,7 +55,7 @@ again.
 | **Entry** | one user message, rewritten to stand alone, with the words as said beside it, numbered and dated | the journal, append-only — the source of truth |
 | **Dialogue** | the entries of one conversation in a row, the user's only, until a long silence or a new session | not stored: a stretch of the journal |
 | **Topic** | a text the model writes over the entries on one subject, across dialogues, layered: considered, ruled out and why, chosen, changed — naming the entries it stands on | every version; a new one closes the one before |
-| **Entity** | a person, place or thing as one dialogue speaks of it, with a plain kind word ("person", "TV") | per dialogue |
+| **Entity** | a person, place or thing as one dialogue speaks of it, with a kind ("person", "TV", "place") from a flat set: the reader is shown the kinds in use and takes one before making a new one; no hierarchy | per dialogue |
 | **Assertion** | one thing an entry says of an entity: a value, or a relation to another entity | with its entry, quote, `said` and `until` |
 | **The user** | the one entity shared by every dialogue: every entry is the user's, so "I", "me", "my" are always the user — a fact of the source, not a guess. A name the user goes by ("Alex") is bound to them by an identity link | one, always; everything the user tells of their people hangs on them ("my wife" is a person with *wife → the user*) |
 | **Identity link** | "the Tom of Monday is Tom Becker": two dialogues' entities are one | with its entry and quote; can be undone |
@@ -124,7 +124,7 @@ with each of the user's conditions judged against the page. When the memory does
 | Built and measured | hearing through hooks; the gate and the rewrite; the journal with days; interests; `ask` from the journal; gathering over the web with conditions judged; secrets withheld; person names kept out of web queries |
 | Built, the older way | the world reads the journal after 30 s of silence into values and links, each with its entry and quote, and asks whether a later entry ends a link — but it merges identity on write and drops an ended link instead of closing it |
 | Designed, not built | dialogues and topics as texts; assertions per dialogue with `said`/`until`; identity links that can be undone; images built when asked for |
-| Set aside | the automatic class hierarchy and its generated methods; preparing ahead by interest; forgetting on the user's word (entries shown, confirmed, removed with all that stood on them, topics and images rebuilt without them); hooks for agents other than Claude Code |
+| Set aside | the ontology grown automatically — a class hierarchy, its methods generated as code — simplified to a flat set of kinds, since growing it proved a large work of its own; preparing ahead by interest; forgetting on the user's word (entries shown, confirmed, removed with all that stood on them, topics and images rebuilt without them); hooks for agents other than Claude Code |
 
 ## Open
 

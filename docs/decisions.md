@@ -5429,8 +5429,9 @@ Re-measured on seed 0 and, so as not to be fitted to it, on seed 1:
 The context fell from 86.7% on seed 0 with the new answering step, which is the same in both
 modes: the spread between runs is as large as the change. Most of the gap is
 single-session-assistant, 1/5 against 5/5 on both seeds: those questions ask what the assistant
-said, and the memory drops the agent's messages by design. Without them, seed 1: memory 19/25,
-context 21/25.
+said, and the memory drops the agent's messages by design. Without them the two are level:
+seed 0 memory 16/25, context 15/25; seed 1 memory 18/25, context 18/25. So the runner leaves that
+type out (`--with-assistant` puts it back): it measures what the memory is not meant to keep.
 
 ## 2026-10-29 — Texts and a knowledge graph on them, in time (design, not built)
 
