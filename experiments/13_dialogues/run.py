@@ -250,6 +250,8 @@ def main() -> None:
     parser.add_argument("--times", type=int, default=1)
     parser.add_argument("--wait", type=int, default=1200, help="seconds to let the world read the history")
     args = parser.parse_args()
+    if not os.environ.get("NEBIUS_API_KEY"):
+        raise SystemExit("NEBIUS_API_KEY is not set: set -a; . ./.env; set +a")
     names = list(SCENARIOS) if args.scenario == "all" else [args.scenario]
     passed = {n: [scenario(n, args.model, args.port, args.engine, args.wait)["passed"] for _ in range(args.times)]
               for n in names}

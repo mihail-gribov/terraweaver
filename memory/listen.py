@@ -118,13 +118,14 @@ class Listener:
         with self._lock, self.heard_path.open("a") as file:
             file.write(json.dumps(line, ensure_ascii=False) + "\n")
 
-    async def ask(self, question: str, wait: bool = True, progress=None) -> str:
+    async def ask(self, question: str, wait: bool = True, progress=None, gather: bool = True) -> str:
         """The agent's own question to the memory: answered from what it holds, or by gathering the
-        facts when it asks for something to be found. Nothing is kept."""
+        facts when it asks for something to be found. Nothing is kept. `gather=False`: from what it
+        holds only, never the web (a benchmark measures the memory, not the web)."""
         question = (question or "").strip()
         if not question:
             return "nothing"
-        got = await self._sort(question, "", only=("find",), who="The agent asks")
+        got = await self._sort(question, "", only=("find",), who="The agent asks") if gather else {"find": 0.0}
         if got["find"] >= 0.5:
             return await self._gather(question, wait, progress)
         found = await self._context(question, 10)

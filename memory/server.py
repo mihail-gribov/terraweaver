@@ -21,6 +21,7 @@ import asyncio
 import contextlib
 import io
 import logging
+import os
 import traceback
 from datetime import datetime
 
@@ -299,6 +300,16 @@ async def http_say(request):
     return PlainTextResponse(await listener.say(messages, body.get("now"), wait=bool(body.get("wait", False))))
 
 
+@base.server.custom_route("/ask", ["POST"])
+async def http_ask(request):
+    """`ask` over HTTP, for runners outside an agent: {"question": ..., "gather": false} answers from
+    what the memory holds only."""
+    from starlette.responses import PlainTextResponse
+    body = await request.json()
+    return PlainTextResponse(await listener.ask(body.get("question", ""), wait=True,
+                                                gather=bool(body.get("gather", True))))
+
+
 @base.server.custom_route("/interests", ["GET"])
 async def http_interests(request):
     """What the user wanted to know, and whether an answer is ready: for a look, not for the agent."""
@@ -331,6 +342,11 @@ def main() -> None:
     parser.add_argument("--no-world", action="store_true",
                         help="keep the journal and the index only: no world said into, nothing read")
     args = parser.parse_args()
+    if not os.environ.get("NEBIUS_API_KEY"):
+        # Without it every read fails and the memory only keeps words as said: a run that looks
+        # alive and answers nothing (2026-10-29, a vacuum run started without .env).
+        raise SystemExit("NEBIUS_API_KEY is not set: the memory's models are on Nebius Token Factory. "
+                         "set -a; . ./.env; set +a")
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
     where = base.ROOT / "var" / "memory" / args.name
