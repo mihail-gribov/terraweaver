@@ -375,16 +375,18 @@ def main() -> None:
     if args.world:
         from memory.world import Worker
         world = Worker(where / "world")
-    elif not args.no_world:
-        from memory.graph import Graph
-        graph = Graph(where / "graph", lambda: base._entries(base._memory()))
-        base.graph_facts = graph.facts_for
     # Readers are shown what the search finds, not the whole journal: every entry about a thing
     # the question names, and twelve more by words and meaning (docs/decisions.md, 2026-10-20).
     from memory.search import Search
     search = Search(structure, lambda: {n: t for n, _, t in base._entries(base._memory())},
                     where / "vectors.jsonl", image=(lambda: world.image) if world else None)
     base.narrow = lambda question: search.find(question, limit=12)
+    if not args.world and not args.no_world:
+        from memory.graph import Graph
+        # Topics found by meaning, with the encoder the search already holds.
+        graph = Graph(where / "graph", lambda: base._entries(base._memory()),
+                      embed=lambda texts: search._encoder().embed(texts))
+        base.graph_facts = graph.facts_for
     base.confirm_forget = confirm_forget
     from memory.listen import Listener
     listener = Listener(base, base._keep, base.context, base.ask, _solve, _journal_changed,

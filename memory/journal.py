@@ -284,9 +284,10 @@ async def context(message: str, limit: int = 10) -> str:
 
 
 @server.tool()
-async def tell(text: str, source: str = "conversation") -> str:
+async def tell(text: str, source: str = "conversation", now: str | None = None) -> str:
     """Keep what was said about the user's life. `text` is the statement, in your words or
-    theirs; `source` is where it came from — the conversation, a file, a page."""
+    theirs; `source` is where it came from — the conversation, a file, a page. `now`: when it was
+    said, if not just now."""
     text = text.strip()
     if not text:
         return "Nothing was said, so nothing was kept."
@@ -299,7 +300,7 @@ async def tell(text: str, source: str = "conversation") -> str:
     # One more than the largest, not than how many: a forgotten entry leaves a gap, and its number
     # is never given to another.
     async with writing:
-        _keep(text, source)
+        _keep(text, source, _told(now))
     return "Kept."
 
 
@@ -481,7 +482,7 @@ async def http_context(request: Request) -> PlainTextResponse:
 @server.custom_route("/tell", ["POST"])
 async def http_tell(request: Request) -> PlainTextResponse:
     body = await request.json()
-    return PlainTextResponse(await tell(body.get("text", ""), body.get("source", "conversation")))
+    return PlainTextResponse(await tell(body.get("text", ""), body.get("source", "conversation"), body.get("now")))
 
 
 @server.custom_route("/ask", ["POST"])

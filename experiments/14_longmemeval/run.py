@@ -64,6 +64,11 @@ def answer(given: str, instance) -> str:
 
 
 GRAPH = False
+# Raw: every user turn kept as said, by `/tell`, without the gate and the rewrite — for histories too
+# long to pass through the intake by the deadline (LongMemEval_S: ~500 user turns a question). It
+# measures finding in a long history, not the rewrite.
+RAW = False
+DATA = "oracle"
 
 
 def by_memory(instance, port: int, out: Path) -> dict:
@@ -83,6 +88,10 @@ def by_memory(instance, port: int, out: Path) -> dict:
             now = session.date.isoformat(timespec="minutes")
             for turn in session.turns:
                 role_of = "user" if turn["role"] == "user" else "agent"
+                if RAW:
+                    if role_of == "user" and turn["content"].strip():
+                        call(port, "/tell", {"text": turn["content"], "source": "the user", "now": now})
+                    continue
                 call(port, "/say", {"messages": [{"role": role_of, "text": turn["content"]}], "now": now})
         told = round(time.time() - began)
         asked = lme.Session(instance.asked_on, []).date.isoformat(timespec="minutes")
@@ -140,18 +149,21 @@ def main() -> int:
     parser.add_argument("--port", type=int, default=7140, help="the first of --parallel ports")
     parser.add_argument("--only", nargs="*", help="these question ids")
     parser.add_argument("--graph", action="store_true", help="the memory reads every entry into its graph")
+    parser.add_argument("--data", choices=["oracle", "s"], default="oracle",
+                        help="oracle: the evidence sessions only; s: ~40 sessions a question, ~115k tokens")
+    parser.add_argument("--raw", action="store_true", help="user turns kept as said, no gate and rewrite")
     args = parser.parse_args()
-    global GRAPH
-    GRAPH = args.graph
+    global GRAPH, RAW, DATA
+    GRAPH, RAW, DATA = args.graph, args.raw, args.data
     if not os.environ.get("NEBIUS_API_KEY"):
         raise SystemExit("NEBIUS_API_KEY is not set: set -a; . ./.env; set +a")
 
-    instances = lme.load("oracle")
+    instances = lme.load(args.data)
     picked = ([i for i in instances if i.id in args.only] if args.only
               else lme.slice_of(instances, args.count, kinds=[k for k in lme.TYPES if args.with_assistant
                                                               or k != "single-session-assistant"], seed=args.seed))
     modes = ["memory", "context"] if args.mode == "both" else [args.mode]
-    out = ROOT / "experiments" / "results" / "14_longmemeval" / f"{datetime.now():%Y%m%d-%H%M%S}-seed{args.seed}{'-graph' if args.graph else ''}"
+    out = ROOT / "experiments" / "results" / "14_longmemeval" / f"{datetime.now():%Y%m%d-%H%M%S}-{args.data}-seed{args.seed}{'-graph' if args.graph else ''}{'-raw' if args.raw else ''}"
     out.mkdir(parents=True)
     print(f"{len(picked)} questions, modes {modes}, results in {out}", flush=True)
 
@@ -161,7 +173,7 @@ def main() -> int:
     with concurrent.futures.ThreadPoolExecutor(args.parallel) as pool:
         rows = list(pool.map(lambda instance: one(instance, modes, ports, out), picked))
 
-    summary = {"slice": "oracle", "count": len(rows), "seed": args.seed, "with_assistant": args.with_assistant, "answerer": role("reader").model,
+    summary = {"slice": args.data, "raw": args.raw, "count": len(rows), "seed": args.seed, "with_assistant": args.with_assistant, "answerer": role("reader").model,
                "judge": "haiku", "memory": f"memory.server{'' if args.graph else ' --no-world'}, /ask gather=false"}
     for mode in modes:
         by_kind = defaultdict(list)

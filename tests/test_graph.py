@@ -104,6 +104,41 @@ def offline() -> None:
         check("what was read is kept on disk", again.read_upto == 5 and len(again.topics) == 5 and again.links)
 
 
+def at_scale() -> None:
+    """However large the memory, the reader of one entry is shown a bounded few: the topic it goes on
+    with among them, and the user's own people among the entities."""
+    from memory import graph as module
+    entries = [(1, "2026-01-01 10:00:00", "My sister Ana lives in Lisbon.")]
+    entries += [(n, f"2026-01-{1 + n % 27:02d} 1{n % 10}:00:00", f"Note number {n} about hobby{n}.") for n in range(2, 302)]
+    entries += [(302, "2026-06-01 10:00:00", "More on the bakery: the oven costs 4000 euros.")]
+    readings = [{"entities": [{"name": "the user", "as": "My"}, {"name": "Ana", "kind": "person", "as": "sister Ana"}],
+                 "links": [{"from": "Ana", "relation": "sibling", "to": "the user", "quote": "My sister Ana"}]}]
+    readings += [{"topics": [{"topic": "new", "name": f"hobby{n}", "text": f"Talks about hobby{n}."}]} for n in range(2, 302)]
+    shown = {}
+
+    def reader(system, prompt):
+        if "More on the bakery" in prompt:
+            shown["prompt"] = prompt
+            return {}
+        return readings.pop(0) if readings else {}
+
+    with tempfile.TemporaryDirectory() as tmp:
+        g = Graph(Path(tmp), journal(entries[:-1]), reader=reader)
+        g.wait(30)
+        g.topics.append({"topic": 999, "name": "starting the bakery", "text": "Plans a bakery in Lisbon.",
+                         "day": "2026-05-01", "entries": [1], "version": 1})
+        g._index([], [], g.topics[-1:])
+        g.entries = journal(entries)
+        g.wake()
+        g.wait(30)
+        prompt = shown.get("prompt", "")
+        topics_part = prompt.split("The topics so far")[1].split("What the user said earlier")[0] if prompt else ""
+        check("at scale: the reader is shown a bounded few topics",
+              0 < topics_part.count(": Talks about") + topics_part.count(": Plans") <= module.SHOWN_TOPICS, topics_part[:200])
+        check("at scale: the topic the entry goes on with is among them", "starting the bakery" in topics_part)
+        check("at scale: the user's own people are shown to the reader", "- Ana — person" in prompt)
+
+
 def live() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         g = Graph(Path(tmp), journal(TV))
@@ -121,6 +156,7 @@ def live() -> None:
 
 def main() -> int:
     offline()
+    at_scale()
     if "--live" in sys.argv:
         live()
     print(f"\n{len(failures)} failed" if failures else "\nall passed")
