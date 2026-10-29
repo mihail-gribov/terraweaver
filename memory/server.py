@@ -1,17 +1,17 @@
 """The memory of texts with one more door: `run`, where the agent names entities, events and links.
 
-Every call of the baseline is here as it is (`baseline/server.py`) — the same journal, the same
+Every call of the baseline is here as it is (`memory/journal.py`) — the same journal, the same
 `ask`, `context` and `search_memory` reading all of it — so whatever is measured through the
 contract is the baseline's. What is added is `run(code)`: Python with `entity`, `event`, `link`
 and `say` in it, whose sentences go to that journal and whose things go to an index beside it
-(`proto/model.py`). The object model is small enough to live in the skill's text
-(`proto/SKILL.md`). And `task(text)`: a task in the user's words, which the memory solves by a
-program it writes or reuses (`proto/solve.py`) — from what it holds, and from the web when the
+(`memory/model.py`). The object model is small enough to live in the skill's text
+(`memory/SKILL.md`). And `task(text)`: a task in the user's words, which the memory solves by a
+program it writes or reuses (`memory/solve.py`) — from what it holds, and from the web when the
 task needs it.
 
-    .venv/bin/python -m proto.server                     # var/proto/main/, port 7110
-    .venv/bin/python -m proto.server --name fc --port 7111
-    .venv/bin/python -m proto.server --host 0.0.0.0      # the local network, behind a token
+    .venv/bin/python -m memory.server                     # var/memory/main/, port 7110
+    .venv/bin/python -m memory.server --name fc --port 7111
+    .venv/bin/python -m memory.server --host 0.0.0.0      # the local network, behind a token
 
 A run's variables last between runs of one session: the `x-terraweaver-session` header if the
 host sends one, otherwise the client's name (the MCP protocol is stateless, 2026-07-28).
@@ -26,17 +26,17 @@ from datetime import datetime
 
 from mcp.server.mcpserver import Context
 
-from baseline import server as base
-from proto.model import Structure
+from memory import journal as base
+from memory.model import Structure
 
 SESSION_HEADER = "x-terraweaver-session"
 structure: Structure
 sessions: dict[str, dict] = {}
-# The world the journal is said into and read by (proto/world.py), when there is one; and the
-# search the readers are shown entries by (proto/search.py).
+# The world the journal is said into and read by (memory/world.py), when there is one; and the
+# search the readers are shown entries by (memory/search.py).
 world = None
 search = None
-# Which memory this is (var/proto/<name>), and the search engine tasks use.
+# Which memory this is (var/memory/<name>), and the search engine tasks use.
 name, engine = "main", "tavily"
 
 
@@ -172,7 +172,7 @@ async def run(code: str, ctx: Context, now: str | None = None) -> str:
 def confirm_forget(what: str, entry: str) -> bool:
     """Is this entry what the user asked to forget, or only something the request names to say
     which one? A closed question, for the decision model; kept when it can't be asked."""
-    from proto.models import role
+    from memory.models import role
     try:
         p = role("judge").noul(f'The user asked the memory to forget: "{what}"\n\nAn entry of the memory:\n"{entry}"',
                                "Does this entry say anything about the person or thing the user wants forgotten?",
@@ -195,7 +195,7 @@ async def task(text: str, ctx: Context) -> str:
     when needed. Takes a few minutes. Returns what was found, how each candidate stands on the user's limits
     and wishes with the words each stands on, what was ruled out, and the user's limits and wishes
     as they said them."""
-    from proto import solve
+    from memory import solve
 
     out = base.ROOT / "var" / "solve" / f"{name}-{datetime.now():%Y%m%d-%H%M%S}"
     out.mkdir(parents=True, exist_ok=True)
@@ -230,7 +230,7 @@ TWO_DOORS = (
 
 
 def _solve(text: str) -> str:
-    from proto import solve
+    from memory import solve
     out = base.ROOT / "var" / "solve" / f"{name}-{datetime.now():%Y%m%d-%H%M%S}"
     out.mkdir(parents=True, exist_ok=True)
     return solve.run(text, name, engine, 2, out)
@@ -319,7 +319,7 @@ async def http_notes(request):
 def main() -> None:
     global structure, world, search, name, engine, listener
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--name", default="main", help="var/proto/<name>/: facts.md and structure.jsonl")
+    parser.add_argument("--name", default="main", help="var/memory/<name>/: facts.md and structure.jsonl")
     parser.add_argument("--model", default="nvidia/nemotron-3-super-120b-a12b",
                         help="the model that reads the journal: Token Factory, or `haiku` via the claude CLI")
     parser.add_argument("--port", type=int, default=7110)
@@ -333,21 +333,21 @@ def main() -> None:
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
-    where = base.ROOT / "var" / "proto" / args.name
+    where = base.ROOT / "var" / "memory" / args.name
     name, engine = args.name, args.engine
     base.facts, base.model = where / "facts.md", args.model
     structure = Structure(where / "structure.jsonl", base._keep, held)
     if not args.no_world:
-        from proto.world import Worker
+        from memory.world import Worker
         world = Worker(where / "world")
     # Readers are shown what the search finds, not the whole journal: every entry about a thing
     # the question names, and twelve more by words and meaning (docs/decisions.md, 2026-10-20).
-    from proto.search import Search
+    from memory.search import Search
     search = Search(structure, lambda: {n: t for n, _, t in base._entries(base._memory())},
                     where / "vectors.jsonl", image=(lambda: world.image) if world else None)
     base.narrow = lambda question: search.find(question, limit=12)
     base.confirm_forget = confirm_forget
-    from proto.listen import Listener
+    from memory.listen import Listener
     listener = Listener(base, base._keep, base.context, base.ask, _solve, _journal_changed,
                         interests_path=where / "interests.jsonl", heard_path=where / "heard.jsonl",
                         embed=lambda texts: search._encoder().embed(texts))

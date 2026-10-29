@@ -1,9 +1,9 @@
 """Does an agent use the four calls? Claude Code against the baseline memory, bare or with a skill and hooks.
 
-    .venv/bin/python -m baseline.check_agent                  # 3 runs, host on haiku
-    .venv/bin/python -m baseline.check_agent --model sonnet --runs 1
-    .venv/bin/python -m baseline.check_agent --plugin            # the personal-world plugin, mode on
-    .venv/bin/python -m baseline.check_agent --skill other/SKILL.md --scenario buried
+    .venv/bin/python -m benchmarks.check_agent                  # 3 runs, host on haiku
+    .venv/bin/python -m benchmarks.check_agent --model sonnet --runs 1
+    .venv/bin/python -m benchmarks.check_agent --plugin            # the personal-world plugin, mode on
+    .venv/bin/python -m benchmarks.check_agent --skill other/SKILL.md --scenario buried
 
 Each run starts an empty memory and two fresh sessions (see SCENARIOS). Judged
 on what reached the file and on the second answer, and on which calls the agent made. Bare, the
@@ -102,7 +102,7 @@ def found(text: str, words: tuple) -> bool:
 def one_run(number: int, model: str, port: int, skill: Path | None, plugin: bool, scenario: dict) -> bool:
     name = f"check-{int(time.time())}-{port}-{number}"
     facts = ROOT / "var" / "baseline" / name / "facts.md"
-    server = subprocess.Popen([sys.executable, "-m", "baseline.server", "--name", name, "--port", str(port)],
+    server = subprocess.Popen([sys.executable, "-m", "memory.journal", "--name", name, "--port", str(port)],
                               cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     try:
         for _ in range(30):

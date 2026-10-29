@@ -4,9 +4,9 @@
     .venv/bin/python experiments/05_proto_code/run.py --batches 2     # the first 50
 
 Haiku plays the host. Each batch of the benchmark's facts (25, as the world's runs took them)
-comes to it as something the user said, with the skill's text (`proto/SKILL.md`), the variables
+comes to it as something the user said, with the skill's text (`memory/SKILL.md`), the variables
 it has already made, and what the memory asked after its last run. Its answer is one `run` of
-Python, executed in one session with `proto.server.run_code`, exactly as the MCP tool would.
+Python, executed in one session with `memory.server.run_code`, exactly as the MCP tool would.
 Nothing is asked of the memory: this looks at the code and at the structure it leaves.
 
 Writes experiments/results/05_proto_code/<stamp>/: batches.jsonl (facts, code, the run's
@@ -26,11 +26,11 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path[:0] = [str(ROOT), str(ROOT / "benchmarks")]
 
 import factconsolidation as fc  # noqa: E402
-from baseline import server as base  # noqa: E402
-from proto import server  # noqa: E402
-from proto.model import Structure, Thing  # noqa: E402
+from memory import journal as base  # noqa: E402
+from memory import server  # noqa: E402
+from memory.model import Structure, Thing  # noqa: E402
 
-SKILL = (ROOT / "proto" / "SKILL.md").read_text().split("---", 2)[2].strip()
+SKILL = (ROOT / "memory" / "SKILL.md").read_text().split("---", 2)[2].strip()
 
 PROMPT = """You are the user's assistant, and the user's personal memory is connected to you. \
 This is how it is used:

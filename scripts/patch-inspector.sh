@@ -9,7 +9,7 @@ set -euo pipefail
 here="$(cd "$(dirname "$0")/.." && pwd)"
 dist="$(npm root -g)/@modelcontextprotocol/inspector/clients/web/dist"
 [ -f "$dist/index.html" ] || { echo "MCP Inspector not installed: npm install -g @modelcontextprotocol/inspector" >&2; exit 1; }
-cp "$here/tools/inspector-uuid-polyfill.js" "$dist/assets/uuid-polyfill.js"
+cp "$here/scripts/inspector-uuid-polyfill.js" "$dist/assets/uuid-polyfill.js"
 [ -f "$dist/index.html.orig" ] || cp "$dist/index.html" "$dist/index.html.orig"
 if ! grep -q uuid-polyfill "$dist/index.html"; then
   sed -i 's#    <title>MCP Inspector</title>#    <title>MCP Inspector</title>\n    <script src="/assets/uuid-polyfill.js"></script>#' "$dist/index.html"

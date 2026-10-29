@@ -15,10 +15,10 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path[:0] = [str(ROOT), str(ROOT / "benchmarks")]
 
 import factconsolidation as fc  # noqa: E402
-from baseline import server as base  # noqa: E402
-from proto import server  # noqa: E402
-from proto.model import Structure  # noqa: E402
-from proto.search import Search  # noqa: E402
+from memory import journal as base  # noqa: E402
+from memory import server  # noqa: E402
+from memory.model import Structure  # noqa: E402
+from memory.search import Search  # noqa: E402
 
 KS = (3, 5, 10, 20)
 SETS = [("structure",), ("words",), ("meaning",), ("words", "meaning"), ("structure", "words", "meaning")]

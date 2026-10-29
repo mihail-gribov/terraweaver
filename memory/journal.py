@@ -10,8 +10,8 @@ and `forgotten` lists them; they are deleted for good a set time later. `questio
 doubts. Whatever the world does better than this
 is the world's effect; whatever it does worse, it has to answer for.
 
-    .venv/bin/python -m baseline.server                 # var/baseline/main/facts.md, port 7100
-    .venv/bin/python -m baseline.server --name mike --port 7101
+    .venv/bin/python -m memory.journal                 # var/baseline/main/facts.md, port 7100
+    .venv/bin/python -m memory.journal --name mike --port 7101
 
 Connect an agent to http://127.0.0.1:7100/mcp. Nothing here imports terraweaver.
 """
@@ -127,7 +127,7 @@ def _memory() -> str:
 
 
 # What a reader is shown, if not the whole journal: question -> the entry numbers to show. None
-# here, so the baseline reads everything; the proto sets its search (proto/search.py).
+# here, so the baseline reads everything; the proto sets its search (memory/search.py).
 narrow = None
 
 

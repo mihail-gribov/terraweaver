@@ -234,7 +234,7 @@ MCP tool result that says in words what failed — never an opaque error.
 
 ## Connecting an agent
 
-From weakest to strongest guarantee. Measured with `baseline/check_agent.py`, Claude Code on Haiku
+From weakest to strongest guarantee. Measured with `benchmarks/check_agent.py`, Claude Code on Haiku
 as host, against the baseline: two fresh sessions per run, facts said in passing in the first and
 needed in the second.
 
@@ -262,14 +262,14 @@ mode, a hook puts `context` beside every message; out of it, a hook refuses `tel
 
 | | Where | Conforms | Behind the four calls |
 |---|---|---|---|
-| Baseline | `baseline/server.py`, port 7100 | yes, except `context` is not fast (seconds) | a text file; Haiku reads all of it |
+| Baseline | `memory/journal.py`, port 7100 | yes, except `context` is not fast (seconds) | a text file; Haiku reads all of it |
 | The world | — | not yet: needs a front serving the four calls | the record, identity, time, questions |
 
 The baseline is what the world is measured against: same agent, same calls, same scenarios. The
 world's effect is whatever it does beyond a text file and a model reading it.
 
 **Checking an implementation:** `tests/test_baseline.py` for the calls themselves (`--live` for
-the model-backed ones), `baseline/check_agent.py` for an agent using them. Both are written
+the model-backed ones), `benchmarks/check_agent.py` for an agent using them. Both are written
 against the baseline today and need a `--url` to run against any server.
 
 ## Open

@@ -1,13 +1,13 @@
 """What the world solves a task with: a few tools that know about correctness and nothing about
 any particular task.
 
-The world's model writes a program from these (proto/solve.py) and decides which it needs — a
+The world's model writes a program from these (memory/solve.py) and decides which it needs — a
 question about the user's colleagues is answered from the memory's links and never searches; a
 purchase gathers candidates from the web first. What makes an answer right lives in the tools, so
 no program can skip it:
 
 - `parse` keeps a value or a link only on the text's own words, checked by code and by the
-  decision model (proto/parse.py);
+  decision model (memory/parse.py);
 - `select` never reads "not known" as "no";
 - `search` refuses a query that names anyone the user's memory holds;
 - everything kept has its sentence and its source.
@@ -16,10 +16,10 @@ The user's memory is `memory`; a collection gathered for a task is a shelf — t
 store under the memory's directory (collections/), so a thousand products don't crowd the user's
 life. A collection outlives the task, so what was found can still be asked about, but a task
 chooses only from what was found lately (FRESH) — what reuses is the program, not stale prices.
-Not for good either: a thing found lives TTL (proto/ttl.py) from its last use — found or read by a
+Not for good either: a thing found lives TTL (memory/ttl.py) from its last use — found or read by a
 task — unless it has been with the user: named in an answer the agent got, or in the user's memory.
 Those have no TTL. What is past its TTL is removed, its texts with it, by the cleaner
-(proto/cleaner.py).
+(memory/cleaner.py).
 """
 import asyncio
 import json
@@ -29,10 +29,10 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
-from proto import parse as parsing
-from proto.models import role
-from proto.model import Structure, Thing
-from proto.ttl import TTL
+from memory import parse as parsing
+from memory.models import role
+from memory.model import Structure, Thing
+from memory.ttl import TTL
 
 ENGINE = "tavily"
 # What holds for every thing of a class, whatever the task: its fields, and which must be known.
@@ -417,7 +417,7 @@ class Tools:
         self._closest: list = []
         self._ruled_out: dict = {}
         # Collections live with the memory and outlast the task; what is past its time is
-        # removed by the cleaner (proto/cleaner.py), before a task starts.
+        # removed by the cleaner (memory/cleaner.py), before a task starts.
         self.collections = memory.path / "collections"
         self._recall, self.answered = recall_with, None
         # Pages already read onto a shelf with the same fields: a program fixed and run again
@@ -482,7 +482,7 @@ class Tools:
         if self._view is None:
             self._view, self._image_used = self.memory.structure, False
             try:
-                from proto.world import image_of
+                from memory.world import image_of
                 world = self.memory.path / "world"
                 image = image_of(world) if (world / "image.json").exists() else None
             except Exception as wrong:  # noqa: BLE001 - without the image, the host's structure

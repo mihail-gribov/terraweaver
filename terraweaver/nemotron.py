@@ -221,7 +221,7 @@ class Nemotron:
         return {key: future.result() for key, future in done.items()}
 
 
-# The name it had while it was only a decision model; proto/parse.py and experiment 12 still use it.
+# The name it had while it was only a decision model; memory/parse.py and experiment 12 still use it.
 Reader = Nemotron
 
 

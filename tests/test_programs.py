@@ -10,10 +10,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from proto.cleaner import clean  # noqa: E402
-from proto.parse import _says_what  # noqa: E402
-from proto.programs import Programs, description  # noqa: E402
-from proto.tools import Item, Shelf, Tools  # noqa: E402
+from memory.cleaner import clean  # noqa: E402
+from memory.parse import _says_what  # noqa: E402
+from memory.programs import Programs, description  # noqa: E402
+from memory.tools import Item, Shelf, Tools  # noqa: E402
 
 failures: list[str] = []
 
@@ -135,7 +135,7 @@ def programs_age(where: Path) -> None:
 
 
 def limits_and_closest(where: Path) -> None:
-    from proto.solve import LIMIT_WORDS
+    from memory.solve import LIMIT_WORDS
     check("a stated limit has a limit's words", all(LIMIT_WORDS.search(q) for q in (
         "has to stay under 400 euros", "between 200 and 500", "does not want another device that works only through a cloud")))
     check("a preference or a habit is no limit", not any(LIMIT_WORDS.search(q) for q in (
@@ -165,7 +165,7 @@ def limits_and_closest(where: Path) -> None:
 
 
 def search_reaches_read_things(where: Path) -> None:
-    from proto.search import Search
+    from memory.search import Search
     mem = Shelf(where / "search-mem")
     anna = mem.structure.entity("world", "Anna", "Anna is the user's sister.", kind="person")
     image = {"things": {anna.id: {"name": "Anna", "class": "Person"}, "r:the-user": {"name": "the user", "class": "Person",

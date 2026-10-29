@@ -9,7 +9,7 @@ def journals():
     """Each run's history, in journal order: (text, vector, message it came from)."""
     out = []
     for f in sorted(glob.glob(f"{ROOT}/experiments/results/13_dialogues/*/run.json")):
-        r = json.load(open(f)); mem = f"{ROOT}/var/proto/{r['memory']}"
+        r = json.load(open(f)); mem = f"{ROOT}/var/memory/{r['memory']}"
         try:
             text = open(f"{mem}/facts.md").read()
             vec = {j["n"]: np.array(j["v"]) for j in map(json.loads, open(f"{mem}/vectors.jsonl"))}

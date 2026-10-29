@@ -1,4 +1,4 @@
-"""Tests for the two doors, `say` and `ask` (proto/listen.py): who said what, what is kept, what
+"""Tests for the two doors, `say` and `ask` (memory/listen.py): who said what, what is kept, what
 is never kept, a forget only once confirmed, and the agent's question routed; the intake read with stand-in models.
 
 Run: .venv/bin/python tests/test_listen.py        # no model calls: the judge is a stand-in
@@ -10,9 +10,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import proto.models  # noqa: E402
-from baseline import server as base  # noqa: E402
-from proto.listen import Listener  # noqa: E402
+import memory.models  # noqa: E402
+from memory import journal as base  # noqa: E402
+from memory.listen import Listener  # noqa: E402
 
 failures: list[str] = []
 
@@ -104,7 +104,7 @@ def journal() -> str:
 
 
 def main() -> int:
-    proto.models.role = lambda name: Judge()
+    memory.models.role = lambda name: Judge()
     with tempfile.TemporaryDirectory() as tmp:
         heard, solved = listener(Path(tmp))
         run = lambda *a, **k: asyncio.run(heard.say(*a, **k))
@@ -198,7 +198,7 @@ def main() -> int:
         got = asyncio.run(third.ask("find a good dentist in Belgrade, please"))
         check("asked in other words, by meaning: what was prepared is given at once, no new search",
               "asked before" in got and "candidates for 'find a good dentist in Belgrade'" in got and not solved3, got[:300])
-    from proto import server
+    from memory import server
 
     class Ctx:
         def __init__(self, headers):

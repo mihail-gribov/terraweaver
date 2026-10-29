@@ -10,12 +10,12 @@ nothing about it:
   what the memory should get ready, from what it holds, for the next time it comes up
   (2026-10-28, the user);
 - answers the agent's own `ask` always, waiting for it: the only door that gathers from the web
-  (`proto/solve.py`), and the same gathering again while it is fresh;
+  (`memory/solve.py`), and the same gathering again while it is fresh;
 - takes out what the user asks to be forgotten, but only once the user has confirmed which
   entries — a forget is never done on a guess;
 - and gives, with any answer, what it has come to since the last one ("the memory remembered").
 
-What a message holds is read by the intake (`intake/intake.py`): the user's message with the
+What a message holds is read by the intake (`memory/intake/intake.py`): the user's message with the
 agent's message just before it, never more — personal or a request? the message rewritten to be
 understood alone ("up to 400" after "what is the budget?"), and its questions, each of a kind. The
 agent's message is what the user's is understood by, then dropped: never kept.
@@ -31,7 +31,7 @@ from datetime import datetime
 
 log = logging.getLogger("listen")
 # An answer prepared this recently answers the same question again, instead of a new search:
-# three days, as fresh as what a task chooses from (proto/tools.py FRESH).
+# three days, as fresh as what a task chooses from (memory/tools.py FRESH).
 FRESH_JOB = 3 * 24 * 3600
 # Meaning finds the candidates, the judge says which is the same question. Measured on bge-small
 # (2026-10-27): repeats sat at 0.64–0.85 ("who are my colleagues now?" ~ "who do I work with at
@@ -161,14 +161,14 @@ class Listener:
         return parts
 
     def _heard_as(self, role: str, text: str) -> None:
-        from intake.intake import WINDOW
+        from memory.intake.intake import WINDOW
         self.recent = (self.recent + [{"role": role, "text": " ".join(SECRETS.sub("[withheld]", text).split())}])[-WINDOW:]
 
     def _read(self, said: str):
         """The intake of one message, with the messages before it: the gate reads the last few,
         the rewrite the agent's message just before."""
-        from intake.intake import Read, read
-        from proto.models import role
+        from memory.intake.intake import Read, read
+        from memory.models import role
         messages = self.recent + [{"role": "user", "text": said}]
         try:
             return read(messages, len(messages) - 1, role("sorter"), role("resolver"))
@@ -198,7 +198,7 @@ class Listener:
         return max((j["id"] for j in self.jobs + self.wanted), default=0) + 1
 
     async def _sort(self, message: str, agent_said: str, only=tuple(QUESTIONS), who="The user says") -> dict:
-        from proto.models import role
+        from memory.models import role
         judge = role("sorter")
         said = (f'The agent said: "{agent_said[-1500:]}"\n\n' if agent_said else "") + f'{who}: "{message[-4000:]}"'
 
@@ -327,7 +327,7 @@ class Listener:
         """The question in `among` (the agent's gatherings by default) this one repeats, if any: by
         meaning, and in the band where meaning alone can't tell, by the judge. Without embeddings,
         the judge over the recent ones."""
-        from proto.models import role
+        from memory.models import role
         among = self.jobs if among is None else among
         v = await asyncio.to_thread(self._vector, question)
         if v is not None:
@@ -405,7 +405,7 @@ class Listener:
                 "out yet. Ask the user to confirm, and pass their answer with `say`.")
 
     async def _confirm(self, message: str, now: str | None) -> str:
-        from proto.models import role
+        from memory.models import role
         waiting, self.waiting_forget = self.waiting_forget, None
         q, yes, no = CONFIRM
         try:

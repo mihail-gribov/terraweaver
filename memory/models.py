@@ -1,6 +1,6 @@
 """The models the world works with, by the role each plays — never by a model's name in the code.
 
-    from proto.models import role
+    from memory.models import role
     role("reader").say(...)          # an LLM in that role
     role("judge").noul(...)          # the decision model
 
@@ -21,12 +21,12 @@ ROLES = {
     "reader": "nvidia/nemotron-3-super-120b-a12b",
     # Closed questions as probabilities — does this quote say that claim? One token, calibrated.
     "judge": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
-    # Sorts what the memory hears (proto/listen.py): personal or not, a question, a request, a
+    # Sorts what the memory hears (memory/listen.py): personal or not, a question, a request, a
     # forget, a repeat, a faithful retelling. The decision model on the middle Nemotron for now —
     # the user's call (2026-10-27) — until the questions are measured and a smaller one may do.
     "sorter": "nvidia/nemotron-3-super-120b-a12b",
     # Resolves what the user's message points to in the agent's message before it, and takes its
-    # questions out (intake/). Tried on the small Nemotron first, the user's call: on 2026-10-28 it
+    # questions out (memory/intake/). Tried on the small Nemotron first, the user's call: on 2026-10-28 it
     # copied the prompt's examples into the answer and made questions of statements; on Super.
     "resolver": "nvidia/nemotron-3-super-120b-a12b",
 }

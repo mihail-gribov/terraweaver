@@ -1,8 +1,8 @@
 """The cleaner: removes what has outlived its time, of every kind the world keeps.
 
-    .venv/bin/python -m proto.cleaner --memory main        # what it removed
+    .venv/bin/python -m memory.cleaner --memory main        # what it removed
 
-Everything with a TTL (proto/ttl.py: 90 days) is counted from its last use:
+Everything with a TTL (memory/ttl.py: 90 days) is counted from its last use:
 
 - things found for tasks: from the last time a task found or read them; what has been with the
   user — named in an answer the agent got, or in the user's memory — has no TTL;
@@ -11,14 +11,14 @@ Everything with a TTL (proto/ttl.py: 90 days) is counted from its last use:
 What is removed is removed for good — records, texts, files. The user's own memory is never
 touched here: what the user told goes only when the user asks for it to.
 
-It runs before every task (proto/solve.py), and can be run on its own.
+It runs before every task (memory/solve.py), and can be run on its own.
 """
 import argparse
 from datetime import datetime
 from pathlib import Path
 
-from proto.programs import Programs
-from proto.tools import Shelf, spoken
+from memory.programs import Programs
+from memory.tools import Shelf, spoken
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -40,9 +40,9 @@ def clean(memory: Shelf, programs: Programs | None = None, now: datetime | None 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--memory", default="main", help="var/proto/<name>: the user's memory")
+    parser.add_argument("--memory", default="main", help="var/memory/<name>: the user's memory")
     args = parser.parse_args()
-    removed = clean(Shelf(ROOT / "var" / "proto" / args.memory))
+    removed = clean(Shelf(ROOT / "var" / "memory" / args.memory))
     if not removed["items"] and not removed["programs"]:
         print("nothing past its time")
 

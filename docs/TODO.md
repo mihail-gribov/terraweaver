@@ -29,10 +29,10 @@ the Builder Program pages (dev.nebius.com/builders).
 Ordered by what currently blocks progress. The focus is reading the world; write tasks are
 deliberately parked (see below).
 
-## Sorting what the user says (queued 2026-10-27, built 2026-10-28 in `intake/`)
+## Sorting what the user says (queued 2026-10-27, built 2026-10-28 in `memory/intake/`)
 
 Agreed with the user, simple for now. The rewrite sees two messages, the agent's and the user's
-after it — what came earlier the memory already holds. Prompts in `intake/prompts/`.
+after it — what came earlier the memory already holds. Prompts in `memory/intake/prompts/`.
 
 1. **The decision model, on the last four messages:** anything personal, or a request? No — done.
 2. **The big Nemotron (Super, thinking)**, the rewrite worded by the user: a new-topic flag; the
@@ -57,12 +57,12 @@ Subtasks:
 3. **The new-topic flag**, measured on `data/contexts/history.py` against the embedding gap (F1
    0.73).
 4. **A labelled set:** about 100 user messages, each with the agent's message before it, with what
-   they hold; MemOps and LongMemEval through `intake/sources.py`.
-5. ~~**Into `say`**~~ — done 2026-10-28: `proto/listen.py` reads through the intake.
+   they hold; MemOps and LongMemEval through `memory/intake/sources.py`.
+5. ~~**Into `say`**~~ — done 2026-10-28: `memory/listen.py` reads through the intake.
 
 ## Preparing by the user's interests (queued 2026-10-28, the world's — f8)
 
-The user's questions are kept in `interests.jsonl` beside the journal (`proto/listen.py`):
+The user's questions are kept in `interests.jsonl` beside the journal (`memory/listen.py`):
 `{"id", "asked", "by": "user", "at"}`, and `{"id", "asked_again"}` for each repeat. They are not
 answered or searched for (docs/decisions.md, 2026-10-28). They should order what the world reads
 and structures in the quiet: the texts a frequent or recent interest bears on first, so that the
@@ -95,7 +95,7 @@ Measured 2026-10-27 (bge-small, the vectors search already keeps beside the jour
 To do: embeddings propose, the judge settles. Cut below 0.5, keep above 0.7, and ask the judge in
 between: "does this entry go on the same conversation?". Join each fragment to its nearest earlier
 one only when the judge says "it goes on that one". Measure on `data/contexts`, then on a second
-history written apart. Then use it: the world reads by context instead of by size (`proto/world.py`,
+history written apart. Then use it: the world reads by context instead of by size (`memory/world.py`,
 f8's), a name's identity is judged against the contexts it was said in ("Tom" the flatmate and
 "Tom Becker" the manager are in the labelled history on purpose), and a task gets its facts with
 their contexts. Open: whether my own labels at the edges are right — knee pain after a run is

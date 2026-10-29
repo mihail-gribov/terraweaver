@@ -1,9 +1,9 @@
 """Intake: one message of the user's, read with the agent's message just before it, into what the
 memory keeps and what it is asked.
 
-    .venv/bin/python -m intake.intake --dialogue experiments/results/13_dialogues/concert-20261027-193801/run.json
-    .venv/bin/python -m intake.intake --memops A01_remember
-    .venv/bin/python -m intake.intake --longmemeval 3
+    .venv/bin/python -m memory.intake.intake --dialogue experiments/results/13_dialogues/concert-20261027-193801/run.json
+    .venv/bin/python -m memory.intake.intake --memops A01_remember
+    .venv/bin/python -m memory.intake.intake --longmemeval 3
 
 Agreed with the user, 2026-10-27/28 (docs/TODO.md, "Sorting what the user says"), simple for now.
 The rewrite sees two messages only, the agent's and the user's after it: what came earlier the
@@ -137,13 +137,13 @@ def read(messages: list[dict], upto: int, decide, resolver) -> Read:
 def run(messages: list[dict], decide=None, resolver=None) -> list[Read]:
     """Every user message of a conversation, in order."""
     if decide is None or resolver is None:
-        from proto.models import role
+        from memory.models import role
         decide, resolver = decide or role("sorter"), resolver or role("resolver")
     return [read(messages, i, decide, resolver) for i, m in enumerate(messages) if m["role"] == "user"]
 
 
 def main() -> None:
-    from intake import sources
+    from memory.intake import sources
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--dialogue", help="a run.json of experiments/13_dialogues")

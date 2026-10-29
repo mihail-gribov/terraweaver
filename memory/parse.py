@@ -13,7 +13,7 @@ me through connecting to WiFi". Asking it more firmly would not have held; check
 
 A thing is the one the memory holds under the same name and kind, else a new one.
 
-    from proto.parse import parse
+    from memory.parse import parse
     parse(structure, session, page_text, source="https://…", want="robot vacuums and their specs")
 """
 import json
@@ -22,7 +22,7 @@ import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from proto.models import role  # noqa: E402
+from memory.models import role  # noqa: E402
 
 READ = """Read the text below and say what it states{want}. Answer with JSON only:
 {{"things": [{{"name": "...", "kind": "one word or two", "values": {{"<attribute>": {{"value": \

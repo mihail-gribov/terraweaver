@@ -1,4 +1,4 @@
-"""Tests for the intake (intake/): the exchange each step sees, the steps'
+"""Tests for the intake (memory/intake/): the exchange each step sees, the steps'
 order, and the three sources read into one shape.
 
 Run: .venv/bin/python tests/test_intake.py        # no model calls: the models are stand-ins
@@ -9,8 +9,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from intake import sources  # noqa: E402
-from intake.intake import exchange, read, window  # noqa: E402
+from memory.intake import sources  # noqa: E402
+from memory.intake.intake import exchange, read, window  # noqa: E402
 
 failures: list[str] = []
 

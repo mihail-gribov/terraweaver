@@ -40,7 +40,7 @@ def post(url: str, path: str, body: dict, timeout: float = 600) -> str:
 
 
 def baseline(name: str, port: int) -> subprocess.Popen:
-    server = subprocess.Popen([sys.executable, "-m", "baseline.server", "--name", name, "--port", str(port)],
+    server = subprocess.Popen([sys.executable, "-m", "memory.journal", "--name", name, "--port", str(port)],
                               cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     for _ in range(60):
         try:

@@ -69,7 +69,7 @@ Bound to the LAN, every request except `/health` needs `Authorization: Bearer <t
 Started by `scripts/dev.sh start`, bound to the LAN address and already pointed at the world with
 the token and `x-terraweaver-session: inspector`. It is opened from other machines over plain
 http, where browsers don't provide `crypto.randomUUID`; `scripts/patch-inspector.sh` adds a
-polyfill (`tools/inspector-uuid-polyfill.js`). Without it the UI fails with "crypto.randomUUID is
+polyfill (`scripts/inspector-uuid-polyfill.js`). Without it the UI fails with "crypto.randomUUID is
 not a function".
 
 ## Connecting Claude Code to the world

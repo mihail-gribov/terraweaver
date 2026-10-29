@@ -44,7 +44,7 @@ def _tokens(text: str) -> list[str]:
 class Search:
     def __init__(self, structure, entries, vectors: Path, model: str = "BAAI/bge-small-en-v1.5", image=None):
         """`structure` is the proto's index; `entries()` gives {number: text} of what is held;
-        `image()`, if given, what the world read of it (`proto.world.Mirror.image`)."""
+        `image()`, if given, what the world read of it (`memory.world.Mirror.image`)."""
         self.structure, self.entries, self.vectors_path, self.model_name = structure, entries, vectors, model
         self.image = image
         self._model = None

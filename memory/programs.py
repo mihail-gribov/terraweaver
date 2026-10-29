@@ -4,7 +4,7 @@
     var/programs/runs.jsonl    every run: the task, the program it used or made, whether it answered,
                                its attempts and seconds — the registry's statistics are read off it
 
-    .venv/bin/python -m proto.programs        # the registry, with each program's statistics
+    .venv/bin/python -m memory.programs        # the registry, with each program's statistics
 
 A task is a program, literally: before writing one, the world looks for a program kept for a task
 of the same kind, and the programmer starts from it instead of from nothing. Written from nothing,
@@ -19,7 +19,7 @@ import re
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 
-from proto.ttl import TTL
+from memory.ttl import TTL
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]

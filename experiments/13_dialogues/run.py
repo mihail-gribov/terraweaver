@@ -4,7 +4,7 @@
     .venv/bin/python experiments/13_dialogues/run.py vacuum --model sonnet
     .venv/bin/python experiments/13_dialogues/run.py all --times 3         # pass^3
 
-A Claude Code host with the personal-world plugin, against a fresh proto memory behind the two
+A Claude Code host with the personal-world plugin, against a fresh memory behind the two
 doors (docs/decisions.md, 2026-10-27): the plugin's hooks pass every message to `say` — the user's
 before the host sees it, the host's reply after — and the host has `ask` for what it needs. The
 history is told first, session by session, as a user mentions their life in passing; then the
@@ -187,7 +187,7 @@ def scenario(name: str, model: str, port: int, engine: str, wait: int) -> dict:
     out = ROOT / "experiments" / "results" / "13_dialogues" / f"{name}-{datetime.now():%Y%m%d-%H%M%S}"
     out.mkdir(parents=True)
     memory = f"dialogue-{out.name}"
-    server = subprocess.Popen([sys.executable, "-m", "proto.server", "--name", memory, "--port", str(port),
+    server = subprocess.Popen([sys.executable, "-m", "memory.server", "--name", memory, "--port", str(port),
                                "--engine", engine], cwd=ROOT, stdout=open(out / "server.log", "w"),
                               stderr=subprocess.STDOUT)
     time.sleep(10)
@@ -198,7 +198,7 @@ def scenario(name: str, model: str, port: int, engine: str, wait: int) -> dict:
     where = Path(tempfile.mkdtemp(prefix=f"host-{name}-"))
     record = {"scenario": name, "about": plan["about"], "model": model, "memory": memory, "engine": engine,
               "history": [], "task": []}
-    memory_dir, seen = ROOT / "var" / "proto" / memory, 0
+    memory_dir, seen = ROOT / "var" / "memory" / memory, 0
     try:
         for told in plan["history"]:
             session, sitting = None, []

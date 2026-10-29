@@ -9,10 +9,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from baseline import server as base  # noqa: E402
-from proto import server  # noqa: E402
-from proto.model import Structure  # noqa: E402
-from proto.world import Mirror, image_of  # noqa: E402
+from memory import journal as base  # noqa: E402
+from memory import server  # noqa: E402
+from memory.model import Structure  # noqa: E402
+from memory.world import Mirror, image_of  # noqa: E402
 
 failures: list[str] = []
 
@@ -24,7 +24,7 @@ def check(name: str, condition: bool, detail: str = "") -> None:
 
 
 class Reader:
-    """Stands in for `proto.parse.read`: says what each session's text holds, from a script."""
+    """Stands in for `memory.parse.read`: says what each session's text holds, from a script."""
 
     def __init__(self):
         self.texts = []
@@ -110,7 +110,7 @@ class Later_judge(Judge):
 
 def later_entries() -> None:
     """A link said in one reading and ended in a later one; chunks cut by size, with the context."""
-    import proto.world as pw
+    import memory.world as pw
 
     with tempfile.TemporaryDirectory() as where:
         base.facts = Path(where) / "facts.md"

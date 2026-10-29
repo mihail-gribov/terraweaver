@@ -1,7 +1,7 @@
 """The world solves a task with a program: its model writes it once, whole, and it runs.
 
-    .venv/bin/python -m proto.solve "Pick me a robot vacuum" --memory pick-20261026-154726
-    .venv/bin/python -m proto.solve "Who are my colleagues?" --memory main --engine keenable
+    .venv/bin/python -m memory.solve "Pick me a robot vacuum" --memory pick-20261026-154726
+    .venv/bin/python -m memory.solve "Who are my colleagues?" --memory main --engine keenable
 
 Nothing here knows any task. The model is told the tools and the task, and writes the program:
 whether it searches, what it gathers, which values it wants, what it calls a hard condition, and
@@ -23,10 +23,10 @@ import traceback
 from datetime import datetime
 from pathlib import Path
 
-from proto.cleaner import clean
-from proto.models import role
-from proto.programs import Programs
-from proto.tools import Shelf, Tools
+from memory.cleaner import clean
+from memory.models import role
+from memory.programs import Programs
+from memory.tools import Shelf, Tools
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -109,8 +109,8 @@ LIMIT_WORDS = re.compile(
 
 def run(task: str, memory: str, engine: str, fixes: int, out: Path) -> str:
     began = time.monotonic()
-    clean(Shelf(ROOT / "var" / "proto" / memory))
-    tools = Tools(Shelf(ROOT / "var" / "proto" / memory), out, engine=engine)
+    clean(Shelf(ROOT / "var" / "memory" / memory))
+    tools = Tools(Shelf(ROOT / "var" / "memory" / memory), out, engine=engine)
     writer, programmer = role("reader"), role("programmer")
     entries = "\n".join(f"- {e}" for e in list(tools.memory.journal.entries.values())[-300:])
     tools._recall = lambda q: writer.say(
@@ -151,7 +151,7 @@ def run(task: str, memory: str, engine: str, fixes: int, out: Path) -> str:
              # What the store holds, so the program reads what is there: told nothing, it read
              # people's "employer" value where the memory holds a works_at link (2026-10-26).
              "\n\nWhat the user's memory holds as structure:\n" + tools.namespace()["user_memory"].describe())
-    from proto.tools import CLASSES
+    from memory.tools import CLASSES
     classes = "\n".join(f"  {k}: {c['about']}; fields {list(c['fields'])}; required {c['required']} — {c['why']}"
                         for k, c in CLASSES.items())
     # A program kept for a task of the same kind is where the writing starts: written from
@@ -254,7 +254,7 @@ def _useful(task: str, answer: str) -> bool:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("task")
-    parser.add_argument("--memory", default="main", help="var/proto/<name>: the user's memory")
+    parser.add_argument("--memory", default="main", help="var/memory/<name>: the user's memory")
     parser.add_argument("--engine", default="tavily")
     parser.add_argument("--fixes", type=int, default=2, help="times a failed program goes back to be fixed")
     parser.add_argument("--out", type=Path, help="where the run goes (program.py, solve.json)")

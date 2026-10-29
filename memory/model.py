@@ -3,7 +3,7 @@
 The agent describing a situation with two people should not have to know how the world is built:
 it makes a variable for each, says what it knows about them, and says what joins them — always in
 a sentence, because a fact is its text. The sentence goes to the memory's journal like any `tell`
-(`baseline/server.py`), numbered and dated; the things it is about go beside it, in a structure
+(`memory/journal.py`), numbered and dated; the things it is about go beside it, in a structure
 file, as an index over the texts and never as facts of their own (docs/decisions.md, 2026-10-15).
 
 What the agent never settles here is identity across conversations. `entity("Anna")` makes a new

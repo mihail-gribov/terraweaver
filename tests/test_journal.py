@@ -11,7 +11,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from baseline import server  # noqa: E402
+from memory import journal as server  # noqa: E402
 
 failures: list[str] = []
 

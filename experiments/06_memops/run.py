@@ -5,7 +5,7 @@
     .venv/bin/python experiments/06_memops/run.py --answer <results dir>   # only ask again
 
 Haiku plays the host. Each user turn comes to it with the conversation before it, the date (a
-week a segment: MemOps gives none), the skill (`proto/SKILL.md`), its variables and what the
+week a segment: MemOps gives none), the skill (`memory/SKILL.md`), its variables and what the
 memory asked; it answers with the code of one `run`, or with nothing to keep. The turn itself is
 heard first (`Structure.heard`), as the world would hear it through `context`.
 
@@ -29,10 +29,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from baseline import server as base  # noqa: E402
-from proto import server  # noqa: E402
-from proto.model import Structure  # noqa: E402
-from proto.search import Search  # noqa: E402
+from memory import journal as base  # noqa: E402
+from memory import server  # noqa: E402
+from memory.model import Structure  # noqa: E402
+from memory.search import Search  # noqa: E402
 
 _spec = importlib.util.spec_from_file_location("proto_run", ROOT / "experiments" / "05_proto_code" / "run.py")
 p05 = importlib.util.module_from_spec(_spec)

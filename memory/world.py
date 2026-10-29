@@ -13,7 +13,7 @@ and the world's reading runs over it at a close (`read`), with the engineer and 
 gives itself. Which world entity is which proto thing, and which bare link came from which entry,
 is kept in `mirror.json`: the structure finds, and the texts are still the answer.
 
-    .venv/bin/python -m proto.world <run dir>      # mirror a run's journal, read it, print the image
+    .venv/bin/python -m memory.world <run dir>      # mirror a run's journal, read it, print the image
 """
 import json
 import logging
@@ -25,7 +25,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 CORE = ROOT / "ontology" / "core"
 KEY = "proto"
-log = logging.getLogger("proto.world")
+log = logging.getLogger("memory.world")
 # The world's logs: what was run and what was read, where a forgotten thing's name is scrubbed too.
 LOGS = {"runs", "readings"}
 # Entries said in one run: a run is stopped after ten seconds.
@@ -223,7 +223,7 @@ class Mirror:
         mind consolidates. Entries that follow each other are read together, because what joins
         two things is said across sentences; a cut by size is bridged by showing the reader the
         entries just before it, and what the image already knows of the things named, as context
-        it does not read from. `proto.parse.read` proposes and checks each value and link twice
+        it does not read from. `memory.parse.read` proposes and checks each value and link twice
         (the quote is in the text, by code; the quote says the claim, by the judge); each one kept
         here carries the entry its quote stands in, so a forgotten entry takes it away. A later
         entry can end what an earlier one said ("Rachel left"), so links read before are asked
@@ -237,9 +237,9 @@ class Mirror:
         if self.structure is None or not self.held:
             return {}
         if reader is None:
-            from proto.parse import read as reader
+            from memory.parse import read as reader
         if judge is None:
-            from proto.models import role
+            from memory.models import role
             judge = role("judge")
         began, done = time.monotonic(), set(self.from_journal["entries"])
         unread = sorted(n for n in self.held if n not in done)
@@ -407,7 +407,7 @@ class Mirror:
 
     def _is_the_user(self, name: str, kind, text: str, judge, tally: dict) -> bool:
         """Whether a person's name nobody holds is the user's own. The host writes "the user" and
-        "Alex" for one person (var/proto/dialogue-colleagues-20261027-191432), and every link then
+        "Alex" for one person (var/memory/dialogue-colleagues-20261027-191432), and every link then
         hung off two things. Asked once per name; a yes is kept, so the name binds from then on."""
         if kind and "person" not in str(kind).lower():
             return False
@@ -713,7 +713,7 @@ def _holds(judge, text: str, says: str, asked: bool = False) -> tuple[str, float
 
 def _entry_of(quote: str, texts: dict) -> int | None:
     """The entry a quote stands in: the latest whose words hold it, or None if none does."""
-    from proto.parse import words
+    from memory.parse import words
 
     w = words(quote)
     hits = [n for n, t in texts.items() if w and w in words(t)]
@@ -721,8 +721,8 @@ def _entry_of(quote: str, texts: dict) -> int | None:
 
 
 def image_of(world_dir) -> dict:
-    """The image as the server last wrote it, for a reader outside the server (`python -m proto.solve`):
-    `image_of(var/proto/<memory>/world)`. Built from the world directly when no server has written it."""
+    """The image as the server last wrote it, for a reader outside the server (`python -m memory.solve`):
+    `image_of(var/memory/<memory>/world)`. Built from the world directly when no server has written it."""
     path = Path(world_dir) / IMAGE
     if path.exists():
         return json.loads(path.read_text())
@@ -753,9 +753,9 @@ def _erase(conn, instance: str) -> None:
 def main() -> int:
     """Mirror a proto run's journal into a world beside it, read it, and print what it made."""
     sys.path.insert(0, str(ROOT))
-    from baseline import server as base
-    from proto import server
-    from proto.model import Structure
+    from memory import journal as base
+    from memory import server
+    from memory.model import Structure
 
     run = Path(sys.argv[1])
     base.facts = run / "facts.md"

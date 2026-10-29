@@ -3,7 +3,7 @@
     .venv/bin/python experiments/12_pick_product/run.py                  # Haiku as host
     .venv/bin/python experiments/12_pick_product/run.py --model sonnet
 
-Two sessions of a real Claude Code host with the personal-world plugin, against a fresh proto
+Two sessions of a real Claude Code host with the personal-world plugin, against a fresh
 memory. In the first, the user mentions their life in passing — the facts a purchase depends on,
 spread over several messages and none of them about shopping. In the second, a new session with
 nothing of the first, the user asks for a robot vacuum. The host has the memory and `ait-search`.
@@ -79,13 +79,13 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--model", default="haiku")
     parser.add_argument("--port", type=int, default=7116)
-    parser.add_argument("--memory", help="ask of this memory as it is (var/proto/<name>), telling nothing")
+    parser.add_argument("--memory", help="ask of this memory as it is (var/memory/<name>), telling nothing")
     args = parser.parse_args()
 
     out = ROOT / "experiments" / "results" / "12_pick_product" / datetime.now().strftime("%Y%m%d-%H%M%S")
     out.mkdir(parents=True)
     name = args.memory or f"pick-{out.name}"
-    server = subprocess.Popen([sys.executable, "-m", "proto.server", "--name", name, "--port", str(args.port)],
+    server = subprocess.Popen([sys.executable, "-m", "memory.server", "--name", name, "--port", str(args.port)],
                               cwd=ROOT, stdout=open(out / "server.log", "w"), stderr=subprocess.STDOUT)
     time.sleep(8)
     env = {**os.environ, "PERSONAL_WORLD": "on", "PERSONAL_MEMORY_URL": f"http://127.0.0.1:{args.port}"}
@@ -110,7 +110,7 @@ def main() -> None:
               "leaks": leaks, "pick": pick, "conditions": CONDITIONS,
               "cost": sum(e.get("total_cost_usd") or 0 for e in stream if e.get("type") == "result")}
     (out / "run.json").write_text(json.dumps(record, indent=2, ensure_ascii=False))
-    facts = ROOT / "var" / "proto" / name / "facts.md"
+    facts = ROOT / "var" / "memory" / name / "facts.md"
     print("memory:\n" + (facts.read_text() if facts.exists() else "(empty)"))
     print("\ncalls:", [c["name"].split("__")[-1] for c in used])
     print("\nqueries:", *queries, sep="\n  ")

@@ -10,9 +10,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from baseline import server as base  # noqa: E402
-from proto import server  # noqa: E402
-from proto.model import Structure  # noqa: E402
+from memory import journal as base  # noqa: E402
+from memory import server  # noqa: E402
+from memory.model import Structure  # noqa: E402
 
 failures: list[str] = []
 
@@ -150,7 +150,7 @@ def main() -> int:
               "Rex" not in server.run_code('print(1)', "s1", now="2020-01-06"))
 
         # --- the world: entries said into it, and a forgotten one taken out of it, for good ---
-        from proto.world import Worker, _text_columns
+        from memory.world import Worker, _text_columns
         server.world = Worker(Path(where) / "world", quiet=3600)
         try:
             server.run_code('mia = entity("Mia", "Mia is the user\'s niece.")\n'

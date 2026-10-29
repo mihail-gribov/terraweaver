@@ -1,6 +1,6 @@
 # Intake prompts
 
-Every prompt the intake (`intake/intake.py`) sends, one file each, read at import.
+Every prompt the intake (`memory/intake/intake.py`) sends, one file each, read at import.
 
 | file | to | shape |
 |---|---|---|
