@@ -104,8 +104,11 @@ their contexts. Open: whether my own labels at the edges are right — knee pain
 **Each topic its own summary, kept apart** (the user, 2026-10-29). "We talked about this before" needs
 no roles: it is knowing that a topic was taken up already, raising what it came to, and answering
 with it. So each context, once cut and joined across sessions, gets a summary of its own, stored
-beside the journal and rebuilt from the context's entries whenever they change — derived like the
-world's image, never written over the user's words, so a wrong summary is rebuilt, not a memory
+beside the journal, and **kept up to date as the topic goes on**: a new entry joined to a topic
+updates its summary (the summary so far plus what was just said — "we chose the ryokan in
+Gion", "the trip moved to May"), so what the talk has come to is the latest; and now and then it
+is rebuilt from all the topic's entries, so updates on updates do not drift. Derived like the
+world's image, never written over the user's words: a wrong summary is rebuilt, not a memory
 spoiled. What the assistant said in those talks is another subject (working with dialogues), not
 this one.
 
