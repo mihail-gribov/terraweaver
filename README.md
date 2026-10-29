@@ -7,8 +7,7 @@ facts to it, and it still decides alone what is worth keeping.
 TerraWeaver is a memory that **listens instead of waiting to be told**. It hears the whole
 conversation by itself, keeps what you say about your life in your own words — rewritten only so
 that it stands alone — reads and structures it in the quiet, and answers the agent with **facts
-and the words they stand on, never decisions**. It lives on your machine, keeps no secrets, and
-forgets for real when you say so.
+and the words they stand on, never decisions**. It lives on your machine and keeps no secrets.
 
 Built for the Nebius × NVIDIA Global AI Hackathon, **Personal AI** track. Every model call is an
 NVIDIA Nemotron model on **Nebius Token Factory**; web search is **Tavily**.
@@ -25,7 +24,7 @@ on the agent remembering to. This one acts by itself:
 | **reads in the quiet** | after 30 s of silence the world reads the journal into things, values and links |
 | **notes interests** | every question of the user's is kept with how often it comes back: what to get ready for next time |
 | **gathers** when the agent asks | a program written by Nemotron over the memory and the web (Tavily), checked condition by condition |
-| **protects** | secrets are withheld before any model sees them; a web query that names a person from the memory is refused; a forget is shown, confirmed, and then the words are gone |
+| **protects** | secrets are withheld before any model sees them; a web query that names a person from the memory is refused |
 
 ## What it looks like
 
@@ -166,7 +165,7 @@ docs/decisions.md      every behaviour change with its reason
 
 - **Dialogues** (`experiments/13_dialogues`, Claude Haiku as the host): concert, vacuum (limits
   told in passing over two sessions, a pick from the web) and colleagues (links that change
-  across sessions, a confirmed forget) pass.
+  across sessions) pass.
 - **The rewrite**, 16 hand checks on the dialogues: 13–16 of 16 over six runs; "we/us" left as the
   user said it when the agent's message does not say who: 32 of 32.
 - Every number, and every change made because of one, is in `docs/decisions.md`.
@@ -174,6 +173,8 @@ docs/decisions.md      every behaviour change with its reason
 ## Limits
 
 - Preparing ahead by the user's interests is not built yet: interests are kept and counted.
+- Forgetting on the user's word is next: the memory can take entries out once the user confirms
+  which, but reading "forget everything about Olga" reliably is not settled yet.
 - The host is Claude Code; any agent with MCP can use `say` and `ask`, without hooks it passes
   the messages itself.
 - One run measures little here: the spread between runs is as large as the differences.
