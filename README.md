@@ -170,14 +170,17 @@ docs/decisions.md      every behaviour change with its reason
   user said it when the agent's message does not say who: 32 of 32.
 - Every number, and every change made because of one, is in `docs/decisions.md`.
 
-## Limits
+## What's next
 
-- Preparing ahead by the user's interests is not built yet: interests are kept and counted.
-- Forgetting on the user's word is next: the memory can take entries out once the user confirms
-  which, but reading "forget everything about Olga" reliably is not settled yet.
-- The host is Claude Code; any agent with MCP can use `say` and `ask`, without hooks it passes
-  the messages itself.
-- One run measures little here: the spread between runs is as large as the differences.
+- **Preparing ahead by interest.** The user's questions are kept and counted; next, the world
+  reads first what the user keeps coming back to, so the answer is ready before it is asked again.
+- **Forgetting on the user's word.** The memory can take entries out once the user confirms which;
+  next, reading "forget everything about Olga" reliably, and the words gone everywhere they reached.
+- **Hooks beyond Claude Code.** Any agent with MCP can use `say` and `ask` today, passing the
+  messages itself; next, the same hooks for other agents, so none of them has to remember to.
+
+One run measures little here: the spread between runs is as large as the differences, so every
+number above comes with its repeats in `docs/decisions.md`.
 
 ## License
 
