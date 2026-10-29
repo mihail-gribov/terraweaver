@@ -29,6 +29,24 @@ the Builder Program pages (dev.nebius.com/builders).
 Ordered by what currently blocks progress. The focus is reading the world; write tasks are
 deliberately parked (see below).
 
+## Filling the user's world from what they say (set 2026-10-29, first cut built)
+
+The task: the user's world is a half-fixed structure (`PEOPLE`, `OWN` in `memory/graph.py`, described in
+`docs/memory.md`). The memory fills it from the conversation with no one telling it to. The goal needs
+no judge: the share of expected values that land in their places, with what was replaced kept as *was*.
+
+How it fills now:
+- A personal entry is asked down a tree by the decision model: a group first (family, people, work, home, things, self, something ended), then the parts of the groups it says yes to.
+- The parts it finds are what the reader (Super) is told to fill, with quotes checked by code.
+- Code sets what is plain in the words: "my wife Mila", "Mila, my wife", "my wife" with no name (joined when named), pets, relation synonyms.
+
+Measured by `scripts/demo_world.py`: four talks about a family over a month, 13 expected values. Three runs gave 13, 13 and 12. The miss was "moved from Lisbon to Belgrade": the old city was ended, the new one not given.
+
+Next:
+- More talks: friends, colleagues, health, a move, a breakup.
+- Checking each world link with the decision model ("does the entry say Mila is the user's wife?"), to drop what the reader made up.
+- The memory's questions from what is not known yet.
+
 ## Sorting what the user says (queued 2026-10-27, built 2026-10-28 in `memory/intake/`)
 
 Agreed with the user, simple for now. The rewrite sees two messages, the agent's and the user's
