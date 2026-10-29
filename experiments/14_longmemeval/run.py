@@ -8,10 +8,11 @@ A stratified slice of LongMemEval `oracle` (the sessions that hold the answer; b
 without single-session-assistant: those ask what the assistant said, and the memory drops the
 agent's messages by design (`--with-assistant` puts them back).
 
-- **memory:** a fresh memory per question (`python -m memory.server --no-world`). Every turn of
+- **memory:** a fresh memory per question (`python -m memory.server`, `--no-world` unless `--graph`). Every turn of
   every session goes in by `/say` as the hooks would pass it — the user's and the assistant's, with
   the session's date as `now`. Then the question goes to `/ask` with `gather: false`: from what the
-  memory holds only, never the web. The world's reading is left out (journal and search only).
+  memory holds only, never the web. Without `--graph`, journal and search only; with it, every entry
+  is read into the graph (memory/graph.py) as it is kept, and the answer is given its topics too.
 - **context:** the same model with every session in its prompt — what the memory is measured against.
 
 In both, Nemotron Super words the final answer from what it was given, and the same judge
@@ -62,11 +63,14 @@ def answer(given: str, instance) -> str:
     return role("reader").say(ANSWER_SYSTEM, prompt, room=6000, thinking=True).strip()
 
 
+GRAPH = False
+
+
 def by_memory(instance, port: int, out: Path) -> dict:
     name = f"lme-{out.name}-{instance.id}"
     log = open(out / f"{instance.id}.server.log", "w")
-    server = subprocess.Popen([sys.executable, "-m", "memory.server", "--name", name, "--port", str(port),
-                               "--no-world"], cwd=ROOT, stdout=log, stderr=subprocess.STDOUT)
+    server = subprocess.Popen([sys.executable, "-m", "memory.server", "--name", name, "--port", str(port)]
+                              + ([] if GRAPH else ["--no-world"]), cwd=ROOT, stdout=log, stderr=subprocess.STDOUT)
     began = time.time()
     try:
         for _ in range(60):
@@ -134,7 +138,10 @@ def main() -> int:
     parser.add_argument("--parallel", type=int, default=6)
     parser.add_argument("--port", type=int, default=7140, help="the first of --parallel ports")
     parser.add_argument("--only", nargs="*", help="these question ids")
+    parser.add_argument("--graph", action="store_true", help="the memory reads every entry into its graph")
     args = parser.parse_args()
+    global GRAPH
+    GRAPH = args.graph
     if not os.environ.get("NEBIUS_API_KEY"):
         raise SystemExit("NEBIUS_API_KEY is not set: set -a; . ./.env; set +a")
 
@@ -143,7 +150,7 @@ def main() -> int:
               else lme.slice_of(instances, args.count, kinds=[k for k in lme.TYPES if args.with_assistant
                                                               or k != "single-session-assistant"], seed=args.seed))
     modes = ["memory", "context"] if args.mode == "both" else [args.mode]
-    out = ROOT / "experiments" / "results" / "14_longmemeval" / f"{datetime.now():%Y%m%d-%H%M%S}-seed{args.seed}"
+    out = ROOT / "experiments" / "results" / "14_longmemeval" / f"{datetime.now():%Y%m%d-%H%M%S}-seed{args.seed}{'-graph' if args.graph else ''}"
     out.mkdir(parents=True)
     print(f"{len(picked)} questions, modes {modes}, results in {out}", flush=True)
 
@@ -154,7 +161,7 @@ def main() -> int:
         rows = list(pool.map(lambda instance: one(instance, modes, ports, out), picked))
 
     summary = {"slice": "oracle", "count": len(rows), "seed": args.seed, "with_assistant": args.with_assistant, "answerer": role("reader").model,
-               "judge": "haiku", "memory": "memory.server --no-world, /ask gather=false"}
+               "judge": "haiku", "memory": f"memory.server{'' if args.graph else ' --no-world'}, /ask gather=false"}
     for mode in modes:
         by_kind = defaultdict(list)
         for r in rows:
