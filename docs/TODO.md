@@ -111,8 +111,12 @@ is rebuilt from all the topic's entries, so updates on updates do not drift. Der
 world's image, never written over the user's words: a wrong summary is rebuilt, not a memory
 spoiled. The case to build it on (the user): "which TV did we choose in the end, last time?" The choice is
 said by the user — "ok, the first one" after the agent listed two — and the intake already keeps it
-as "Let's take the LG C4 55\" for 1199", dated; the topic's summary holds the latest such choice,
-and a later change of mind replaces it there. What the assistant said in those talks is another
+as "Let's take the LG C4 55\" for 1199", dated; the topic's summary holds it **layered over what came
+before**, not instead of it: "looked at Sony, LG and Samsung; Sony dropped, too dear; LG dropped,
+glare in a bright room; settled on the Samsung S90D". What was ruled out, and why, stays in the
+summary beside what was chosen — without it the agent offers Sony again a month later, the very
+complaint about assistants that "suggest what we already rejected". A later change of mind is one
+more layer: "then moved from the Samsung to the LG after all". What the assistant said in those talks is another
 subject (working with dialogues), not this one.
 
 ## Skill tests: what the world must be able to do, with a real agent, three times each (queued 2026-10-05)
