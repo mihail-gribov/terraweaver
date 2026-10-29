@@ -86,7 +86,8 @@ def by_memory(instance, port: int, out: Path) -> dict:
                 call(port, "/say", {"messages": [{"role": role_of, "text": turn["content"]}], "now": now})
         told = round(time.time() - began)
         asked = lme.Session(instance.asked_on, []).date.isoformat(timespec="minutes")
-        held = call(port, "/ask", {"question": instance.question, "gather": False, "now": asked})
+        held = call(port, "/ask", {"question": instance.question, "gather": False, "now": asked,
+                                    "settle": GRAPH}, timeout=3700)
     finally:
         server.terminate()
         server.wait(timeout=30)

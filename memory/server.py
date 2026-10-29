@@ -320,6 +320,9 @@ async def http_ask(request):
     answers from what the memory holds only, as of `now`."""
     from starlette.responses import PlainTextResponse
     body = await request.json()
+    if graph is not None and body.get("settle"):
+        # A benchmark tells a whole history at once and asks at once: every entry read first.
+        await asyncio.to_thread(graph.wait, 3600)
     return PlainTextResponse(await listener.ask(body.get("question", ""), wait=True,
                                                 gather=bool(body.get("gather", True)), now=body.get("now")))
 
