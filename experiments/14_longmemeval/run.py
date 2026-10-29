@@ -98,7 +98,7 @@ def by_memory(instance, port: int, out: Path) -> dict:
         told = round(time.time() - began)
         asked = lme.Session(instance.asked_on, []).date.isoformat(timespec="minutes")
         held = call(port, "/ask", {"question": instance.question, "gather": False, "now": asked,
-                                    "settle": GRAPH}, timeout=3700)
+                                    "settle": GRAPH}, timeout=7300)
     finally:
         server.terminate()
         server.wait(timeout=30)
@@ -180,6 +180,7 @@ def main() -> int:
     parser.add_argument("--data", choices=["oracle", "s"], default="oracle",
                         help="oracle: the evidence sessions only; s: ~40 sessions a question, ~115k tokens")
     parser.add_argument("--raw", action="store_true", help="user turns kept as said, no gate and rewrite")
+    parser.add_argument("--kinds", nargs="*", help="only these question types, --count spread over them")
     parser.add_argument("--judge", default="sonnet", help="the Claude model that grades: sonnet, haiku, opus")
     parser.add_argument("--rejudge", type=Path, help="grade again the answers kept in this results folder, nothing run")
     args = parser.parse_args()
@@ -192,8 +193,8 @@ def main() -> int:
 
     instances = lme.load(args.data)
     picked = ([i for i in instances if i.id in args.only] if args.only
-              else lme.slice_of(instances, args.count, kinds=[k for k in lme.TYPES if args.with_assistant
-                                                              or k != "single-session-assistant"], seed=args.seed))
+              else lme.slice_of(instances, args.count, kinds=args.kinds or [k for k in lme.TYPES if args.with_assistant
+                                                                           or k != "single-session-assistant"], seed=args.seed))
     modes = ["memory", "context"] if args.mode == "both" else [args.mode]
     out = ROOT / "experiments" / "results" / "14_longmemeval" / f"{datetime.now():%Y%m%d-%H%M%S}-{args.data}-seed{args.seed}{'-graph' if args.graph else ''}{'-raw' if args.raw else ''}"
     out.mkdir(parents=True)

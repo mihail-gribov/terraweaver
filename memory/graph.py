@@ -35,6 +35,7 @@ import logging
 import math
 import re
 import threading
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -313,14 +314,18 @@ class Graph:
     def _classify(self, text: str, links: list[dict], versions: list[dict]) -> None:
         """The closed questions, to the decision model and outside the lock: the class of each thing
         the user says of themselves, the kind of each new topic. Then the links and topics are kept."""
-        for l in links:
-            if l["from"] == USER and not l["common"]:
-                try:
-                    l["class"] = self.decide(
-                        f'What the user said: "{text}"\n\nRead from it: the user {l["relation"].replace("_", " ")} {l["to"]} '
-                        f'("{l["quote"]}")', "Which is this, of what the user says of themselves?", list(CLASSES.items()))
-                except Exception:  # noqa: BLE001 - a link without a class is still a link
-                    log.exception("classifying a link failed")
+        def classify(l):
+            try:
+                l["class"] = self.decide(
+                    f'What the user said: "{text}"\n\nRead from it: the user {l["relation"].replace("_", " ")} {l["to"]} '
+                    f'("{l["quote"]}")', "Which is this, of what the user says of themselves?", list(CLASSES.items()))
+            except Exception:  # noqa: BLE001 - a link without a class is still a link
+                log.exception("classifying a link failed")
+        own = [l for l in links if l["from"] == USER and not l["common"]]
+        if own:
+            # One entry's links at once: a long history told in one go is read in hours otherwise.
+            with ThreadPoolExecutor(min(8, len(own))) as pool:
+                list(pool.map(classify, own))
         for t in versions:
             if "kind" not in t:
                 try:
