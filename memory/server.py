@@ -334,6 +334,15 @@ async def http_interests(request):
     return JSONResponse(listener.interests())
 
 
+@base.server.custom_route("/settle", ["GET"])
+async def http_settle(request):
+    """Until every kept entry is read into the graph, up to `wait` seconds: for a demo or a run that
+    tells a history and then wants it read before the next message."""
+    from starlette.responses import PlainTextResponse
+    done = graph is None or await asyncio.to_thread(graph.wait, float(request.query_params.get("wait", 600)))
+    return PlainTextResponse("read" if done else "still reading")
+
+
 @base.server.custom_route("/notes", ["GET"])
 async def http_notes(request):
     """What the memory came to since it last answered, waiting up to `wait` seconds for it."""
