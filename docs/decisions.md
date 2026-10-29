@@ -5448,3 +5448,30 @@ picker) are set aside for now: an entity carries a plain kind word, and the stru
 words only; a topic's text, written by the model, mentions but never supports, so a wrong summary
 cannot confirm itself. Closing, not deleting, is what lets a topic say what was ruled out and why.
 The full design is in `docs/TODO.md`, under the topics paragraph.
+
+## 2026-10-29 — The graph built, simpler than designed: the texts are the links
+
+Designing it with the user, the graph came down to a skeleton over the texts. The user: we need a
+simple structure for structuring texts; the entities at least; the texts themselves are already the
+links; the structure must give the world a skeleton, not squeeze it; the texts are the flesh that
+lets us get round hard formalities. So there are no assertions with `said`/`until`, no closing by
+code: an entry is read into the entities it mentions (with the words, checked by code to be in it),
+the links it states — a few common relations named the same way every time (spouse, parent, friend,
+works at…), any other under its own name, never dropped — and the topics it belongs to, each a
+layered, dated text with every version kept. Time is in the days of the texts; the answer is told
+the newest holds. Each entry is read as it is kept, beside the conversation, not after a quiet. The
+strict ontology (`memory/world.py` over `terraweaver/`) leaves the product; it stays behind `--world`.
+
+On the TV story, live: the topic first copied the entries instead of summing them up, folded "Sony"
+into a general "TV", named Mila "the user's wife" and wrote "User" and "we" as entities of their
+own. Fixed by an example in the prompt (from another subject, so it is not copied), by the rule that
+a particular product is its own entity and a named person goes by their name, and by code making
+every word for the user the one user. Then the topic turned the Samsung, chosen and later changed,
+into "looked at"; told that a changed choice stays a choice with its day, it read "Chose Samsung
+S90D (2026-10-26). Changed to LG after putting up blinds (2026-11-28)", and the answer followed.
+
+**The server's `/ask` was never reached.** The journal registers an `/ask` of its own, the question
+alone, before the server adds its own; the first route wins. So `now` and `gather` were lost on
+every HTTP ask: LongMemEval's memory answered as of the machine's day, not the question's — its
+temporal questions were counted from the wrong today, while the context mode was given the right
+one. The journal's route is dropped in the server; LongMemEval re-measured.
