@@ -25,5 +25,5 @@ code. The demo instance must never look like a place to put real data.
 
 - No LongMemEval number is printed: LongMemEval_S was not run in full.
 - A link to the demo video when it is uploaded.
-- Whether the live demo should be reachable from the page, once the prefilled world and the daily reset exist (`HOSTING.md`, "Still to do").
+- Whether the live demo should be reachable from the page, once a prefilled demo world and a daily reset exist.
 - An Open Graph image for link previews.
