@@ -1,0 +1,10 @@
+{"from": "Mila", "relation": "wants", "common": false, "to": "jazz concerts in Belgrade in November", "text": 1, "day": "2026-09-30 20:00:00", "quote": "Mila and I want to get back into live jazz this autumn. are there any good jazz concerts in Belgrade in November?", "when": "2026-09-30"}
+{"from": "the user", "relation": "wants", "common": false, "to": "jazz concerts in Belgrade in November", "text": 1, "day": "2026-09-30 20:00:00", "quote": "Mila and I want to get back into live jazz this autumn. are there any good jazz concerts in Belgrade in November?", "when": "2026-09-30", "class": "plans"}
+{"from": "Mila", "relation": "hobby", "common": true, "to": "live jazz", "text": 1, "day": "2026-09-30 20:00:00", "quote": "get back into live jazz", "when": "2026-09-30"}
+{"from": "the user", "relation": "hobby", "common": true, "to": "live jazz", "text": 1, "day": "2026-09-30 20:00:00", "quote": "get back into live jazz", "when": "2026-09-30"}
+{"from": "the user", "relation": "went_to", "common": false, "to": "Bitef Jazz Club", "text": 2, "day": "2026-09-30 20:00:00", "quote": "we used to go to Bitef Jazz Club every week", "when": "2026-09-30", "ended": true, "class": "did"}
+{"from": "Mila", "relation": "went_to", "common": false, "to": "Bitef Jazz Club", "text": 2, "day": "2026-09-30 20:00:00", "quote": "we used to go to Bitef Jazz Club every week", "when": "2026-09-30", "ended": true}
+{"from": "Lev", "relation": "child", "common": true, "to": "the user", "text": 2, "day": "2026-09-30 20:00:00", "quote": "before Lev was born", "when": "2026-09-30"}
+{"from": "Lev", "relation": "child", "common": true, "to": "Mila", "text": 2, "day": "2026-09-30 20:00:00", "quote": "before Lev was born", "when": "2026-09-30"}
+{"from": "the user", "relation": "dislikes", "common": true, "to": "standup", "text": 3, "day": "2026-10-03 20:00:00", "quote": "why does that annoy me so much", "when": "2026-10-03"}
+{"from": "the user's manager", "relation": "manager", "common": true, "to": "the user", "text": 4, "day": "2026-10-10 20:00:00", "quote": "my manager", "when": "2026-10-10"}

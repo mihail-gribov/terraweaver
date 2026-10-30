@@ -3,7 +3,7 @@
 Two replays, built from real runs with their traces, each at the speed that fits its slot:
 
     .venv/bin/python scripts/replay.py benchmarks/runs/demo-recall-birthday-20261030-033528 --speed 1.72
-    .venv/bin/python scripts/replay.py benchmarks/runs/demo-recall-home-20261030-033528 --speed 1.81
+    .venv/bin/python scripts/replay.py benchmarks/runs/demo-recall-jazz-20261030-142413 --speed 1.8
 
 Record each at 1920×1080 (H hides the bar). The timecodes below are of the video; the voice is
 English, about 150 words a minute, cut into lines that each start on a moment of the replay.
@@ -13,7 +13,7 @@ English, about 150 words a minute, cut into lines that each start on a moment of
 |---|---|---|
 | Intro | title card / the schema | 0:00–0:12 |
 | Birthday | replay 1 at 1.72× | 0:12–1:43 |
-| Home | replay 2 at 1.81× | 1:43–2:45 |
+| Jazz, the web | replay 2 at 1.8× | 1:43–2:45 |
 | Close | the schema, the numbers | 2:45–3:00 |
 
 ## 0:00 — Intro (title card)
@@ -61,31 +61,38 @@ English, about 150 words a minute, cut into lines that each start on a moment of
 
 (~200 words over 91 s; leave the last seconds of the reply silent)
 
-## 1:43 — Home (replay 2, at 1.81×)
+## 1:43 — Jazz: a topic kept current from the web (replay 2, at 1.8×)
 
-**1:43** — the TV, then the soundbar (1:59).
-> A harder kind of question: counting over time. Sums said in passing: a TV, a soundbar,
+Cues are moments of the replay; set the timecodes when it is recorded.
 
-**2:08** — car service, 300.
-> a car service, which is not the home,
+**1:43** — a month ago: "any good jazz concerts in Belgrade in November?"; the agent: programmes
+aren't out yet.
+> A month ago, a question nobody could answer yet: jazz in Belgrade, in November. And in passing:
+> we used to go to Bitef every week.
 
-**2:13** — washing machine; the plumber "fixed the tap" (2:22).
-> a repairman, and a plumber who fixed the tap. No one ever says "home spending".
+**work talk, fast-forwarded** — the standup grumble is kept, then checked and left alone.
+> Weeks of work talk go by.
 
-**2:28** — "Now reading", the question.
-> How much have we spent on the home since October? The memory gathers the facts with their days.
+**"Meanwhile: the web ↓"** — the 🌐 bubble, the web's entry in the journal, the topic layer.
+> Meanwhile, in the quiet, the memory keeps its topics current. Concerts change; this one is due.
+> It searches the web for the user's own question, with no names and nothing private, and keeps
+> what matters as the web's entry, never as the user's words. A grumble about work is the user's
+> own matter: it never reaches the web.
 
-**2:33** — the note, then the table.
-> Two thousand and fifteen euros. The car stays out. It even notes the blinds had no price.
-> <break time="0.8s"/> This class is not solved every time: in an earlier run the plumber was missed.
+**"Now reading ←"** — today: "Saturday the 14th is free … any ideas?"
+> Today: a free Saturday, any ideas? The topic comes back with what the web added:
 
-(~95 words over 62 s)
+**the note, then the reply.**
+> Kovacs at Bitef, the fourth and the fifth: not the fourteenth, and the agent says so. Bitef
+> first, book early.
+
+(~130 words over 62 s; Tavily for the search, Nemotron for every decision)
 
 ## 2:45 — Close (the schema)
 
 > Two doors: what the user says goes in, what the agent asks comes out. Two one-token Nemotron
-> filters keep the noise out, Nemotron Super reads what is left, and the cost per message stays
-> flat. TerraWeaver: a memory that grows with you.
+> filters keep the noise out, Nemotron Super reads what is left, Tavily keeps the topics current,
+> and the cost per message stays flat. TerraWeaver: a memory that grows with you.
 
 (42 words, ~15 s)
 
@@ -93,6 +100,5 @@ English, about 150 words a minute, cut into lines that each start on a moment of
 
 - The pace leaves room: about 2.4 words a second where a line has to land on a moment, less
   elsewhere. If a line runs long, slow that stretch in the edit, not the voice.
-- If the home run is redone and the plumber is missed again, swap the 2:33 line for: "Nineteen
-  twenty: the plumber was missed, the word was 'tap', not 'repair'. Here the memory found the fact
-  but did not count it."
+- The jazz run's reply calls Kovacs "him" and a saxophonist; Sharon Kovacs is a singer. Keep the
+  voice on the dates, or redo the run.

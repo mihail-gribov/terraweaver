@@ -487,7 +487,7 @@ const RUN = {
     // Later, after the reply: the memory extends the topic from the web for the user's questions.
     clearOn(); clearTrail(); setMode("write");
     $("#ctx").hidden = true;
-    $("#mem").insertAdjacentHTML("beforeend", `<div id="switch"><b style="color:var(--write)">Later: the web ↓</b><span>the topic "${esc(e.topic)}" is extended for the user's questions on it</span></div>`);
+    $("#mem").insertAdjacentHTML("beforeend", `<div id="switch"><b style="color:var(--write)">Meanwhile: the web ↓</b><span>the memory keeps "${esc(e.topic)}" current, for the user's questions on it</span></div>`);
     setTimeout(() => $("#switch") && $("#switch").remove(), 2600 / speed);
     setTimeout(() => {
       const bubble = chat(`<b class="who">🌐 the web · for ${e.questions.map(q => "“" + esc(cut(q, 60)) + "”").join(", ")}</b>${md(e.found)}`, "msg web");

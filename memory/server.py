@@ -235,17 +235,24 @@ def main() -> None:
                         embed=lambda texts: search._encoder().embed(texts))
     listener.load_interests()
     if graph is not None and args.engine != "off":
-        # A topic the user comes back to is extended from the web for their questions on it
-        # (memory/refresh.py); what is found is the web's entry in the journal, read into the topic.
+        # Topics kept current from the web (memory/refresh.py): a sweep over the stale ones, offered
+        # by the server's timer; what is found is the web's entry in the journal, read into the topic.
+        from memory import jobs
         from memory.refresh import Refresher
 
-        def keep_web(text: str, topic: int) -> int:
-            n = base.keep_web(text, topic)
+        def keep_web(text: str, topic: int, when=None) -> int:
+            n = base.keep_web(text, topic, when)
             _journal_changed()
             return n
-        refresher = Refresher(keep_web, questions_of=listener.questions_of, extended=listener.extended)
+
+        def topics() -> list[dict]:
+            with graph.lock:
+                return list(graph.latest.values())
+        refresher = Refresher(keep_web, questions_of=listener.questions_of, extended=listener.extended,
+                              last_web=base.last_web, last_said=base.last_said, where=where / "graph")
         refresher.tell = listener.note
-        graph.on_topics = refresher.touched
+        jobs.add(lambda: refresher.sweep(topics()))
+        jobs.start()
     # Two doors (docs/decisions.md, 2026-10-27): the conversation goes in by `say` — from a hook,
     # where the agent has hooks, or from the agent — and the agent asks by `ask`. The journal's own
     # calls stay in it for its tests, not for the agent.

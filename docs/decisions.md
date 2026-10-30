@@ -5567,3 +5567,32 @@ server with `--engine off`.
 `/debug/facts`, …) are no longer served by the memory server: they wrote and forgot past the gate,
 the secrets filter and the user's confirmation. Notes are given only with an answer to a message of
 the user's: the Stop hook's agent-only `say` threw them away.
+
+**Only a topic come back to, in the conversation's time.** The first jazz run searched the moment
+the question was asked — a month back in the story, timed by the clock — and searched a grumble
+about the standup (0.55). The agent answers what is asked today, with its own web if it has one; the
+memory extends what the user comes back to on a later day. Days and marks are the conversation's
+(the newest entry's day), and a topic is searched only when the outside surely changes (≥ 0.7;
+concerts read 0.89–0.96). The second run showed three more: work talk beside a topic ("perfect",
+"80 messages for that lol") searched it — now only a message that asks something does; two topics
+were searched with the same question, the one nearer by chance with no city, and brought clubs in
+Chicago — now only the topic the message goes on with most surely, and a query with no place is not
+sent; the web's entries were dated by the clock — now by the conversation's time.
+
+**Then: the topic, swept, not the question, asked (the user's rules, same day).** What is kept
+current is the topic. A sweep in the server's own timer (`memory/jobs.py`, a minute's wake; the
+sweep itself at most once in `TERRAWEAVER_WEB_EVERY`, an hour, its time kept beside the graph so a
+restart does not shorten it) takes up to `TERRAWEAVER_WEB_TOPICS` (3) due topics, one at a time. A
+topic is due when it has no web entry in `FRESH` (30 days) and the user spoke in it within
+`DORMANT` (90 days); only the user's entries count for that, or the web's would keep a topic alive
+by themselves. Why a month: prices and event lists are what changes within weeks, and one search
+per topic a month bounds what the shared demo spends — it has no other search budget, and an
+hourly sweep of three topics bounds a day at 72. A sweep that finds nothing that matters keeps no
+journal entry — "nothing" read into a topic would be noise — but the topic is marked checked
+(`graph/web_checks.jsonl`) and is fresh for a month as well; so is a topic whose outside does not
+change (the one-token gate, ≥ 0.7): the user's own matters — an allergy, a grumble about work —
+are asked once a month and never reach the web. The queries are made from the user's questions on
+the topic, or from the topic itself when it has none, never with a name or a private detail. The
+agent hears of it with the next answer to a message of the user's. The message-time trigger, the
+"looking on the web" line and the per-question freshness are gone; the per-question marks stay
+for the record.

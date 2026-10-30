@@ -189,6 +189,23 @@ def topic_of(heading: str) -> int | None:
     return int(last.removeprefix("topic ")) if last.startswith("topic ") and last[6:].isdigit() else None
 
 
+def last_web(topic: int) -> str | None:
+    """When the web was last heard on a topic: the day of its latest web entry."""
+    days = [_day for _, heading, _ in _entries(_memory())
+            if source_of(heading) == WEB and topic_of(heading) == topic
+            for _day in [heading.split(" · ")[1].strip()]]
+    return max(days) if days else None
+
+
+def last_said(numbers) -> str | None:
+    """When the user last spoke of these entries' matter: the day of the newest of them that is
+    the user's, not the web's."""
+    numbers = set(numbers)
+    days = [heading.split(" · ")[1].strip() for n, heading, _ in _entries(_memory())
+            if n in numbers and source_of(heading) == USER]
+    return max(days) if days else None
+
+
 def keep_web(text: str, topic: int | None, told: datetime | None = None) -> int:
     """A web page's words for a topic of the user's: kept in the journal, marked as the web's."""
     return _keep(text, WEB + (f" · topic {topic}" if topic is not None else ""), told)

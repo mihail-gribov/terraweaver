@@ -1,0 +1,586 @@
+{
+ "the user": {
+  "named": true,
+  "kind": "person",
+  "portrait": [
+   {
+    "text": "Wants to resume attending live jazz concerts this autumn, specifically looking for good jazz concerts in Belgrade in November (2026-09-30). Used to go to Bitef Jazz Club every week before Lev was born. gets annoyed when the standup time is moved earlier (2026-10-03) Had a 1:1 with manager that went fine, nothing dramatic (2026-10-10)",
+    "day": "2026-10-10",
+    "facts": [
+     1,
+     2,
+     3,
+     4
+    ]
+   }
+  ],
+  "known_as": [],
+  "parts": {
+   "spouse": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "partner": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "child": {
+    "size": "few",
+    "now": [
+     {
+      "value": "Lev",
+      "fact": 2,
+      "day": "2026-09-30",
+      "quote": "before Lev was born"
+     }
+    ],
+    "was": []
+   },
+   "parent": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "sibling": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "relative": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "pet": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "friend": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "colleague": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "manager": {
+    "size": "one",
+    "now": [
+     {
+      "value": "the user's manager",
+      "fact": 4,
+      "day": "2026-10-10",
+      "quote": "my manager"
+     }
+    ],
+    "was": []
+   },
+   "born_on": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "age": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "lives_in": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "works_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "job": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "studies_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "owns": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "skill": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "speaks": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "hobby": {
+    "size": "many",
+    "now": [
+     {
+      "value": "live jazz",
+      "fact": 1,
+      "day": "2026-09-30",
+      "quote": "get back into live jazz"
+     }
+    ],
+    "was": []
+   },
+   "health": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "likes": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "dislikes": {
+    "size": "many",
+    "now": [
+     {
+      "value": "standup",
+      "kind": "event",
+      "fact": 3,
+      "day": "2026-10-03",
+      "quote": "why does that annoy me so much"
+     }
+    ],
+    "was": []
+   }
+  }
+ },
+ "Lev": {
+  "named": true,
+  "kind": "person",
+  "portrait": [
+   {
+    "text": "Born after the user and Mila stopped going weekly to Bitef Jazz Club.",
+    "day": "2026-09-30",
+    "facts": [
+     2
+    ]
+   }
+  ],
+  "known_as": [],
+  "parts": {
+   "spouse": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "partner": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "child": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "parent": {
+    "size": "few",
+    "now": [
+     {
+      "value": "Mila",
+      "fact": 2,
+      "day": "2026-09-30",
+      "quote": "before Lev was born"
+     },
+     {
+      "value": "the user",
+      "fact": 2,
+      "day": "2026-09-30",
+      "quote": "before Lev was born"
+     }
+    ],
+    "was": []
+   },
+   "sibling": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "relative": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "pet": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "friend": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "colleague": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "manager": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "born_on": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "age": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "lives_in": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "works_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "job": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "studies_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "owns": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "skill": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "speaks": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "hobby": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "health": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "likes": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "dislikes": {
+    "size": "many",
+    "now": [],
+    "was": []
+   }
+  }
+ },
+ "Mila": {
+  "named": true,
+  "kind": "person",
+  "portrait": [
+   {
+    "text": "Wants to resume attending live jazz concerts this autumn, specifically looking for good jazz concerts in Belgrade in November (2026-09-30). Used to go to Bitef Jazz Club every week before Lev was born.",
+    "day": "2026-09-30",
+    "facts": [
+     1,
+     2
+    ]
+   }
+  ],
+  "known_as": [],
+  "parts": {
+   "spouse": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "partner": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "child": {
+    "size": "few",
+    "now": [
+     {
+      "value": "Lev",
+      "fact": 2,
+      "day": "2026-09-30",
+      "quote": "before Lev was born"
+     }
+    ],
+    "was": []
+   },
+   "parent": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "sibling": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "relative": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "pet": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "friend": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "colleague": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "manager": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "born_on": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "age": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "lives_in": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "works_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "job": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "studies_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "owns": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "skill": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "speaks": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "hobby": {
+    "size": "many",
+    "now": [
+     {
+      "value": "live jazz",
+      "fact": 1,
+      "day": "2026-09-30",
+      "quote": "get back into live jazz"
+     }
+    ],
+    "was": []
+   },
+   "health": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "likes": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "dislikes": {
+    "size": "many",
+    "now": [],
+    "was": []
+   }
+  }
+ },
+ "the user's manager": {
+  "named": false,
+  "kind": "person",
+  "portrait": [
+   {
+    "text": "Had a 1:1 with the user that went fine, nothing dramatic (2026-10-10)",
+    "day": "2026-10-10",
+    "facts": [
+     4
+    ]
+   }
+  ],
+  "known_as": [],
+  "parts": {
+   "spouse": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "partner": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "child": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "parent": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "sibling": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "relative": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "pet": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "friend": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "colleague": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "manager": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "born_on": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "age": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "lives_in": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "works_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "job": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "studies_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "owns": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "skill": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "speaks": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "hobby": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "health": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "likes": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "dislikes": {
+    "size": "many",
+    "now": [],
+    "was": []
+   }
+  }
+ }
+}

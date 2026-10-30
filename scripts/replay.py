@@ -89,6 +89,15 @@ def build(run: Path, speed: float = 1.0) -> dict:
         if since and events[since - 1]["kind"] == "day":
             events[since - 1]["fast"] = True
 
+    # Between the talk and today: a topic looked up on the web by the memory's sweep
+    # (memory/refresh.py) — the web's reply, kept in the journal as the web's, read into the topic,
+    # told to the agent with the next answer.
+    web = []
+    for w in [s for s in steps if s["step"] == "web" and s.get("entry")]:
+        read = next((r for r in steps if r["step"] == "read" and r.get("source") == "the web" and r["entry"] == w["entry"]), {})
+        web.append({"kind": "web", "topic": w["topic"], "questions": w["questions"], "found": w["found"],
+                    "entry": w["entry"], "added": [{"name": t["name"], "added": t["added"]} for t in read.get("topics", [])],
+                    "later": f'Looked on the web on "{w["topic"]}": found what matters, kept as entry #{w["entry"]}.\n{w["found"]}'})
     start, clock = 0, "20:00"
     for h in heard:
         m = h["heard"][0] if h["heard"] else None
@@ -115,6 +124,8 @@ def build(run: Path, speed: float = 1.0) -> dict:
             events.append({"kind": "day", "date": day})
         final = m["text"] == last_user and today
         if final:
+            events += web
+            web = []
             events.append({"kind": "mode", "to": "read"})
         start = len(events)
         clock = ((k.get("day") or "")[11:16] if k and new_day != day_before else "") or _later(clock)
@@ -157,13 +168,7 @@ def build(run: Path, speed: float = 1.0) -> dict:
                    {"kind": "note", "text": (recall or {}).get("note", "")},
                    {"kind": "say", "role": "agent", "text": today.get("reply", ""), "final": True,
                     "time": _later(today.get("time", "21:14"))}]
-    # Later: a topic extended from the web for the user's questions (memory/refresh.py) — the web's
-    # reply, kept in the journal as the web's, read into the topic, told to the agent.
-    for w in [s for s in steps if s["step"] == "web" and s.get("entry")]:
-        read = next((r for r in steps if r["step"] == "read" and r.get("source") == "the web" and r["entry"] == w["entry"]), {})
-        events.append({"kind": "web", "topic": w["topic"], "questions": w["questions"], "found": w["found"],
-                       "entry": w["entry"], "added": [{"name": t["name"], "added": t["added"]} for t in read.get("topics", [])],
-                       "later": today.get("later", "")})
+    events += web
     return {"title": run.name, "speed": speed, "events": events}
 
 

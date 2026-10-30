@@ -61,7 +61,6 @@ USER = "the user"
 # this", and one who is not keeps it in mind.
 SURE, POSSIBLE = 0.7, 0.3
 # The line of recall that says a web search is under way: given to the agent as it is, never fitted away.
-LOOKING = "Looking on the web:"
 # The words a reader may write for the user; every one of them is the user, by code.
 SELF = {"the user", "user", "i", "me", "myself", "we", "us", "the user s"}
 
@@ -347,7 +346,6 @@ class Graph:
             "Does the user's message go on with this topic, the same matter?", "yes, the same matter",
             "no, another matter")["p"]["yes"])
         # Called with the topics a message goes on with (memory/refresh.py keeps them fresh).
-        self.on_topics = None
         # Texts -> vectors, to find topics by meaning; without it, by the words they share.
         self.embed = embed
         self._vectors: dict[tuple, list] = {}
@@ -964,7 +962,6 @@ class Graph:
                 sure.append(t)
             elif p >= POSSIBLE and len(possible) < 3:
                 possible.append(t)
-        searching = self.on_topics(sure, message) if sure and self.on_topics else []
         lines = []
         for t in sure:
             lines.append(f'We discussed this before: "{t["name"]}", last on {t["day"][:10]} (facts '
@@ -976,9 +973,6 @@ class Graph:
             lines.append(f'Possibly related: "{t["name"]}", last on {t["day"][:10]} — ask the memory if it matters.')
         lines += self._world_spoken_of(message)
         lines += self._known_of(message, set(recent))
-        for name in searching:
-            lines.append(f'{LOOKING} "{name}" changes, so the memory is looking on the web for what is new on it '
-                         f'now. Tell the user you will check online; what it finds comes with a later answer.')
         if not lines:
             return ""
         lines.append("How and whether to bring this up with the user is yours to decide.")

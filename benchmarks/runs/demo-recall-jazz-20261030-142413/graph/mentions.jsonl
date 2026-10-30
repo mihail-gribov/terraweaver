@@ -1,0 +1,17 @@
+{"text": 1, "dialogue": 0, "day": "2026-09-30 20:00:00", "entity": "the user", "kind": "person", "as": "I"}
+{"text": 1, "dialogue": 1, "day": "2026-09-30 20:00:00", "entity": "Mila", "kind": "person", "as": "Mila"}
+{"text": 1, "dialogue": 1, "day": "2026-09-30 20:00:00", "entity": "Belgrade", "kind": "place", "as": "Belgrade"}
+{"text": 1, "dialogue": 1, "day": "2026-09-30 20:00:00", "entity": "jazz concerts in Belgrade in November", "kind": "event", "as": "jazz concerts in Belgrade in November"}
+{"text": 2, "dialogue": 0, "day": "2026-09-30 20:00:00", "entity": "the user", "kind": "person", "as": "we"}
+{"text": 2, "dialogue": 1, "day": "2026-09-30 20:00:00", "entity": "Mila", "kind": "person", "as": "we"}
+{"text": 2, "dialogue": 1, "day": "2026-09-30 20:00:00", "entity": "Lev", "kind": "person", "as": "Lev"}
+{"text": 2, "dialogue": 1, "day": "2026-09-30 20:00:00", "entity": "Bitef Jazz Club", "kind": "place", "as": "Bitef Jazz Club"}
+{"text": 3, "dialogue": 3, "day": "2026-10-03 20:00:00", "entity": "standup", "kind": "event", "as": "standup"}
+{"text": 3, "dialogue": 0, "day": "2026-10-03 20:00:00", "entity": "the user", "kind": "person", "as": "me"}
+{"text": 4, "dialogue": 4, "day": "2026-10-10 20:00:00", "entity": "the user's manager", "kind": "person", "as": "my manager"}
+{"text": 6, "dialogue": 5, "day": "2026-10-18 20:00:00", "entity": "office", "kind": "place", "as": "the office"}
+{"text": 6, "dialogue": 5, "day": "2026-10-18 20:00:00", "entity": "kitchen", "kind": "place", "as": "the kitchen"}
+{"text": 7, "dialogue": 0, "day": "2026-10-24 20:00:00", "entity": "the user", "kind": "person", "as": "I"}
+{"text": 8, "dialogue": 0, "day": "2026-10-30 14:26:14", "entity": "the user", "kind": "person", "as": "my"}
+{"text": 8, "dialogue": 8, "day": "2026-10-30 14:26:14", "entity": "Lev", "kind": "person", "as": "Lev"}
+{"text": 8, "dialogue": 8, "day": "2026-10-30 14:26:14", "entity": "the user's mother-in-law", "kind": "person", "as": "mother-in-law"}

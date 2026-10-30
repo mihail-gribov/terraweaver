@@ -168,6 +168,8 @@ JAZZ = [
     (30, "agent", "Bitef is a lovely spot. I hope you get back there soon."),
 ]
 
+# Stories whose point is a topic looked up on the web between the talk and today.
+LOOKED_UP = {"jazz"}
 STORIES = {
     "tv": (TV, "I want to get a soundbar for the living room TV. What would you suggest?"),
     "birthday": (with_filler(BIRTHDAY, "birthday"), "Help me plan something nice for my wife's birthday evening."),
@@ -219,6 +221,15 @@ def main() -> int:
             print(f"  [{when:%Y-%m-%d}] {who}: {text}")
         print("\n(the memory reads what it kept into its graph...)", flush=True)
         call(args.port, "/settle?wait=900", timeout=960)
+        if args.story in LOOKED_UP:
+            # The memory's timer sweeps the stale topics; the story waits for the web to be heard
+            # and read into the topic, as a month would have passed (memory/refresh.py).
+            print("(the memory looks its topics up on the web...)", flush=True)
+            for _ in range(60):
+                if '"step": "web"' in (where / "trace.jsonl").read_text():
+                    break
+                time.sleep(5)
+            call(args.port, "/settle?wait=600", timeout=660)
 
         print(f"\n== Today, a new session of Claude Code ({args.model}), the plugin on\n\n  user: {args.message}\n", flush=True)
         cwd = where / "cwd"
@@ -226,6 +237,8 @@ def main() -> int:
         env = {**os.environ, "PERSONAL_WORLD": "on", "PERSONAL_MEMORY_URL": f"http://127.0.0.1:{args.port}"}
         run = subprocess.run(["claude", "-p", "--model", args.model, "--plugin-dir", str(PLUGIN),
                               "--allowedTools", "mcp__plugin_personal-world_memory__ask",
+                              # The web is the memory's here: what it finds comes after the reply.
+                              "--disallowedTools", "WebSearch", "WebFetch", "mcp__keenable", "mcp__keenable-select",
                               "--output-format", "stream-json", "--verbose"],
                              input=args.message, cwd=cwd, env=env, capture_output=True, text=True, timeout=900)
         # The agent's whole turn, its calls to the memory included: kept beside the memory's trace.

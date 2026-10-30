@@ -68,7 +68,6 @@ class Listener:
         self.recent: list[dict] = []  # the last messages heard, both sides: what the gate reads with
         self.jobs: list[dict] = []    # the agent's gatherings, each with its answer once done
         self.wanted: list[dict] = []  # the user's questions: their interests, each with its entries and extensions
-        self.asking: list[int] = []   # the questions of the message being answered
         self.interests_path, self._embed = interests_path, embed
         self.heard_path = heard_path  # every `say`: what was heard and what was answered
         self.notes: list[str] = []
@@ -166,9 +165,11 @@ class Listener:
                 parts.append(f"Kept as entry #{entry}." + (" (A secret in it was withheld.)"
                                                             if said != " ".join(message.split()) else ""))
         # Every question of the user's is a wish to know: kept as one, with the entry it was asked in,
-        # before the recall — a topic this message goes on with is extended for it (memory/refresh.py).
-        # An action is the agent's.
-        self.asking = [await self._wanted(r["text"], entry) for r in got.requests if r["kind"] == "know"]
+        # so that a topic it is read into is looked up on the web for it (memory/refresh.py). An action
+        # is the agent's.
+        for r in got.requests:
+            if r["kind"] == "know":
+                await self._wanted(r["text"], entry)
         # At once, beside each other: what bears on the message, the topic and people it goes on
         # with, and the answer to each question of the user's, from the memory only.
         recall, narrow = getattr(self.base, "graph_recall", None), getattr(self.base, "narrow", None)
@@ -197,10 +198,6 @@ class Listener:
                                                       *(answered(q) for q in asked))
         gathered = ([f"What the memory holds that bears on this:\n{found}"]
                     if found and found.strip().lower().strip(".") != "nothing" else [])
-        # That the memory is looking on the web is said as it is: the agent tells the user.
-        from memory.graph import LOOKING
-        looking = [l for l in (topic or "").splitlines() if l.startswith(LOOKING)]
-        topic = "\n".join(l for l in (topic or "").splitlines() if not l.startswith(LOOKING))
         gathered += [topic] + list(answers)
         gathered = [g for g in gathered if g]
         if gathered:
@@ -210,7 +207,6 @@ class Listener:
             else:
                 # The user's own question, answered from the memory, is never fitted away.
                 parts += [a for a in answers if a]
-        parts += looking
         return parts
 
     async def _fitted(self, message: str, gathered: list[str]) -> str:
@@ -266,12 +262,11 @@ class Listener:
         return wish["id"]
 
     def questions_of(self, topic: dict) -> list[dict]:
-        """The user's questions on a topic: those asked in its entries, and those of the message being
-        answered (its entry is not read into the topic yet). Each with when it was last extended
-        for this topic."""
+        """The user's questions on a topic: those asked in its entries. Each with when it was last
+        looked up on the web for this topic."""
         on = set(topic["entries"])
         return [{"id": w["id"], "asked": w["asked"], "extended": w["extended"].get(str(topic["topic"]))}
-                for w in self.wanted if on & set(w["entries"]) or w["id"] in self.asking]
+                for w in self.wanted if on & set(w["entries"])]
 
     def extended(self, question: int, topic: int, day: str, entry: int | None) -> None:
         """A topic was extended from the web for a question: when, and the web entry it gave (None:
