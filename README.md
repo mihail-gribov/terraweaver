@@ -2,6 +2,8 @@
 
 **One personal memory you own. It grows with every conversation and follows you from one agent to the next.**
 
+**Site and demo: https://terraweaver.life**
+
 Your agent forgets what you said in passing, or remembers it in its own words: "up to 400" with
 no idea that it was the budget for the vacuum, "she" with no idea who. You end up dictating
 facts to it, and it still decides alone what is worth keeping.

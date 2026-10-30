@@ -99,5 +99,6 @@ The repository was started on 2026-09-19, inside the submission period; all code
 
 ## Links
 - Code: https://github.com/mihail-gribov/terraweaver
+- Site: https://terraweaver.life
 - Video: (YouTube link)
 - Try it: https://terraweaver.life, an evaluation-only instance (one shared memory, no personal data please); the page says how to connect Claude Code with a key. For real use, the README's "Run it" section runs the memory locally: the server and Claude Code with the plugin, two commands.
