@@ -5,7 +5,7 @@
     --sans: system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   }
   * { box-sizing:border-box; }
-  html { scroll-behavior:smooth; }
+  html { scroll-behavior:smooth; scroll-padding-top:3.6rem; }
   body { margin:0; background:var(--bg); color:var(--fg); font:17px/1.65 var(--sans); -webkit-font-smoothing:antialiased; }
   a { color:var(--accent-ink); }
   .wrap { max-width:62rem; margin:0 auto; padding:0 20px; }
@@ -97,3 +97,9 @@
   .doc h2 { font-size:1.5rem; margin:2.4rem 0 .5rem; }
   .doc p, .doc li { color:#33403b; }
   .doc .todo { background:var(--warn); color:var(--warnfg); border:1px solid #f0dca0; border-radius:12px; padding:.7rem 1rem; font-size:.93rem; }
+
+  /* The last section is short: give it room so that its anchor can reach the top of the screen. */
+  #contact { min-height:calc(100vh - 13rem); }
+  .weave-wrap { margin-top:3rem; text-align:center; }
+  .weave { display:block; width:100%; height:12rem; border-radius:18px; background:linear-gradient(180deg,#f6fbf9,#fbf4e0); border:1px solid var(--line); }
+  .weave-cap { color:var(--muted); font-family:var(--serif); font-style:italic; margin:.8rem 0 0; }
