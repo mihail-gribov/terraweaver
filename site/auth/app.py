@@ -2,6 +2,7 @@
 
     GOOGLE_CLIENT_ID=… GOOGLE_CLIENT_SECRET=… SESSION_SECRET=… \\
         .venv/bin/python site/auth/app.py            # 127.0.0.1:7120, behind Caddy
+    SERVE_SITE=1 BASE_URL=http://localhost:7120 …   # locally: the pages too, one address
 
 Caddy sends /auth/* here (site/deploy/Caddyfile); the cabinet itself is the static page /account/.
 The Google client's redirect URI is BASE_URL/auth/callback (default https://terraweaver.life).
@@ -24,7 +25,8 @@ import uvicorn
 from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, JSONResponse, RedirectResponse
-from starlette.routing import Route
+from starlette.routing import Mount, Route
+from starlette.staticfiles import StaticFiles
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from memory import keys  # noqa: E402
@@ -185,6 +187,9 @@ app = Starlette(routes=[
     Route("/auth/api/account", delete_account, methods=["DELETE"]),
     Route("/auth/api/logout", logout, methods=["POST"]),
 ])
+if os.environ.get("SERVE_SITE"):
+    # Local runs only: on the server Caddy serves the pages and sends /auth/* here.
+    app.routes.append(Mount("/", StaticFiles(directory=Path(__file__).resolve().parents[1], html=True)))
 
 if __name__ == "__main__":
     if len(SECRET) < 16:
