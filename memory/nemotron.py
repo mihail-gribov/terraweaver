@@ -74,7 +74,7 @@ def fitted_for(path: Path, model: str) -> dict:
 
     One entry per model (`{"models": {id: {"calibration": ...}}}`): another model's confidence is on
     another scale, so its temperature is noise here. Any Nemotron can be used; one with no entry reads
-    both orders at temperature 1 until `experiments/09_decision` fits it.
+    both orders at temperature 1 until it is fitted (how: docs/decisions.md, 2026-10-26).
     """
     shipped = json.loads(Path(path).read_text()) if Path(path).exists() else {}
     return (shipped.get("models") or {}).get(model, {}).get("calibration", {})

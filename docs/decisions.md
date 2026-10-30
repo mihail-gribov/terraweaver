@@ -5596,3 +5596,5 @@ the topic, or from the topic itself when it has none, never with a name or a pri
 agent hears of it with the next answer to a message of the user's. The message-time trigger, the
 "looking on the web" line and the per-question freshness are gone; the per-question marks stay
 for the record.
+A query naming a person the graph knows of is now dropped by the code before it is sent, not
+only by the prompt's word (lead's review, 2026-10-30).

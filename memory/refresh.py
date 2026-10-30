@@ -24,6 +24,7 @@ what was found, or that nothing new was.
 import json
 import logging
 import os
+import re
 import threading
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -92,7 +93,7 @@ class Refresher:
     with nothing kept, and the time of the last sweep."""
 
     def __init__(self, keep_web, questions_of=None, extended=None, last_web=None, last_said=None, where: Path | None = None,
-                 search=None, write=None, volatile=None, worth=None, now=datetime.now):
+                 search=None, write=None, volatile=None, worth=None, now=datetime.now, names=None):
         if search is None:
             from memory.web import tavily
             search = tavily
@@ -101,6 +102,8 @@ class Refresher:
         self.extended = extended or (lambda *a: None)
         self.last_web = last_web or (lambda topic: None)
         self.last_said = last_said or (lambda entries: None)
+        # The people the memory knows of: a query naming one is not sent, whatever the model wrote.
+        self.names = names or (lambda: set())
         self.where, self.checked, self.swept = where, {}, None
         if where and (where / "web_checks.jsonl").exists():
             for line in (where / "web_checks.jsonl").read_text().splitlines():
@@ -148,6 +151,15 @@ class Refresher:
                 (self.where / "web_sweep.json").write_text(json.dumps({"at": self.swept.isoformat(timespec="seconds")}))
         return done
 
+    def _names_someone(self, query: str) -> bool:
+        """Does the query carry a known person's name? Then it stays here: the model is told to
+        leave names out, and this holds when it does not."""
+        for name in self.names():
+            if name and re.search(rf"\b{re.escape(name)}\b", query, re.IGNORECASE):
+                log.info("query dropped, it names someone: %r", query)
+                return True
+        return False
+
     def _checked(self, topic: int, when: datetime) -> None:
         on = when.isoformat(timespec="seconds")
         self.checked[topic] = on
@@ -179,7 +191,7 @@ class Refresher:
                 try:
                     got = json.loads(said[said.find("{"):said.rfind("}") + 1])["queries"][:2]
                     # "jazz clubs [City Name]": no place known, and the web answers for America.
-                    queries += [x for x in got if "[" not in x]
+                    queries += [x for x in got if "[" not in x and not self._names_someone(x)]
                 except (ValueError, KeyError, TypeError):
                     log.warning("no queries for %r: %r", t["name"], said[:200])
             pages = [p for query in dict.fromkeys(queries) for p in self.search(query, 4)]

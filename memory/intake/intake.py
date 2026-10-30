@@ -152,7 +152,7 @@ def main() -> None:
     from memory.intake import sources
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("--dialogue", help="a run.json of experiments/13_dialogues")
+    group.add_argument("--dialogue", help="a dialogue run's run.json: history sessions and a task")
     group.add_argument("--memops", help="a MemOps sample, e.g. A01_remember")
     group.add_argument("--longmemeval", type=int, help="a LongMemEval question's index; its sessions, in order")
     parser.add_argument("--out", help="write every reading as JSON here")

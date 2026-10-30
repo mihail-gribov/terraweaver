@@ -16,14 +16,15 @@ FOUND = "- Jazz trio at Bluebird, 11 Nov 21:00 (https://bluebird.example)"
 NOW = datetime(2026, 10, 30, 12, 0)
 
 
-def make(questions, found=FOUND, matters=0.9, changes=0.8, said="2026-10-20 20:00", web=None, where=None):
+def make(questions, found=FOUND, matters=0.9, changes=0.8, said="2026-10-20 20:00", web=None, where=None,
+         names=None, query="jazz club Belgrade November 2026"):
     kept, told, searched, marks = [], [], [], []
     r = Refresher(keep_web=lambda text, topic, when=None: kept.append((text, topic)) or 42,
                   questions_of=lambda t: questions, extended=lambda *a: marks.append(a),
                   last_web=lambda topic: web, last_said=lambda entries: said, where=where,
                   search=lambda q, n: searched.append(q) or [{"url": "https://bluebird.example", "title": "Bluebird", "text": "jazz"}],
-                  write=lambda prompt: '{"queries": ["jazz club Belgrade November 2026"]}' if "queries" in prompt else found,
-                  volatile=lambda t, q: changes, worth=lambda t, q, f: matters, now=lambda: NOW)
+                  write=lambda prompt: '{"queries": ["%s"]}' % query if "queries" in prompt else found,
+                  volatile=lambda t, q: changes, worth=lambda t, q, f: matters, now=lambda: NOW, names=names)
     r.tell = told.append
     return r, kept, told, searched, marks
 
@@ -60,6 +61,12 @@ def test_a_web_entry_within_a_month_keeps_a_topic_fresh():
     assert not r.due(TOPIC)
     r.now = lambda: datetime(2026, 11, 10, 12, 0)
     assert r.due(TOPIC)
+
+
+def test_a_query_naming_someone_is_not_sent():
+    r, kept, _, searched, _ = make([], names=lambda: {"Mila"}, query="Mila jazz Belgrade")
+    r.sweep([TOPIC])
+    assert not searched and not kept
 
 
 def test_a_dormant_topic_is_not_looked_up():

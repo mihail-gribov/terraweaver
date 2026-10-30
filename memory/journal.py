@@ -1,19 +1,18 @@
-"""The baseline world: the same four doors as the world, behind the plainest possible memory.
+"""The journal: the user's own words, kept as said, numbered, dated and with their source.
 
-What every agent is told is one contract — `context`, `tell`, `ask`, `questions`, and the calls
-every other memory has, `add_memory`, `search_memory`, `forget` — and this is that contract with
-nothing behind it but a text file. `tell` (and `add_memory`, the same call) appends what was said,
-numbered, dated and with its source, as it came. `ask`, `context` and `search_memory` hand the
-whole file to the reading model with the question; `search_memory` gives back the entries themselves, not an
-answer. `forget` moves entries to a bin, `forgotten.jsonl` beside the file, where no reader looks
-and `forgotten` lists them; they are deleted for good a set time later. `questions` never has any: a text file has no
-doubts. Whatever the world does better than this
-is the world's effect; whatever it does worse, it has to answer for.
+Every message the memory keeps is appended to `facts.md` as one entry, `## #N · time · source`
+(the user, or the web for a topic, `· topic N`); the graph (`memory/graph.py`) is read from it and
+the search (`memory/search.py`) indexes it. `forget` moves entries to a bin, `forgotten.jsonl`
+beside the file, where no reader looks; they are deleted for good a set time later. `ask` and
+`context` hand the reading model what the search finds for the question.
 
-    .venv/bin/python -m memory.journal                 # var/baseline/main/facts.md, port 7100
-    .venv/bin/python -m memory.journal --name mike --port 7101
+This module holds the MCP server object and its transport (`serve`, `app_for`); the memory server
+(`memory/server.py`) puts its two doors and routes on it and serves it:
 
-Connect an agent to http://127.0.0.1:7100/mcp. Nothing here imports terraweaver.
+    .venv/bin/python -m memory.server                  # var/memory/main/facts.md, port 7110
+
+Run alone (`python -m memory.journal`: var/baseline/<name>/, port 7100), it is the plain journal
+with nothing read from it: the baseline the memory is measured against.
 """
 import argparse
 import asyncio
@@ -594,28 +593,39 @@ def main() -> None:
 
 
 def serve(port: int, host: str = "127.0.0.1") -> None:
-    """Serve MCP on /mcp and the plain HTTP routes: on localhost, or on the network with a token.
+    """Serve MCP on /mcp and the plain HTTP routes."""
+    app, how = app_for(port, host)
+    log.info("memory %s on http://%s:%d/mcp, %s", facts, host, port, how)
+    uvicorn.run(app, host=host, port=port, log_level="info")
 
-    On localhost the host and origin checks keep a web page from reaching the memory. Off it they
-    can't, since the names a LAN client uses aren't known here, so every request must carry
-    `Authorization: Bearer <token>` instead: TERRAWEAVER_TOKEN, or one made once and kept beside
-    the journal (`token`, readable by its owner only). The token itself is never logged.
+
+def app_for(port: int, host: str = "127.0.0.1"):
+    """The app, and how it is guarded (for the log, without the token).
+
+    Open only on localhost with no token set and no keys issued: there the host and origin checks
+    keep a web page from reaching the memory. Anywhere else — on the network, or on localhost
+    behind a proxy that serves the public (TERRAWEAVER_TOKEN set, or keys issued to accounts,
+    memory/keys.py) — every request, /mcp and every route alike, must carry
+    `Authorization: Bearer <token>`: the server's token (TERRAWEAVER_TOKEN, or one made once and
+    kept beside the journal, readable by its owner only) or an issued key. The host check is off
+    then, since the proxy's name is not known here; the token is the protection. The token itself
+    is never logged.
     """
-    if host in ("127.0.0.1", "localhost"):
+    from memory import keys
+    loopback = host in ("127.0.0.1", "localhost")
+    public = os.environ.get("TERRAWEAVER_TOKEN", "").strip() or os.environ.get("TERRAWEAVER_KEYS") \
+        or keys.path().exists()
+    if loopback and not public:
         names = ["127.0.0.1", "localhost"]
         security = TransportSecuritySettings(
             allowed_hosts=[f"{name}:{port}" for name in names],
             allowed_origins=[f"http://{name}:{port}" for name in names],
         )
-        app = server.streamable_http_app(host="127.0.0.1", transport_security=security)
-        log.info("memory %s on http://127.0.0.1:%d/mcp", facts, port)
-    else:
-        token, kept = _token(facts.parent / "token")
-        app = _guarded(server.streamable_http_app(
-            host=host, transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False)),
-            token)
-        log.info("memory %s on http://%s:%d/mcp, bearer token %s", facts, host, port, kept)
-    uvicorn.run(app, host=host, port=port, log_level="info")
+        return server.streamable_http_app(host="127.0.0.1", transport_security=security), "localhost only"
+    token, kept = _token(facts.parent / "token")
+    return _guarded(server.streamable_http_app(
+        host=host, transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False)),
+        token), f"bearer token {kept} or an issued key"
 
 
 def _token(path: Path) -> tuple[str, str]:

@@ -248,8 +248,15 @@ def main() -> None:
         def topics() -> list[dict]:
             with graph.lock:
                 return list(graph.latest.values())
+        from memory.graph import USER
+
+        def names() -> set[str]:
+            # Every person the graph knows of, by the whole name and by each part of it.
+            with graph.lock:
+                people = [e for e, kind in graph.kinds.items() if kind == "person" and e != USER]
+            return set(people) | {w for e in people for w in e.split() if len(w) > 2}
         refresher = Refresher(keep_web, questions_of=listener.questions_of, extended=listener.extended,
-                              last_web=base.last_web, last_said=base.last_said, where=where / "graph")
+                              last_web=base.last_web, last_said=base.last_said, where=where / "graph", names=names)
         refresher.tell = listener.note
         jobs.add(lambda: refresher.sweep(topics()))
         jobs.start()

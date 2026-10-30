@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def dialogue(path: str) -> list[dict]:
-    """A run of experiments/13_dialogues: its history sessions and its task, one after another, each
+    """A dialogue run (run.json): its history sessions and its task, one after another, each
     message marked with its session."""
     run = json.loads(Path(path).read_text())
     out = []

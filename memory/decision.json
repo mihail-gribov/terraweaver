@@ -19,7 +19,7 @@
           "temperature": 1.863
         }
       },
-      "fitted_on": "experiments/09_decision bench",
+      "fitted_on": "the decision bench of 2026-10-26 (docs/decisions.md)",
       "rows": 1256
     },
     "nvidia/Nemotron-3_5-Lightning": {
@@ -41,7 +41,7 @@
           "temperature": 1.725
         }
       },
-      "fitted_on": "experiments/09_decision bench",
+      "fitted_on": "the decision bench of 2026-10-26 (docs/decisions.md)",
       "rows": 1256
     },
     "nvidia/Nemotron-3.5-Super-VL": {
@@ -63,7 +63,7 @@
           "temperature": 3.449
         }
       },
-      "fitted_on": "experiments/09_decision bench",
+      "fitted_on": "the decision bench of 2026-10-26 (docs/decisions.md)",
       "rows": 1256
     },
     "nvidia/nemotron-3-super-120b-a12b": {
@@ -85,7 +85,7 @@
           "temperature": 2.535
         }
       },
-      "fitted_on": "experiments/09_decision bench",
+      "fitted_on": "the decision bench of 2026-10-26 (docs/decisions.md)",
       "rows": 1256
     },
     "nvidia/Nemotron-3-Ultra-550b-a55b": {
@@ -107,7 +107,7 @@
           "temperature": 3.449
         }
       },
-      "fitted_on": "experiments/09_decision bench",
+      "fitted_on": "the decision bench of 2026-10-26 (docs/decisions.md)",
       "rows": 1256
     }
   }

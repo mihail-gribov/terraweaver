@@ -2,7 +2,7 @@
 
 Two replays, built from real runs with their traces, each at the speed that fits its slot:
 
-    .venv/bin/python scripts/replay.py benchmarks/runs/demo-recall-birthday-20261030-033528 --speed 1.72
+    .venv/bin/python scripts/replay.py benchmarks/runs/demo-recall-birthday-20261030-035627 --speed 1.72
     .venv/bin/python scripts/replay.py benchmarks/runs/demo-recall-jazz-20261030-142413 --speed 1.8
 
 Record each at 1920×1080 (H hides the bar). The timecodes below are of the video; the voice is
