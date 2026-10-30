@@ -125,18 +125,18 @@
 <section id="measured" aria-labelledby="measured-h">
   <div class="wrap">
     <p class="eyebrow">Measured</p>
-    <h2 id="measured-h">43 of 45, and the two misses.</h2>
-    <p class="lead">Five short personal histories (family, books, running, home, trips): a dozen talks over two months among thirty of everyday talk, each told to a fresh memory and checked by words. The first run of the day gave 39 of 45; 43 of 45 came after the fixes the misses pointed at. The histories were seen during development, so the second number is tuned on them.</p>
+    <h2 id="measured-h">40 of 45 on the final models, and where it misses.</h2>
+    <p class="lead">Five short personal histories (family, books, running, home, trips): a dozen talks over two months among thirty of everyday talk, each told to a fresh memory and checked by words. The same histories gave 39, 43 and 40 of 45 on the same day, on different fixes and different models. They were seen during development, so these numbers are tuned on them.</p>
     <table>
       <tr><th>Class of task</th><th>Passed</th></tr>
       <tr><td>Latest value: what holds now</td><td>11 / 11</td></tr>
       <tr><td>Time: days, order, how long ago</td><td>8 / 8</td></tr>
-      <tr><td>Count: events spread over talks</td><td>7 / 7</td></tr>
+      <tr><td>Count: events spread over talks</td><td>6 / 7</td></tr>
       <tr><td>Who is who</td><td>4 / 4</td></tr>
-      <tr><td>Recall, nobody asks</td><td>7 / 8</td></tr>
-      <tr><td>Never said, so "I don't know"</td><td>6 / 7</td></tr>
+      <tr><td>Recall, nobody asks</td><td>6 / 8</td></tr>
+      <tr><td>Never said, so "I don't know"</td><td>5 / 7</td></tr>
     </table>
-    <p class="lead" style="margin-top:1rem">The misses are real: a car-alarm question that did not bring up the user's Skoda Octavia, and a sale of a Golf that was never told, which the memory answered instead of declining.
+    <p class="lead" style="margin-top:1rem">The misses are real: one count, two cases where the memory did not bring up what it should have without being asked, and two questions about things never said that it answered instead of declining.
     One run measures little here: the spread between runs is as large as the differences. You can run it yourself: <code>set -a; . ./.env; set +a; .venv/bin/python benchmarks/scenarios.py --only books</code> (needs a Nebius key, about nine minutes for one story; see the <a href="https://github.com/mihail-gribov/terraweaver/blob/main/benchmarks/README.md">benchmark notes</a>).</p>
   </div>
 </section>
@@ -146,7 +146,7 @@
     <p class="eyebrow">What's next</p>
     <h2 id="next-h">Not done yet, and said so.</h2>
     <div class="classes">
-      <div class="row"><b>Wider measurement</b><span>Public memory benchmarks with baselines, ablations and confidence intervals. For now: our scenarios benchmark, 43 of 45.</span></div>
+      <div class="row"><b>Wider measurement</b><span>Public memory benchmarks with baselines, ablations and confidence intervals. For now: our scenarios benchmark, 40 of 45.</span></div>
       <div class="row"><b>Portability, shown</b><span>A demo of history built up in one agent and used automatically in another.</span></div>
       <div class="row"><b>Memory control</b><span>View, edit, full forget (including derived logs and indexes) and export.</span></div>
       <div class="row"><b>Cost and speed</b><span>The cost per 1,000 messages, and how latency grows at 10k, 100k and 1M messages.</span></div>
@@ -198,12 +198,12 @@ adapters/claude_code/claude-personal</pre>
   <div class="wrap">
     <p class="eyebrow">Under the hood</p>
     <h2 id="models-h">NVIDIA Nemotron on Nebius Token Factory.</h2>
-    <p class="lead">Each model sits where it pays. Closed questions are answered from the first token's logprobs: one token, a probability instead of a guess.</p>
+    <p class="lead">Each model sits where it pays: the larger one reads a few times per message, the lighter one answers hundreds of small questions.</p>
     <table>
-      <tr><th>Role</th><th>Model</th></tr>
-      <tr><td>Rewrite, read, decide</td><td>Nemotron 3 Super 120B-A12B</td></tr>
-      <tr><td>Judge: hundreds of small closed questions</td><td>Nemotron 3 Nano 30B-A3B</td></tr>
-      <tr><td>Search by meaning: embeddings (on the demo, through OpenRouter)</td><td>NVIDIA Nemotron embed 1B</td></tr>
+      <tr><th>What it does</th><th>Model</th></tr>
+      <tr><td><strong>Understand.</strong> Is it personal? Rewrite it to stand alone. Read it into people, links and topics. A few calls per message.</td><td>Nemotron 3.5 Super VL</td></tr>
+      <tr><td><strong>Decide.</strong> Does this quote say that? Does this matter? Does the topic change outside? Hundreds of calls; the answer is read from the first token's logprobs, a probability instead of a guess.</td><td>Nemotron 3.5 Lightning</td></tr>
+      <tr><td><strong>Find by meaning.</strong> On the demo, through OpenRouter.</td><td>NVIDIA Nemotron embed 1B</td></tr>
     </table>
   </div>
 </section>
