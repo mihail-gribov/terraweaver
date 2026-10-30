@@ -1,0 +1,25 @@
+{"of": "the user", "added": "Enjoys reading, finished 'The Martian' on holiday and found it a perfect beach read (2026-08-16)", "day": "2026-08-16 20:00:00", "entries": [1], "version": 1}
+{"of": "the user", "added": "Ordered new headphones, expected to arrive Friday (2026-08-20)", "day": "2026-08-20 20:00:00", "entries": [1, 2], "version": 2}
+{"of": "the user", "added": "Finished reading 'Piranesi' by Susanna Clarke, thought it strange and beautiful.", "day": "2026-09-10 20:00:00", "entries": [1, 2, 4], "version": 3}
+{"of": "the user", "added": "Watched the new season of that detective show and thought the ending was silly. (2026-09-13)", "day": "2026-09-13 20:00:00", "entries": [1, 2, 4, 5], "version": 4}
+{"of": "the user", "added": "Started reading 'The Overstory' today, thought it huge (2026-09-15)", "day": "2026-09-15 20:00:00", "entries": [1, 2, 4, 5, 6], "version": 5}
+{"of": "the user", "added": "Resolved a bank issue after an hour-long phone call (2026-09-20)", "day": "2026-09-20 20:00:00", "entries": [1, 2, 4, 5, 6, 7], "version": 6}
+{"of": "the user", "added": "Gave up on 'The Overstory', found it too slow (2026-09-22)", "day": "2026-09-22 20:00:00", "entries": [1, 2, 4, 5, 6, 7, 8], "version": 7}
+{"of": "the user", "added": "Spent the whole evening fixing a bug in our CI pipeline (2026-09-23)", "day": "2026-09-23 20:00:00", "entries": [1, 2, 4, 5, 6, 7, 8, 9], "version": 8}
+{"of": "the user", "added": "Listened to a podcast about sleep and feels they need more sleep. (2026-09-25)", "day": "2026-09-25 20:00:00", "entries": [1, 2, 4, 5, 6, 7, 8, 9, 10], "version": 9}
+{"of": "the user", "added": "Started the audiobook of 'Project Hail Mary' for my commute.", "day": "2026-09-29 20:00:00", "entries": [1, 2, 4, 5, 6, 7, 8, 9, 10, 11], "version": 10}
+{"of": "the user", "added": "Had a long day, ate pizza and went to bed early (2026-09-30).", "day": "2026-09-30 20:00:00", "entries": [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12], "version": 11}
+{"of": "the user", "added": "Felt tired and slept poorly (2026-10-01).", "day": "2026-10-01 20:00:00", "entries": [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13], "version": 12}
+{"of": "the user", "added": "Made a big pot of lentil soup, good for three days. (2026-10-03)", "day": "2026-10-03 20:00:00", "entries": [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15], "version": 13}
+{"of": "the user", "added": "Finished 'Project Hail Mary' and loved the ending. (2026-10-06)", "day": "2026-10-06 20:00:00", "entries": [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16], "version": 14}
+{"of": "the user", "added": "Finished reading 'Klara and the Sun' on the train home. (2026-10-11)", "day": "2026-10-11 20:00:00", "entries": [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 18], "version": 15}
+{"of": "the user", "added": "'Klara and the Sun' stayed with me all day, what a quiet ending. (2026-10-12)", "day": "2026-10-12 20:00:00", "entries": [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 18, 19], "version": 16}
+{"of": "the user", "added": "Reports that their laptop battery is dying fast and asks for tips.", "day": "2026-10-13 20:00:00", "entries": [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 18, 19, 20], "version": 17}
+{"of": "the user", "added": "Read 'Station Eleven' over the weekend and couldn't put it down. (2026-10-15)", "day": "2026-10-15 20:00:00", "entries": [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 18, 19, 20, 21], "version": 18}
+{"of": "the user's neighbour", "added": "The neighbours are drilling again on a Sunday. (2026-10-16)", "day": "2026-10-16 20:00:00", "entries": [22], "version": 1}
+{"of": "the user", "added": "Almost done with 'The Remains of the Day', twenty pages left. (2026-10-18)", "day": "2026-10-18 20:00:00", "entries": [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 18, 19, 20, 21, 23], "version": 19}
+{"of": "the user", "added": "Had many meetings on Monday (2026-10-23)", "day": "2026-10-23 20:00:00", "entries": [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 18, 19, 20, 21, 23, 26], "version": 20}
+{"of": "the user", "added": "Finished 'The Remains of the Day' (2026-10-25).", "day": "2026-10-25 20:00:00", "entries": [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 18, 19, 20, 21, 23, 26, 27], "version": 21}
+{"of": "the user", "added": "Started reading 'Tomorrow, and Tomorrow, and Tomorrow' tonight. (2026-10-27)", "day": "2026-10-27 20:00:00", "entries": [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 18, 19, 20, 21, 23, 26, 27, 28], "version": 22}
+{"of": "the user", "added": "Tried 'Normal People' but stopped at chapter three, finding it not for them (2026-10-29)", "day": "2026-10-29 20:00:00", "entries": [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 18, 19, 20, 21, 23, 26, 27, 28, 29], "version": 23}
+{"of": "the user", "added": "Wants a recommendation for what to read next (2026-10-30)", "day": "2026-10-30 19:00:00", "entries": [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 18, 19, 20, 21, 23, 26, 27, 28, 29, 30], "version": 24}

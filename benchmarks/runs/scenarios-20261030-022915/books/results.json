@@ -1,0 +1,96 @@
+[
+ {
+  "scenario": "books",
+  "class": "count",
+  "text": "How many books have I finished in the last two months?",
+  "words": [
+   [
+    "five",
+    "5"
+   ]
+  ],
+  "said": "**Facts that tell us you finished a book in the last two months (from 2026‑08‑30 to 2026‑10‑30):**\n\n| Fact # | Date said | What you said (finished book) |\n|--------|-----------|--------------------------------|\n| 11 | 2026‑09‑10 | “I just finished reading **'Piranesi'** by Susanna Clarke. It was strange and beautiful.” |\n| 31 | 2026‑10‑15 | “Finished reading **'Station Eleven'** over the weekend and couldn’t put it down.” |\n| 25 | 2026‑10‑06 | “Finished **'Project Hail Mary'**, loved the ending.” |\n| 28 | 2026‑10‑11 | “Finished **'Klara and the Sun'** on the train home.” |\n| 38 | 2026‑10‑25 | “Finished **'The Remains of the Day'** at last.” |\n\nAll five of these completion statements fall within the two‑month window ( 2026‑08‑30 through 2026‑10‑30 ). No other fact in the memory records a book finished during that period.\n\n**Total books finished in the last two months: 5**.  \n\n(Used facts 11, 31, 25, 28, 38.)",
+  "passed": true
+ },
+ {
+  "scenario": "books",
+  "class": "count",
+  "text": "How many books did I give up on?",
+  "words": [
+   [
+    "two",
+    "2"
+   ]
+  ],
+  "said": "The memory records two occasions where the user gave up on a book:\n\n- **Fact 16** [2026‑09‑22]: “I gave up on *‘The Overstory’*, too slow for me.”  \n- **Fact 40** [2026‑10‑29]: “Gave *‘Normal People’* a go early, not for me, stopped at chapter three.”\n\nThese are the only instances of abandoning a book, so the user has given up on **2 books**. (Facts used: 16, 40)",
+  "passed": true
+ },
+ {
+  "scenario": "books",
+  "class": "latest",
+  "text": "What am I reading right now?",
+  "words": [
+   [
+    "Tomorrow"
+   ]
+  ],
+  "said": "The memory shows that on **2026‑10‑27** you said you “Started ‘Tomorrow, and Tomorrow, and Tomorrow’” (fact 39).  \nNo later fact mentions finishing that book or starting another one, so as of today (2026‑10‑30) you are still reading **‘Tomorrow, and Tomorrow, and Tomorrow’**.  \n\n**Fact used:** 39 (2026‑10‑27).",
+  "passed": true
+ },
+ {
+  "scenario": "books",
+  "class": "time",
+  "text": "Which did I finish first, 'Klara and the Sun' or 'Project Hail Mary'?",
+  "words": [
+   [
+    "Hail Mary"
+   ]
+  ],
+  "said": "**Facts used**\n\n- Fact 25 – [2026‑10‑06] “I finished ‘Project Hail Mary’ and loved the ending.”  \n- Fact 28 – [2026‑10‑11] “Finished ‘Klara and the Sun’ on the train home.”\n\n**Reasoning**\n\n- According to Fact 25, *Project Hail Mary* was completed on **2026‑10‑06**.  \n- According to Fact 28, *Klara and the Sun* was completed on **2026‑10‑11**.  \n\nSince October 6 comes before October 11, *Project Hail Mary* was finished first—about five days before *Klara and the Sun*.  \n\nNo other facts contradict these dates, so the memory clearly indicates that *Project Hail Mary* was finished before *Klara and the Sun*.",
+  "passed": true
+ },
+ {
+  "scenario": "books",
+  "class": "time",
+  "text": "How long did it take me to get through 'Project Hail Mary'?",
+  "words": [
+   [
+    "7 days",
+    "seven days",
+    "a week",
+    "one week",
+    "1 week"
+   ]
+  ],
+  "said": "Facts bearing on the question:\n\n- Fact 19 – [2026‑09‑29] “Started the audiobook of ‘Project Hail Mary’ for my commute.”  \n- Fact 25 – [2026‑10‑06] “I finished ‘Project Hail Mary’ and loved the ending.”\n\nThe user began the book on 2026‑09‑29 and completed it on 2026‑10‑06. Counting the days from the start date through the finish date gives:\n\n- Sep 29 → Sep 30 (1)  \n- Oct 1 (2) → Oct 2 (3) → Oct 3 (4) → Oct 4 (5) → Oct 5 (6) → Oct 6 (7)\n\nSo it took **7 days** to get through *Project Hail Mary*.  \n\n(Used facts 19 and 25.)",
+  "passed": true
+ },
+ {
+  "scenario": "books",
+  "class": "recall",
+  "text": "Any idea what I should read next?",
+  "words": [
+   [
+    "Normal People"
+   ]
+  ],
+  "said": "Kept as entry #41.\n\nFrom before, for this message (fact numbers and days; the user's latest word wins):\nBased on your reading history:\n\nYou enjoy fast-paced, engaging sci-fi/fantasy such as *The Martian* (finished 2026-08-16, fact 1: \"Finished ‘The Martian’ on holiday – called it a perfect beach read.\") and *Project Hail Mary* (finished 2026-10-06, fact 25: \"Finished ‘Project Hail Mary’ and loved the ending.\").\n\nYou also appreciated the literary and unusual quality of *Piranesi* (finished 2026-09-10, fact 11: \"Just finished ‘Piranesi’ by Susanna Clarke – described it as 'strange and beautiful.'\").\n\nYou recently started *Tomorrow, and Tomorrow, and Tomorrow* (2026-10-27, fact 39: \"Started ‘Tomorrow, and Tomorrow, and Tomorrow’ tonight.\") and are nearly done with *The Remains of the Day* (2026-10-18, fact 33: \"Almost done with ‘The Remains of the Day’ – only twenty pages left.\").\n\nYou have tried *Normal People* twice but did not connect with it (first noted 2026-10-21, fact 36: \"The book club picked ‘Normal People’ for next month.\"; then 2026-10-29, fact 40: \"Gave ‘Normal People’ a try early, didn’t like it, stopped at chapter three.\"), and gave up on *The Overstory* for being too slow (2026-09-22, fact 16: \"Gave up on ‘The Overstory’ because it felt too slow.\").\n\nThis suggests you may enjoy another immersive, well-paced novel with strong storytelling—whether speculative fiction or literary fiction with a distinctive voice—but likely not something slow-moving or overly conventional in tone.",
+  "passed": true
+ },
+ {
+  "scenario": "books",
+  "class": "unknown",
+  "text": "Who recommended 'Piranesi' to me?",
+  "words": [],
+  "said": "The memory contains no information about who recommended *Piranesi* to you.  \nFact 11 tells us that you finished reading *Piranesi* on 2026‑09‑10, but it does not mention anyone recommending the book. Therefore, the memory does not say who recommended it.  \n\n**Used fact:** 11 (to confirm you read the book, but it provides no recommendation).",
+  "passed": true
+ },
+ {
+  "scenario": "books",
+  "class": "unknown",
+  "text": "Which book is the book club reading this month?",
+  "words": [],
+  "said": "Fact 36 – [2026‑10‑21] “The book club picked ‘Normal People’ for next month.”  \nThis indicates that the book club’s current reading selection is **Normal People**.",
+  "passed": false
+ }
+]

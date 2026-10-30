@@ -1,0 +1,24 @@
+{"of": "the user", "added": "User is busy in November and plans to block out calendar. (2026-09-26)", "day": "2026-09-26 20:00:00", "entries": [3], "version": 1}
+{"of": "the user", "added": "The user has a wife named Mila whose birthday is on the evening of 11 November (2026-09-26).", "day": "2026-09-26 20:00:00", "entries": [3, 4], "version": 2}
+{"of": "Mila", "added": "Mila is the user's wife and her birthday is on the evening of 11 November (2026-09-26).", "day": "2026-09-26 20:00:00", "entries": [4], "version": 1}
+{"of": "the user", "added": "The user wants reminders a week and a day before (2026-09-26).", "day": "2026-09-26 20:00:00", "entries": [3, 4, 5], "version": 3}
+{"of": "the user", "added": "User is seeking weekend activity ideas for two people (2026-09-30)", "day": "2026-09-30 20:00:00", "entries": [3, 4, 5, 7], "version": 4}
+{"of": "Mila", "added": "Mila dislikes big crowds and prefers small jazz gigs (2026-09-30)", "day": "2026-09-30 20:00:00", "entries": [4, 8], "version": 2}
+{"of": "Mila", "added": "Mila likes the jazz trio at a small club (~60 seats) (2026-09-30).", "day": "2026-09-30 20:00:00", "entries": [4, 8, 9], "version": 3}
+{"of": "the user", "added": "Wants to find a place for dinner on Friday (2026-10-03)", "day": "2026-10-03 20:00:00", "entries": [3, 4, 5, 7, 11], "version": 5}
+{"of": "Mila", "added": "Mila is seriously allergic to peanuts (2026-10-03)", "day": "2026-10-03 20:00:00", "entries": [4, 8, 9, 12], "version": 4}
+{"of": "the user", "added": "User avoids Bangkok Garden because Mila is allergic to peanuts (2026-10-03)", "day": "2026-10-03 20:00:00", "entries": [3, 4, 5, 7, 11, 12], "version": 6}
+{"of": "the user", "added": "User dislikes Thai and Indian restaurants due to Mila's peanut allergy (2026-10-03)", "day": "2026-10-03 20:00:00", "entries": [3, 4, 5, 7, 11, 12, 13], "version": 7}
+{"of": "the user", "added": "User asks for help writing thank-you notes to the parents who came to Lev's party on Saturday.", "day": "2026-10-10 20:00:00", "entries": [3, 4, 5, 7, 11, 12, 13, 16], "version": 8}
+{"of": "Lev", "added": "Lev hosted a party on Saturday that parents attended.", "day": "2026-10-10 20:00:00", "entries": [16], "version": 1}
+{"of": "parents", "added": "Parents attended Lev's party on Saturday.", "day": "2026-10-10 20:00:00", "entries": [16], "version": 1}
+{"of": "Lev", "added": "Lev turned seven. The party was a big Lego party at home with twenty kids. It was fun, but chaotic. (2026-10-10)", "day": "2026-10-10 20:00:00", "entries": [16, 17], "version": 2}
+{"of": "the user", "added": "The user feels exhausted (2026-10-10)", "day": "2026-10-10 20:00:00", "entries": [3, 4, 5, 7, 11, 12, 13, 16, 18], "version": 9}
+{"of": "Mila", "added": "Mila wants a quiet birthday celebration just with the user for her birthday (2026-10-10)", "day": "2026-10-10 20:00:00", "entries": [4, 8, 9, 12, 18], "version": 5}
+{"of": "the user", "added": "Seeks a stretch for stiff neck after laptop use (2026-10-17)", "day": "2026-10-17 20:00:00", "entries": [3, 4, 5, 7, 11, 12, 13, 16, 18, 20], "version": 10}
+{"of": "the user", "added": "The user wants to plan dinners for the next two weeks for a group of four (2026-10-21).", "day": "2026-10-21 20:00:00", "entries": [3, 4, 5, 7, 11, 12, 13, 16, 18, 20, 21], "version": 11}
+{"of": "Vesna", "added": "Vesna is coming to stay with the user for two weeks starting next Monday (2026-10-21)", "day": "2026-10-21 20:00:00", "entries": [22], "version": 1}
+{"of": "the user", "added": "User's mother-in-law Vesna will be staying with them for two weeks from next Monday (2026-10-21)", "day": "2026-10-21 20:00:00", "entries": [3, 4, 5, 7, 11, 12, 13, 16, 18, 20, 21, 22], "version": 12}
+{"of": "Mila", "added": "Mila must avoid peanuts (2026-10-21)", "day": "2026-10-21 20:00:00", "entries": [4, 8, 9, 12, 18, 23], "version": 6}
+{"of": "the user", "added": "User wants to plan something nice for wife's birthday evening (2026-10-30)", "day": "2026-10-30 03:26:29", "entries": [3, 4, 5, 7, 11, 12, 13, 16, 18, 20, 21, 22, 24], "version": 13}
+{"of": "Mila", "added": "It is Mila's birthday evening (2026-10-30)", "day": "2026-10-30 03:26:29", "entries": [4, 8, 9, 12, 18, 23, 24], "version": 7}

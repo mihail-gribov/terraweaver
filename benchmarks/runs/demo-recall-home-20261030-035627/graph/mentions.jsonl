@@ -1,0 +1,25 @@
+{"text": 1, "dialogue": 1, "day": "2026-10-02 20:00:00", "entity": "LG", "kind": "product", "as": "LG"}
+{"text": 1, "dialogue": 1, "day": "2026-10-02 20:00:00", "entity": "blinds", "kind": "object", "as": "blinds"}
+{"text": 1, "dialogue": 0, "day": "2026-10-02 20:00:00", "entity": "the user", "kind": "person", "as": "I"}
+{"text": 2, "dialogue": 2, "day": "2026-10-03 20:00:00", "entity": "office", "kind": "object", "as": "office"}
+{"text": 2, "dialogue": 2, "day": "2026-10-03 20:00:00", "entity": "wifi", "kind": "object", "as": "wifi"}
+{"text": 2, "dialogue": 2, "day": "2026-10-03 20:00:00", "entity": "kitchen", "kind": "object", "as": "kitchen"}
+{"text": 3, "dialogue": 0, "day": "2026-10-05 20:00:00", "entity": "the user", "kind": "person", "as": "me"}
+{"text": 3, "dialogue": 3, "day": "2026-10-05 20:00:00", "entity": "standup", "kind": "object", "as": "standup"}
+{"text": 4, "dialogue": 0, "day": "2026-10-15 20:00:00", "entity": "the user", "kind": "person", "as": "I"}
+{"text": 4, "dialogue": 4, "day": "2026-10-15 20:00:00", "entity": "Sonos Beam", "kind": "product", "as": "the Sonos Beam"}
+{"text": 5, "dialogue": 0, "day": "2026-10-17 20:00:00", "entity": "the user", "kind": "person", "as": "I"}
+{"text": 6, "dialogue": 6, "day": "2026-10-18 20:00:00", "entity": "car", "kind": "object", "as": "car"}
+{"text": 6, "dialogue": 6, "day": "2026-10-18 20:00:00", "entity": "service", "kind": "object", "as": "service"}
+{"text": 7, "dialogue": 7, "day": "2026-10-19 20:00:00", "entity": "car", "kind": "object", "as": "car"}
+{"text": 7, "dialogue": 7, "day": "2026-10-19 20:00:00", "entity": "service", "kind": "object", "as": "service"}
+{"text": 8, "dialogue": 8, "day": "2026-10-22 20:00:00", "entity": "filter", "kind": "object", "as": "the filter"}
+{"text": 8, "dialogue": 8, "day": "2026-10-22 20:00:00", "entity": "repairman", "kind": "person", "as": "a repairman"}
+{"text": 9, "dialogue": 0, "day": "2026-10-25 20:00:00", "entity": "the user", "kind": "person", "as": "my"}
+{"text": 9, "dialogue": 9, "day": "2026-10-25 20:00:00", "entity": "the user's manager", "kind": "person", "as": "my manager"}
+{"text": 10, "dialogue": 0, "day": "2026-10-26 20:00:00", "entity": "the user", "kind": "person", "as": "I"}
+{"text": 10, "dialogue": 10, "day": "2026-10-26 20:00:00", "entity": "kitchen tap", "kind": "object", "as": "kitchen tap"}
+{"text": 11, "dialogue": 10, "day": "2026-10-26 20:00:00", "entity": "plumber", "kind": "person", "as": "the plumber"}
+{"text": 11, "dialogue": 10, "day": "2026-10-26 20:00:00", "entity": "kitchen tap", "kind": "object", "as": "the tap"}
+{"text": 13, "dialogue": 0, "day": "2026-10-30 04:02:57", "entity": "the user", "kind": "person", "as": "we"}
+{"text": 13, "dialogue": 13, "day": "2026-10-30 04:02:57", "entity": "home", "kind": "object", "as": "the home"}

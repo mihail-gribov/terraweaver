@@ -1,0 +1,15 @@
+{"from": "Mila", "relation": "spouse", "common": true, "to": "the user", "text": 2, "day": "2026-09-26 20:00:00", "quote": "my wife Mila", "when": "2026-09-26"}
+{"from": "Mila", "relation": "born_on", "common": true, "to": "evening of 11 November", "text": 2, "day": "2026-09-26 20:00:00", "quote": "The evening of 11 November", "when": "2026-09-26"}
+{"from": "the user", "relation": "dislikes", "common": true, "to": "standup", "text": 4, "day": "2026-09-29 20:00:00", "quote": "why does that annoy me so much", "when": "2026-09-29"}
+{"from": "the user", "relation": "dislikes", "common": true, "to": "the big open-air festival", "text": 6, "day": "2026-09-30 20:00:00", "quote": "I don't want to go to the big open-air festival", "when": "2026-09-30"}
+{"from": "Mila", "relation": "likes", "common": true, "to": "small jazz gig", "text": 6, "day": "2026-09-30 20:00:00", "quote": "She would much rather a small jazz gig", "when": "2026-09-30"}
+{"from": "Mila", "relation": "likes", "common": true, "to": "the jazz trio at Bluebird", "text": 7, "day": "2026-09-30 20:00:00", "quote": "is totally her thing", "when": "2026-09-30"}
+{"from": "the user", "relation": "needs", "common": false, "to": "place for dinner on friday", "text": 8, "day": "2026-10-03 20:00:00", "quote": "need a place for dinner on friday", "when": "2026-10-03", "class": "plans"}
+{"from": "Mila", "relation": "health", "common": true, "to": "peanuts", "text": 9, "day": "2026-10-03 20:00:00", "quote": "god no. we tried thai last week and Mila had a reaction, turns out she's seriously allergic to peanuts", "when": "2026-10-03"}
+{"from": "the user", "relation": "dislikes", "common": true, "to": "Thai", "text": 10, "day": "2026-10-03 20:00:00", "quote": "skip Thai and Indian places", "when": "2026-10-03"}
+{"from": "the user", "relation": "dislikes", "common": true, "to": "Indian places", "text": 10, "day": "2026-10-03 20:00:00", "quote": "skip Thai and Indian places", "when": "2026-10-03"}
+{"from": "the user's manager", "relation": "manager", "common": true, "to": "the user", "text": 11, "day": "2026-10-09 20:00:00", "quote": "my manager", "when": "2026-10-09"}
+{"from": "Lev", "relation": "age", "common": true, "to": "seven", "text": 13, "day": "2026-10-10 20:00:00", "quote": "seven!", "when": "2026-10-10"}
+{"from": "the user", "relation": "partner", "common": true, "to": "Mila", "text": 14, "day": "2026-10-10 20:00:00", "quote": "just me and Mila", "when": "2026-10-10"}
+{"from": "Vesna", "relation": "relative", "common": true, "to": "the user", "text": 16, "day": "2026-10-21 20:00:00", "quote": "my mother-in-law Vesna", "when": "2026-10-21"}
+{"from": "Mila", "relation": "health", "common": true, "to": "peanuts", "text": 17, "day": "2026-10-21 20:00:00", "quote": "just no peanuts, for Mila", "when": "2026-10-21"}

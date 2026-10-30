@@ -1,0 +1,30 @@
+{"text": 3, "dialogue": 0, "day": "2026-09-26 20:00:00", "entity": "the user", "kind": "person", "as": "me"}
+{"text": 3, "dialogue": 3, "day": "2026-09-26 20:00:00", "entity": "calendar", "kind": "thing", "as": "my calendar"}
+{"text": 4, "dialogue": 0, "day": "2026-09-26 20:00:00", "entity": "the user", "kind": "person", "as": "my"}
+{"text": 4, "dialogue": 3, "day": "2026-09-26 20:00:00", "entity": "Mila", "kind": "person", "as": "wife Mila"}
+{"text": 5, "dialogue": 0, "day": "2026-09-26 20:00:00", "entity": "the user", "kind": "person", "as": "I"}
+{"text": 5, "dialogue": 3, "day": "2026-09-26 20:00:00", "entity": "reminders", "kind": "thing", "as": "reminders"}
+{"text": 8, "dialogue": 7, "day": "2026-09-30 20:00:00", "entity": "Mila", "kind": "person", "as": "Mila"}
+{"text": 8, "dialogue": 7, "day": "2026-09-30 20:00:00", "entity": "big open-air music festival", "kind": "thing", "as": "big open-air music festival"}
+{"text": 8, "dialogue": 7, "day": "2026-09-30 20:00:00", "entity": "small jazz gig", "kind": "thing", "as": "small jazz gig"}
+{"text": 9, "dialogue": 7, "day": "2026-09-30 20:00:00", "entity": "Mila", "kind": "person", "as": "her"}
+{"text": 9, "dialogue": 7, "day": "2026-09-30 20:00:00", "entity": "jazz trio at a small club on Saturday night, about 60 seats", "kind": "thing", "as": "the jazz trio at a small club on Saturday night, about 60 seats"}
+{"text": 11, "dialogue": 0, "day": "2026-10-03 20:00:00", "entity": "the user", "kind": "person", "as": "us"}
+{"text": 12, "dialogue": 11, "day": "2026-10-03 20:00:00", "entity": "Bangkok Garden", "kind": "thing", "as": "Bangkok Garden"}
+{"text": 12, "dialogue": 11, "day": "2026-10-03 20:00:00", "entity": "peanuts", "kind": "thing", "as": "peanuts"}
+{"text": 13, "dialogue": 0, "day": "2026-10-03 20:00:00", "entity": "the user", "kind": "person", "as": "I"}
+{"text": 14, "dialogue": 14, "day": "2026-10-06 20:00:00", "entity": "latte", "kind": "thing", "as": "latte"}
+{"text": 14, "dialogue": 14, "day": "2026-10-06 20:00:00", "entity": "flat white", "kind": "thing", "as": "flat white"}
+{"text": 16, "dialogue": 0, "day": "2026-10-10 20:00:00", "entity": "the user", "kind": "person", "as": "me"}
+{"text": 16, "dialogue": 16, "day": "2026-10-10 20:00:00", "entity": "parents", "kind": "person", "as": "parents"}
+{"text": 16, "dialogue": 16, "day": "2026-10-10 20:00:00", "entity": "Lev", "kind": "person", "as": "Lev"}
+{"text": 16, "dialogue": 16, "day": "2026-10-10 20:00:00", "entity": "Lev's party", "kind": "thing", "as": "Lev's party"}
+{"text": 17, "dialogue": 16, "day": "2026-10-10 20:00:00", "entity": "Lev", "kind": "person", "as": "Lev"}
+{"text": 18, "dialogue": 0, "day": "2026-10-10 20:00:00", "entity": "the user", "kind": "person", "as": "us"}
+{"text": 18, "dialogue": 16, "day": "2026-10-10 20:00:00", "entity": "Mila", "kind": "person", "as": "Mila"}
+{"text": 21, "dialogue": 0, "day": "2026-10-21 20:00:00", "entity": "the user", "kind": "person", "as": "we"}
+{"text": 22, "dialogue": 21, "day": "2026-10-21 20:00:00", "entity": "Vesna", "kind": "person", "as": "mother-in-law Vesna"}
+{"text": 23, "dialogue": 21, "day": "2026-10-21 20:00:00", "entity": "peanuts", "kind": "thing", "as": "peanuts"}
+{"text": 23, "dialogue": 21, "day": "2026-10-21 20:00:00", "entity": "Mila", "kind": "person", "as": "Mila"}
+{"text": 24, "dialogue": 0, "day": "2026-10-30 03:26:29", "entity": "the user", "kind": "person", "as": "me"}
+{"text": 24, "dialogue": 24, "day": "2026-10-30 03:26:29", "entity": "Mila", "kind": "person", "as": "my wife"}

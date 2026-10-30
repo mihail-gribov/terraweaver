@@ -1,0 +1,11 @@
+{"topic": 1, "name": "home improvement", "added": "Chose LG product costing 1,290 euros and installed blinds (2026-10-02)", "day": "2026-10-02 20:00:00", "entries": [1], "version": 1, "kind": "interest"}
+{"topic": 2, "name": "office wifi", "added": "the office wifi is down so everyone is pretending to work in the kitchen (2026-10-03)", "day": "2026-10-03 20:00:00", "entries": [2], "version": 1, "kind": "problem"}
+{"topic": 3, "name": "standup schedule", "added": "standup moved to 9:15 instead of 9:30, annoys me (2026-10-05)", "day": "2026-10-05 20:00:00", "entries": [3], "version": 1, "kind": "habit"}
+{"topic": 4, "name": "home audio", "added": "Ordered Sonos Beam for 450 euros, arriving Friday (2026-10-15)", "day": "2026-10-15 20:00:00", "entries": [4], "version": 1, "kind": "interest"}
+{"topic": 5, "name": "car service", "added": "remind me to take the car to the service tomorrow (2026-10-18)", "day": "2026-10-18 20:00:00", "entries": [6], "version": 1, "kind": "habit"}
+{"topic": 5, "name": "car service", "kind": "habit", "added": "Car service completed, cost 300 euros (2026-10-19)", "day": "2026-10-19 20:00:00", "entries": [6, 7], "version": 2}
+{"topic": 6, "name": "appliance repair", "added": "Cleaning the filter didn't help, so I had to call a repairman. It cost 180 euros, and now it works. (2026-10-22)", "day": "2026-10-22 20:00:00", "entries": [8], "version": 1, "kind": "problem"}
+{"topic": 7, "name": "manager one-on-one", "added": "1:1 with my manager went fine, nothing dramatic (2026-10-25)", "day": "2026-10-25 20:00:00", "entries": [9], "version": 1, "kind": "interest"}
+{"topic": 8, "name": "kitchen tap repair", "added": "who to call about a dripping kitchen tap (2026-10-26)", "day": "2026-10-26 20:00:00", "entries": [10], "version": 1, "kind": "problem"}
+{"topic": 8, "name": "kitchen tap repair", "kind": "problem", "added": "Plumber fixed the tap for 95 euros (2026-10-26)", "day": "2026-10-26 20:00:00", "entries": [10, 11], "version": 2}
+{"topic": 1, "name": "home improvement", "kind": "interest", "added": "Asked total spent on home since start of October (2026-10-30)", "day": "2026-10-30 04:02:57", "entries": [1, 13], "version": 2}

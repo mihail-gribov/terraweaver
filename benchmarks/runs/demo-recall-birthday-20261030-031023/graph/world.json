@@ -1,0 +1,622 @@
+{
+ "the user": {
+  "named": true,
+  "kind": "person",
+  "portrait": [
+   {
+    "text": "The user has a wife named Mila (2026-09-26) The user has nothing they'd like to plan at the moment (2026-09-26). They have a son named Lev who turned seven; they hosted a Lego party for his birthday (2026-10-10) Mother-in-law Vesna is coming to stay with them for two weeks from next Monday (2026-10-21). The user wants to plan something nice for Mila's birthday evening (2026-10-30)",
+    "day": "2026-10-30",
+    "facts": [
+     1,
+     2,
+     4,
+     5,
+     6
+    ]
+   }
+  ],
+  "known_as": [],
+  "parts": {
+   "spouse": {
+    "size": "one",
+    "now": [
+     {
+      "value": "Mila",
+      "fact": 6,
+      "day": "2026-10-30",
+      "quote": "my wife"
+     }
+    ],
+    "was": []
+   },
+   "partner": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "child": {
+    "size": "few",
+    "now": [
+     {
+      "value": "Lev",
+      "fact": 4,
+      "day": "2026-10-10",
+      "quote": "Our son Lev"
+     }
+    ],
+    "was": []
+   },
+   "parent": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "sibling": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "relative": {
+    "size": "many",
+    "now": [
+     {
+      "value": "Vesna",
+      "fact": 5,
+      "day": "2026-10-21",
+      "quote": "My mother-in-law Vesna"
+     }
+    ],
+    "was": []
+   },
+   "pet": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "friend": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "colleague": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "manager": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "born_on": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "age": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "lives_in": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "works_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "job": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "studies_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "owns": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "skill": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "speaks": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "hobby": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "health": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "likes": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "dislikes": {
+    "size": "many",
+    "now": [],
+    "was": []
+   }
+  }
+ },
+ "Lev": {
+  "named": true,
+  "kind": "person",
+  "portrait": [
+   {
+    "text": "He is seven years old (2026-10-10)",
+    "day": "2026-10-10",
+    "facts": [
+     4
+    ]
+   }
+  ],
+  "known_as": [],
+  "parts": {
+   "spouse": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "partner": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "child": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "parent": {
+    "size": "few",
+    "now": [
+     {
+      "value": "the user",
+      "fact": 4,
+      "day": "2026-10-10",
+      "quote": "Our son Lev"
+     }
+    ],
+    "was": []
+   },
+   "sibling": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "relative": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "pet": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "friend": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "colleague": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "manager": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "born_on": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "age": {
+    "size": "one",
+    "now": [
+     {
+      "value": "seven",
+      "fact": 4,
+      "day": "2026-10-10",
+      "quote": "Lev turned seven"
+     }
+    ],
+    "was": []
+   },
+   "lives_in": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "works_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "job": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "studies_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "owns": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "skill": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "speaks": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "hobby": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "health": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "likes": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "dislikes": {
+    "size": "many",
+    "now": [],
+    "was": []
+   }
+  }
+ },
+ "Mila": {
+  "named": true,
+  "kind": "person",
+  "portrait": [
+   {
+    "text": "Mila's birthday is on 11 November (2026-09-26) She loves jazz, especially small live venues, and she can't stand big crowds (2026-09-26). Mila is seriously allergic to nuts (after a reaction at a restaurant yesterday) (2026-10-03) She prefers a quiet evening for future celebrations (2026-10-10)",
+    "day": "2026-10-10",
+    "facts": [
+     1,
+     2,
+     3,
+     4
+    ]
+   }
+  ],
+  "known_as": [],
+  "parts": {
+   "spouse": {
+    "size": "one",
+    "now": [
+     {
+      "value": "the user",
+      "fact": 6,
+      "day": "2026-10-30",
+      "quote": "my wife"
+     }
+    ],
+    "was": []
+   },
+   "partner": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "child": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "parent": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "sibling": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "relative": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "pet": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "friend": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "colleague": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "manager": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "born_on": {
+    "size": "one",
+    "now": [
+     {
+      "value": "11 November",
+      "fact": 1,
+      "day": "2026-09-26",
+      "quote": "Mila's birthday is on 11 November"
+     }
+    ],
+    "was": []
+   },
+   "age": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "lives_in": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "works_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "job": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "studies_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "owns": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "skill": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "speaks": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "hobby": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "health": {
+    "size": "many",
+    "now": [
+     {
+      "value": "allergic to nuts",
+      "fact": 3,
+      "day": "2026-10-03",
+      "quote": "she's seriously allergic to nuts"
+     }
+    ],
+    "was": []
+   },
+   "likes": {
+    "size": "many",
+    "now": [
+     {
+      "value": "quiet evening",
+      "fact": 4,
+      "day": "2026-10-10",
+      "quote": "Mila said next time she wants a quiet evening"
+     },
+     {
+      "value": "small live venues",
+      "fact": 2,
+      "day": "2026-09-26",
+      "quote": "especially small live venues"
+     },
+     {
+      "value": "jazz",
+      "fact": 2,
+      "day": "2026-09-26",
+      "quote": "She loves jazz"
+     }
+    ],
+    "was": []
+   },
+   "dislikes": {
+    "size": "many",
+    "now": [
+     {
+      "value": "big crowds",
+      "fact": 2,
+      "day": "2026-09-26",
+      "quote": "she can't stand big crowds"
+     }
+    ],
+    "was": []
+   }
+  }
+ },
+ "Vesna": {
+  "named": true,
+  "kind": "person",
+  "portrait": [
+   {
+    "text": "She is coming to stay with her child-in-law (the user) for two weeks from next Monday (2026-10-21).",
+    "day": "2026-10-21",
+    "facts": [
+     5
+    ]
+   }
+  ],
+  "known_as": [],
+  "parts": {
+   "spouse": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "partner": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "child": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "parent": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "sibling": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "relative": {
+    "size": "many",
+    "now": [
+     {
+      "value": "the user",
+      "fact": 5,
+      "day": "2026-10-21",
+      "quote": "My mother-in-law Vesna"
+     }
+    ],
+    "was": []
+   },
+   "pet": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "friend": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "colleague": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "manager": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "born_on": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "age": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "lives_in": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "works_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "job": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "studies_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "owns": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "skill": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "speaks": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "hobby": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "health": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "likes": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "dislikes": {
+    "size": "many",
+    "now": [],
+    "was": []
+   }
+  }
+ }
+}

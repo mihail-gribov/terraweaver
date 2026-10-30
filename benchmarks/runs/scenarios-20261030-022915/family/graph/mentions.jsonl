@@ -1,0 +1,38 @@
+{"text": 1, "dialogue": 1, "day": "2026-09-14 20:00:00", "entity": "lentil soup", "kind": "food", "as": "lentil soup"}
+{"text": 3, "dialogue": 0, "day": "2026-09-16 20:00:00", "entity": "the user", "kind": "person", "as": "I"}
+{"text": 3, "dialogue": 3, "day": "2026-09-16 20:00:00", "entity": "the user's wife", "kind": "person", "as": "my wife"}
+{"text": 4, "dialogue": 3, "day": "2026-09-16 20:04:00", "entity": "the user's wife", "kind": "person", "as": "She"}
+{"text": 4, "dialogue": 3, "day": "2026-09-16 20:04:00", "entity": "jazz", "kind": "music", "as": "jazz"}
+{"text": 4, "dialogue": 3, "day": "2026-09-16 20:04:00", "entity": "small venues", "kind": "place", "as": "small venues"}
+{"text": 4, "dialogue": 3, "day": "2026-09-16 20:04:00", "entity": "nuts", "kind": "food", "as": "nuts"}
+{"text": 4, "dialogue": 3, "day": "2026-09-16 20:04:00", "entity": "chocolates", "kind": "food", "as": "chocolates"}
+{"text": 6, "dialogue": 6, "day": "2026-09-19 20:00:00", "entity": "headphones", "kind": "device", "as": "new headphones"}
+{"text": 7, "dialogue": 7, "day": "2026-09-20 20:00:00", "entity": "Ana", "kind": "person", "as": "My sister Ana"}
+{"text": 7, "dialogue": 7, "day": "2026-09-20 20:00:00", "entity": "Lisbon", "kind": "place", "as": "Lisbon"}
+{"text": 7, "dialogue": 7, "day": "2026-09-20 20:00:00", "entity": "Porto", "kind": "place", "as": "Porto"}
+{"text": 9, "dialogue": 0, "day": "2026-09-23 20:00:00", "entity": "the user", "kind": "person", "as": "Our"}
+{"text": 9, "dialogue": 9, "day": "2026-09-23 20:00:00", "entity": "Lev", "kind": "person", "as": "Lev"}
+{"text": 10, "dialogue": 0, "day": "2026-09-24 20:00:00", "entity": "the user", "kind": "person", "as": "I"}
+{"text": 10, "dialogue": 10, "day": "2026-09-24 20:00:00", "entity": "podcast", "kind": "music", "as": "podcast"}
+{"text": 12, "dialogue": 12, "day": "2026-09-26 20:00:00", "entity": "Tom", "kind": "person", "as": "Tom"}
+{"text": 12, "dialogue": 12, "day": "2026-09-26 20:00:00", "entity": "Sara", "kind": "person", "as": "Sara"}
+{"text": 12, "dialogue": 12, "day": "2026-09-26 20:00:00", "entity": "shellfish", "kind": "food", "as": "shellfish"}
+{"text": 14, "dialogue": 14, "day": "2026-09-30 20:00:00", "entity": "Initech", "kind": "place", "as": "Initech"}
+{"text": 17, "dialogue": 0, "day": "2026-10-04 20:00:00", "entity": "the user", "kind": "person", "as": "I"}
+{"text": 17, "dialogue": 17, "day": "2026-10-04 20:00:00", "entity": "Initech", "kind": "place", "as": "Initech"}
+{"text": 20, "dialogue": 20, "day": "2026-10-08 20:00:00", "entity": "bank", "kind": "place", "as": "the bank"}
+{"text": 21, "dialogue": 21, "day": "2026-10-10 20:00:00", "entity": "Vesna", "kind": "person", "as": "Vesna"}
+{"text": 21, "dialogue": 0, "day": "2026-10-10 20:00:00", "entity": "the user", "kind": "person", "as": "my"}
+{"text": 28, "dialogue": 28, "day": "2026-10-18 20:00:00", "entity": "Ana", "kind": "person", "as": "Ana"}
+{"text": 28, "dialogue": 28, "day": "2026-10-18 20:00:00", "entity": "Porto", "kind": "place", "as": "Porto"}
+{"text": 28, "dialogue": 28, "day": "2026-10-18 20:00:00", "entity": "Belgrade", "kind": "place", "as": "Belgrade"}
+{"text": 32, "dialogue": 0, "day": "2026-10-24 20:00:00", "entity": "the user", "kind": "person", "as": "I"}
+{"text": 32, "dialogue": 32, "day": "2026-10-24 20:00:00", "entity": "Globex", "kind": "place", "as": "Globex"}
+{"text": 32, "dialogue": 32, "day": "2026-10-24 20:00:00", "entity": "Acme", "kind": "place", "as": "Acme"}
+{"text": 34, "dialogue": 0, "day": "2026-10-26 20:00:00", "entity": "the user", "kind": "person", "as": "my"}
+{"text": 34, "dialogue": 34, "day": "2026-10-26 20:00:00", "entity": "Ana (colleague)", "kind": "person", "as": "Ana"}
+{"text": 34, "dialogue": 34, "day": "2026-10-26 20:00:00", "entity": "Globex", "kind": "place", "as": "Globex"}
+{"text": 34, "dialogue": 34, "day": "2026-10-26 20:00:00", "entity": "Novi Sad", "kind": "place", "as": "Novi Sad"}
+{"text": 34, "dialogue": 34, "day": "2026-10-26 20:00:00", "entity": "Funny", "kind": "person", "as": "Funny, my new colleague"}
+{"text": 39, "dialogue": 0, "day": "2026-10-30 19:00:00", "entity": "the user", "kind": "person", "as": "my"}
+{"text": 39, "dialogue": 37, "day": "2026-10-30 19:00:00", "entity": "Vesna", "kind": "person", "as": "my mother-in-law"}

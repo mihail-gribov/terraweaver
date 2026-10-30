@@ -1,0 +1,101 @@
+[
+ {
+  "scenario": "home",
+  "class": "latest",
+  "text": "Which TV did we end up buying?",
+  "words": [
+   [
+    "LG"
+   ]
+  ],
+  "said": "**Facts that bear on the question**\n\n- **Fact 4** – *[2026-09-20]* “Our living room is very bright, the LG C4 OLED would glare.”  \n- **Fact 5** – *[2026-09-20]* “Ok, let’s take the Samsung.” *(initial preference)*  \n- **Fact 12** – *[2026-10-02]* “We went with the LG C4 after all and put up blinds. Paid 1,290 euros.”  \n\n**Conclusion:** After considering the options, the user ultimately purchased the **LG C4 OLED TV** (a 55‑inch model), as stated in Fact 12. No later fact changes this choice.",
+  "passed": true
+ },
+ {
+  "scenario": "home",
+  "class": "latest",
+  "text": "How much is our rent now?",
+  "words": [
+   [
+    "1,100",
+    "1100",
+    "1 100"
+   ]
+  ],
+  "said": "The memory states that after negotiating with the landlord and signing a two‑year lease, the rent was set to **1,100 euros per month**.\n\n- Fact 21 [2026‑10‑12]: “Talked to the landlord: 1,100 euros if we sign for two years. We signed.”  \n- This supersedes the earlier increase mentioned in Fact 15 [2026‑10‑05] (“The landlord raised our rent from 1,000 to 1,150 euros”).\n\nNo later fact changes the rent, so as of today 2026‑10‑30 the rent remains **1,100 euros**.  \n\n**Facts used:** 21 (and, for context, 15).",
+  "passed": true
+ },
+ {
+  "scenario": "home",
+  "class": "latest",
+  "text": "What car do we drive?",
+  "words": [
+   [
+    "Octavia",
+    "Skoda"
+   ]
+  ],
+  "said": "The memory indicates that the user sold their old VW Golf and purchased a Skoda Octavia (fact 34, said on 2026‑10‑28). Therefore, the car they currently drive is a **Skoda Octavia**.  \n\n**Fact used:** 34 (2026‑10‑28).",
+  "passed": true
+ },
+ {
+  "scenario": "home",
+  "class": "count",
+  "text": "How much have we spent on the home since October: the TV, the soundbar and repairs?",
+  "words": [
+   [
+    "2,015",
+    "2015",
+    "2 015"
+   ]
+  ],
+  "said": "The relevant facts are:\n\n- **Fact 12** [2026‑10‑02]: “We went with the LG C4 after all and put up blinds. Paid 1,290 euros.” – cost of the TV (and blinds).  \n- **Fact 23** [2026‑10‑15]: “Bought a Sonos Beam soundbar for 450 euros.” – cost of the soundbar.  \n- **Fact 29** [2026‑10‑22]: “The washing machine broke, the repair was 180 euros.” – cost of the repair.\n\nAdding these amounts: 1,290 + 450 + 180 = **1,920 euros** spent on the TV, soundbar, and repairs since October.  \n\n**Facts used:** 12, 23, 29.",
+  "passed": false
+ },
+ {
+  "scenario": "home",
+  "class": "time",
+  "text": "How many days after picking the Samsung did we buy the LG?",
+  "words": [
+   [
+    "12",
+    "twelve"
+   ]
+  ],
+  "said": "**Relevant facts**\n\n- **Fact 5** – *[2026-09-20]* “Ok, let’s take the Samsung.”  \n  → This marks the moment we picked the Samsung TV (date 2026‑09‑20).\n\n- **Fact 12** – *[2026-10-02]* “We went with the LG C4 after all and put up blinds. Paid 1,290 euros.”  \n  → This marks the moment we bought the LG C4 TV (date 2026‑10‑02).\n\n**Calculation**\n\nDifference between the two dates:\n\n- 2026‑10‑02 − 2026‑09‑20 = **12 days**.\n\nSo, we bought the LG C4 **12 days after** picking the Samsung.\n\n**Facts used:** 5, 12.",
+  "passed": true
+ },
+ {
+  "scenario": "home",
+  "class": "recall",
+  "text": "I need a new remote for the living room TV, which one should I look for?",
+  "words": [
+   [
+    "LG"
+   ]
+  ],
+  "said": "Kept as entry #36.\n\nThe user asks: \"which one should I look for?\". What the memory holds to answer it:\nThe memory does not contain any information about which remote to look for. No relevant facts are present.  \n\n(No fact numbers used.)",
+  "passed": false
+ },
+ {
+  "scenario": "home",
+  "class": "recall",
+  "text": "Should I get a car alarm? Cars are getting stolen around here.",
+  "words": [
+   [
+    "Octavia",
+    "Skoda"
+   ]
+  ],
+  "said": "Kept as entry #37.\n\nFrom before, for this message (fact numbers and days; the user's latest word wins):\n[37] 2026-10-30  \n[27] 2026-10-19: \"Our neighbour's Golf got stolen last night, right in front of the building.\"  \n[34] 2026-10-28: \"Sold old VW Golf and bought a Skoda Octavia\"",
+  "passed": true
+ },
+ {
+  "scenario": "home",
+  "class": "unknown",
+  "text": "How much did we sell the Golf for?",
+  "words": [],
+  "said": "The memory does not state how much the Golf was sold for.  \nFact 34 ([2026-10-28]) confirms the sale occurred: \"We sold our old VW Golf and bought a Skoda Octavia,\" but it provides no sale price or monetary amount. No other facts mention the sale price of the Golf.  \n**Used fact:** 34 (for confirming the sale happened, but it does not address the price).  \n**Conclusion:** The memory does not specify the sale amount.  \n\nAnswer: The memory does not say.  \nFact used: 34",
+  "passed": true
+ }
+]

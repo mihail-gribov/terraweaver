@@ -5527,3 +5527,29 @@ the last has no point.
 Measured before these (5 scenarios, ~200 entries): reader 40% of tokens, 87% of its output thinking;
 Nano part questions 35%; intake 25%. Every call is now counted when `TERRAWEAVER_USAGE` names a file
 (`scripts/usage.py` sums it).
+
+## 2026-10-30 — Topics kept fresh from the web: answer now, look, tell what was found
+
+**What.** A message that goes on with a topic is answered at once, from what the memory holds.
+Beside it, the decision model is asked, of the message with its topic, whether what is current
+outside would help — places, events, prices, what is on sale, what changes within weeks; not the
+user's own plans or people. If yes and the topic was not searched in seven days, the answer says
+"Looking on the web: … tell the user you will check online", and a search runs in the background
+(`memory/refresh.py`): the reader writes two queries (the place and the kind of thing, never a name
+or a private detail), Tavily finds the pages, the reader says what on them bears on it, with
+addresses. A second one-token question asks whether that matters; if it does, it becomes a memory —
+a layer of the topic, "From the web, <day>: …" — and either way the agent is told with the memory's
+next answer: what was found, or that nothing new was. Every search is kept in `graph/web.jsonl`.
+
+**Why.** The user's design: the memory knows which of the user's matters live on the outside world,
+and keeps them current the way a person would — "I'll look it up" — without the agent having to
+think of it. Asked of the message, not once per topic: "Schedule blocking" is the user's own matter
+on most days and needs the web only when the evening is to be filled. The place comes from the
+message or the topic: without it, the first run searched "romantic dinner restaurants" and brought
+San Diego and New York; with it, Belgrade. Pages about another city or a general list are refused
+twice, when what was found is written and when it is judged. Never the journal: the web is a
+second narrator, not the user.
+
+**Also.** The agent's `ask` gathers again with the program solver (`memory/solve.py`, restored with
+its modules); benchmarks run the server with `--engine off`, since they measure the memory, not
+the web.

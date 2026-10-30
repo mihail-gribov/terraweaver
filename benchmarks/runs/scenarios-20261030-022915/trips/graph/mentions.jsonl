@@ -1,0 +1,20 @@
+{"text": 3, "dialogue": 0, "day": "2026-09-02 20:00:00", "entity": "the user", "kind": "person", "as": "the user"}
+{"text": 3, "dialogue": 3, "day": "2026-09-02 20:00:00", "entity": "Vienna", "kind": "place", "as": "Vienna"}
+{"text": 4, "dialogue": 4, "day": "2026-09-08 20:00:00", "entity": "Lisbon", "kind": "place", "as": "Lisbon"}
+{"text": 5, "dialogue": 0, "day": "2026-09-10 20:00:00", "entity": "the user", "kind": "person", "as": "Spent"}
+{"text": 5, "dialogue": 5, "day": "2026-09-10 20:00:00", "entity": "the bank", "kind": "organisation", "as": "the bank"}
+{"text": 18, "dialogue": 0, "day": "2026-10-08 20:00:00", "entity": "the user", "kind": "person", "as": "my"}
+{"text": 18, "dialogue": 18, "day": "2026-10-08 20:00:00", "entity": "the user's wife", "kind": "person", "as": "my wife"}
+{"text": 18, "dialogue": 18, "day": "2026-10-08 20:00:00", "entity": "Ljubljana", "kind": "place", "as": "Ljubljana"}
+{"text": 22, "dialogue": 0, "day": "2026-10-14 20:00:00", "entity": "the user", "kind": "person", "as": "I"}
+{"text": 22, "dialogue": 22, "day": "2026-10-14 20:00:00", "entity": "our CI pipeline", "kind": "organisation", "as": "our CI pipeline"}
+{"text": 24, "dialogue": 24, "day": "2026-10-16 20:00:00", "entity": "Japan", "kind": "place", "as": "Japan"}
+{"text": 24, "dialogue": 24, "day": "2026-10-16 20:00:00", "entity": "Tokyo", "kind": "place", "as": "Tokyo"}
+{"text": 24, "dialogue": 24, "day": "2026-10-16 20:00:00", "entity": "Kyoto", "kind": "place", "as": "Kyoto"}
+{"text": 26, "dialogue": 0, "day": "2026-10-18 20:00:00", "entity": "the user", "kind": "person", "as": "I"}
+{"text": 28, "dialogue": 0, "day": "2026-10-20 20:00:00", "entity": "the user", "kind": "person", "as": "I"}
+{"text": 28, "dialogue": 28, "day": "2026-10-20 20:00:00", "entity": "Athens", "kind": "place", "as": "Athens"}
+{"text": 28, "dialogue": 28, "day": "2026-10-20 20:00:00", "entity": "the user's friend", "kind": "person", "as": "friend's"}
+{"text": 31, "dialogue": 0, "day": "2026-10-26 20:00:00", "entity": "the user", "kind": "person", "as": "I"}
+{"text": 31, "dialogue": 31, "day": "2026-10-26 20:00:00", "entity": "headphones", "kind": "product", "as": "new headphones"}
+{"text": 34, "dialogue": 34, "day": "2026-10-29 20:00:00", "entity": "neighbours", "kind": "person", "as": "neighbours"}

@@ -1,0 +1,35 @@
+{"text": 1, "dialogue": 1, "day": "2026-09-26 20:00:00", "entity": "November", "kind": "month", "as": "November"}
+{"text": 2, "dialogue": 0, "day": "2026-09-26 20:00:00", "entity": "the user", "kind": "person", "as": "my"}
+{"text": 2, "dialogue": 1, "day": "2026-09-26 20:00:00", "entity": "Mila", "kind": "person", "as": "Mila"}
+{"text": 2, "dialogue": 1, "day": "2026-09-26 20:00:00", "entity": "November", "kind": "month", "as": "November"}
+{"text": 3, "dialogue": 0, "day": "2026-09-26 20:00:00", "entity": "the user", "kind": "person", "as": "I"}
+{"text": 4, "dialogue": 0, "day": "2026-09-29 20:00:00", "entity": "the user", "kind": "person", "as": "me"}
+{"text": 4, "dialogue": 4, "day": "2026-09-29 20:00:00", "entity": "standup", "kind": "event", "as": "our standup"}
+{"text": 5, "dialogue": 0, "day": "2026-09-30 20:00:00", "entity": "the user", "kind": "person", "as": "us"}
+{"text": 6, "dialogue": 0, "day": "2026-09-30 20:00:00", "entity": "the user", "kind": "person", "as": "I"}
+{"text": 6, "dialogue": 5, "day": "2026-09-30 20:00:00", "entity": "Mila", "kind": "person", "as": "Mila"}
+{"text": 6, "dialogue": 5, "day": "2026-09-30 20:00:00", "entity": "the big open-air festival", "kind": "event", "as": "the big open-air festival"}
+{"text": 6, "dialogue": 5, "day": "2026-09-30 20:00:00", "entity": "small jazz gig", "kind": "event", "as": "a small jazz gig"}
+{"text": 7, "dialogue": 5, "day": "2026-09-30 20:00:00", "entity": "Mila", "kind": "person", "as": "her"}
+{"text": 7, "dialogue": 5, "day": "2026-09-30 20:00:00", "entity": "the jazz trio at Bluebird", "kind": "event", "as": "the jazz trio at Bluebird"}
+{"text": 8, "dialogue": 8, "day": "2026-10-03 20:00:00", "entity": "place for dinner on friday", "kind": "thing", "as": "place for dinner on friday"}
+{"text": 9, "dialogue": 8, "day": "2026-10-03 20:00:00", "entity": "Mila", "kind": "person", "as": "Mila"}
+{"text": 9, "dialogue": 8, "day": "2026-10-03 20:00:00", "entity": "peanuts", "kind": "thing", "as": "peanuts"}
+{"text": 9, "dialogue": 8, "day": "2026-10-03 20:00:00", "entity": "Thai", "kind": "thing", "as": "Thai"}
+{"text": 10, "dialogue": 8, "day": "2026-10-03 20:00:00", "entity": "Thai", "kind": "thing", "as": "Thai"}
+{"text": 10, "dialogue": 8, "day": "2026-10-03 20:00:00", "entity": "Indian places", "kind": "thing", "as": "Indian places"}
+{"text": 11, "dialogue": 0, "day": "2026-10-09 20:00:00", "entity": "the user", "kind": "person", "as": "my"}
+{"text": 11, "dialogue": 11, "day": "2026-10-09 20:00:00", "entity": "the user's manager", "kind": "person", "as": "my manager"}
+{"text": 13, "dialogue": 12, "day": "2026-10-10 20:00:00", "entity": "Lev", "kind": "person", "as": "He"}
+{"text": 13, "dialogue": 12, "day": "2026-10-10 20:00:00", "entity": "Lego", "kind": "thing", "as": "lego"}
+{"text": 14, "dialogue": 12, "day": "2026-10-10 20:00:00", "entity": "Mila", "kind": "person", "as": "Mila"}
+{"text": 14, "dialogue": 0, "day": "2026-10-10 20:00:00", "entity": "the user", "kind": "person", "as": "me"}
+{"text": 15, "dialogue": 0, "day": "2026-10-21 20:00:00", "entity": "the user", "kind": "person", "as": "we"}
+{"text": 16, "dialogue": 15, "day": "2026-10-21 20:00:00", "entity": "Vesna", "kind": "person", "as": "my mother-in-law Vesna"}
+{"text": 17, "dialogue": 0, "day": "2026-10-21 20:00:00", "entity": "the user", "kind": "person", "as": "I"}
+{"text": 17, "dialogue": 15, "day": "2026-10-21 20:00:00", "entity": "Mila", "kind": "person", "as": "Mila"}
+{"text": 17, "dialogue": 15, "day": "2026-10-21 20:00:00", "entity": "peanuts", "kind": "thing", "as": "peanuts"}
+{"text": 18, "dialogue": 0, "day": "2026-10-30 04:05:12", "entity": "the user", "kind": "person", "as": "me"}
+{"text": 18, "dialogue": 18, "day": "2026-10-30 04:05:12", "entity": "Mila", "kind": "person", "as": "my wife"}
+{"text": 18, "dialogue": 18, "day": "2026-10-30 04:05:12", "entity": "Mila's birthday evening", "kind": "event", "as": "my wife's birthday evening"}
+{"text": 18, "dialogue": 18, "day": "2026-10-30 04:05:12", "entity": "the user's wife", "kind": "person", "as": "my wife"}

@@ -1,0 +1,22 @@
+{"text": 14, "dialogue": 0, "day": "2026-10-04 20:00:00", "entity": "the user", "kind": "person", "as": "I"}
+{"text": 14, "dialogue": 14, "day": "2026-10-04 20:00:00", "entity": "podcast", "kind": "podcast", "as": "podcast"}
+{"text": 14, "dialogue": 14, "day": "2026-10-04 20:00:00", "entity": "sleep", "kind": "condition", "as": "sleep"}
+{"text": 15, "dialogue": 0, "day": "2026-10-05 20:00:00", "entity": "the user", "kind": "person", "as": "our"}
+{"text": 15, "dialogue": 15, "day": "2026-10-05 20:00:00", "entity": "the user's landlord", "kind": "person", "as": "The landlord"}
+{"text": 20, "dialogue": 0, "day": "2026-10-11 20:00:00", "entity": "the user", "kind": "person", "as": "I"}
+{"text": 20, "dialogue": 20, "day": "2026-10-11 20:00:00", "entity": "CI pipeline", "kind": "system", "as": "our CI pipeline"}
+{"text": 21, "dialogue": 0, "day": "2026-10-12 20:00:00", "entity": "the user", "kind": "person", "as": "the user"}
+{"text": 21, "dialogue": 21, "day": "2026-10-12 20:00:00", "entity": "the landlord", "kind": "person", "as": "the landlord"}
+{"text": 22, "dialogue": 22, "day": "2026-10-14 20:00:00", "entity": "the bank", "kind": "system", "as": "the bank"}
+{"text": 23, "dialogue": 23, "day": "2026-10-15 20:00:00", "entity": "Sonos Beam soundbar", "kind": "device", "as": "Sonos Beam soundbar"}
+{"text": 27, "dialogue": 0, "day": "2026-10-19 20:00:00", "entity": "the user", "kind": "person", "as": "our"}
+{"text": 27, "dialogue": 27, "day": "2026-10-19 20:00:00", "entity": "the user's neighbour", "kind": "person", "as": "our neighbour"}
+{"text": 27, "dialogue": 27, "day": "2026-10-19 20:00:00", "entity": "Golf", "kind": "device", "as": "Golf"}
+{"text": 29, "dialogue": 29, "day": "2026-10-22 20:00:00", "entity": "washing machine", "kind": "device", "as": "The washing machine"}
+{"text": 30, "dialogue": 0, "day": "2026-10-24 20:00:00", "entity": "the user", "kind": "person", "as": ""}
+{"text": 30, "dialogue": 30, "day": "2026-10-24 20:00:00", "entity": "headphones", "kind": "device", "as": "new headphones"}
+{"text": 32, "dialogue": 32, "day": "2026-10-26 20:00:00", "entity": "plumber", "kind": "person", "as": "plumber"}
+{"text": 32, "dialogue": 32, "day": "2026-10-26 20:00:00", "entity": "tap", "kind": "device", "as": "tap"}
+{"text": 34, "dialogue": 0, "day": "2026-10-28 20:00:00", "entity": "the user", "kind": "person", "as": "we"}
+{"text": 34, "dialogue": 34, "day": "2026-10-28 20:00:00", "entity": "VW Golf", "kind": "device", "as": "our old VW Golf"}
+{"text": 34, "dialogue": 34, "day": "2026-10-28 20:00:00", "entity": "Skoda Octavia", "kind": "device", "as": "a Skoda Octavia"}

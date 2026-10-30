@@ -1,0 +1,10 @@
+{"from": "the user", "relation": "visited", "common": false, "to": "Vienna", "text": 3, "day": "2026-09-02 20:00:00", "quote": "Back from a long weekend in Vienna", "when": "2026-09-02", "class": "did"}
+{"from": "the user", "relation": "booked_flights", "common": false, "to": "Lisbon", "text": 4, "day": "2026-09-08 20:00:00", "quote": "Booked flights to Lisbon", "when": "2026-09-08", "class": "did"}
+{"from": "the user", "relation": "contacted", "common": false, "to": "the bank", "text": 5, "day": "2026-09-10 20:00:00", "quote": "Spent an hour on the phone with the bank", "when": "2026-09-10", "class": "did"}
+{"from": "the user", "relation": "spouse", "common": true, "to": "the user's wife", "text": 18, "day": "2026-10-08 20:00:00", "quote": "my wife", "when": "2026-10-08"}
+{"from": "the user", "relation": "visited", "common": false, "to": "Ljubljana", "text": 18, "day": "2026-10-08 20:00:00", "quote": "Weekend in Ljubljana", "when": "2026-10-08", "class": "did"}
+{"from": "the user's wife", "relation": "visited", "common": false, "to": "Ljubljana", "text": 18, "day": "2026-10-08 20:00:00", "quote": "Weekend in Ljubljana with my wife", "when": "2026-10-08"}
+{"from": "the user's wife", "relation": "spouse", "common": true, "to": "the user", "text": 18, "day": "2026-10-08 20:00:00", "quote": "my wife"}
+{"from": "the user", "relation": "fixed", "common": false, "to": "our CI pipeline", "text": 22, "day": "2026-10-14 20:00:00", "quote": "fixing a bug in our CI pipeline", "when": "2026-10-14", "class": "did"}
+{"from": "the user", "relation": "friend", "common": true, "to": "the user's friend", "text": 28, "day": "2026-10-20 20:00:00", "quote": "for a friend's wedding", "when": "2026-10-20"}
+{"from": "the user", "relation": "owns", "common": true, "to": "headphones", "text": 31, "day": "2026-10-26 20:00:00", "quote": "ordered new headphones", "when": "2026-10-26"}

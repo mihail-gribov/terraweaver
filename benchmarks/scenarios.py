@@ -12,7 +12,9 @@ memory's own door (`say`), then checked:
   unknown    never said: the memory must say it does not know
 
 A check passes when the answer holds every group of words (any one word of a group), so a reader
-sees why it passed. Every scenario runs on a fresh memory of its own, all of them at once.
+sees why it passed. Every scenario runs on a fresh memory of its own, all of them at once. A run is
+kept under benchmarks/runs/: per scenario the journal, what was heard and said back, the trace of
+every step (memory/trace.py), the graph, the tokens, the results.
 
 Run: set -a; . ./.env; set +a; .venv/bin/python benchmarks/scenarios.py [--only family,books] [--port 7150]
 """
@@ -258,8 +260,10 @@ def run(name: str, port: int, out: Path) -> list[dict]:
     scenario = SCENARIOS[name]
     where = out / name
     where.mkdir(parents=True)
-    server = subprocess.Popen([sys.executable, "-m", "memory.server", "--name", f"{out.name}-{name}",
-                               "--port", str(port)], cwd=ROOT, stdout=open(where / "server.log", "w"),
+    memory = ROOT / "var" / "memory" / f"{out.name}-{name}"
+    memory.mkdir(parents=True, exist_ok=True)
+    server = subprocess.Popen([sys.executable, "-m", "memory.server", "--engine", "off", "--name", f"{out.name}-{name}",
+                               "--port", str(port)], cwd=ROOT, stdout=open(memory / "server.log", "w"),
                               stderr=subprocess.STDOUT,
                               env={**os.environ, "TERRAWEAVER_USAGE": str(where / "usage.jsonl")})
     results = []
@@ -290,7 +294,23 @@ def run(name: str, port: int, out: Path) -> list[dict]:
         server.terminate()
         server.wait(timeout=30)
     (where / "results.json").write_text(json.dumps(results, indent=1, ensure_ascii=False))
+    keep(memory, where)
     return results
+
+
+# What a run leaves to be looked at and replayed: the journal, what was heard and said back, every
+# step, the graph and the tokens. Not the vectors (derived, and large) nor the server's log.
+KEPT = ("facts.md", "heard.jsonl", "trace.jsonl", "interests.jsonl", "graph")
+
+
+def keep(memory: Path, where: Path) -> None:
+    import shutil
+    for name in KEPT:
+        source = memory / name
+        if source.is_dir():
+            shutil.copytree(source, where / name, dirs_exist_ok=True)
+        elif source.exists():
+            shutil.copy2(source, where / name)
 
 
 def main() -> int:
@@ -301,7 +321,8 @@ def main() -> int:
     if not os.environ.get("NEBIUS_API_KEY"):
         raise SystemExit("NEBIUS_API_KEY is not set: set -a; . ./.env; set +a")
     names = [n for n in args.only.split(",") if n] or list(SCENARIOS)
-    out = ROOT / "benchmarks" / "results" / f"scenarios-{datetime.now():%Y%m%d-%H%M%S}"
+    # Kept in the repository: a run is its own evidence, replayable by scripts/replay.py.
+    out = ROOT / "benchmarks" / "runs" / f"scenarios-{datetime.now():%Y%m%d-%H%M%S}"
     out.mkdir(parents=True)
     with ThreadPoolExecutor(len(names)) as pool:
         results = [r for rs in pool.map(lambda nk: run(nk[1], args.port + nk[0], out), enumerate(names)) for r in rs]

@@ -1,0 +1,101 @@
+[
+ {
+  "scenario": "home",
+  "class": "latest",
+  "text": "Which TV did we end up buying?",
+  "words": [
+   [
+    "LG"
+   ]
+  ],
+  "said": "We ended up buying the **LG C4** TV.\n\n- Fact 9 [2026‑10‑02]: “We went with the LG C4 after all and put up blinds. Paid 1,290 euros.”  \n\nThis is the most recent statement about the TV purchase, overriding the earlier considerations (facts 2‑4). Thus the TV we bought is the LG C4.",
+  "passed": true
+ },
+ {
+  "scenario": "home",
+  "class": "latest",
+  "text": "How much is our rent now?",
+  "words": [
+   [
+    "1,100",
+    "1100",
+    "1 100"
+   ]
+  ],
+  "said": "The rent was first raised to 1,150 euros (fact 12, 2026‑10‑05).  \nLater, the user talked to the landlord and agreed to 1,100 euros for a two‑year lease, which they signed (fact 18, 2026‑10‑12).  \nSince fact 18 is newer than fact 12, it sets the current rent.\n\n**Current rent: 1,100 euros per month.**  \n(Facts used: 12, 18)",
+  "passed": true
+ },
+ {
+  "scenario": "home",
+  "class": "latest",
+  "text": "What car do we drive?",
+  "words": [
+   [
+    "Octavia",
+    "Skoda"
+   ]
+  ],
+  "said": "Based on the memory facts, the user currently drives a Skoda Octavia. This is stated in fact 28, which says: \"[2026-10-28] We sold our old VW Golf and bought a Skoda Octavia.\" As of today (2026-10-30), this is the most recent and relevant information about the user's vehicle, confirming they no longer own the VW Golf and now own the Skoda Octavia.\n\n**Fact used:** 28 (dated 2026-10-28)  \n**Answer:** Skoda Octavia",
+  "passed": true
+ },
+ {
+  "scenario": "home",
+  "class": "count",
+  "text": "How much have we spent on the home since October: the TV, the soundbar and repairs?",
+  "words": [
+   [
+    "2,015",
+    "2015",
+    "2 015"
+   ]
+  ],
+  "said": "**Facts that bear on the question**\n\n| Fact | Date said | What it tells us | Amount (euros) |\n|------|-----------|------------------|----------------|\n| **9** | 2026‑10‑02 | “We went with the LG C4 after all and put up blinds. Paid **1,290 euros**.” – TV purchase | 1,290 |\n| **20** | 2026‑10‑15 | “Bought a Sonos Beam soundbar for **450 euros**.” – soundbar purchase | 450 |\n| **24** | 2026‑10‑22 | “The washing machine broke, the repair was **180 euros**.” – washing‑machine repair | 180 |\n| **26** | 2026‑10‑26 | “Had the leaking tap fixed by a plumber for **95 euros**.” – tap repair | 95 |\n\n**Calculation**\n\n- TV: 1,290 €  \n- Soundbar: 450 €  \n- Washing‑machine repair: 180 €  \n- Tap repair: 95 €  \n\n**Total spent since October** = 1,290 + 450 + 180 + 95 = **2,015 euros**.  \n\nSo, according to the memory, the user has spent **2,015 euros** on the TV, soundbar, and home repairs since the start of October. (Facts used: 9, 20, 24, 26.)",
+  "passed": true
+ },
+ {
+  "scenario": "home",
+  "class": "time",
+  "text": "How many days after picking the Samsung did we buy the LG?",
+  "words": [
+   [
+    "12",
+    "twelve"
+   ]
+  ],
+  "said": "The memory contains the following relevant facts:\n\n- **Fact 4** – [2026‑09‑20] “Ok, let’s take the Samsung.”  \n- **Fact 9** – [2026‑10‑02] “We went with the LG C4 after all and put up blinds. Paid 1,290 euros.”\n\nThe Samsung was chosen on 2026‑09‑20 and the LG was bought on 2026‑10‑02.  \nThe interval between those dates is:\n\n- September 21 – September 30 = 10 days  \n- October 1 – October 2 = 2 days  \n\nTotal = 10 + 2 = **12 days**.\n\nSo, we bought the LG **12 days after** picking the Samsung.  \n(Facts used: 4 and 9.)",
+  "passed": true
+ },
+ {
+  "scenario": "home",
+  "class": "recall",
+  "text": "I need a new remote for the living room TV, which one should I look for?",
+  "words": [
+   [
+    "LG"
+   ]
+  ],
+  "said": "Kept as entry #29.\n\nFrom before, for this message (fact numbers and days; the user's latest word wins):\nBased on the memory:\n\n- Fact 2 [2026-09-20]: \"We need a new TV for the living room, around 55 inches.\" – establishes context for the living room TV size preference at that time.  \n- Fact 3 [2026-09-20]: \"The Sony is too dear. Our living room is very bright, the LG would glare.\" – notes prior concerns about brightness and glare influencing TV choice.  \n- Fact 4 [2026-09-20]: \"Ok, let’s take the Samsung.\" – indicates initial decision toward a Samsung TV.  \n- Fact 9 [2026-10-02]: \"Bought LG C4 TV for 1,290 euros and installed blinds.\" – confirms final purchase: LG C4 TV, with blinds added to address bright-room glare mentioned earlier.  \n- Fact 29 [2026-10-30]: \"I need a new remote for the living room TV, which one should I look for?\" – the user’s current request regarding a remote for the living room TV.  \n\nNo further details about remotes or compatibility are recorded in the memory. The TV currently owned is the LG C4 (per Fact 9). Any remote suggestion must align with this model, but the memory provides no specific guidance on which remote to choose.  \n\nnothing",
+  "passed": true
+ },
+ {
+  "scenario": "home",
+  "class": "recall",
+  "text": "Should I get a car alarm? Cars are getting stolen around here.",
+  "words": [
+   [
+    "Octavia",
+    "Skoda"
+   ]
+  ],
+  "said": "Kept as entry #30.\n\nFrom before, for this message (fact numbers and days; the user's latest word wins):\nAnswering based on the memory:\n\n- [30; 2026-10-30] User said: \"Should I get a car alarm? Cars are getting stolen around here.\"\n- [23; 2026-10-19] Memory confirms: \"Our neighbour's Golf got stolen last night, right in front of the building.\"\n\nNo prior discussion or decision about obtaining a car alarm is recorded in the memory. The memory supports the concern but contains no recommendation or conclusion regarding action. Deciding remains with the user.",
+  "passed": false
+ },
+ {
+  "scenario": "home",
+  "class": "unknown",
+  "text": "How much did we sell the Golf for?",
+  "words": [],
+  "said": "The memory does not state how much the Golf was sold for.  \nFact 28 ([2026-10-28]) confirms the sale occurred: \"We sold our old VW Golf and bought a Skoda Octavia,\" but it does not mention the sale price. No other facts provide this information.  \n**Used fact:** 28.",
+  "passed": false
+ }
+]

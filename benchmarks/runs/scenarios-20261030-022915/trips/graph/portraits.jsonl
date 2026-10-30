@@ -1,0 +1,12 @@
+{"of": "the user", "added": "Recently visited Vienna for a long weekend and found the museums great (2026-09-02)", "day": "2026-09-02 20:00:00", "entries": [3], "version": 1}
+{"of": "the user", "added": "Booked flights to Lisbon for mid-October (2026-09-08).", "day": "2026-09-08 20:00:00", "entries": [3, 4], "version": 2}
+{"of": "the user", "added": "Spent an hour on the phone with the bank, finally sorted. (2026-09-10)", "day": "2026-09-10 20:00:00", "entries": [3, 4, 5], "version": 3}
+{"of": "the user", "added": "Spent a weekend in Ljubljana with his wife, describing the city as lovely and little. (2026-10-08)", "day": "2026-10-08 20:00:00", "entries": [3, 4, 5, 18], "version": 4}
+{"of": "the user's wife", "added": "Was with the user in Ljubljana for a weekend, described the city as lovely and little. (2026-10-08)", "day": "2026-10-08 20:00:00", "entries": [18], "version": 1}
+{"of": "the user", "added": "Spent the whole evening fixing a bug in our CI pipeline (2026-10-14)", "day": "2026-10-14 20:00:00", "entries": [3, 4, 5, 18, 22], "version": 5}
+{"of": "the user", "added": "Booked a two‑week trip to Japan for April, visiting Tokyo and Kyoto. (2026-10-16)", "day": "2026-10-16 20:00:00", "entries": [3, 4, 5, 18, 22, 24], "version": 6}
+{"of": "the user", "added": "Needs more sleep after listening to a podcast about it. (2026-10-18)", "day": "2026-10-18 20:00:00", "entries": [3, 4, 5, 18, 22, 24, 26], "version": 7}
+{"of": "the user", "added": "Flew to Athens for a friend's wedding, returned on Sunday, feeling exhausted (2026-10-20)", "day": "2026-10-20 20:00:00", "entries": [3, 4, 5, 18, 22, 24, 26, 28], "version": 8}
+{"of": "the user's friend", "added": "Attended their wedding in Athens, returning on Sunday, exhausted (2026-10-20)", "day": "2026-10-20 20:00:00", "entries": [28], "version": 1}
+{"of": "the user", "added": "Ordered new headphones, expected arrival Friday. (2026-10-26)", "day": "2026-10-26 20:00:00", "entries": [3, 4, 5, 18, 22, 24, 26, 28, 31], "version": 9}
+{"of": "the user", "added": "Hears neighbours drilling again on a Sunday (2026-10-29)", "day": "2026-10-29 20:00:00", "entries": [3, 4, 5, 18, 22, 24, 26, 28, 31, 34], "version": 10}

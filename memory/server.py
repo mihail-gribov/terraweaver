@@ -192,6 +192,8 @@ def main() -> None:
     global graph, search, listener
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--name", default="main", help="var/memory/<name>/: facts.md and what is read from it")
+    parser.add_argument("--engine", default="tavily", help="the web search a gathering uses: tavily, keenable; "
+                        "off: no web at all (a benchmark measures the memory, not the web)")
     parser.add_argument("--model", default="nvidia/nemotron-3-super-120b-a12b",
                         help="the model that reads the journal: Token Factory, or `haiku` via the claude CLI")
     parser.add_argument("--port", type=int, default=7110)
@@ -221,12 +223,30 @@ def main() -> None:
                       embed=lambda texts: search._encoder().embed(texts))
         base.graph_facts = graph.facts_for
         base.graph_recall = graph.recall
+        if args.engine != "off":
+            # Topics whose outside changes are searched again when the user comes back to them.
+            from memory.refresh import Refresher
+            refresher = Refresher(where / "graph", keep=graph.add_to_topic)
+            graph.on_topics = refresher.touched
     base.confirm_forget = confirm_forget
     from memory.listen import Listener
-    listener = Listener(base, base._keep, base.context, base.ask, None, _journal_changed,
+    from memory import trace
+    trace.to(where / "trace.jsonl")
+    def solve(task: str) -> str:
+        # The agent asked for something to be found or worked out: a program over the memory and
+        # the web (memory/solve.py), run to its end; what it found, the agent decides from.
+        from datetime import datetime
+        from memory import solve as solving
+        out = base.ROOT / "var" / "solve" / f"{args.name}-{datetime.now():%Y%m%d-%H%M%S}"
+        out.mkdir(parents=True, exist_ok=True)
+        return solving.run(task, args.name, args.engine, 2, out)
+
+    listener = Listener(base, base._keep, base.context, base.ask, solve if args.engine != "off" else None, _journal_changed,
                         interests_path=where / "interests.jsonl", heard_path=where / "heard.jsonl",
                         embed=lambda texts: search._encoder().embed(texts))
     listener.load_interests()
+    if graph is not None and getattr(graph, "on_topics", None):
+        refresher.tell = listener.note
     # Two doors (docs/decisions.md, 2026-10-27): the conversation goes in by `say` — from a hook,
     # where the agent has hooks, or from the agent — and the agent asks by `ask`. The journal's own
     # calls stay in it for its tests, not for the agent.

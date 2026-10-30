@@ -40,6 +40,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import NamedTuple
 
+from memory import trace
 from memory.models import role
 
 log = logging.getLogger("memory.graph")
@@ -58,6 +59,8 @@ USER = "the user"
 # in a line, for the agent to `ask` if it needs it — as a person who is sure says "oh, I thought about
 # this", and one who is not keeps it in mind.
 SURE, POSSIBLE = 0.7, 0.3
+# The line of recall that says a web search is under way: given to the agent as it is, never fitted away.
+LOOKING = "Looking on the web:"
 # The words a reader may write for the user; every one of them is the user, by code.
 SELF = {"the user", "user", "i", "me", "myself", "we", "us", "the user s"}
 
@@ -148,6 +151,10 @@ WORTH = ("something about the user's life or the people in it worth remembering 
          "they did, got, have, plan, like or dislike, how they or their health, work, home or money stand, "
          "who is who — not passing small talk (the weather, a meal, a mood today) and not a general "
          "question or task for the assistant")
+# Not read below this. Low on purpose: the decision model puts real facts and small talk both near
+# 0.3-0.5, and at 0.5 it left out 35 of 80 facts of the scenarios (a nut allergy among them); at 0.3,
+# none, and still half of the small talk. A missed fact costs more than a reading.
+WORTH_READ = 0.3
 # The closing of a part is asked once, beside the groups.
 ENDED = "something that no longer holds: sold, gave away, replaced, left a job, moved out, broke up"
 RELATIONS = {k: p.say for k, p in PARTS.items()}
@@ -327,6 +334,8 @@ class Graph:
             f'A topic the user talked about before, "{t["name"]}": {_tail(t["text"])}\n\nThe user now says: "{message}"',
             "Does the user's message go on with this topic, the same matter?", "yes, the same matter",
             "no, another matter")["p"]["yes"])
+        # Called with the topics a message goes on with (memory/refresh.py keeps them fresh).
+        self.on_topics = None
         # Texts -> vectors, to find topics by meaning; without it, by the words they share.
         self.embed = embed
         self._vectors: dict[tuple, list] = {}
@@ -438,7 +447,8 @@ class Graph:
         except Exception:  # noqa: BLE001 - not known to be small talk: read
             log.exception("asking whether an entry is worth reading failed")
             worth = 1.0
-        if worth < 0.5:
+        trace.step("worth", entry=n, p=round(worth, 2), read=worth >= WORTH_READ)
+        if worth < WORTH_READ:
             with self.lock:
                 self.read_upto = n
                 (self.where / "state.json").write_text(json.dumps({"read_upto": n}))
@@ -462,6 +472,11 @@ class Graph:
         with self.lock:
             links, versions = self._keep_reading(n, heading, text, dialogue[0], got)
         self._classify(text, links, versions)
+        trace.step("read", entry=n, parts=parts,
+                   links=[{k: l.get(k) for k in ("from", "relation", "to", "ended", "when", "class", "quote")} for l in links],
+                   topics=[{"topic": t["topic"], "name": t["name"], "added": t.get("added", t["text"])} for t in versions],
+                   portraits=[{"of": r["of"], "added": r.get("added", r.get("text"))} for r in self.portraits[-10:]
+                              if r["entries"][-1] == n])
         with self.lock:
             self.read_upto = n
             (self.where / "state.json").write_text(json.dumps({"read_upto": n}))
@@ -881,6 +896,19 @@ class Graph:
                              f'(fact {l["text"]} [{l["day"][:10]}]: "{l["quote"]}")')
         return IMAGE_HEAD.format(names="what the question bears on") + "\n" + "\n".join(lines) if lines else ""
 
+    def add_to_topic(self, topic, added: str, day: str) -> None:
+        """A layer that came from outside the conversation (the web, memory/refresh.py): kept on the
+        topic like any other, standing on the same entries, with its source in its words."""
+        with self.lock:
+            before = self.latest.get(topic)
+            if not before:
+                return
+            v = _version([before], added, day, before["entries"][-1], topic=before["topic"], name=before["name"],
+                         **({"kind": before["kind"]} if before.get("kind") else {}))
+            self.topics.append(_layer(v))
+            self._index([], [], [v])
+            self._append("topics.jsonl", [_layer(v)])
+
     def recall(self, message: str, numbers=(), limit: int = 2) -> str:
         """For the agent, beside the user's message: the topics it goes on with, said as a talk had
         before — where it stood and when it was last on — for the agent to bring up as it sees fit.
@@ -909,6 +937,7 @@ class Graph:
                 sure.append(t)
             elif p >= POSSIBLE and len(possible) < 3:
                 possible.append(t)
+        searching = self.on_topics(sure, message) if sure and self.on_topics else []
         lines = []
         for t in sure:
             lines.append(f'We discussed this before: "{t["name"]}", last on {t["day"][:10]} (facts '
@@ -920,6 +949,9 @@ class Graph:
             lines.append(f'Possibly related: "{t["name"]}", last on {t["day"][:10]} — ask the memory if it matters.')
         lines += self._world_spoken_of(message)
         lines += self._known_of(message, set(recent))
+        for name in searching:
+            lines.append(f'{LOOKING} "{name}" changes, so the memory is looking on the web for what is new on it '
+                         f'now. Tell the user you will check online; what it finds comes with a later answer.')
         if not lines:
             return ""
         lines.append("How and whether to bring this up with the user is yours to decide.")

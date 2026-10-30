@@ -1,0 +1,5 @@
+{
+ "model": "sonnet",
+ "message": "How much have we spent on the home since the start of October?",
+ "reply": "Since the start of October you've spent **2,015 euros** on the home:\n\n| Date | Item | Cost |\n|---|---|---|\n| Oct 2 | LG | \u20ac1,290 |\n| Oct 15 | Sonos Beam | \u20ac450 |\n| Oct 22 | Repairman | \u20ac180 |\n| Oct 26 | Plumber (tap) | \u20ac95 |\n\nThe total leaves out the blinds you put up on Oct 2. You didn't say what they cost. If you tell me, I'll add it."
+}

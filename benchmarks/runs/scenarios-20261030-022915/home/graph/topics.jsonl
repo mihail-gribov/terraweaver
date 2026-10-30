@@ -1,0 +1,11 @@
+{"topic": 1, "name": "sleep", "added": "User listened to a sleep podcast and feels they need more sleep (2026-10-04).", "day": "2026-10-04 20:00:00", "entries": [14], "version": 1, "kind": "habit"}
+{"topic": 2, "name": "rent increase", "added": "The landlord raised our rent from 1,000 to 1,150 euros (2026-10-05).", "day": "2026-10-05 20:00:00", "entries": [15], "version": 1, "kind": "problem"}
+{"topic": 3, "name": "CI pipeline bug fix", "added": "Spent the whole evening fixing a bug in our CI pipeline (2026-10-11).", "day": "2026-10-11 20:00:00", "entries": [20], "version": 1, "kind": "project"}
+{"topic": 2, "name": "rent increase", "kind": "problem", "added": "Negotiated rent at 1,100 euros for a two‑year lease and signed (2026-10-12).", "day": "2026-10-12 20:00:00", "entries": [15, 21], "version": 2}
+{"topic": 4, "name": "bank issue resolution", "added": "Spent an hour on the phone with the bank, finally sorted. (2026-10-14)", "day": "2026-10-14 20:00:00", "entries": [22], "version": 1, "kind": "problem"}
+{"topic": 5, "name": "soundbar purchase", "added": "Bought a Sonos Beam soundbar for 450 euros (2026-10-15)", "day": "2026-10-15 20:00:00", "entries": [23], "version": 1, "kind": "choice"}
+{"topic": 6, "name": "neighbour theft", "added": "Our neighbour's Golf got stolen last night, right in front of the building. (2026-10-19)", "day": "2026-10-19 20:00:00", "entries": [27], "version": 1, "kind": "problem"}
+{"topic": 7, "name": "washing machine repair", "added": "The washing machine broke, repair cost 180 euros (2026-10-22)", "day": "2026-10-22 20:00:00", "entries": [29], "version": 1, "kind": "problem"}
+{"topic": 8, "name": "headphone purchase", "added": "Ordered new headphones, they arrive Friday. (2026-10-24)", "day": "2026-10-24 20:00:00", "entries": [30], "version": 1, "kind": "choice"}
+{"topic": 9, "name": "tap repair", "added": "The plumber finally fixed the leaking tap, 95 euros (2026-10-26).", "day": "2026-10-26 20:00:00", "entries": [32], "version": 1, "kind": "problem"}
+{"topic": 10, "name": "vehicle purchase", "added": "Sold old VW Golf and bought a Skoda Octavia (2026-10-28).", "day": "2026-10-28 20:00:00", "entries": [34], "version": 1, "kind": "choice"}

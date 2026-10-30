@@ -1,0 +1,10 @@
+{"text": 1, "dialogue": 0, "day": "2026-09-26 20:00:00", "entity": "the user", "kind": "person", "as": "my"}
+{"text": 1, "dialogue": 1, "day": "2026-09-26 20:00:00", "entity": "Mila", "kind": "person", "as": "Mila"}
+{"text": 2, "dialogue": 1, "day": "2026-09-26 20:00:00", "entity": "Mila", "kind": "person", "as": "She"}
+{"text": 4, "dialogue": 0, "day": "2026-10-10 20:00:00", "entity": "the user", "kind": "person", "as": "our"}
+{"text": 4, "dialogue": 4, "day": "2026-10-10 20:00:00", "entity": "Mila", "kind": "person", "as": "Mila"}
+{"text": 4, "dialogue": 4, "day": "2026-10-10 20:00:00", "entity": "Lev", "kind": "person", "as": "Lev"}
+{"text": 4, "dialogue": 4, "day": "2026-10-10 20:00:00", "entity": "Lego party", "kind": "event", "as": "Lego party"}
+{"text": 5, "dialogue": 5, "day": "2026-10-21 20:00:00", "entity": "Vesna", "kind": "person", "as": "Vesna"}
+{"text": 6, "dialogue": 6, "day": "2026-10-30 02:34:56", "entity": "Mila", "kind": "person", "as": "my wife"}
+{"text": 6, "dialogue": 6, "day": "2026-10-30 02:34:56", "entity": "the user's wife", "kind": "person", "as": "my wife"}

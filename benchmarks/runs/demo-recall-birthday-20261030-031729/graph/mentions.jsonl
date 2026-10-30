@@ -1,0 +1,19 @@
+{"text": 2, "dialogue": 0, "day": "2026-09-26 20:00:00", "entity": "the user", "kind": "person", "as": "my"}
+{"text": 2, "dialogue": 2, "day": "2026-09-26 20:00:00", "entity": "Mila", "kind": "person", "as": "Mila"}
+{"text": 3, "dialogue": 0, "day": "2026-09-26 20:00:00", "entity": "the user", "kind": "person", "as": "I"}
+{"text": 3, "dialogue": 2, "day": "2026-09-26 20:00:00", "entity": "Mila", "kind": "person", "as": "She"}
+{"text": 3, "dialogue": 2, "day": "2026-09-26 20:00:00", "entity": "small concerts", "kind": "thing", "as": "small concerts"}
+{"text": 3, "dialogue": 2, "day": "2026-09-26 20:00:00", "entity": "jazz", "kind": "thing", "as": "jazz"}
+{"text": 3, "dialogue": 2, "day": "2026-09-26 20:00:00", "entity": "big crowds", "kind": "thing", "as": "big crowds"}
+{"text": 4, "dialogue": 4, "day": "2026-10-03 20:00:00", "entity": "Mila", "kind": "person", "as": "Mila"}
+{"text": 4, "dialogue": 4, "day": "2026-10-03 20:00:00", "entity": "peanuts", "kind": "thing", "as": "peanuts"}
+{"text": 4, "dialogue": 4, "day": "2026-10-03 20:00:00", "entity": "the new Thai place", "kind": "thing", "as": "the new Thai place"}
+{"text": 7, "dialogue": 7, "day": "2026-10-08 20:00:00", "entity": "pizza", "kind": "thing", "as": "Pizza"}
+{"text": 8, "dialogue": 8, "day": "2026-10-10 20:00:00", "entity": "Lev", "kind": "person", "as": "Our son Lev"}
+{"text": 9, "dialogue": 0, "day": "2026-10-10 20:00:00", "entity": "the user", "kind": "person", "as": "I"}
+{"text": 9, "dialogue": 8, "day": "2026-10-10 20:00:00", "entity": "Mila", "kind": "person", "as": "Mila"}
+{"text": 11, "dialogue": 11, "day": "2026-10-18 20:00:00", "entity": "CI pipeline", "kind": "thing", "as": "CI pipeline"}
+{"text": 12, "dialogue": 12, "day": "2026-10-21 20:00:00", "entity": "Vesna", "kind": "person", "as": "Vesna"}
+{"text": 12, "dialogue": 0, "day": "2026-10-21 20:00:00", "entity": "the user", "kind": "person", "as": "my"}
+{"text": 13, "dialogue": 0, "day": "2026-10-30 03:19:43", "entity": "the user", "kind": "person", "as": "me"}
+{"text": 13, "dialogue": 13, "day": "2026-10-30 03:19:43", "entity": "Mila", "kind": "person", "as": "my wife"}

@@ -1,0 +1,24 @@
+{"of": "the user", "added": "User is looking for gift ideas for wife's upcoming birthday (2026-09-16).", "day": "2026-09-16 20:00:00", "entries": [3], "version": 1}
+{"of": "the user's wife", "added": "Wife's birthday is on 11 November (2026-09-16).", "day": "2026-09-16 20:00:00", "entries": [3], "version": 1}
+{"of": "the user's wife", "added": "Loves jazz and small venues; allergic to nuts, avoids chocolates. (2026-09-16)", "day": "2026-09-16 20:04:00", "entries": [3, 4], "version": 2}
+{"of": "the user", "added": "Ordered new headphones, they arrive Friday. (2026-09-19)", "day": "2026-09-19 20:00:00", "entries": [3, 6], "version": 2}
+{"of": "the user", "added": "The user's sister Ana moved from Lisbon to Porto for a new job (2026-09-20)", "day": "2026-09-20 20:00:00", "entries": [3, 6, 7], "version": 3}
+{"of": "Ana", "added": "Ana moved from Lisbon to Porto for a new job (2026-09-20)", "day": "2026-09-20 20:00:00", "entries": [7], "version": 1}
+{"of": "the user", "added": "Has a son Lev who turned seven last weekend; they held a Lego party. (2026-09-23)", "day": "2026-09-23 20:00:00", "entries": [3, 6, 7, 9], "version": 4}
+{"of": "Lev", "added": "Turned seven last weekend; had a Lego party. (2026-09-23)", "day": "2026-09-23 20:00:00", "entries": [9], "version": 1}
+{"of": "the user", "added": "Listened to a podcast about sleep, apparently I need more of it. (2026-09-24)", "day": "2026-09-24 20:00:00", "entries": [3, 6, 7, 9, 10], "version": 5}
+{"of": "the user", "added": "The user has a friend named Tom (2026-09-26)", "day": "2026-09-26 20:00:00", "entries": [3, 6, 7, 9, 10, 12], "version": 6}
+{"of": "Tom", "added": "Tom is a friend of the user (2026-09-26)", "day": "2026-09-26 20:00:00", "entries": [12], "version": 1}
+{"of": "Sara", "added": "Sara is married to Tom and allergic to shellfish (2026-09-26)", "day": "2026-09-26 20:00:00", "entries": [12], "version": 1}
+{"of": "the user", "added": "User received a senior role offer from Initech after a successful interview (2026-09-30)", "day": "2026-09-30 20:00:00", "entries": [3, 6, 7, 9, 10, 12, 14], "version": 7}
+{"of": "the user", "added": "Turned down Initech senior role offer due to awful commute (2026-10-04)", "day": "2026-10-04 20:00:00", "entries": [3, 6, 7, 9, 10, 12, 14, 17], "version": 8}
+{"of": "the user", "added": "Spent an hour on the phone with the bank, finally sorted. (2026-10-08)", "day": "2026-10-08 20:00:00", "entries": [3, 6, 7, 9, 10, 12, 14, 17, 20], "version": 9}
+{"of": "Vesna", "added": "Vesna is staying with the user for two weeks from 2 November (2026-10-10).", "day": "2026-10-10 20:00:00", "entries": [21], "version": 1}
+{"of": "the user", "added": "User's mother-in-law Vesna is staying with them for two weeks from 2 November (2026-10-10).", "day": "2026-10-10 20:00:00", "entries": [3, 6, 7, 9, 10, 12, 14, 17, 20, 21], "version": 10}
+{"of": "Ana", "added": "Ana moved again; Porto didn't work out, she lives in Belgrade now, ten minutes from us (2026-10-18).", "day": "2026-10-18 20:00:00", "entries": [7, 28], "version": 2}
+{"of": "the user", "added": "Lives within ten minutes of Belgrade (2026-10-18).", "day": "2026-10-18 20:00:00", "entries": [3, 6, 7, 9, 10, 12, 14, 17, 20, 21, 28], "version": 11}
+{"of": "the user", "added": "Started working as a product designer at Globex on Monday; left Acme after five years. (2026-10-24)", "day": "2026-10-24 20:00:00", "entries": [3, 6, 7, 9, 10, 12, 14, 17, 20, 21, 28, 32], "version": 12}
+{"of": "the user", "added": "Has a new colleague at Globex named Ana. (2026-10-26)", "day": "2026-10-26 20:00:00", "entries": [3, 6, 7, 9, 10, 12, 14, 17, 20, 21, 28, 32, 34], "version": 13}
+{"of": "Ana (colleague)", "added": "Lives in Novi Sad and commutes to work at Globex. (2026-10-26)", "day": "2026-10-26 20:00:00", "entries": [34], "version": 1}
+{"of": "the user", "added": "Planning a family dinner with mother-in-law on 5 November (2026-10-30).", "day": "2026-10-30 19:00:00", "entries": [3, 6, 7, 9, 10, 12, 14, 17, 20, 21, 28, 32, 34, 39], "version": 14}
+{"of": "Vesna", "added": "Being planned for a family dinner on 5 November (2026-10-30).", "day": "2026-10-30 19:00:00", "entries": [21, 39], "version": 2}

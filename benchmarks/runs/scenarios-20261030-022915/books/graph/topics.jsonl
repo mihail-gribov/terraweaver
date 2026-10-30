@@ -1,0 +1,8 @@
+{"topic": 1, "name": "buying headphones", "added": "Ordered new headphones, they arrive Friday. (2026-08-20)", "day": "2026-08-20 20:00:00", "entries": [4], "version": 1, "kind": "choice"}
+{"topic": 2, "name": "bank resolution", "added": "Spent an hour on the phone with the bank, finally sorted. (2026-09-20)", "day": "2026-09-20 20:00:00", "entries": [15], "version": 1, "kind": "problem"}
+{"topic": 3, "name": "sleep", "added": "Recognized need for more sleep after listening to a sleep podcast (2026-09-25)", "day": "2026-09-25 20:00:00", "entries": [18], "version": 1, "kind": "habit"}
+{"topic": 4, "name": "audiobook listening", "added": "Started the audiobook of 'Project Hail Mary' for my commute (2026-09-29)", "day": "2026-09-29 20:00:00", "entries": [19], "version": 1, "kind": "interest"}
+{"topic": 5, "name": "reading books", "added": "Finished reading 'Station Eleven' over the weekend and couldn't put it down. (2026-10-15)", "day": "2026-10-15 20:00:00", "entries": [31], "version": 1, "kind": "interest"}
+{"topic": 6, "name": "neighbour noise", "added": "Neighbours are drilling again on a Sunday (2026-10-16).", "day": "2026-10-16 20:00:00", "entries": [32], "version": 1, "kind": "problem"}
+{"topic": 5, "name": "reading books", "kind": "interest", "added": "The book club picked 'Normal People' for next month (2026-10-21)", "day": "2026-10-21 20:00:00", "entries": [31, 36], "version": 2}
+{"topic": 5, "name": "reading books", "kind": "interest", "added": "Started 'Tomorrow, and Tomorrow, and Tomorrow' tonight. (2026-10-27)", "day": "2026-10-27 20:00:00", "entries": [31, 36, 39], "version": 3}

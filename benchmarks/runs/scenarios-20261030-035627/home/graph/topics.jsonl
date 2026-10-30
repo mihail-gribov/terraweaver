@@ -1,0 +1,21 @@
+{"topic": 1, "name": "cooking", "added": "Made a big pot of lentil soup, good for three days.", "day": "2026-09-18 20:00:00", "entries": [1], "version": 1, "kind": "interest"}
+{"topic": 2, "name": "choosing a TV", "added": "We need a new TV for the living room, around 55 inches (2026-09-20)", "day": "2026-09-20 20:00:00", "entries": [2], "version": 1, "kind": "choice"}
+{"topic": 2, "name": "choosing a TV", "kind": "choice", "added": "Sony too dear; LG would glare in bright living room (2026-09-20)", "day": "2026-09-20 20:04:00", "entries": [2, 3], "version": 2}
+{"topic": 2, "name": "choosing a TV", "kind": "choice", "added": "Chose Samsung TV (2026-09-20)", "day": "2026-09-20 20:06:00", "entries": [2, 3, 4], "version": 3}
+{"topic": 1, "name": "cooking", "kind": "interest", "added": "Had pizza for dinner and went to bed early (2026-09-23)", "day": "2026-09-23 20:00:00", "entries": [1, 5], "version": 2}
+{"topic": 2, "name": "choosing a TV", "kind": "choice", "added": "Chose LG C4 after all, paid 1,290 euros, put up blinds (2026-10-02)", "day": "2026-10-02 20:00:00", "entries": [2, 3, 4, 9], "version": 4}
+{"topic": 3, "name": "sleep", "added": "Listened to a podcast about sleep, apparently I need more of it. (2026-10-04)", "day": "2026-10-04 20:00:00", "entries": [11], "version": 1, "kind": "habit"}
+{"topic": 4, "name": "rent increase", "added": "Landlord raised rent from 1,000 to 1,150 euros (2026-10-05)", "day": "2026-10-05 20:00:00", "entries": [12], "version": 1, "kind": "problem"}
+{"topic": 3, "name": "sleep", "kind": "habit", "added": "Tired today, slept badly. (2026-10-06)", "day": "2026-10-06 20:00:00", "entries": [11, 13], "version": 2}
+{"topic": 5, "name": "work", "added": "Spent the whole evening fixing a bug in our CI pipeline.", "day": "2026-10-11 20:00:00", "entries": [17], "version": 1, "kind": "interest"}
+{"topic": 4, "name": "rent increase", "kind": "problem", "added": "Agreed to rent 1,100 euros for a two‑year lease and signed the contract (2026-10-12)", "day": "2026-10-12 20:00:00", "entries": [12, 18], "version": 2}
+{"topic": 6, "name": "bank resolution", "added": "Spent an hour on the phone with the bank, finally sorted. (2026-10-14)", "day": "2026-10-14 20:00:00", "entries": [19], "version": 1, "kind": "problem"}
+{"topic": 7, "name": "choosing a soundbar", "added": "Bought a Sonos Beam soundbar for 450 euros. (2026-10-15)", "day": "2026-10-15 20:00:00", "entries": [20], "version": 1, "kind": "choice"}
+{"topic": 8, "name": "neighbourhood incident", "added": "Neighbour's Golf stolen last night in front of the building (2026-10-19)", "day": "2026-10-19 20:00:00", "entries": [23], "version": 1, "kind": "problem"}
+{"topic": 9, "name": "washing machine repair", "added": "The washing machine broke, repair cost 180 euros (2026-10-22)", "day": "2026-10-22 20:00:00", "entries": [24], "version": 1, "kind": "problem"}
+{"topic": 10, "name": "choosing headphones", "added": "Ordered new headphones, they arrive Friday. (2026-10-24)", "day": "2026-10-24 20:00:00", "entries": [25], "version": 1, "kind": "choice"}
+{"topic": 11, "name": "tap repair", "added": "The plumber finally fixed the leaking tap, 95 euros. (2026-10-26)", "day": "2026-10-26 20:00:00", "entries": [26], "version": 1, "kind": "problem"}
+{"topic": 5, "name": "work", "kind": "interest", "added": "Had many meetings on Monday (2026-10-27)", "day": "2026-10-27 20:00:00", "entries": [17, 27], "version": 2}
+{"topic": 12, "name": "choosing a car", "added": "Sold old VW Golf and bought a Skoda Octavia (2026-10-28)", "day": "2026-10-28 20:00:00", "entries": [28], "version": 1, "kind": "choice"}
+{"topic": 2, "name": "choosing a TV", "kind": "choice", "added": "User says they need a new remote for the living room TV and asks which one to look for (2026-10-30)", "day": "2026-10-30 19:00:00", "entries": [2, 3, 4, 9, 29], "version": 5}
+{"topic": 8, "name": "neighbourhood incident", "kind": "problem", "added": "User considers getting a car alarm because cars are being stolen nearby (2026-10-30)", "day": "2026-10-30 19:00:00", "entries": [23, 30], "version": 2}

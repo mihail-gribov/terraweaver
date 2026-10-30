@@ -1,0 +1,10 @@
+{"topic": 1, "name": "Vienna weekend", "added": "Visited Vienna for a long weekend; museums were great (2026-09-02)", "day": "2026-09-02 20:00:00", "entries": [3], "version": 1, "kind": "project"}
+{"topic": 2, "name": "Lisbon trip", "added": "Booked flights to Lisbon for mid-October (2026-09-08).", "day": "2026-09-08 20:00:00", "entries": [4], "version": 1, "kind": "project"}
+{"topic": 3, "name": "Bank call", "added": "Spent an hour on the phone with the bank, finally sorted. (2026-09-10)", "day": "2026-09-10 20:00:00", "entries": [5], "version": 1, "kind": "problem"}
+{"topic": 4, "name": "Ljubljana weekend", "added": "Weekend in Ljubljana with my wife, lovely little city. (2026-10-08)", "day": "2026-10-08 20:00:00", "entries": [18], "version": 1, "kind": "project"}
+{"topic": 5, "name": "CI pipeline fix", "added": "Fixed a bug in the CI pipeline during the evening (2026-10-14)", "day": "2026-10-14 20:00:00", "entries": [22], "version": 1, "kind": "project"}
+{"topic": 6, "name": "Japan trip", "added": "Booked Japan for April: Tokyo and Kyoto, two weeks. (2026-10-16)", "day": "2026-10-16 20:00:00", "entries": [24], "version": 1, "kind": "project"}
+{"topic": 7, "name": "Sleep", "added": "Listened to a podcast about sleep, apparently I need more of it. (2026-10-18)", "day": "2026-10-18 20:00:00", "entries": [26], "version": 1, "kind": "habit"}
+{"topic": 8, "name": "Athens trip", "added": "Flew to Athens for a friend's wedding, back on Sunday, exhausted (2026-10-20)", "day": "2026-10-20 20:00:00", "entries": [28], "version": 1, "kind": "project"}
+{"topic": 9, "name": "Headphones purchase", "added": "Ordered new headphones, they arrive Friday. (2026-10-26)", "day": "2026-10-26 20:00:00", "entries": [31], "version": 1, "kind": "choice"}
+{"topic": 10, "name": "Neighbour noise", "added": "The neighbours are drilling again on a Sunday (2026-10-29)", "day": "2026-10-29 20:00:00", "entries": [34], "version": 1, "kind": "problem"}

@@ -1,0 +1,22 @@
+{"from": "Mila", "relation": "spouse", "common": true, "to": "the user", "text": 2, "day": "2026-09-26 20:00:00", "quote": "my wife Mila", "when": "2026-09-26"}
+{"from": "Mila", "relation": "born_on", "common": true, "to": "11 November", "text": 2, "day": "2026-09-26 20:00:00", "quote": "the evening of 11 November", "when": "2026-09-26"}
+{"from": "the user", "relation": "dislikes", "common": true, "to": "standup", "text": 6, "day": "2026-09-29 20:00:00", "quote": "why does that annoy me so much", "when": "2026-09-29"}
+{"from": "the user", "relation": "plans", "common": false, "to": "Saturday", "text": 7, "day": "2026-09-30 20:00:00", "quote": "any ideas for saturday?", "when": "2026-09-30", "class": "plans"}
+{"from": "Mila", "relation": "dislikes", "common": true, "to": "crowds", "text": 8, "day": "2026-09-30 20:00:00", "quote": "Mila hates crowds.", "when": "2026-09-30"}
+{"from": "Mila", "relation": "likes", "common": true, "to": "small jazz gig", "text": 8, "day": "2026-09-30 20:00:00", "quote": "she'd much rather a small jazz gig", "when": "2026-09-30"}
+{"from": "Mila", "relation": "likes", "common": true, "to": "the jazz trio", "text": 9, "day": "2026-09-30 20:00:00", "quote": "totally her thing", "when": "2026-09-30"}
+{"from": "Mila", "relation": "health", "common": true, "to": "seriously allergic to peanuts", "text": 11, "day": "2026-10-03 20:00:00", "quote": "Mila had a reaction, turns out she's seriously allergic to peanuts", "when": "2026-10-03"}
+{"from": "Mila", "relation": "dislikes", "common": true, "to": "Thai", "text": 11, "day": "2026-10-03 20:00:00", "quote": "We tried Thai last week and Mila had a reaction", "when": "2026-10-03"}
+{"from": "the user's manager", "relation": "manager", "common": true, "to": "the user", "text": 15, "day": "2026-10-09 20:00:00", "quote": "my manager", "when": "2026-10-09"}
+{"from": "the user", "relation": "writes", "common": false, "to": "thank-you notes", "text": 16, "day": "2026-10-10 20:00:00", "quote": "write thank-you notes", "when": "2026-10-10", "class": "plans"}
+{"from": "Lev", "relation": "honoree_of", "common": false, "to": "Lev's party", "text": 16, "day": "2026-10-10 20:00:00", "quote": "Lev's party", "when": "2026-10-10"}
+{"from": "parents", "relation": "attendee_of", "common": false, "to": "Lev's party", "text": 16, "day": "2026-10-10 20:00:00", "quote": "the parents from Lev's party", "when": "2026-10-10"}
+{"from": "Lev", "relation": "age", "common": true, "to": "seven", "text": 17, "day": "2026-10-10 20:00:00", "quote": "seven!", "when": "2026-10-10"}
+{"from": "Lev's party", "relation": "attendees", "common": false, "to": "twenty kids", "text": 17, "day": "2026-10-10 20:00:00", "quote": "Twenty kids", "when": "2026-10-10"}
+{"from": "Lev's party", "relation": "includes", "common": false, "to": "Lego", "text": 17, "day": "2026-10-10 20:00:00", "quote": "a mountain of Lego", "when": "2026-10-10"}
+{"from": "Mila", "relation": "health", "common": true, "to": "exhausted", "text": 18, "day": "2026-10-10 20:00:00", "quote": "Mila is exhausted", "when": "2026-10-10"}
+{"from": "Mila", "relation": "likes", "common": true, "to": "quiet birthday", "text": 18, "day": "2026-10-10 20:00:00", "quote": "she says that for her own birthday she wants something quiet", "when": "2026-10-10"}
+{"from": "Mila", "relation": "partner", "common": true, "to": "the user", "text": 18, "day": "2026-10-10 20:00:00", "quote": "just you and me", "when": "2026-10-10"}
+{"from": "Vesna", "relation": "relative", "common": true, "to": "the user", "text": 21, "day": "2026-10-21 20:00:00", "quote": "my mother-in-law Vesna", "when": "2026-10-21"}
+{"from": "Mila", "relation": "health", "common": true, "to": "seriously allergic to peanuts", "text": 22, "day": "2026-10-21 20:00:00", "quote": "Just no peanuts for Mila.", "when": "2026-10-21"}
+{"from": "Mila", "relation": "spouse", "common": true, "to": "the user", "text": 25, "day": "2026-10-30 03:41:28", "quote": "my wife", "when": "2026-10-30"}

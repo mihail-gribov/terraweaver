@@ -1,0 +1,580 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TerraWeaver Replay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  /* Layout: a fixed 1920x1080 stage scaled to the window. The conversation on the left; the memory on
+     the right, the deciding blocks beside the four stores. Every step comes from the run's trace. */
+  :root {
+    --bg: #eef0ec;
+    --panel: #ffffff;
+    --ink: #1d2320;
+    --muted: #66706a;
+    --line: #cfd4cf;
+    --write: #3d4a43;
+    --read: #1f6fd1;
+    --read-soft: #e3eefb;
+    --store: #e4e8e2;
+    --new: #fff3c4;
+    --model: #6b5a2e;
+    --model-soft: #f1ead6;
+    --user: #dfe9e2;
+    --display: "IBM Plex Sans Condensed", "Arial Narrow", sans-serif;
+    --body: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    color-scheme: light;
+  }
+  html, body { margin: 0; height: 100%; background: #0d0f0e; overflow: hidden; }
+  #stage {
+    position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0;
+    background: var(--bg); color: var(--ink); font-family: var(--body);
+    display: grid; grid-template-columns: 700px minmax(0, 1fr); grid-template-rows: 76px minmax(0, 1fr);
+  }
+  header { grid-column: 1 / -1; display: flex; align-items: center; gap: 28px; padding: 0 36px; border-bottom: 1px solid var(--line); background: var(--panel); }
+  header { padding: 0 !important; gap: 0 !important; }
+  .hcol { display: flex; align-items: baseline; gap: 16px; padding: 0 30px; }
+  .hcol.left { width: 700px; box-sizing: border-box; border-right: 1px solid var(--line); align-self: stretch; align-items: center; }
+  .hcol.left .sub { font-family: var(--display); font-weight: 600; font-size: 22px; color: var(--ink); }
+  #mode { margin-right: 30px; }
+  header h1 { font-family: var(--display); font-weight: 600; font-size: 30px; margin: 0; letter-spacing: .01em; }
+  header .sub { color: var(--muted); font-size: 18px; }
+  #ff { margin-left: auto; font-family: var(--mono); font-size: 18px; color: var(--muted); padding: 6px 14px; border: 1.5px dashed var(--muted); border-radius: 6px; }
+  #ff:not([hidden]) + #mode { margin-left: 0; }
+  #mode { margin-left: auto; font-family: var(--display); font-weight: 600; font-size: 22px; letter-spacing: .06em; padding: 8px 20px; border-radius: 6px; background: var(--write); color: #fff; transition: background .4s; }
+  #mode.read { background: var(--read); }
+
+  /* the conversation */
+  /* the conversation, as a messenger shows it */
+  #chatwrap { display: grid; grid-template-rows: 68px minmax(0, 1fr); border-right: 1px solid #b9c7ae; min-height: 0; }
+  .tg-top { display: flex; align-items: center; gap: 14px; padding: 0 22px; background: #ffffff; border-bottom: 1px solid #dfe3dc; }
+  .tg-ava { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #7bc862, #3aa364); color: #fff; display: grid; place-items: center; font-family: var(--display); font-weight: 600; font-size: 21px; }
+  .tg-name { font-weight: 600; font-size: 19px; }
+  .tg-status { font-size: 15px; color: #3a9bdc; }
+  #chat {
+    overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; padding: 16px 22px; gap: 6px;
+    background-color: #cfdcb8;
+    background-image: radial-gradient(rgba(255,255,255,.22) 1.2px, transparent 1.6px), radial-gradient(rgba(80,110,60,.10) 1.2px, transparent 1.6px);
+    background-size: 26px 26px, 26px 26px; background-position: 0 0, 13px 13px;
+  }
+  #chat > * { flex: none; }
+  .day { align-self: center; font-size: 15px; font-weight: 500; color: #fff; padding: 4px 12px; border-radius: 14px; background: rgba(66, 90, 52, .45); margin: 8px 0 4px; }
+  .msg { position: relative; max-width: 520px; font-size: 18px; line-height: 1.38; padding: 7px 12px 7px; border-radius: 14px; animation: pop .3s ease-out; box-shadow: 0 1px 1px rgba(40, 60, 30, .18); }
+  .msg .time { float: right; margin: 9px 0 -4px 12px; font-size: 13px; color: #8b9a87; white-space: nowrap; }
+  .msg.user .time { color: #5fa65a; }
+  .msg.user { align-self: flex-end; background: #e2fdc9; border-bottom-right-radius: 4px; }
+  .msg.agent { align-self: flex-start; background: #ffffff; border-bottom-left-radius: 4px; }
+  .msg.fast { opacity: .6; font-size: 15.5px; }
+  .msg.agent.final { font-size: 16.5px; line-height: 1.4; }
+  .typing { color: #3a9bdc; font-size: 16px; }
+  .typing i { font-style: normal; animation: blink 1s infinite; }
+  .typing i:nth-child(2) { animation-delay: .2s; } .typing i:nth-child(3) { animation-delay: .4s; }
+  @keyframes blink { 0%, 100% { opacity: .2; } 50% { opacity: 1; } }
+  .msg.agent.final div + div, .msg.agent.final ul + div { margin-top: 5px; }
+  #c-fit .out { color: var(--ink); font-family: var(--body); font-size: 14px; line-height: 1.38; }
+  #c-fit .note-title { font-family: var(--display); font-weight: 600; font-size: 15px; letter-spacing: .04em; color: var(--read); margin-bottom: 4px; }
+  #c-fit .note-body { background: var(--read-soft); border: 1.5px dashed var(--read); border-radius: 8px; padding: 8px 10px; max-height: 360px; overflow: hidden; }
+  #c-fit .note-body div + div { margin-top: 3px; }
+  .msg.agent.final ul { margin: 3px 0; padding-left: 20px; }
+  .msg.note { align-self: stretch; max-width: none; background: var(--read-soft); border: 1.5px dashed var(--read); font-size: 14.5px; line-height: 1.38; box-shadow: none; }
+  .msg .who { display: block; font-weight: 600; font-size: 15px; color: #3a9bdc; margin-bottom: 1px; }
+  .msg.note .who { color: var(--read); font-family: var(--display); letter-spacing: .04em; }
+  @keyframes pop { from { transform: translateY(10px); opacity: .3; } to { transform: none; opacity: 1; } }
+
+  /* the memory */
+  #mem { position: relative; display: grid; grid-template-columns: 380px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: 14px 110px; padding: 22px 30px; min-height: 0; }
+  #decide { display: flex; flex-direction: column; gap: 14px; min-height: 0; }
+  .col { font-family: var(--display); font-weight: 600; font-size: 15px; letter-spacing: .14em; color: var(--muted); }
+  .card { background: var(--panel); border: 2px solid var(--line); border-radius: 10px; padding: 14px 16px; transition: border-color .3s, box-shadow .3s, opacity .3s; }
+  .card h3 { font-family: var(--display); font-weight: 600; font-size: 23px; margin: 0; display: flex; align-items: center; gap: 10px; }
+  .card h3 small { font-family: var(--mono); font-weight: 400; font-size: 13px; color: var(--muted); }
+  .card .q { font-size: 16.5px; margin-top: 4px; }
+  .chip { margin-left: auto; font-family: var(--mono); font-size: 13px; font-weight: 400; color: var(--model); background: var(--model-soft); padding: 2px 8px; border-radius: 4px; }
+  .card .out { font-family: var(--mono); font-size: 14.5px; margin-top: 8px; min-height: 20px; color: var(--muted); }
+  .card .out b { color: var(--ink); font-weight: 500; }
+  .card.on { border-color: var(--write); box-shadow: 0 0 0 4px rgba(61, 74, 67, .12); }
+  .read-mode .card.on { border-color: var(--read); box-shadow: 0 0 0 4px rgba(31, 111, 209, .15); }
+  .card.dim { opacity: .45; }
+  .read-mode .card h3 { color: var(--read); }
+
+  /* Fixed halves from the first frame: the stores never move as they fill. */
+  #stores { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: 1.3fr 1fr 1fr 1fr; gap: 14px; flex: 1 1 0; min-height: 0; }
+  #s-world .items, #s-topics .items, #s-portraits .items { flex-direction: row-reverse; align-items: flex-end; justify-content: flex-start; }
+  #s-world .item, #s-topics .item, #s-portraits .item { flex: 0 0 300px; max-height: 100%; overflow: hidden; }
+  .store { background: var(--store); border-radius: 10px; padding: 14px 16px; min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 8px; border: 2px solid transparent; transition: border-color .3s; }
+  .store.on { border-color: var(--write); }
+  .read-mode .store.on { border-color: var(--read); }
+  .store h2 { font-family: var(--display); font-weight: 600; font-size: 24px; margin: 0; }
+  .store h2 small { font-family: var(--body); font-weight: 400; font-size: 14px; color: var(--muted); margin-left: 8px; }
+  .items { display: flex; flex-direction: column; gap: 6px; overflow: hidden; justify-content: flex-end; flex: 1; min-height: 0; }
+  .item { background: var(--panel); border-radius: 6px; padding: 7px 10px; font-size: 15px; line-height: 1.35; transition: background 1.2s, outline-color .3s; outline: 2px solid transparent; }
+  .item.new { background: var(--new); }
+  .item.hit { outline-color: var(--read); background: var(--read-soft); }
+  .item .n { font-family: var(--mono); font-size: 13px; color: var(--muted); margin-right: 6px; }
+  .person h4, .topic h4 { margin: 0 0 3px; font-size: 16px; font-weight: 600; }
+  .part { font-family: var(--mono); font-size: 13.5px; }
+  .part.ended { text-decoration: line-through; color: var(--muted); }
+  .layer { font-size: 14px; color: var(--ink); }
+  .layer + .layer { margin-top: 2px; }
+
+  #ctx { position: absolute; right: 30px; top: 70px; width: 720px; max-height: 760px; overflow: hidden; background: var(--panel); border: 2px solid var(--read); border-radius: 12px; box-shadow: 0 18px 50px rgba(20, 40, 70, .28); padding: 18px 22px; animation: slide .5s ease-out; z-index: 5; }
+  #ctx .ctx-title { font-family: var(--display); font-weight: 600; font-size: 24px; color: var(--read); margin-bottom: 10px; }
+  #ctx .ctx-title span { font-family: var(--body); font-weight: 400; font-size: 15px; color: var(--muted); }
+  #ctx .ctx-body { font-size: 17px; line-height: 1.45; }
+  #ctx .ctx-body div + div { margin-top: 6px; }
+  @keyframes slide { from { transform: translateX(60px); opacity: 0; } to { transform: none; opacity: 1; } }
+  /* A message, or what is made of it, travelling between the blocks. */
+  .packet { position: absolute; z-index: 6; left: 0; top: 0; transform: translate(-50%, -50%); padding: 5px 12px; border-radius: 16px; background: var(--write); color: #fff; font-family: var(--mono); font-size: 14px; white-space: nowrap; max-width: 300px; overflow: hidden; text-overflow: ellipsis; box-shadow: 0 4px 14px rgba(0, 0, 0, .25); transition-property: left, top, opacity; transition-timing-function: ease-in-out; }
+  .read-mode .packet { background: var(--read); }
+  .packet.stop { background: #c0392b; }
+  .card { position: relative; }
+  svg#wires { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+  svg#wires path { fill: none; stroke: #a9b2ab; stroke-width: 2.5; }
+  svg#wires path.lit { stroke: var(--write); stroke-width: 5; }
+  svg#wires path.exit { stroke-dasharray: 5 4; }
+  svg#wires text.exit { fill: #a94434; font-size: 13px; }
+  .read-mode svg#wires path.lit { stroke: var(--read); }
+  svg#wires path.lit.stop { stroke: #c0392b; }
+  svg#wires .lbl { font-family: var(--mono); font-size: 14px; font-weight: 500; fill: var(--write); paint-order: stroke; stroke: var(--bg, #f6f5f1); stroke-width: 5px; }
+  .read-mode svg#wires path { stroke: #8fb6e8; }
+  .read-mode svg#wires .lbl { fill: var(--read); }
+  #switch { position: absolute; inset: 0; z-index: 7; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; background: rgba(246, 248, 252, .9); animation: fadein .4s ease-out; }
+  #switch b { font-family: var(--display); font-size: 64px; font-weight: 600; color: var(--read); }
+  #switch span { font-size: 24px; color: var(--ink); }
+  @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes flow { to { stroke-dashoffset: -14; } }
+  @media (prefers-reduced-motion: reduce) { svg#wires path, .msg { animation: none; } }
+
+  #bar { position: fixed; right: 12px; bottom: 10px; font: 12px var(--mono); color: #9aa; background: rgba(0,0,0,.55); padding: 6px 10px; border-radius: 6px; }
+  #bar.hide { display: none; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <header>
+    <div class="hcol left"><span class="sub">The user's chat with their agent</span></div>
+    <div class="hcol right"><h1>Inside the memory</h1><span class="sub">TerraWeaver on NVIDIA Nemotron · every step as this run took it</span></div>
+    <span id="ff" hidden>⏩ time-lapse · everyday work talk</span>
+    <span id="mode">WRITING</span>
+  </header>
+  <section id="chatwrap" aria-label="The conversation">
+    <div class="tg-top"><div class="tg-ava">A</div><div><div class="tg-name">Agent</div><div class="tg-status">bot · personal memory on</div></div></div>
+    <div id="chat"></div>
+  </section>
+  <section id="mem">
+    <div id="decide">
+      <div class="col" id="col-left">DECIDES</div>
+      <div class="card w" id="c-gate"><h3>Gate <span class="chip">Super · 1 token</span></h3><div class="q">Personal, or a request about it? Not a work task.</div><div class="out"></div></div>
+      <div class="card w" id="c-resolve"><h3>Resolve <small>agent-referring anaphora</small><span class="chip">Super</span></h3><div class="q">A reply to the agent ("yes please")? Said in full.</div><div class="out"></div></div>
+      <div class="card w" id="c-worth"><h3>Personal? <span class="chip">Nano · 1 token</span></h3><div class="q">About the user's life, worth keeping a month? Not work, not a task.</div><div class="out"></div></div>
+      <div class="card w" id="c-reader"><h3>Reader <span class="chip">Super</span></h3><div class="q">Who? Which part of their world? Which topic? What is new?</div><div class="out"></div></div>
+      <div class="card r" id="c-search" hidden><h3>Search</h3><div class="q">Which facts bear on it? By words and by meaning.</div><div class="out"></div></div>
+      <div class="card r" id="c-world" hidden><h3>World</h3><div class="q">Whose parts does it name?</div><div class="out"></div></div>
+      <div class="card r" id="c-topic" hidden><h3>Topic <span class="chip">Nano · 1 token</span></h3><div class="q">Does it go on with one?</div><div class="out"></div></div>
+      <div class="card r" id="c-fit" hidden><h3>Fit <span class="chip">Super</span></h3><div class="q">What of it bears on this message?</div><div class="out"></div></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;min-height:0;height:100%">
+      <div class="col" id="col-right">WHERE IT SETTLES</div>
+      <div id="stores">
+        <div class="store" id="s-journal"><h2>Journal<small>the facts as said, with their day</small></h2><div class="items"></div></div>
+        <div class="store" id="s-world"><h2>User's world<small>people and their parts, now and was</small></h2><div class="items"></div></div>
+        <div class="store" id="s-topics"><h2>Topics<small>dated layers</small></h2><div class="items"></div></div>
+        <div class="store" id="s-portraits"><h2>Portraits<small>one text per person</small></h2><div class="items"></div></div>
+      </div>
+    </div>
+    <svg id="wires"><defs><marker id="tip" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8a948d" stroke="none"/></marker><marker id="tipR" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1f6fd1" stroke="none"/></marker></defs><g id="road"></g></svg>
+    <aside id="ctx" hidden>
+      <div class="ctx-title">In the agent's context <span>· beside the user's message, unseen by the user</span></div>
+      <div class="ctx-body"></div>
+    </aside>
+  </section>
+</div>
+<div id="bar">space play/pause · → step · R restart · 1–4 speed · H hide</div>
+
+<script>
+const DATA = /*DATA*/null;
+const $ = (s, el = document) => el.querySelector(s);
+const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+const cut = (t, n) => (t = String(t || "")).length > n ? t.slice(0, n - 1) + "…" : t;
+const stage = $("#stage");
+function fit() {
+  const k = Math.min(innerWidth / 1920, innerHeight / 1080);
+  stage.style.transform = `translate(${(innerWidth - 1920 * k) / 2}px, ${(innerHeight - 1080 * k) / 2}px) scale(${k})`;
+}
+addEventListener("resize", fit); fit();
+
+function md(text) {
+  const out = [];
+  let list = null;
+  for (const raw of String(text).split("\n")) {
+    let line = esc(raw.trim()).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");
+    if (/^[-*] /.test(line) || /^\d+\. /.test(line)) {
+      if (!list) { list = []; }
+      list.push(line.replace(/^([-*]|\d+\.) /, ""));
+      continue;
+    }
+    if (list) { out.push("<ul>" + list.map(l => `<li>${l}</li>`).join("") + "</ul>"); list = null; }
+    if (line) out.push(`<div>${line}</div>`);
+  }
+  if (list) out.push("<ul>" + list.map(l => `<li>${l}</li>`).join("") + "</ul>");
+  return out.join("");
+}
+
+// --- state ---------------------------------------------------------------------------------
+let world, topics, portraits, journalEls;
+function reset() {
+  $("#chat").innerHTML = "";
+  document.querySelectorAll(".store .items").forEach(el => el.innerHTML = "");
+  document.querySelectorAll(".card .out").forEach(el => el.innerHTML = "");
+  world = {}; topics = {}; portraits = {}; journalEls = {};
+  $("#ctx").hidden = true;
+  $("#switch") && $("#switch").remove();
+  document.querySelectorAll(".packet").forEach(el => el.remove());
+  document.querySelectorAll("#road .lit").forEach(el => el.classList.remove("lit", "stop"));
+  setMode("write");
+  clearOn();
+}
+function setMode(m) {
+  const read = m === "read";
+  $("#stage").classList.toggle("read-mode", read);
+  $("#mode").textContent = read ? "READING" : "WRITING";
+  $("#mode").classList.toggle("read", read);
+  document.querySelectorAll(".card.w").forEach(c => c.hidden = read);
+  document.querySelectorAll(".card.r").forEach(c => c.hidden = !read);
+  $("#col-right").textContent = read ? "WHAT IT READS" : "WHERE IT SETTLES";
+  requestAnimationFrame(() => drawRoad(read));
+}
+function clearTrail() { document.querySelectorAll("#road .lit").forEach(el => el.classList.remove("lit", "stop")); }
+function clearOn() {
+  if (fastNow) return;
+  document.querySelectorAll(".on").forEach(e => e.classList.remove("on"));
+  document.querySelectorAll(".item.new").forEach(e => e.classList.remove("new"));
+}
+function on(id) { const el = $(id); if (!fastNow) el.classList.add("on"); return el; }
+function out(id, html) { if (!fastNow) $(id + " .out").innerHTML = html; }
+function wire() {}
+// One still road from block to block: what the packets travel along.
+function road(from, to, side = "h", label = "") {
+  const box = $("#mem").getBoundingClientRect(), k = box.width / $("#mem").offsetWidth;
+  const a = $(from).getBoundingClientRect(), b = $(to).getBoundingClientRect();
+  const P = (x, y) => [(x - box.left) / k, (y - box.top) / k];
+  let d;
+  if (side === "h") {
+    let [x1, y1] = P(a.right, a.top + a.height / 2), [x2, y2] = P(b.left, b.top + Math.min(b.height / 2, 40));
+    if (from === "#chatwrap") y1 = y2;
+    const mid = (x1 + x2) / 2;
+    d = `M${x1},${y1} C${mid},${y1} ${mid},${y2} ${x2 - 3},${y2}`;
+  } else if (side === "back") {
+    let [x1, y1] = P(a.left, a.top + Math.min(a.height / 2, 40)), [x2, y2] = P(b.right, b.top + b.height / 2);
+    if (to === "#chatwrap") y2 = y1;
+    const mid = (x1 + x2) / 2;
+    d = `M${x1},${y1} C${mid},${y1} ${mid},${y2} ${x2 + 3},${y2}`;
+  } else {
+    const [x1, y1] = P(a.left + a.width / 2, a.bottom), [, y2] = P(0, b.top);
+    d = `M${x1},${y1} L${x1},${y2 - 2}`;
+  }
+  const read = $("#stage").classList.contains("read-mode");
+  $("#road").insertAdjacentHTML("beforeend", `<path data-key="${from}>${to}" d="${d}" marker-end="url(#${read ? "tipR" : "tip"})"/>`);
+  if (label) {
+    const path = $("#road").lastElementChild, at = path.getPointAtLength(path.getTotalLength() * .55);
+    $("#road").insertAdjacentHTML("beforeend", `<text class="lbl" x="${at.x}" y="${at.y - 8}" text-anchor="middle">${label}</text>`);
+  }
+}
+function exitRoad(card, label, low) {
+  const box = $("#mem").getBoundingClientRect(), k = box.width / $("#mem").offsetWidth, a = $(card).getBoundingClientRect();
+  const x1 = (a.right - box.left) / k, y = ((low ? a.bottom - 16 : a.top + a.height / 2) - box.top) / k;
+  $("#road").insertAdjacentHTML("beforeend", `<path class="exit" data-key="${card}>out" d="M${x1},${y} L${x1 + 30},${y}" marker-end="url(#tip)"/>` +
+    `<text class="lbl exit" x="${x1 + 40}" y="${y + 5}">✕</text>`);
+}
+function drawRoad(read) {
+  $("#road").innerHTML = "";
+  if (!read) {
+    road("#chatwrap", "#c-gate", "h", "message →");
+    road("#c-gate", "#c-resolve", "v"); road("#c-resolve", "#s-journal", "h", "kept →");
+    road("#s-journal", "#c-worth", "back", "← to read"); road("#c-worth", "#c-reader", "v");
+    exitRoad("#c-gate", "✕ not kept"); exitRoad("#c-worth", "✕ journal only", true);
+    road("#c-reader", "#s-world", "h", "adds →"); road("#c-reader", "#s-topics", "h", "adds →"); road("#c-reader", "#s-portraits", "h", "adds →");
+  } else {
+    road("#s-journal", "#c-search", "back", "← found"); road("#s-world", "#c-world", "back", "← found"); road("#s-portraits", "#c-world", "back");
+    road("#s-topics", "#c-topic", "back", "← found");
+    road("#chatwrap", "#c-search", "h", "question →");
+    road("#c-search", "#c-world", "v"); road("#c-world", "#c-topic", "v"); road("#c-topic", "#c-fit", "v");
+    road("#c-fit", "#chatwrap", "back", "← note to the agent");
+  }
+}
+function oldWire(from, to, reverse) {
+  const box = $("#mem").getBoundingClientRect(), k = box.width / $("#mem").offsetWidth;
+  const a = $(from).getBoundingClientRect(), b = $(to).getBoundingClientRect();
+  const x1 = (a.right - box.left) / k, y1 = (a.top + a.height / 2 - box.top) / k;
+  const x2 = (b.left - box.left) / k, y2 = (b.top + Math.min(b.height / 2, 60) - box.top) / k;
+  const mid = (x1 + x2) / 2;
+  const d = reverse ? `M${x2},${y2} C${mid},${y2} ${mid},${y1} ${x1 + 8},${y1}` : `M${x1},${y1} C${mid},${y1} ${mid},${y2} ${x2 - 8},${y2}`;
+  const color = getComputedStyle(document.documentElement).getPropertyValue(reverse ? "--read" : "--write");
+  $("#wires").insertAdjacentHTML("beforeend", `<path d="${d}" style="stroke:${color}"/>`);
+}
+let fastNow = false, lastUser = null;
+function centre(el) {
+  const s = stage.getBoundingClientRect(), k = s.width / 1920, r = el.getBoundingClientRect();
+  return [(r.left + r.width / 2 - s.left) / k, (r.top + Math.min(r.height / 2, 40) - s.top) / k];
+}
+// A pill with the text carried from one block to the next; "stop" ends it there, crossed out.
+function node(el) {
+  // The block an element sits in, as the roads name it.
+  const at = el.closest("#chatwrap, .store, .card, #ctx");
+  return at ? "#" + at.id : null;
+}
+function memAt(el) {
+  const box = $("#mem").getBoundingClientRect(), k = box.width / $("#mem").offsetWidth, r = el.getBoundingClientRect();
+  return [(r.left + r.width / 2 - box.left) / k, (r.top + Math.min(r.height / 2, 40) - box.top) / k];
+}
+function fly(from, to, label, stop = "", delay = 0, keep = false) {
+  const a = typeof from === "string" ? $(from) : from, b = typeof to === "string" ? $(to) : to;
+  if (!a || !b) return;
+  const ms = (fastNow ? 200 : 750) / speed, wait = delay / speed, fast = fastNow;
+  setTimeout(() => {
+    const path = $(`#road path[data-key="${node(a)}>${node(b)}"]`);
+    const el = document.createElement("div");
+    el.className = "packet"; el.textContent = label;
+    el.style.transition = "opacity .3s";
+    $("#mem").appendChild(el);
+    const [x1, y1] = memAt(a), [x2, y2] = memAt(b), L = path ? path.getTotalLength() : 0;
+    if (path) path.classList.add("lit");
+    const t0 = performance.now();
+    const move = now => {
+      const t = Math.min(1, (now - t0) / ms), e = t < .5 ? 2 * t * t : 1 - (2 - 2 * t) ** 2 / 2;
+      const [x, y] = path ? (pt => [pt.x, pt.y])(path.getPointAtLength(L * e)) : [x1 + (x2 - x1) * e, y1 + (y2 - y1) * e];
+      el.style.left = x + "px"; el.style.top = y + "px";
+      if (t < 1) return requestAnimationFrame(move);
+      if (stop) {
+        el.classList.add("stop"); el.textContent = "✕ " + stop;
+        const out = $(`#road path[data-key="${node(b)}>out"]`);
+        if (out) out.classList.add("lit", "stop");
+      }
+      setTimeout(() => {
+        el.style.opacity = 0;
+        setTimeout(() => el.remove(), 400);
+      }, (stop ? (fast ? 350 : 900) : (fast ? 60 : 250)) / speed);
+    };
+    requestAnimationFrame(move);
+  }, wait);
+}
+function chat(html, cls) {
+  const el = document.createElement("div");
+  el.className = cls; el.innerHTML = html;
+  $("#chat").appendChild(el);
+  return el;
+}
+function add(store, html, cls = "item new") {
+  const el = document.createElement("div");
+  el.className = cls; el.innerHTML = html;
+  $(store + " .items").appendChild(el);
+  return el;
+}
+
+function personCard(name) {
+  if (!world[name]) {
+    world[name] = add("#s-world", `<h4>${esc(name)}</h4><div class="parts"></div>`, "item person new");
+  }
+  return world[name];
+}
+function topicCard(name) {
+  if (!topics[name]) topics[name] = add("#s-topics", `<h4>${esc(name)}</h4>`, "item topic new");
+  return topics[name];
+}
+function portraitCard(name) {
+  if (!portraits[name]) portraits[name] = add("#s-portraits", `<h4>${esc(name)}</h4>`, "item person new");
+  return portraits[name];
+}
+function bump(el) { el.classList.add("new"); el.parentNode.appendChild(el); }
+
+// --- steps -----------------------------------------------------------------------------------
+const pct = p => p == null ? "—" : p.toFixed(2);
+const RUN = {
+  more() { return typing(); },
+  day(e) {
+    const d = new Date(e.date + "T12:00:00");
+    chat(isNaN(d) ? esc(e.date) : d.toLocaleDateString("en-GB", {day: "numeric", month: "long"}), "day");
+    return e.fast ? 120 : 600;
+  },
+  say(e) {
+    const time = `<span class="time">${esc(e.time || "")}${e.role === "user" ? " ✓✓" : ""}</span>`;
+    if (e.final) {
+      // The reply as a messenger would show it: one message per part, each after "typing…".
+      clearOn();
+      const parts = String(e.text).split(/\n\s*\n(?=\*\*|[A-Z])/).reduce((acc, block) => {
+        if (acc.length && (/^\s*([-*]|\d+\.)\s/.test(block) || acc[acc.length - 1].trim().endsWith(":") || /^\*\*[^*]+\*\*\s*$/.test(acc[acc.length - 1].trim()))) {
+          acc[acc.length - 1] += "\n\n" + block;
+        } else acc.push(block);
+        return acc;
+      }, []);
+      finalParts = parts; finalTime = time;
+      return typing();
+    }
+    const bubble = chat(`${esc(e.text)}${time}`, `msg ${e.role}${e.fast ? " fast" : ""}`);
+    if (e.role === "user") lastUser = bubble;
+    return e.role === "user" ? 1300 : 900;
+  },
+  gate(e) {
+    clearOn(); on("#c-gate");
+    out("#c-gate", e.kept ? `p = <b>${pct(e.p)}</b> → kept` : `p = <b>${pct(e.p)}</b> → not kept`);
+    out("#c-resolve", ""); out("#c-worth", ""); out("#c-reader", "");
+    clearTrail();
+    if (lastUser) fly(lastUser, "#c-gate", cut(lastUser.firstChild.textContent, 30), e.kept ? "" : "not kept", 0, true);
+    return 650;
+  },
+  resolve(e) {
+    on("#c-resolve");
+    out("#c-resolve", e.skip ? "no agent message before → kept as said"
+      : `<b>"${esc(cut(e.said, 40))}"</b><br>→ <b>"${esc(cut(e.to, 70))}"</b>`);
+    fly("#c-gate", "#c-resolve", e.skip ? "as said" : cut(e.to, 30), "", 100);
+    return e.skip ? 250 : 1500;
+  },
+  journal(e) {
+    on("#s-journal"); wire("#c-resolve", "#s-journal");
+    journalEls[e.entry] = add("#s-journal", `<span class="n">#${e.entry} · ${esc(e.day)}</span>${esc(cut(e.text, 120))}`);
+    fly("#c-resolve", journalEls[e.entry], `#${e.entry}`, "", 150);
+    return 650;
+  },
+  worth(e) {
+    clearOn(); on("#c-worth");
+    out("#c-worth", e.read ? `p = <b>${pct(e.p)}</b> → read` : `p = <b>${pct(e.p)}</b> → not personal · journal only`);
+    if (journalEls[e.entry]) wire("#c-worth", "#s-journal", true);
+    fly(journalEls[e.entry], "#c-worth", `#${e.entry}`, e.read ? "" : "not personal");
+    return 550;
+  },
+  read(e) {
+    on("#c-reader");
+    fly("#c-worth", "#c-reader", `#${e.entry}`);
+    const said = [];
+    if (e.world.length) {
+      on("#s-world"); wire("#c-reader", "#s-world");
+      for (const w of e.world) {
+        const card = personCard(w.who);
+        bump(card);
+        if (w.part === "is the user's") {
+          const h = $("h4", card); if (!h.dataset.role) { h.dataset.role = 1; h.innerHTML += ` <span class="part">· ${esc(w.value)}</span>`; }
+        } else {
+          $(".parts", card).insertAdjacentHTML("beforeend", `<div class="part${w.ended ? " ended" : ""}">${esc(w.part)} · ${esc(w.value)}</div>`);
+        }
+      }
+      said.push(`${e.world.length} part${e.world.length > 1 ? "s" : ""}`);
+      fly("#c-reader", world[e.world[0].who], `${e.world[0].who} · ${e.world[0].value}`, "", 500);
+    }
+    if (e.topics.length) {
+      on("#s-topics"); wire("#c-reader", "#s-topics");
+      for (const t of e.topics) { const c = topicCard(t.name); bump(c); c.insertAdjacentHTML("beforeend", `<div class="layer">${esc(cut(t.added, 110))}</div>`); }
+      said.push(`${e.topics.length} topic layer${e.topics.length > 1 ? "s" : ""}`);
+      fly("#c-reader", topics[e.topics[0].name], e.topics[0].name, "", 650);
+    }
+    const people = e.portraits.filter(p => p.of !== "the user");
+    if (people.length) {
+      on("#s-portraits"); wire("#c-reader", "#s-portraits");
+      for (const p of people) { const c = portraitCard(p.of); bump(c); c.insertAdjacentHTML("beforeend", `<div class="layer">${esc(cut(p.added, 110))}</div>`); }
+      said.push(`${people.length} portrait line${people.length > 1 ? "s" : ""}`);
+      fly("#c-reader", portraits[people[0].of], people[0].of, "", 800);
+    }
+    out("#c-reader", said.length ? "+ " + said.join(" · ") : "nothing new");
+    return 1700;
+  },
+  mode(e) {
+    clearOn(); clearTrail(); setMode(e.to);
+    chat("Today", "day");
+    if (e.to === "read") {
+      $("#mem").insertAdjacentHTML("beforeend", `<div id="switch"><b>Now reading ←</b><span>the same four stores, read back for today's message</span></div>`);
+      setTimeout(() => $("#switch") && $("#switch").remove(), 2800 / speed);
+      return 3200;
+    }
+    return 1600;
+  },
+  search(e) {
+    clearOn(); on("#c-search"); on("#s-journal");
+    for (const n of e.entries) journalEls[n] && journalEls[n].classList.add("hit");
+    if (e.entries.length) wire("#c-search", "#s-journal", true);
+    if (lastUser) fly(lastUser, "#c-search", cut(lastUser.firstChild.textContent, 30));
+    e.entries.forEach((n, i) => journalEls[n] && fly(journalEls[n], "#c-search", `#${n}`, "", 700 + i * 120));
+    out("#c-search", `found <b>${e.entries.map(n => "#" + n).join(" ")}</b>`);
+    return 1800;
+  },
+  world(e) {
+    on("#c-world");
+    const hit = e.who.filter(w => world[w] || portraits[w]);
+    for (const w of hit) { world[w] && world[w].classList.add("hit"); portraits[w] && portraits[w].classList.add("hit"); }
+    if (hit.some(w => world[w])) { on("#s-world"); wire("#c-world", "#s-world", true); }
+    if (hit.some(w => portraits[w])) { on("#s-portraits"); wire("#c-world", "#s-portraits", true); }
+    hit.forEach((w, i) => fly(world[w] || portraits[w], "#c-world", w, "", i * 150));
+    out("#c-world", hit.length ? `<b>${hit.map(esc).join(", ")}</b>` : "none named");
+    return 1600;
+  },
+  topic(e) {
+    on("#c-topic");
+    const hit = e.names.filter(n => topics[n]);
+    for (const n of hit) topics[n].classList.add("hit");
+    if (hit.length) { on("#s-topics"); wire("#c-topic", "#s-topics", true); }
+    hit.forEach((n, i) => fly(topics[n], "#c-topic", n, "", i * 150));
+    out("#c-topic", hit.length ? `goes on with <b>${hit.map(esc).join(", ")}</b>` : "none");
+    return 1600;
+  },
+  note(e) {
+    // The note goes to the agent, not into the user's chat: it is shown where it is made.
+    on("#c-fit");
+    out("#c-fit", "→ one note, <b>sent to the agent</b>");
+    ["#c-search", "#c-world", "#c-topic"].forEach((c, i) => fly(c, "#c-fit", ["facts", "people", "topics"][i], "", i * 150));
+    const text = e.text.replace(/^Here are the relevant facts from memory:\s*/i, "")
+      .replace(/^Kept as entry #\d+\.\s*/i, "").replace(/^From before, for this message[^\n]*\n/i, "");
+    $("#ctx .ctx-body").innerHTML = md(text);
+    setTimeout(() => { $("#ctx").hidden = false; }, 900 / speed);
+    fly("#c-fit", "#chatwrap", "note → agent", "", 300);
+    return 6900;
+  },
+};
+
+let finalParts = [], finalTime = "";
+function typing() {
+  if (!finalParts.length) return 300;
+  const dots = chat(`<span class="typing">Agent is typing<i>.</i><i>.</i><i>.</i></span>`, "msg agent");
+  const part = finalParts.shift();
+  const left = finalParts.length;
+  setTimeout(() => {
+    dots.remove();
+    chat(`${md(part)}${finalTime}`, "msg agent final");
+  }, 900 / speed);
+  // The next part after this one is read: about a second per line.
+  const pause = 900 + Math.min(4500, 500 + part.split("\n").length * 450);
+  if (left) DATA.events.splice(at, 0, {kind: "more"});
+  return pause;
+}
+
+// --- player ----------------------------------------------------------------------------------
+let at = 0, timer = null, speed = 1;
+function step() {
+  if (at >= DATA.events.length) { timer = null; return false; }
+  const e = DATA.events[at++];
+  $("#ff").hidden = !e.fast;
+  fastNow = !!e.fast;
+  const wait = (RUN[e.kind] || (() => 300))(e);
+  // Fast still lets each hop be seen: the path is what the time-lapse shows.
+  return e.fast ? Math.min(wait / 4, 220) : wait;
+}
+function play() {
+  const wait = step();
+  timer = wait === false ? null : setTimeout(play, wait / speed);
+}
+function pause() { clearTimeout(timer); timer = null; }
+addEventListener("keydown", ev => {
+  if (ev.key === " ") { ev.preventDefault(); timer ? pause() : play(); }
+  else if (ev.key === "ArrowRight") { pause(); step(); }
+  else if (ev.key.toLowerCase() === "r") { pause(); at = 0; DATA.events = DATA.events.filter(e => e.kind !== "more"); finalParts = []; reset(); }
+  else if ("1234".includes(ev.key)) speed = [0.5, 1, 1.5, 2.5][+ev.key - 1];
+  else if (ev.key.toLowerCase() === "h") $("#bar").classList.toggle("hide");
+});
+speed = DATA.speed || 1;
+document.fonts && document.fonts.ready.then(() => drawRoad($("#stage").classList.contains("read-mode")));
+reset();
+setTimeout(play, 1200);
+</script>
+</body>
+</html>

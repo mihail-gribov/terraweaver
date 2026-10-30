@@ -29,6 +29,8 @@ import re
 import threading
 from datetime import datetime
 
+from memory import trace
+
 log = logging.getLogger("listen")
 # An answer prepared this recently answers the same question again, instead of a new search:
 # three days, as fresh as what a task chooses from (memory/tools.py FRESH).
@@ -134,6 +136,7 @@ class Listener:
             return await self._gather(question, wait, progress)
         found = await self._context(question, 10)
         answer = await (self._ask(question, now) if now else self._ask(question))
+        trace.step("ask", question=question, now=now, found=found, answer=answer)
         return _reply([answer, "What it stands on:\n" + found if found and found.strip().lower().strip(".") != "nothing" else ""])
 
     async def _heard(self, message: str, now, wait: bool, progress) -> list[str]:
@@ -147,6 +150,8 @@ class Listener:
         got = await asyncio.to_thread(self._read, said)
         self._heard_as("user", said)
         log.info("say: personal %.2f, requests %s", got.for_memory, [(r["kind"], r["text"]) for r in got.requests])
+        trace.step("gate", said=said, rewritten=(got.information or [said])[0], personal=round(got.for_memory, 2),
+                   requests=[{"kind": r["kind"], "text": r["text"]} for r in got.requests], note=got.note)
         forget = [r for r in got.requests if r["kind"] == "memory"]
         if forget:
             return [await self._prepare_forget(forget[0]["text"])]
@@ -184,6 +189,10 @@ class Listener:
                                                       *(answered(q) for q in asked))
         gathered = ([f"What the memory holds that bears on this:\n{found}"]
                     if found and found.strip().lower().strip(".") != "nothing" else [])
+        # That the memory is looking on the web is said as it is: the agent tells the user.
+        from memory.graph import LOOKING
+        looking = [l for l in (topic or "").splitlines() if l.startswith(LOOKING)]
+        topic = "\n".join(l for l in (topic or "").splitlines() if not l.startswith(LOOKING))
         gathered += [topic] + list(answers)
         gathered = [g for g in gathered if g]
         if gathered:
@@ -193,6 +202,7 @@ class Listener:
             else:
                 # The user's own question, answered from the memory, is never fitted away.
                 parts += [a for a in answers if a]
+        parts += looking
         # Every question of the user's is a wish to know: kept as one. An action is the agent's.
         for request in got.requests:
             if request["kind"] == "know":
@@ -208,6 +218,7 @@ class Listener:
         except Exception:  # noqa: BLE001 - not fitted: given as found
             log.exception("fitting the note failed")
             return "\n\n".join(gathered)
+        trace.step("recall", message=message, gathered=gathered, note=said)
         if not said or said.lower().strip(" .") == "nothing":
             return ""
         return "From before, for this message (fact numbers and days; the user's latest word wins):\n" + said
@@ -280,6 +291,7 @@ class Listener:
         if text != said:
             text = f'{text}\n(said: "{said}")'
         number = self._keep(text, "the user", told)
+        trace.step("kept", entry=number, text=text, day=f"{told:%Y-%m-%d %H:%M}" if told else None)
         self._changed()
         return f"Kept as entry #{number}." + (" (A secret in it was withheld.)" if withheld else "")
 

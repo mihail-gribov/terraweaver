@@ -1,0 +1,1455 @@
+{
+ "the user": {
+  "named": true,
+  "kind": "person",
+  "portrait": [
+   {
+    "text": "User is looking for gift ideas for wife's upcoming birthday (2026-09-16). Ordered new headphones, they arrive Friday. (2026-09-19) The user's sister Ana moved from Lisbon to Porto for a new job (2026-09-20) Has a son Lev who turned seven last weekend; they held a Lego party. (2026-09-23) Listened to a podcast about sleep, apparently I need more of it. (2026-09-24) The user has a friend named Tom (2026-09-26) User received a senior role offer from Initech after a successful interview (2026-09-30) Turned down Initech senior role offer due to awful commute (2026-10-04) Spent an hour on the phone with the bank, finally sorted. (2026-10-08) User's mother-in-law Vesna is staying with them for two weeks from 2 November (2026-10-10). Lives within ten minutes of Belgrade (2026-10-18). Started working as a product designer at Globex on Monday; left Acme after five years. (2026-10-24) Has a new colleague at Globex named Ana. (2026-10-26) Planning a family dinner with mother-in-law on 5 November (2026-10-30).",
+    "day": "2026-10-30",
+    "facts": [
+     3,
+     6,
+     7,
+     9,
+     10,
+     12,
+     14,
+     17,
+     20,
+     21,
+     28,
+     32,
+     34,
+     39
+    ]
+   }
+  ],
+  "known_as": [],
+  "parts": {
+   "spouse": {
+    "size": "one",
+    "now": [
+     {
+      "value": "the user's wife",
+      "fact": 3,
+      "day": "2026-09-16",
+      "quote": "my wife"
+     }
+    ],
+    "was": []
+   },
+   "partner": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "child": {
+    "size": "few",
+    "now": [
+     {
+      "value": "Lev",
+      "fact": 9,
+      "day": "2026-09-23",
+      "quote": "Our son Lev"
+     }
+    ],
+    "was": []
+   },
+   "parent": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "sibling": {
+    "size": "few",
+    "now": [
+     {
+      "value": "Ana",
+      "fact": 7,
+      "day": "2026-09-20",
+      "quote": "My sister Ana"
+     }
+    ],
+    "was": []
+   },
+   "relative": {
+    "size": "many",
+    "now": [
+     {
+      "value": "Vesna",
+      "fact": 39,
+      "day": "2026-10-30",
+      "quote": "my mother-in-law"
+     }
+    ],
+    "was": []
+   },
+   "pet": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "friend": {
+    "size": "many",
+    "now": [
+     {
+      "value": "Tom",
+      "fact": 12,
+      "day": "2026-09-26",
+      "quote": "My friend Tom"
+     }
+    ],
+    "was": []
+   },
+   "colleague": {
+    "size": "many",
+    "now": [
+     {
+      "value": "Funny",
+      "fact": 34,
+      "day": "2026-10-26",
+      "quote": "Funny, my new colleague"
+     },
+     {
+      "value": "Ana (colleague)",
+      "fact": 34,
+      "day": "2026-10-26",
+      "quote": "my new colleague at Globex is also called Ana."
+     }
+    ],
+    "was": []
+   },
+   "manager": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "born_on": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "age": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "lives_in": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "works_at": {
+    "size": "one",
+    "now": [
+     {
+      "value": "Globex",
+      "kind": "place",
+      "fact": 32,
+      "day": "2026-10-24",
+      "quote": "I started at Globex as a product designer on Monday."
+     }
+    ],
+    "was": [
+     {
+      "value": "Initech",
+      "kind": "place",
+      "fact": 14,
+      "day": "2026-09-30",
+      "quote": "they offered me a senior role"
+     },
+     {
+      "value": "Acme",
+      "kind": "place",
+      "fact": 32,
+      "day": "2026-10-24",
+      "quote": "I left Acme after five years.",
+      "ended": true
+     }
+    ]
+   },
+   "job": {
+    "size": "one",
+    "now": [
+     {
+      "value": "product designer",
+      "fact": 32,
+      "day": "2026-10-24",
+      "quote": "I started at Globex as a product designer on Monday."
+     }
+    ],
+    "was": [
+     {
+      "value": "senior role",
+      "fact": 14,
+      "day": "2026-09-30",
+      "quote": "they offered me a senior role"
+     }
+    ]
+   },
+   "studies_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "owns": {
+    "size": "many",
+    "now": [
+     {
+      "value": "headphones",
+      "kind": "device",
+      "fact": 6,
+      "day": "2026-09-19",
+      "quote": "Ordered new headphones"
+     }
+    ],
+    "was": []
+   },
+   "skill": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "speaks": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "hobby": {
+    "size": "many",
+    "now": [
+     {
+      "value": "podcast",
+      "kind": "music",
+      "fact": 10,
+      "day": "2026-09-24",
+      "quote": "Listened to a podcast about sleep"
+     }
+    ],
+    "was": []
+   },
+   "health": {
+    "size": "many",
+    "now": [
+     {
+      "value": "sleep",
+      "fact": 10,
+      "day": "2026-09-24",
+      "quote": "apparently I need more of it"
+     }
+    ],
+    "was": []
+   },
+   "likes": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "dislikes": {
+    "size": "many",
+    "now": [],
+    "was": []
+   }
+  }
+ },
+ "Ana": {
+  "named": true,
+  "kind": "person",
+  "portrait": [
+   {
+    "text": "Ana moved from Lisbon to Porto for a new job (2026-09-20) Ana moved again; Porto didn't work out, she lives in Belgrade now, ten minutes from us (2026-10-18).",
+    "day": "2026-10-18",
+    "facts": [
+     7,
+     28
+    ]
+   }
+  ],
+  "known_as": [],
+  "parts": {
+   "spouse": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "partner": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "child": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "parent": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "sibling": {
+    "size": "few",
+    "now": [
+     {
+      "value": "the user",
+      "fact": 7,
+      "day": "2026-09-20",
+      "quote": "My sister Ana"
+     }
+    ],
+    "was": []
+   },
+   "relative": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "pet": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "friend": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "colleague": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "manager": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "born_on": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "age": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "lives_in": {
+    "size": "one",
+    "now": [
+     {
+      "value": "Belgrade",
+      "kind": "place",
+      "fact": 28,
+      "day": "2026-10-18",
+      "quote": "she lives in Belgrade now"
+     }
+    ],
+    "was": [
+     {
+      "value": "Porto",
+      "kind": "place",
+      "fact": 28,
+      "day": "2026-10-18",
+      "quote": "Porto didn't work out",
+      "ended": true
+     },
+     {
+      "value": "Lisbon",
+      "kind": "place",
+      "fact": 7,
+      "day": "2026-09-20",
+      "quote": "moved from Lisbon",
+      "ended": true
+     }
+    ]
+   },
+   "works_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "job": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "studies_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "owns": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "skill": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "speaks": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "hobby": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "health": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "likes": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "dislikes": {
+    "size": "many",
+    "now": [],
+    "was": []
+   }
+  }
+ },
+ "Ana (colleague)": {
+  "named": true,
+  "kind": "person",
+  "portrait": [
+   {
+    "text": "Lives in Novi Sad and commutes to work at Globex. (2026-10-26)",
+    "day": "2026-10-26",
+    "facts": [
+     34
+    ]
+   }
+  ],
+  "known_as": [],
+  "parts": {
+   "spouse": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "partner": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "child": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "parent": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "sibling": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "relative": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "pet": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "friend": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "colleague": {
+    "size": "many",
+    "now": [
+     {
+      "value": "the user",
+      "fact": 34,
+      "day": "2026-10-26",
+      "quote": "my new colleague at Globex is also called Ana."
+     }
+    ],
+    "was": []
+   },
+   "manager": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "born_on": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "age": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "lives_in": {
+    "size": "one",
+    "now": [
+     {
+      "value": "Novi Sad",
+      "kind": "place",
+      "fact": 34,
+      "day": "2026-10-26",
+      "quote": "She lives in Novi Sad"
+     }
+    ],
+    "was": []
+   },
+   "works_at": {
+    "size": "one",
+    "now": [
+     {
+      "value": "Globex",
+      "kind": "place",
+      "fact": 34,
+      "day": "2026-10-26",
+      "quote": "my new colleague at Globex"
+     }
+    ],
+    "was": []
+   },
+   "job": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "studies_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "owns": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "skill": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "speaks": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "hobby": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "health": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "likes": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "dislikes": {
+    "size": "many",
+    "now": [],
+    "was": []
+   }
+  }
+ },
+ "Funny": {
+  "named": true,
+  "kind": "person",
+  "portrait": [],
+  "known_as": [],
+  "parts": {
+   "spouse": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "partner": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "child": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "parent": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "sibling": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "relative": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "pet": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "friend": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "colleague": {
+    "size": "many",
+    "now": [
+     {
+      "value": "the user",
+      "fact": 34,
+      "day": "2026-10-26",
+      "quote": "Funny, my new colleague"
+     }
+    ],
+    "was": []
+   },
+   "manager": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "born_on": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "age": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "lives_in": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "works_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "job": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "studies_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "owns": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "skill": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "speaks": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "hobby": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "health": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "likes": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "dislikes": {
+    "size": "many",
+    "now": [],
+    "was": []
+   }
+  }
+ },
+ "Lev": {
+  "named": true,
+  "kind": "person",
+  "portrait": [
+   {
+    "text": "Turned seven last weekend; had a Lego party. (2026-09-23)",
+    "day": "2026-09-23",
+    "facts": [
+     9
+    ]
+   }
+  ],
+  "known_as": [],
+  "parts": {
+   "spouse": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "partner": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "child": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "parent": {
+    "size": "few",
+    "now": [
+     {
+      "value": "the user",
+      "fact": 9,
+      "day": "2026-09-23",
+      "quote": "Our son Lev"
+     }
+    ],
+    "was": []
+   },
+   "sibling": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "relative": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "pet": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "friend": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "colleague": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "manager": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "born_on": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "age": {
+    "size": "one",
+    "now": [
+     {
+      "value": "seven",
+      "fact": 9,
+      "day": "2026-09-23",
+      "quote": "turned seven"
+     }
+    ],
+    "was": []
+   },
+   "lives_in": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "works_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "job": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "studies_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "owns": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "skill": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "speaks": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "hobby": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "health": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "likes": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "dislikes": {
+    "size": "many",
+    "now": [],
+    "was": []
+   }
+  }
+ },
+ "Sara": {
+  "named": true,
+  "kind": "person",
+  "portrait": [
+   {
+    "text": "Sara is married to Tom and allergic to shellfish (2026-09-26)",
+    "day": "2026-09-26",
+    "facts": [
+     12
+    ]
+   }
+  ],
+  "known_as": [],
+  "parts": {
+   "spouse": {
+    "size": "one",
+    "now": [
+     {
+      "value": "Tom",
+      "fact": 12,
+      "day": "2026-09-26",
+      "quote": "Tom's wife Sara"
+     }
+    ],
+    "was": []
+   },
+   "partner": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "child": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "parent": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "sibling": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "relative": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "pet": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "friend": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "colleague": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "manager": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "born_on": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "age": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "lives_in": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "works_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "job": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "studies_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "owns": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "skill": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "speaks": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "hobby": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "health": {
+    "size": "many",
+    "now": [
+     {
+      "value": "shellfish",
+      "kind": "food",
+      "fact": 12,
+      "day": "2026-09-26",
+      "quote": "allergic to shellfish"
+     }
+    ],
+    "was": []
+   },
+   "likes": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "dislikes": {
+    "size": "many",
+    "now": [],
+    "was": []
+   }
+  }
+ },
+ "Tom": {
+  "named": true,
+  "kind": "person",
+  "portrait": [
+   {
+    "text": "Tom is a friend of the user (2026-09-26)",
+    "day": "2026-09-26",
+    "facts": [
+     12
+    ]
+   }
+  ],
+  "known_as": [],
+  "parts": {
+   "spouse": {
+    "size": "one",
+    "now": [
+     {
+      "value": "Sara",
+      "fact": 12,
+      "day": "2026-09-26",
+      "quote": "Tom's wife Sara"
+     }
+    ],
+    "was": []
+   },
+   "partner": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "child": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "parent": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "sibling": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "relative": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "pet": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "friend": {
+    "size": "many",
+    "now": [
+     {
+      "value": "the user",
+      "fact": 12,
+      "day": "2026-09-26",
+      "quote": "My friend Tom"
+     }
+    ],
+    "was": []
+   },
+   "colleague": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "manager": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "born_on": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "age": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "lives_in": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "works_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "job": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "studies_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "owns": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "skill": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "speaks": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "hobby": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "health": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "likes": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "dislikes": {
+    "size": "many",
+    "now": [],
+    "was": []
+   }
+  }
+ },
+ "Vesna": {
+  "named": true,
+  "kind": "person",
+  "portrait": [
+   {
+    "text": "Vesna is staying with the user for two weeks from 2 November (2026-10-10). Being planned for a family dinner on 5 November (2026-10-30).",
+    "day": "2026-10-30",
+    "facts": [
+     21,
+     39
+    ]
+   }
+  ],
+  "known_as": [],
+  "parts": {
+   "spouse": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "partner": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "child": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "parent": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "sibling": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "relative": {
+    "size": "many",
+    "now": [
+     {
+      "value": "the user",
+      "fact": 39,
+      "day": "2026-10-30",
+      "quote": "my mother-in-law"
+     }
+    ],
+    "was": []
+   },
+   "pet": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "friend": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "colleague": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "manager": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "born_on": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "age": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "lives_in": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "works_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "job": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "studies_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "owns": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "skill": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "speaks": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "hobby": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "health": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "likes": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "dislikes": {
+    "size": "many",
+    "now": [],
+    "was": []
+   }
+  }
+ },
+ "the user's wife": {
+  "named": false,
+  "kind": "person",
+  "portrait": [
+   {
+    "text": "Wife's birthday is on 11 November (2026-09-16). Loves jazz and small venues; allergic to nuts, avoids chocolates. (2026-09-16)",
+    "day": "2026-09-16",
+    "facts": [
+     3,
+     4
+    ]
+   }
+  ],
+  "known_as": [],
+  "parts": {
+   "spouse": {
+    "size": "one",
+    "now": [
+     {
+      "value": "the user",
+      "fact": 3,
+      "day": "2026-09-16",
+      "quote": "my wife"
+     }
+    ],
+    "was": []
+   },
+   "partner": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "child": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "parent": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "sibling": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "relative": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "pet": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "friend": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "colleague": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "manager": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "born_on": {
+    "size": "one",
+    "now": [
+     {
+      "value": "11 November",
+      "fact": 3,
+      "day": "2026-09-16",
+      "quote": "\"my wife's birthday is on 11 November\""
+     }
+    ],
+    "was": []
+   },
+   "age": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "lives_in": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "works_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "job": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "studies_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "owns": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "skill": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "speaks": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "hobby": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "health": {
+    "size": "many",
+    "now": [
+     {
+      "value": "nuts",
+      "kind": "food",
+      "fact": 4,
+      "day": "2026-09-16",
+      "quote": "She's allergic to nuts"
+     }
+    ],
+    "was": []
+   },
+   "likes": {
+    "size": "many",
+    "now": [
+     {
+      "value": "small venues",
+      "kind": "place",
+      "fact": 4,
+      "day": "2026-09-16",
+      "quote": "She loves jazz and small venues"
+     },
+     {
+      "value": "jazz",
+      "kind": "music",
+      "fact": 4,
+      "day": "2026-09-16",
+      "quote": "She loves jazz"
+     }
+    ],
+    "was": []
+   },
+   "dislikes": {
+    "size": "many",
+    "now": [
+     {
+      "value": "chocolates",
+      "kind": "food",
+      "fact": 4,
+      "day": "2026-09-16",
+      "quote": "so no chocolates"
+     }
+    ],
+    "was": []
+   }
+  }
+ }
+}

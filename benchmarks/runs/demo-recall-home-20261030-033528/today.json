@@ -1,0 +1,5 @@
+{
+ "model": "sonnet",
+ "message": "How much have we spent on the home since the start of October?",
+ "reply": "**2,015 \u20ac since 1 October**, according to your memory:\n\n| Date | Item | Cost |\n|---|---|---|\n| Oct 2 | LG TV | 1,290 \u20ac |\n| Oct 15 | Sonos Beam | 450 \u20ac |\n| Oct 22 | Repairman (after the filter cleaning didn't help) | 180 \u20ac |\n| Oct 26 | Plumber fixed the tap | 95 \u20ac |\n\n- **Blinds:** you put them up on Oct 2, but no price is recorded, so the real total may be higher.\n- **What counts as home:** I included the TV and the Sonos as home purchases. Without them, the repair and plumbing come to 275 \u20ac.\n\nIf you remember what the blinds cost, tell me and I'll add it."
+}

@@ -1,0 +1,32 @@
+{"from": "the user", "relation": "spouse", "common": true, "to": "the user's wife", "text": 3, "day": "2026-09-16 20:00:00", "quote": "\"my wife\"", "when": "2026-09-16"}
+{"from": "the user's wife", "relation": "born_on", "common": true, "to": "11 November", "text": 3, "day": "2026-09-16 20:00:00", "quote": "\"my wife's birthday is on 11 November\"", "when": "2026-09-16"}
+{"from": "the user's wife", "relation": "spouse", "common": true, "to": "the user", "text": 3, "day": "2026-09-16 20:00:00", "quote": "my wife"}
+{"from": "the user's wife", "relation": "likes", "common": true, "to": "jazz", "text": 4, "day": "2026-09-16 20:04:00", "quote": "She loves jazz", "when": "2026-09-16"}
+{"from": "the user's wife", "relation": "likes", "common": true, "to": "small venues", "text": 4, "day": "2026-09-16 20:04:00", "quote": "She loves jazz and small venues", "when": "2026-09-16"}
+{"from": "the user's wife", "relation": "health", "common": true, "to": "nuts", "text": 4, "day": "2026-09-16 20:04:00", "quote": "She's allergic to nuts", "when": "2026-09-16"}
+{"from": "the user's wife", "relation": "dislikes", "common": true, "to": "chocolates", "text": 4, "day": "2026-09-16 20:04:00", "quote": "so no chocolates", "when": "2026-09-16"}
+{"from": "the user", "relation": "owns", "common": true, "to": "headphones", "text": 6, "day": "2026-09-19 20:00:00", "quote": "Ordered new headphones", "when": "2026-09-19"}
+{"from": "Ana", "relation": "sibling", "common": true, "to": "the user", "text": 7, "day": "2026-09-20 20:00:00", "quote": "My sister Ana", "when": "2026-09-20"}
+{"from": "Ana", "relation": "lives_in", "common": true, "to": "Porto", "text": 7, "day": "2026-09-20 20:00:00", "quote": "moved from Lisbon to Porto", "when": "2026-09-20"}
+{"from": "Ana", "relation": "lives_in", "common": true, "to": "Lisbon", "text": 7, "day": "2026-09-20 20:00:00", "quote": "moved from Lisbon", "when": "2026-09-20", "ended": true}
+{"from": "Lev", "relation": "child", "common": true, "to": "the user", "text": 9, "day": "2026-09-23 20:00:00", "quote": "Our son Lev", "when": "2026-09-23"}
+{"from": "Lev", "relation": "age", "common": true, "to": "seven", "text": 9, "day": "2026-09-23 20:00:00", "quote": "turned seven", "when": "2026-09-23"}
+{"from": "the user", "relation": "hobby", "common": true, "to": "podcast", "text": 10, "day": "2026-09-24 20:00:00", "quote": "Listened to a podcast about sleep", "when": "2026-09-24"}
+{"from": "the user", "relation": "health", "common": true, "to": "sleep", "text": 10, "day": "2026-09-24 20:00:00", "quote": "apparently I need more of it", "when": "2026-09-24"}
+{"from": "Tom", "relation": "friend", "common": true, "to": "the user", "text": 12, "day": "2026-09-26 20:00:00", "quote": "My friend Tom", "when": "2026-09-26"}
+{"from": "Sara", "relation": "spouse", "common": true, "to": "Tom", "text": 12, "day": "2026-09-26 20:00:00", "quote": "Tom's wife Sara", "when": "2026-09-26"}
+{"from": "Sara", "relation": "health", "common": true, "to": "shellfish", "text": 12, "day": "2026-09-26 20:00:00", "quote": "allergic to shellfish", "when": "2026-09-26"}
+{"from": "the user", "relation": "works_at", "common": true, "to": "Initech", "text": 14, "day": "2026-09-30 20:00:00", "quote": "they offered me a senior role", "when": "2026-09-30"}
+{"from": "the user", "relation": "job", "common": true, "to": "senior role", "text": 14, "day": "2026-09-30 20:00:00", "quote": "they offered me a senior role", "when": "2026-09-30"}
+{"from": "the user", "relation": "turned_down", "common": false, "to": "Initech", "text": 17, "day": "2026-10-04 20:00:00", "quote": "I turned down Initech", "when": "2026-10-04", "class": "did"}
+{"from": "Vesna", "relation": "mother_in_law", "common": false, "to": "the user", "text": 21, "day": "2026-10-10 20:00:00", "quote": "My mother-in-law Vesna", "when": "2026-10-10"}
+{"from": "Ana", "relation": "lives_in", "common": true, "to": "Belgrade", "text": 28, "day": "2026-10-18 20:00:00", "quote": "she lives in Belgrade now", "when": "2026-10-18"}
+{"from": "Ana", "relation": "lives_in", "common": true, "to": "Porto", "text": 28, "day": "2026-10-18 20:00:00", "quote": "Porto didn't work out", "when": "2026-10-18", "ended": true}
+{"from": "the user", "relation": "works_at", "common": true, "to": "Globex", "text": 32, "day": "2026-10-24 20:00:00", "quote": "I started at Globex as a product designer on Monday.", "when": "2026-10-24"}
+{"from": "the user", "relation": "job", "common": true, "to": "product designer", "text": 32, "day": "2026-10-24 20:00:00", "quote": "I started at Globex as a product designer on Monday.", "when": "2026-10-24"}
+{"from": "the user", "relation": "works_at", "common": true, "to": "Acme", "text": 32, "day": "2026-10-24 20:00:00", "quote": "I left Acme after five years.", "when": "2026-10-24", "ended": true}
+{"from": "the user", "relation": "colleague", "common": true, "to": "Ana (colleague)", "text": 34, "day": "2026-10-26 20:00:00", "quote": "my new colleague at Globex is also called Ana.", "when": "2026-10-26"}
+{"from": "Ana (colleague)", "relation": "works_at", "common": true, "to": "Globex", "text": 34, "day": "2026-10-26 20:00:00", "quote": "my new colleague at Globex", "when": "2026-10-26"}
+{"from": "Ana (colleague)", "relation": "lives_in", "common": true, "to": "Novi Sad", "text": 34, "day": "2026-10-26 20:00:00", "quote": "She lives in Novi Sad", "when": "2026-10-26"}
+{"from": "Funny", "relation": "colleague", "common": true, "to": "the user", "text": 34, "day": "2026-10-26 20:00:00", "quote": "Funny, my new colleague"}
+{"from": "the user", "relation": "relative", "common": true, "to": "Vesna", "text": 39, "day": "2026-10-30 19:00:00", "quote": "my mother-in-law", "when": "2026-10-30"}

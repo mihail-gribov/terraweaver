@@ -1,0 +1,173 @@
+[
+ {
+  "scenario": "family",
+  "class": "world",
+  "text": "Who is Vesna?",
+  "words": [
+   [
+    "mother-in-law",
+    "mother in law",
+    "wife's mother",
+    "Mila's mother"
+   ]
+  ],
+  "said": "Vesna is the user’s mother‑in‑law.  \n\n- Fact 21 (2026‑10‑10): “My mother‑in‑law Vesna is staying with us for two weeks from 2 November.”  \n- Fact 36 (2026‑10‑28): “Vesna’s visit is postponed to December, her flight got cancelled.”  \n\nSo Vesna is the user’s mother‑in‑law whose planned stay beginning 2 November was later postponed to December due to a cancelled flight.",
+  "passed": true
+ },
+ {
+  "scenario": "family",
+  "class": "world",
+  "text": "What is my wife allergic to?",
+  "words": [
+   [
+    "nut"
+   ]
+  ],
+  "said": "The memory states that the user’s wife is allergic to nuts.  \n- Fact 4 (said on 2026‑09‑16): “She loves jazz and small venues. **She's allergic to nuts**, so no chocolates.”  \n\nNo later fact contradicts this, so the current information is that the wife’s allergy is to nuts.  \n\n**Used fact:** 4 (2026‑09‑16).",
+  "passed": true
+ },
+ {
+  "scenario": "family",
+  "class": "latest",
+  "text": "Where does my sister live?",
+  "words": [
+   [
+    "Belgrade"
+   ]
+  ],
+  "said": "The memory says your sister Ana currently lives in **Belgrade**, which is **ten minutes away** from you.\n\n- Fact 7 (2026‑09‑20): “My sister Ana moved from Lisbon to Porto for a new job.”  \n- Fact 28 (2026‑10‑18): “Ana moved again! Porto didn’t work out, she lives in Belgrade now, ten minutes from us.”\n\nSince fact 28 has the later date (and higher number), it supersedes the earlier information, giving the present location.",
+  "passed": true
+ },
+ {
+  "scenario": "family",
+  "class": "world",
+  "text": "Who is Ana?",
+  "words": [
+   [
+    "sister"
+   ],
+   [
+    "colleague"
+   ]
+  ],
+  "said": "**Sister Ana**  \n- Fact 7 [2026‑09‑20]: “My sister Ana moved from Lisbon to Porto for a new job.”  \n- Fact 28 [2026‑10‑18]: “Ana moved again! Porto didn’t work out, she lives in Belgrade now, ten minutes from us.”  \n\n**Colleague Ana**  \n- Fact 34 [2026‑10‑26]: “Funny, my new colleague at Globex is also called Ana. She lives in Novi Sad and commutes.”  \n\nThese facts show that there are two distinct people named Ana known to the user: the user’s sister (now living in Belgrade) and a colleague at Globex (living in Novi Sad). No other facts mention Ana.",
+  "passed": true
+ },
+ {
+  "scenario": "family",
+  "class": "recall",
+  "text": "What should I get my wife for her birthday?",
+  "words": [
+   [
+    "jazz"
+   ]
+  ],
+  "said": "Kept as entry #37.\n\nFrom before, for this message (fact numbers and days; the user's latest word wins):\nHere are the relevant facts from your memory:\n\n- Fact 3 [2026‑09‑16]: “I need gift ideas, my wife's birthday is on 11 November.”\n- Fact 4 [2026‑09‑16]: “She loves jazz and small venues. She's allergic to nuts, so no chocolates.”\n\nThese indicate her birthday is 11 November, she enjoys jazz and small‑venue experiences, and must avoid nuts and chocolate-based gifts. No later facts change this information.",
+  "passed": true
+ },
+ {
+  "scenario": "family",
+  "class": "latest",
+  "text": "Where do I work now?",
+  "words": [
+   [
+    "Globex"
+   ]
+  ],
+  "said": "The memory says you now work at **Globex** as a **product designer**.\n\n- Fact 32 [2026‑10‑24]: “I started at Globex as a product designer on Monday. I left Acme after five years.”  \n\nNo later fact changes your employer, so this is the current situation. As of today (2026‑10‑30) you have been at Globex for a few days (since the Monday mentioned in fact 32).",
+  "passed": true
+ },
+ {
+  "scenario": "family",
+  "class": "latest",
+  "text": "When is Vesna coming to stay with us?",
+  "words": [
+   [
+    "December"
+   ]
+  ],
+  "said": "**Relevant facts**\n\n- **Fact 21** [2026‑10‑10]: “My mother‑in‑law Vesna is staying with us for two weeks from 2 November.”  \n  → Original plan: arrival 2 Nov 2026, stay ≈ 2 weeks (until around 16 Nov).\n\n- **Fact 36** [2026‑10‑28]: “Vesna’s visit is postponed to December, her flight got cancelled.”  \n  → Updated plan: the visit has been moved to some time in December 2026; the exact day is not specified in the memory.\n\n**Conclusion**\n\nAccording to the most recent information (Fact 36), Vesna’s stay is now postponed to December (no exact date given). The earlier plan (Fact 21) had her arriving on 2 November 2026 for a two‑week visit, but that has been superseded by the postponement. Thus, Vesna is expected to come sometime in December 2026. (Facts used: 21, 36.)",
+  "passed": true
+ },
+ {
+  "scenario": "family",
+  "class": "count",
+  "text": "How many times has my sister moved since September?",
+  "words": [
+   [
+    "two",
+    "2",
+    "twice"
+   ]
+  ],
+  "said": "The memory records two moves by your sister Ana:\n\n- **Fact 7** – [2026‑09‑20] “My sister Ana moved from Lisbon to Porto for a new job.”  \n- **Fact 28** – [2026‑10‑18] “Ana moved again! Porto didn’t work out, she lives in Belgrade now, ten minutes from us.”\n\nThese show a move from Lisbon → Porto (September 20) and a subsequent move from Porto → Belgrade (October 18). No later moves are mentioned.\n\n**Number of moves since September:** **2**.  \n\nFacts used: **7**, **28**.",
+  "passed": true
+ },
+ {
+  "scenario": "family",
+  "class": "time",
+  "text": "How many days are left until my wife's birthday?",
+  "words": [
+   [
+    "12",
+    "twelve"
+   ]
+  ],
+  "said": "The memory states in **fact 3** (said on 2026‑09‑16) that “my wife's birthday is on 11 November.”  \nToday’s date is 2026‑10‑30.  \n\n- Days remaining in October after the 30th: 1 day (Oct 31).  \n- Days in November up to and including the 11th: 11 days.  \n\nTotal days left until the birthday = 1 + 11 = **12 days**.  \n\n**Used fact:** 3.",
+  "passed": true
+ },
+ {
+  "scenario": "family",
+  "class": "time",
+  "text": "How old will Lev turn on his next birthday?",
+  "words": [
+   [
+    "eight",
+    "8"
+   ]
+  ],
+  "said": "The memory tells us that Lev **“turned seven last weekend”** (Fact 9, said on 2026‑09‑23).  \nSince that birthday has already occurred this year, his next birthday will make him one year older: **he will turn eight**.\n\n**Used fact:** 9 (2026‑09‑23). No other facts give Lev’s birth date, so the calculation relies on the age stated in Fact 9 and the fact that today’s date (2026‑10‑30) is after his most recent birthday.",
+  "passed": true
+ },
+ {
+  "scenario": "family",
+  "class": "recall",
+  "text": "Can you book a table for my wife's birthday dinner? Somewhere with great desserts.",
+  "words": [
+   [
+    "nut"
+   ]
+  ],
+  "said": "Kept as entry #38.\n\nFrom before, for this message (fact numbers and days; the user's latest word wins):\n[2026-10-30] Can you book a table for my wife's birthday dinner? Somewhere with great desserts.  \n[2026-09-16] I need gift ideas, my wife's birthday is on 11 November.  \n[2026-09-16] She loves jazz and small venues. She's allergic to nuts, so no chocolates.  \n[2026-10-10] My mother-in-law Vesna is staying with us for two weeks from 2 November.",
+  "passed": true
+ },
+ {
+  "scenario": "family",
+  "class": "recall",
+  "text": "Let's plan a family dinner with my mother-in-law on 5 November.",
+  "words": [
+   [
+    "December",
+    "postpone"
+   ]
+  ],
+  "said": "Kept as entry #39.\n\nFrom before, for this message (fact numbers and days; the user's latest word wins):\n[2026-10-30] Let's plan a family dinner with my mother-in-law on 5 November.  \n[2026-10-10] My mother-in-law Vesna is staying with us for two weeks from 2 November.",
+  "passed": false
+ },
+ {
+  "scenario": "family",
+  "class": "unknown",
+  "text": "Which company did Ana move to Porto for?",
+  "words": [],
+  "said": "The memory records that Ana’s move to Porto was “for a new job,” but it never names the company she joined there.\n\n**Fact used:**  \n- **Fact 7** – *[2026‑09‑20]* “My sister Ana moved from Lisbon to Porto for a new job.”  \n\nNo other fact specifies the employer associated with this move, so the memory does not state which company Ana moved to Porto for.",
+  "passed": false
+ },
+ {
+  "scenario": "family",
+  "class": "unknown",
+  "text": "Who is my wife's favourite jazz musician?",
+  "words": [],
+  "said": "The memory does not contain any information about your wife’s favourite jazz musician. No fact among those provided mentions a specific jazz musician she likes.",
+  "passed": true
+ }
+]

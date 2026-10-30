@@ -1,0 +1,10 @@
+{"from": "the user", "relation": "owns", "common": true, "to": "LG C4", "text": 2, "day": "2026-10-02 20:00:00", "quote": "went with the LG in the end, 1,290 euros", "when": "2026-10-02"}
+{"from": "the user", "relation": "owns", "common": true, "to": "blinds", "text": 2, "day": "2026-10-02 20:00:00", "quote": "we put up blinds", "when": "2026-10-02"}
+{"from": "the user", "relation": "dislikes", "common": true, "to": "the user's standup", "text": 5, "day": "2026-10-05 20:00:00", "quote": "why does that annoy me so much", "when": "2026-10-05"}
+{"from": "the user", "relation": "ordered", "common": false, "to": "Sonos Beam", "text": 11, "day": "2026-10-15 20:00:00", "quote": "ordered the Sonos Beam", "when": "2026-10-15", "class": "did"}
+{"from": "the user", "relation": "owns", "common": true, "to": "car service", "text": 14, "day": "2026-10-19 20:00:00", "quote": "car service done.", "when": "2026-10-19"}
+{"from": "the user", "relation": "called", "common": false, "to": "repairman", "text": 17, "day": "2026-10-22 20:00:00", "quote": "had to call a repairman", "when": "2026-10-22", "class": "did"}
+{"from": "the user", "relation": "manager", "common": true, "to": "the user's manager", "text": 18, "day": "2026-10-25 20:00:00", "quote": "my manager", "when": "2026-10-25"}
+{"from": "the user's manager", "relation": "manager", "common": true, "to": "the user", "text": 18, "day": "2026-10-25 20:00:00", "quote": "my manager"}
+{"from": "plumber", "relation": "fixed", "common": false, "to": "tap", "text": 20, "day": "2026-10-26 20:00:00", "quote": "fixed the tap", "when": "2026-10-26"}
+{"from": "the user", "relation": "spent_on", "common": false, "to": "home", "text": 22, "day": "2026-10-30 03:40:03", "quote": "How much have we spent on the home", "when": "2026-10-30", "class": "now"}

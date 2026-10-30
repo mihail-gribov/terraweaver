@@ -1,0 +1,11 @@
+{"from": "the user's landlord", "relation": "landlord", "common": false, "to": "the user", "text": 15, "day": "2026-10-05 20:00:00", "quote": "The landlord", "when": "2026-10-05"}
+{"from": "the user", "relation": "fixed", "common": false, "to": "CI pipeline", "text": 20, "day": "2026-10-11 20:00:00", "quote": "fixing a bug in our CI pipeline", "when": "2026-10-11", "class": "did"}
+{"from": "the user", "relation": "talked_to", "common": false, "to": "the landlord", "text": 21, "day": "2026-10-12 20:00:00", "quote": "Talked to the landlord", "when": "2026-10-12", "class": "did"}
+{"from": "the user", "relation": "signed_with", "common": false, "to": "the landlord", "text": 21, "day": "2026-10-12 20:00:00", "quote": "We signed", "when": "2026-10-12", "class": "did"}
+{"from": "the user", "relation": "owns", "common": true, "to": "Sonos Beam soundbar", "text": 23, "day": "2026-10-15 20:00:00", "quote": "Bought a Sonos Beam soundbar for 450 euros.", "when": "2026-10-15"}
+{"from": "the user's neighbour", "relation": "owns", "common": true, "to": "Golf", "text": 27, "day": "2026-10-19 20:00:00", "quote": "our neighbour's Golf", "when": "2026-10-19", "ended": true}
+{"from": "the user", "relation": "neighbour", "common": false, "to": "the user's neighbour", "text": 27, "day": "2026-10-19 20:00:00", "quote": "our neighbour", "when": "2026-10-19", "class": "did"}
+{"from": "the user", "relation": "owns", "common": true, "to": "headphones", "text": 30, "day": "2026-10-24 20:00:00", "quote": "Ordered new headphones", "when": "2026-10-24"}
+{"from": "plumber", "relation": "fixed", "common": false, "to": "tap", "text": 32, "day": "2026-10-26 20:00:00", "quote": "The plumber finally fixed the leaking tap", "when": "2026-10-26"}
+{"from": "the user", "relation": "owns", "common": true, "to": "VW Golf", "text": 34, "day": "2026-10-28 20:00:00", "quote": "We sold our old VW Golf", "when": "2026-10-28", "ended": true}
+{"from": "the user", "relation": "owns", "common": true, "to": "Skoda Octavia", "text": 34, "day": "2026-10-28 20:00:00", "quote": "bought a Skoda Octavia", "when": "2026-10-28"}

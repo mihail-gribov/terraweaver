@@ -1,0 +1,28 @@
+{"topic": 1, "name": "reading", "added": "Finished 'The Martian' on holiday, perfect beach read (2026-08-16)", "day": "2026-08-16 20:00:00", "entries": [1], "version": 1, "kind": "interest"}
+{"topic": 2, "name": "headphones purchase", "added": "User ordered new headphones expected to arrive Friday (2026-08-20)", "day": "2026-08-20 20:00:00", "entries": [2], "version": 1, "kind": "choice"}
+{"topic": 1, "name": "reading", "kind": "interest", "added": "Finished 'Piranesi' by Susanna Clarke, found it strange and beautiful.", "day": "2026-09-10 20:00:00", "entries": [1, 4], "version": 2}
+{"topic": 3, "name": "detective show", "added": "Watched the new season of that detective show, the ending was silly. (2026-09-13)", "day": "2026-09-13 20:00:00", "entries": [5], "version": 1, "kind": "interest"}
+{"topic": 1, "name": "reading", "kind": "interest", "added": "Started 'The Overstory' today, it's huge (2026-09-15)", "day": "2026-09-15 20:00:00", "entries": [1, 4, 6], "version": 3}
+{"topic": 4, "name": "bank issue", "added": "Spent an hour on the phone with the bank, finally sorted. (2026-09-20)", "day": "2026-09-20 20:00:00", "entries": [7], "version": 1, "kind": "problem"}
+{"topic": 1, "name": "reading", "kind": "interest", "added": "Gave up on 'The Overstory', found it too slow (2026-09-22)", "day": "2026-09-22 20:00:00", "entries": [1, 4, 6, 8], "version": 4}
+{"topic": 5, "name": "work", "added": "Spent the whole evening fixing a bug in our CI pipeline (2026-09-23)", "day": "2026-09-23 20:00:00", "entries": [9], "version": 1, "kind": "interest"}
+{"topic": 6, "name": "sleep", "added": "Listened to a podcast about sleep, apparently I need more of it. (2026-09-25)", "day": "2026-09-25 20:00:00", "entries": [10], "version": 1, "kind": "habit"}
+{"topic": 1, "name": "reading", "kind": "interest", "added": "Started the audiobook of 'Project Hail Mary' for my commute.", "day": "2026-09-29 20:00:00", "entries": [1, 4, 6, 8, 11], "version": 5}
+{"topic": 6, "name": "sleep", "kind": "habit", "added": "Ate pizza and went to bed early after a long day (2026-09-30).", "day": "2026-09-30 20:00:00", "entries": [10, 12], "version": 2}
+{"topic": 6, "name": "sleep", "kind": "habit", "added": "Tired today, slept badly. (2026-10-01)", "day": "2026-10-01 20:00:00", "entries": [10, 12, 13], "version": 3}
+{"topic": 7, "name": "grocery shopping", "added": "The supermarket was out of oat milk again (2026-10-02)", "day": "2026-10-02 20:00:00", "entries": [14], "version": 1, "kind": "habit"}
+{"topic": 8, "name": "cooking", "added": "Made a big pot of lentil soup, good for three days. (2026-10-03)", "day": "2026-10-03 20:00:00", "entries": [15], "version": 1, "kind": "interest"}
+{"topic": 1, "name": "reading", "kind": "interest", "added": "Finished 'Project Hail Mary', loved the ending. (2026-10-06)", "day": "2026-10-06 20:00:00", "entries": [1, 4, 6, 8, 11, 16], "version": 6}
+{"topic": 9, "name": "office equipment", "added": "The coffee machine at the office is broken again. (2026-10-10)", "day": "2026-10-10 20:00:00", "entries": [17], "version": 1, "kind": "problem"}
+{"topic": 1, "name": "reading", "kind": "interest", "added": "Finished 'Klara and the Sun' on the train home. (2026-10-11)", "day": "2026-10-11 20:00:00", "entries": [1, 4, 6, 8, 11, 16, 18], "version": 7}
+{"topic": 1, "name": "reading", "kind": "interest", "added": "'Klara and the Sun' stayed with me all day, what a quiet ending.", "day": "2026-10-12 20:00:00", "entries": [1, 4, 6, 8, 11, 16, 18, 19], "version": 8}
+{"topic": 10, "name": "laptop battery issue", "added": "My laptop battery is dying fast, any tips?", "day": "2026-10-13 20:00:00", "entries": [20], "version": 1, "kind": "problem"}
+{"topic": 1, "name": "reading", "kind": "interest", "added": "Finished 'Station Eleven' over the weekend, couldn't put it down. (2026-10-15)", "day": "2026-10-15 20:00:00", "entries": [1, 4, 6, 8, 11, 16, 18, 19, 21], "version": 9}
+{"topic": 11, "name": "neighbour noise", "added": "The neighbours are drilling again on a Sunday. (2026-10-16)", "day": "2026-10-16 20:00:00", "entries": [22], "version": 1, "kind": "problem"}
+{"topic": 1, "name": "reading", "kind": "interest", "added": "Almost done with 'The Remains of the Day', twenty pages left. (2026-10-18)", "day": "2026-10-18 20:00:00", "entries": [1, 4, 6, 8, 11, 16, 18, 19, 21, 23], "version": 10}
+{"topic": 1, "name": "reading", "kind": "interest", "added": "Book club picked 'Normal People' for next month (2026-10-21).", "day": "2026-10-21 20:00:00", "entries": [1, 4, 6, 8, 11, 16, 18, 19, 21, 23, 25], "version": 11}
+{"topic": 5, "name": "work", "kind": "interest", "added": "Had many meetings on Monday (2026-10-23)", "day": "2026-10-23 20:00:00", "entries": [9, 26], "version": 2}
+{"topic": 1, "name": "reading", "kind": "interest", "added": "Finished 'The Remains of the Day' (2026-10-25).", "day": "2026-10-25 20:00:00", "entries": [1, 4, 6, 8, 11, 16, 18, 19, 21, 23, 25, 27], "version": 12}
+{"topic": 1, "name": "reading", "kind": "interest", "added": "Started 'Tomorrow, and Tomorrow, and Tomorrow' tonight. (2026-10-27)", "day": "2026-10-27 20:00:00", "entries": [1, 4, 6, 8, 11, 16, 18, 19, 21, 23, 25, 27, 28], "version": 13}
+{"topic": 1, "name": "reading", "kind": "interest", "added": "Tried 'Normal People' but stopped at chapter three, not for me (2026-10-29)", "day": "2026-10-29 20:00:00", "entries": [1, 4, 6, 8, 11, 16, 18, 19, 21, 23, 25, 27, 28, 29], "version": 14}
+{"topic": 1, "name": "reading", "kind": "interest", "added": "Asks for suggestions on what to read next (2026-10-30)", "day": "2026-10-30 19:00:00", "entries": [1, 4, 6, 8, 11, 16, 18, 19, 21, 23, 25, 27, 28, 29, 30], "version": 15}

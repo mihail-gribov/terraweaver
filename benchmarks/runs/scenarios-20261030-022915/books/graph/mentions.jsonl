@@ -1,0 +1,12 @@
+{"text": 4, "dialogue": 0, "day": "2026-08-20 20:00:00", "entity": "the user", "kind": "person", "as": "I"}
+{"text": 4, "dialogue": 4, "day": "2026-08-20 20:00:00", "entity": "headphones", "kind": "device", "as": "new headphones"}
+{"text": 15, "dialogue": 15, "day": "2026-09-20 20:00:00", "entity": "the bank", "kind": "organisation", "as": "the bank"}
+{"text": 18, "dialogue": 0, "day": "2026-09-25 20:00:00", "entity": "the user", "kind": "person", "as": "I"}
+{"text": 19, "dialogue": 0, "day": "2026-09-29 20:00:00", "entity": "the user", "kind": "person", "as": "my"}
+{"text": 19, "dialogue": 19, "day": "2026-09-29 20:00:00", "entity": "Project Hail Mary", "kind": "work", "as": "'Project Hail Mary'"}
+{"text": 31, "dialogue": 0, "day": "2026-10-15 20:00:00", "entity": "the user", "kind": "person", "as": "I"}
+{"text": 31, "dialogue": 31, "day": "2026-10-15 20:00:00", "entity": "Station Eleven", "kind": "work", "as": "'Station Eleven'"}
+{"text": 36, "dialogue": 36, "day": "2026-10-21 20:00:00", "entity": "book club", "kind": "organisation", "as": "The book club"}
+{"text": 36, "dialogue": 36, "day": "2026-10-21 20:00:00", "entity": "Normal People", "kind": "work", "as": "'Normal People'"}
+{"text": 39, "dialogue": 0, "day": "2026-10-27 20:00:00", "entity": "the user", "kind": "person", "as": "the user"}
+{"text": 39, "dialogue": 39, "day": "2026-10-27 20:00:00", "entity": "Tomorrow, and Tomorrow, and Tomorrow", "kind": "work", "as": "'Tomorrow, and Tomorrow, and Tomorrow'"}

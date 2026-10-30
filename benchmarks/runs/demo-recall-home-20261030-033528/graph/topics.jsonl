@@ -1,0 +1,12 @@
+{"topic": 1, "name": "choosing a TV", "added": "Considering LG C4 or Samsung S90D for a really bright living room (2026-10-02)", "day": "2026-10-02 20:00:00", "entries": [1], "version": 1, "kind": "choice"}
+{"topic": 1, "name": "choosing a TV", "kind": "choice", "added": "Chose LG C4 for 1,290 euros and installed blinds (2026-10-02).", "day": "2026-10-02 20:00:00", "entries": [1, 2], "version": 2}
+{"topic": 2, "name": "standup schedule", "added": "standup moved to 9:15, previously at 9:30; user annoyed (2026-10-05)", "day": "2026-10-05 20:00:00", "entries": [5], "version": 1, "kind": "habit"}
+{"topic": 1, "name": "choosing a TV", "kind": "choice", "added": "Ordered Sonos Beam soundbar for 450 euros, arriving Friday (2026-10-15).", "day": "2026-10-15 20:00:00", "entries": [1, 2, 11], "version": 3}
+{"topic": 3, "name": "work scope", "added": "Maybe we can cut the scope down tomorrow, because I'm done for today (2026-10-17)", "day": "2026-10-17 20:00:00", "entries": [12], "version": 1, "kind": "project"}
+{"topic": 4, "name": "car service reminder", "added": "remind to take car to service tomorrow (2026-10-18)", "day": "2026-10-18 20:00:00", "entries": [13], "version": 1, "kind": "habit"}
+{"topic": 4, "name": "car service", "kind": "habit", "added": "Car service completed, cost 300 euros, user noted ouch (2026-10-19)", "day": "2026-10-19 20:00:00", "entries": [13, 14], "version": 2}
+{"topic": 5, "name": "washing machine repair", "added": "Cleaning the filter didn't help, so I had to call a repairman. It cost 180 euros, and now it works. (2026-10-22)", "day": "2026-10-22 20:00:00", "entries": [17], "version": 1, "kind": "problem"}
+{"topic": 6, "name": "manager meeting", "added": "1:1 with my manager went fine, nothing dramatic (2026-10-25)", "day": "2026-10-25 20:00:00", "entries": [18], "version": 1, "kind": "interest"}
+{"topic": 7, "name": "kitchen tap repair", "added": "Asks who to call about a dripping kitchen tap (2026-10-26)", "day": "2026-10-26 20:00:00", "entries": [19], "version": 1, "kind": "problem"}
+{"topic": 7, "name": "kitchen tap repair", "kind": "problem", "added": "The plumber came this morning and fixed the tap for 95 euros (2026-10-26).", "day": "2026-10-26 20:00:00", "entries": [19, 20], "version": 2}
+{"topic": 8, "name": "home spending", "added": "Asks how much has been spent on the home since the start of October (2026-10-30)", "day": "2026-10-30 03:40:03", "entries": [22], "version": 1, "kind": "habit"}

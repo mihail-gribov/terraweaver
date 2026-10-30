@@ -1,0 +1,25 @@
+{"text": 1, "dialogue": 1, "day": "2026-10-02 20:00:00", "entity": "LG C4", "kind": "product", "as": "LG C4"}
+{"text": 1, "dialogue": 1, "day": "2026-10-02 20:00:00", "entity": "Samsung S90D", "kind": "product", "as": "Samsung S90D"}
+{"text": 1, "dialogue": 1, "day": "2026-10-02 20:00:00", "entity": "living room", "kind": "place", "as": "living room"}
+{"text": 2, "dialogue": 0, "day": "2026-10-02 20:00:00", "entity": "the user", "kind": "person", "as": "I"}
+{"text": 2, "dialogue": 1, "day": "2026-10-02 20:00:00", "entity": "LG C4", "kind": "product", "as": "the LG"}
+{"text": 2, "dialogue": 1, "day": "2026-10-02 20:00:00", "entity": "blinds", "kind": "product", "as": "blinds"}
+{"text": 3, "dialogue": 3, "day": "2026-10-03 20:00:00", "entity": "office", "kind": "place", "as": "office"}
+{"text": 3, "dialogue": 3, "day": "2026-10-03 20:00:00", "entity": "wifi", "kind": "product", "as": "wifi"}
+{"text": 3, "dialogue": 3, "day": "2026-10-03 20:00:00", "entity": "kitchen", "kind": "place", "as": "kitchen"}
+{"text": 5, "dialogue": 0, "day": "2026-10-05 20:00:00", "entity": "the user", "kind": "person", "as": "me"}
+{"text": 5, "dialogue": 5, "day": "2026-10-05 20:00:00", "entity": "the user's standup", "kind": "event", "as": "our standup"}
+{"text": 11, "dialogue": 0, "day": "2026-10-15 20:00:00", "entity": "the user", "kind": "person", "as": "I"}
+{"text": 11, "dialogue": 10, "day": "2026-10-15 20:00:00", "entity": "Sonos Beam", "kind": "product", "as": "Sonos Beam"}
+{"text": 12, "dialogue": 0, "day": "2026-10-17 20:00:00", "entity": "the user", "kind": "person", "as": "I"}
+{"text": 13, "dialogue": 0, "day": "2026-10-18 20:00:00", "entity": "the user", "kind": "person", "as": "me"}
+{"text": 14, "dialogue": 14, "day": "2026-10-19 20:00:00", "entity": "car service", "kind": "event", "as": "car service"}
+{"text": 17, "dialogue": 0, "day": "2026-10-22 20:00:00", "entity": "the user", "kind": "person", "as": "I"}
+{"text": 17, "dialogue": 16, "day": "2026-10-22 20:00:00", "entity": "repairman", "kind": "person", "as": "repairman"}
+{"text": 18, "dialogue": 18, "day": "2026-10-25 20:00:00", "entity": "1:1", "kind": "event", "as": "1:1"}
+{"text": 18, "dialogue": 18, "day": "2026-10-25 20:00:00", "entity": "the user's manager", "kind": "person", "as": "my manager"}
+{"text": 19, "dialogue": 0, "day": "2026-10-26 20:00:00", "entity": "the user", "kind": "person", "as": "I"}
+{"text": 19, "dialogue": 19, "day": "2026-10-26 20:00:00", "entity": "kitchen", "kind": "place", "as": "kitchen"}
+{"text": 20, "dialogue": 19, "day": "2026-10-26 20:00:00", "entity": "plumber", "kind": "person", "as": "the plumber"}
+{"text": 20, "dialogue": 19, "day": "2026-10-26 20:00:00", "entity": "tap", "kind": "product", "as": "the tap"}
+{"text": 22, "dialogue": 22, "day": "2026-10-30 03:40:03", "entity": "home", "kind": "place", "as": "home"}

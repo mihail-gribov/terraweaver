@@ -1,0 +1,10 @@
+{"topic": 1, "name": "spouse's birthday", "added": "Mila's birthday is on 11 November (2026-09-26)", "day": "2026-09-26 20:00:00", "entries": [2], "version": 1, "kind": "interest"}
+{"topic": 2, "name": "music preferences", "added": "User prefers small concerts; Mila likes jazz and dislikes big crowds (2026-09-26).", "day": "2026-09-26 20:00:00", "entries": [3], "version": 1, "kind": "interest"}
+{"topic": 3, "name": "peanut allergy", "added": "Mila had a reaction at the new Thai place; discovered she is seriously allergic to peanuts (2026-10-03).", "day": "2026-10-03 20:00:00", "entries": [4], "version": 1, "kind": "problem"}
+{"topic": 3, "name": "peanut allergy", "kind": "problem", "added": "User asks to avoid suggesting Thai and Indian places from now on (2026-10-03).", "day": "2026-10-03 20:00:00", "entries": [4, 5], "version": 2}
+{"topic": 4, "name": "daily routine", "added": "Had pizza and planned an early night after a long day (2026-10-08)", "day": "2026-10-08 20:00:00", "entries": [7], "version": 1, "kind": "habit"}
+{"topic": 5, "name": "Lev's birthday", "added": "Lev turned seven; we held a big Lego party at home on 2026-10-10.", "day": "2026-10-10 20:00:00", "entries": [8], "version": 1, "kind": "interest"}
+{"topic": 1, "name": "spouse's birthday", "kind": "interest", "added": "Mila said she wants something quiet for her birthday, just the two of us (2026-10-10)", "day": "2026-10-10 20:00:00", "entries": [2, 9], "version": 2}
+{"topic": 6, "name": "CI pipeline work", "added": "Spent the whole evening fixing a bug in our CI pipeline. (2026-10-18)", "day": "2026-10-18 20:00:00", "entries": [11], "version": 1, "kind": "project"}
+{"topic": 7, "name": "mother-in-law visit", "added": "My mother-in-law Vesna is coming to stay with us for two weeks from next Monday (2026-10-21).", "day": "2026-10-21 20:00:00", "entries": [12], "version": 1, "kind": "project"}
+{"topic": 1, "name": "spouse's birthday", "kind": "interest", "added": "Planning something nice for wife's birthday evening (2026-10-30)", "day": "2026-10-30 03:19:43", "entries": [2, 9, 13], "version": 3}

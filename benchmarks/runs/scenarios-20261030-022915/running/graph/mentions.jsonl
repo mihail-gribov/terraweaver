@@ -1,0 +1,15 @@
+{"text": 8, "dialogue": 0, "day": "2026-10-02 20:00:00", "entity": "the user", "kind": "person", "as": "I"}
+{"text": 8, "dialogue": 0, "day": "2026-10-02 20:00:00", "entity": "the user", "kind": "person", "as": "my"}
+{"text": 11, "dialogue": 0, "day": "2026-10-06 20:00:00", "entity": "the user", "kind": "person", "as": "I"}
+{"text": 14, "dialogue": 14, "day": "2026-10-10 20:00:00", "entity": "weights and rowing", "kind": "thing", "as": "weights and rowing"}
+{"text": 15, "dialogue": 0, "day": "2026-10-11 20:00:00", "entity": "the user", "kind": "person", "as": "I"}
+{"text": 15, "dialogue": 15, "day": "2026-10-11 20:00:00", "entity": "podcast", "kind": "thing", "as": "a podcast"}
+{"text": 17, "dialogue": 17, "day": "2026-10-13 20:00:00", "entity": "first 10 km run", "kind": "thing", "as": "first 10 km run"}
+{"text": 21, "dialogue": 0, "day": "2026-10-17 20:00:00", "entity": "the user", "kind": "person", "as": "my"}
+{"text": 21, "dialogue": 21, "day": "2026-10-17 20:00:00", "entity": "Marko", "kind": "person", "as": "Marko"}
+{"text": 21, "dialogue": 21, "day": "2026-10-17 20:00:00", "entity": "Easy 6 km run", "kind": "thing", "as": "Easy 6 km run"}
+{"text": 31, "dialogue": 0, "day": "2026-10-27 20:00:00", "entity": "the user", "kind": "person", "as": "I"}
+{"text": 31, "dialogue": 31, "day": "2026-10-27 20:00:00", "entity": "knee", "kind": "thing", "as": "My knee"}
+{"text": 32, "dialogue": 32, "day": "2026-10-28 20:00:00", "entity": "headphones", "kind": "thing", "as": "new headphones"}
+{"text": 34, "dialogue": 0, "day": "2026-10-30 19:00:00", "entity": "the user", "kind": "person", "as": "I"}
+{"text": 34, "dialogue": 34, "day": "2026-10-30 19:00:00", "entity": "half marathon", "kind": "thing", "as": "half marathon"}

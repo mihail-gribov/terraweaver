@@ -1,0 +1,7 @@
+{"topic": 1, "name": "Mila's birthday", "added": "Mila's birthday is on 11 November (2026-09-26)", "day": "2026-09-26 20:00:00", "entries": [1], "version": 1, "kind": "interest"}
+{"topic": 2, "name": "Mila's preferences", "added": "She loves jazz, especially small live venues, and she can't stand big crowds (2026-09-26).", "day": "2026-09-26 20:00:00", "entries": [2], "version": 1, "kind": "interest"}
+{"topic": 3, "name": "Mila's allergy", "added": "Mila is seriously allergic to nuts (reported after a reaction at a restaurant yesterday) (2026-10-03)", "day": "2026-10-03 20:00:00", "entries": [3], "version": 1, "kind": "problem"}
+{"topic": 2, "name": "Mila's preferences", "kind": "interest", "added": "She prefers a quiet evening for future celebrations (2026-10-10)", "day": "2026-10-10 20:00:00", "entries": [2, 4], "version": 2}
+{"topic": 5, "name": "Lev's birthday celebration", "added": "Lev turned seven; they held a Lego party for his birthday (2026-10-10)", "day": "2026-10-10 20:00:00", "entries": [4], "version": 1, "kind": "interest"}
+{"topic": 6, "name": "Mother-in-law visit", "added": "Mother-in-law Vesna is coming to stay with us for two weeks from next Monday (2026-10-21).", "day": "2026-10-21 20:00:00", "entries": [5], "version": 1, "kind": "project"}
+{"topic": 1, "name": "Mila's birthday", "kind": "interest", "added": "User wants to plan something nice for Mila's birthday evening (2026-10-30)", "day": "2026-10-30 03:12:07", "entries": [1, 6], "version": 2}

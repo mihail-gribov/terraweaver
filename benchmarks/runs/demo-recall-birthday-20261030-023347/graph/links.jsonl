@@ -1,0 +1,15 @@
+{"from": "Mila", "relation": "spouse", "common": true, "to": "the user", "text": 1, "day": "2026-09-26 20:00:00", "quote": "my wife Mila", "when": "2026-09-26"}
+{"from": "Mila", "relation": "born_on", "common": true, "to": "11 November", "text": 1, "day": "2026-09-26 20:00:00", "quote": "Mila's birthday is on 11 November", "when": "2026-09-26"}
+{"from": "Mila", "relation": "likes", "common": true, "to": "jazz", "text": 2, "day": "2026-09-26 20:00:00", "quote": "She loves jazz, especially small live venues", "when": "2026-09-26"}
+{"from": "Mila", "relation": "likes", "common": true, "to": "small live venues", "text": 2, "day": "2026-09-26 20:00:00", "quote": "especially small live venues", "when": "2026-09-26"}
+{"from": "Mila", "relation": "dislikes", "common": true, "to": "big crowds", "text": 2, "day": "2026-09-26 20:00:00", "quote": "she can't stand big crowds", "when": "2026-09-26"}
+{"from": "Lev", "relation": "child", "common": true, "to": "the user", "text": 4, "day": "2026-10-10 20:00:00", "quote": "Our son Lev", "when": "2026-10-10"}
+{"from": "Lev", "relation": "child", "common": true, "to": "Mila", "text": 4, "day": "2026-10-10 20:00:00", "quote": "Our son Lev", "when": "2026-10-10"}
+{"from": "Lev", "relation": "age", "common": true, "to": "seven", "text": 4, "day": "2026-10-10 20:00:00", "quote": "Lev turned seven", "when": "2026-10-10"}
+{"from": "Mila", "relation": "likes", "common": true, "to": "quiet evening", "text": 4, "day": "2026-10-10 20:00:00", "quote": "Mila said next time she wants a quiet evening", "when": "2026-10-10"}
+{"from": "the user", "relation": "hobby", "common": true, "to": "Lego party", "text": 4, "day": "2026-10-10 20:00:00", "quote": "we did a Lego party", "when": "2026-10-10"}
+{"from": "Mila", "relation": "hobby", "common": true, "to": "Lego party", "text": 4, "day": "2026-10-10 20:00:00", "quote": "we did a Lego party", "when": "2026-10-10"}
+{"from": "Vesna", "relation": "relative", "common": true, "to": "the user", "text": 5, "day": "2026-10-21 20:00:00", "quote": "My mother-in-law Vesna", "when": "2026-10-21"}
+{"from": "Vesna", "relation": "staying_with", "common": false, "to": "the user", "text": 5, "day": "2026-10-21 20:00:00", "quote": "is coming to stay with us", "when": "2026-10-21"}
+{"from": "the user", "relation": "spouse", "common": true, "to": "Mila", "text": 6, "day": "2026-10-30 02:34:56", "quote": "my wife", "when": "2026-10-30"}
+{"from": "the user's wife", "relation": "spouse", "common": true, "to": "the user", "text": 6, "day": "2026-10-30 02:34:56", "quote": "my wife"}

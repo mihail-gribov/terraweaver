@@ -1,0 +1,21 @@
+{"from": "the user", "relation": "made", "common": false, "to": "lentil soup", "text": 1, "day": "2026-09-18 20:00:00", "quote": "Made a big pot of lentil soup", "when": "2026-09-18", "class": "did"}
+{"from": "the user", "relation": "dislikes", "common": true, "to": "Sony", "text": 3, "day": "2026-09-20 20:04:00", "quote": "The Sony is too dear.", "when": "2026-09-20"}
+{"from": "the user", "relation": "dislikes", "common": true, "to": "LG", "text": 3, "day": "2026-09-20 20:04:00", "quote": "the LG would glare.", "when": "2026-09-20"}
+{"from": "the user", "relation": "lives_in", "common": true, "to": "living room", "text": 3, "day": "2026-09-20 20:04:00", "quote": "Our living room is very bright.", "when": "2026-09-20"}
+{"from": "the user", "relation": "owns", "common": true, "to": "Samsung", "text": 4, "day": "2026-09-20 20:06:00", "quote": "take the Samsung", "when": "2026-09-20"}
+{"from": "the user", "relation": "owns", "common": true, "to": "LG C4", "text": 9, "day": "2026-10-02 20:00:00", "quote": "We went with the LG C4 after all", "when": "2026-10-02"}
+{"from": "the user", "relation": "listened_to", "common": false, "to": "podcast", "text": 11, "day": "2026-10-04 20:00:00", "quote": "Listened to a podcast", "when": "2026-10-04", "class": "did"}
+{"from": "the landlord", "relation": "raised_rent", "common": false, "to": "the user", "text": 12, "day": "2026-10-05 20:00:00", "quote": "The landlord raised our rent from 1,000 to 1,150 euros.", "when": "2026-10-05"}
+{"from": "the user", "relation": "talked_to", "common": false, "to": "the landlord", "text": 18, "day": "2026-10-12 20:00:00", "quote": "Talked to the landlord", "when": "2026-10-12", "class": "did"}
+{"from": "the user", "relation": "signed", "common": false, "to": "the landlord", "text": 18, "day": "2026-10-12 20:00:00", "quote": "We signed.", "when": "2026-10-12", "class": "did"}
+{"from": "the user", "relation": "contacted", "common": false, "to": "the bank", "text": 19, "day": "2026-10-14 20:00:00", "quote": "Spent an hour on the phone with the bank", "when": "2026-10-14", "class": "did"}
+{"from": "the user", "relation": "owns", "common": true, "to": "Sonos Beam soundbar", "text": 20, "day": "2026-10-15 20:00:00", "quote": "Bought a Sonos Beam soundbar for 450 euros.", "when": "2026-10-15"}
+{"from": "neighbour", "relation": "owns", "common": true, "to": "Golf", "text": 23, "day": "2026-10-19 20:00:00", "quote": "neighbour's Golf", "when": "2026-10-19", "ended": true}
+{"from": "the user", "relation": "owns", "common": true, "to": "washing machine", "text": 24, "day": "2026-10-22 20:00:00", "quote": "The washing machine broke", "when": "2026-10-22"}
+{"from": "the user", "relation": "owns", "common": true, "to": "headphones", "text": 25, "day": "2026-10-24 20:00:00", "quote": "Ordered new headphones", "when": "2026-10-24"}
+{"from": "the plumber", "relation": "fixed", "common": false, "to": "the leaking tap", "text": 26, "day": "2026-10-26 20:00:00", "quote": "The plumber finally fixed the leaking tap", "when": "2026-10-26"}
+{"from": "the user", "relation": "owns", "common": true, "to": "VW Golf", "text": 28, "day": "2026-10-28 20:00:00", "quote": "We sold our old VW Golf", "when": "2026-10-28", "ended": true}
+{"from": "the user", "relation": "owns", "common": true, "to": "Skoda Octavia", "text": 28, "day": "2026-10-28 20:00:00", "quote": "bought a Skoda Octavia", "when": "2026-10-28"}
+{"from": "the user", "relation": "needs", "common": false, "to": "remote", "text": 29, "day": "2026-10-30 19:00:00", "quote": "I need a new remote", "when": "2026-10-30", "class": "has"}
+{"from": "remote", "relation": "for", "common": false, "to": "TV", "text": 29, "day": "2026-10-30 19:00:00", "quote": "for the living room TV", "when": "2026-10-30"}
+{"from": "TV", "relation": "in", "common": false, "to": "living room", "text": 29, "day": "2026-10-30 19:00:00", "quote": "living room TV", "when": "2026-10-30"}

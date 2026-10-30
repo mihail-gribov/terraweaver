@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TerraWeaver Replay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  /* Layout: a fixed 1920x1080 stage scaled to the window. The conversation on the left; the memory on
+     the right, the deciding blocks beside the four stores. Every step comes from the run's trace. */
+  :root {
+    --bg: #eef0ec;
+    --panel: #ffffff;
+    --ink: #1d2320;
+    --muted: #66706a;
+    --line: #cfd4cf;
+    --write: #3d4a43;
+    --read: #1f6fd1;
+    --read-soft: #e3eefb;
+    --store: #e4e8e2;
+    --new: #fff3c4;
+    --model: #6b5a2e;
+    --model-soft: #f1ead6;
+    --user: #dfe9e2;
+    --display: "IBM Plex Sans Condensed", "Arial Narrow", sans-serif;
+    --body: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    color-scheme: light;
+  }
+  html, body { margin: 0; height: 100%; background: #0d0f0e; overflow: hidden; }
+  #stage {
+    position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0;
+    background: var(--bg); color: var(--ink); font-family: var(--body);
+    display: grid; grid-template-columns: 700px minmax(0, 1fr); grid-template-rows: 76px minmax(0, 1fr);
+  }
+  header { grid-column: 1 / -1; display: flex; align-items: center; gap: 28px; padding: 0 36px; border-bottom: 1px solid var(--line); background: var(--panel); }
+  header { padding: 0 !important; gap: 0 !important; }
+  .hcol { display: flex; align-items: baseline; gap: 16px; padding: 0 30px; }
+  .hcol.left { width: 700px; box-sizing: border-box; border-right: 1px solid var(--line); align-self: stretch; align-items: center; }
+  .hcol.left .sub { font-family: var(--display); font-weight: 600; font-size: 22px; color: var(--ink); }
+  #mode { margin-right: 30px; }
+  header h1 { font-family: var(--display); font-weight: 600; font-size: 30px; margin: 0; letter-spacing: .01em; }
+  header .sub { color: var(--muted); font-size: 18px; }
+  #ff { margin-left: auto; font-family: var(--mono); font-size: 18px; color: var(--muted); padding: 6px 14px; border: 1.5px dashed var(--muted); border-radius: 6px; }
+  #ff:not([hidden]) + #mode { margin-left: 0; }
+  #mode { margin-left: auto; font-family: var(--display); font-weight: 600; font-size: 22px; letter-spacing: .06em; padding: 8px 20px; border-radius: 6px; background: var(--write); color: #fff; transition: background .4s; }
+  #mode.read { background: var(--read); }
+
+  /* the conversation */
+  /* the conversation, as a messenger shows it */
+  #chatwrap { display: grid; grid-template-rows: 68px minmax(0, 1fr); border-right: 1px solid #b9c7ae; min-height: 0; }
+  .tg-top { display: flex; align-items: center; gap: 14px; padding: 0 22px; background: #ffffff; border-bottom: 1px solid #dfe3dc; }
+  .tg-ava { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #7bc862, #3aa364); color: #fff; display: grid; place-items: center; font-family: var(--display); font-weight: 600; font-size: 21px; }
+  .tg-name { font-weight: 600; font-size: 19px; }
+  .tg-status { font-size: 15px; color: #3a9bdc; }
+  #chat {
+    overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; padding: 16px 22px; gap: 6px;
+    background-color: #cfdcb8;
+    background-image: radial-gradient(rgba(255,255,255,.22) 1.2px, transparent 1.6px), radial-gradient(rgba(80,110,60,.10) 1.2px, transparent 1.6px);
+    background-size: 26px 26px, 26px 26px; background-position: 0 0, 13px 13px;
+  }
+  #chat > * { flex: none; }
+  .day { align-self: center; font-size: 15px; font-weight: 500; color: #fff; padding: 4px 12px; border-radius: 14px; background: rgba(66, 90, 52, .45); margin: 8px 0 4px; }
+  .msg { position: relative; max-width: 520px; font-size: 18px; line-height: 1.38; padding: 7px 12px 7px; border-radius: 14px; animation: pop .3s ease-out; box-shadow: 0 1px 1px rgba(40, 60, 30, .18); }
+  .msg .time { float: right; margin: 9px 0 -4px 12px; font-size: 13px; color: #8b9a87; white-space: nowrap; }
+  .msg.user .time { color: #5fa65a; }
+  .msg.user { align-self: flex-end; background: #e2fdc9; border-bottom-right-radius: 4px; }
+  .msg.agent { align-self: flex-start; background: #ffffff; border-bottom-left-radius: 4px; }
+  .msg.fast { opacity: .6; font-size: 15.5px; }
+  .msg.agent.final { font-size: 16.5px; line-height: 1.4; }
+  .typing { color: #3a9bdc; font-size: 16px; }
+  .typing i { font-style: normal; animation: blink 1s infinite; }
+  .typing i:nth-child(2) { animation-delay: .2s; } .typing i:nth-child(3) { animation-delay: .4s; }
+  @keyframes blink { 0%, 100% { opacity: .2; } 50% { opacity: 1; } }
+  .msg.agent.final div + div, .msg.agent.final ul + div { margin-top: 5px; }
+  #c-fit .out { color: var(--ink); font-family: var(--body); font-size: 14px; line-height: 1.38; }
+  #c-fit .note-title { font-family: var(--display); font-weight: 600; font-size: 15px; letter-spacing: .04em; color: var(--read); margin-bottom: 4px; }
+  #c-fit .note-body { background: var(--read-soft); border: 1.5px dashed var(--read); border-radius: 8px; padding: 8px 10px; max-height: 360px; overflow: hidden; }
+  #c-fit .note-body div + div { margin-top: 3px; }
+  .msg.agent.final ul { margin: 3px 0; padding-left: 20px; }
+  .msg.note { align-self: stretch; max-width: none; background: var(--read-soft); border: 1.5px dashed var(--read); font-size: 14.5px; line-height: 1.38; box-shadow: none; }
+  .msg .who { display: block; font-weight: 600; font-size: 15px; color: #3a9bdc; margin-bottom: 1px; }
+  .msg.note .who { color: var(--read); font-family: var(--display); letter-spacing: .04em; }
+  @keyframes pop { from { transform: translateY(10px); opacity: .3; } to { transform: none; opacity: 1; } }
+
+  /* the memory */
+  #mem { position: relative; display: grid; grid-template-columns: 400px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: 26px; padding: 22px 30px; min-height: 0; }
+  #decide { display: flex; flex-direction: column; gap: 14px; min-height: 0; }
+  .col { font-family: var(--display); font-weight: 600; font-size: 15px; letter-spacing: .14em; color: var(--muted); }
+  .card { background: var(--panel); border: 2px solid var(--line); border-radius: 10px; padding: 14px 16px; transition: border-color .3s, box-shadow .3s, opacity .3s; }
+  .card h3 { font-family: var(--display); font-weight: 600; font-size: 23px; margin: 0; display: flex; align-items: center; gap: 10px; }
+  .card h3 small { font-family: var(--mono); font-weight: 400; font-size: 13px; color: var(--muted); }
+  .card .q { font-size: 16.5px; margin-top: 4px; }
+  .chip { margin-left: auto; font-family: var(--mono); font-size: 13px; font-weight: 400; color: var(--model); background: var(--model-soft); padding: 2px 8px; border-radius: 4px; }
+  .card .out { font-family: var(--mono); font-size: 14.5px; margin-top: 8px; min-height: 20px; color: var(--muted); }
+  .card .out b { color: var(--ink); font-weight: 500; }
+  .card.on { border-color: var(--write); box-shadow: 0 0 0 4px rgba(61, 74, 67, .12); }
+  .read-mode .card.on { border-color: var(--read); box-shadow: 0 0 0 4px rgba(31, 111, 209, .15); }
+  .card.dim { opacity: .45; }
+  .read-mode .card h3 { color: var(--read); }
+
+  /* Fixed halves from the first frame: the stores never move as they fill. */
+  #stores { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 18px; flex: 1 1 0; min-height: 0; }
+  .store { background: var(--store); border-radius: 10px; padding: 14px 16px; min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 8px; border: 2px solid transparent; transition: border-color .3s; }
+  .store.on { border-color: var(--write); }
+  .read-mode .store.on { border-color: var(--read); }
+  .store h2 { font-family: var(--display); font-weight: 600; font-size: 24px; margin: 0; }
+  .store h2 small { font-family: var(--body); font-weight: 400; font-size: 14px; color: var(--muted); margin-left: 8px; }
+  .items { display: flex; flex-direction: column; gap: 6px; overflow: hidden; justify-content: flex-end; flex: 1; min-height: 0; }
+  .item { background: var(--panel); border-radius: 6px; padding: 7px 10px; font-size: 15px; line-height: 1.35; transition: background 1.2s, outline-color .3s; outline: 2px solid transparent; }
+  .item.new { background: var(--new); }
+  .item.hit { outline-color: var(--read); background: var(--read-soft); }
+  .item .n { font-family: var(--mono); font-size: 13px; color: var(--muted); margin-right: 6px; }
+  .person h4, .topic h4 { margin: 0 0 3px; font-size: 16px; font-weight: 600; }
+  .part { font-family: var(--mono); font-size: 13.5px; }
+  .part.ended { text-decoration: line-through; color: var(--muted); }
+  .layer { font-size: 14px; color: var(--ink); }
+  .layer + .layer { margin-top: 2px; }
+
+  #ctx { position: absolute; right: 30px; top: 70px; width: 720px; max-height: 760px; overflow: hidden; background: var(--panel); border: 2px solid var(--read); border-radius: 12px; box-shadow: 0 18px 50px rgba(20, 40, 70, .28); padding: 18px 22px; animation: slide .5s ease-out; z-index: 5; }
+  #ctx .ctx-title { font-family: var(--display); font-weight: 600; font-size: 24px; color: var(--read); margin-bottom: 10px; }
+  #ctx .ctx-title span { font-family: var(--body); font-weight: 400; font-size: 15px; color: var(--muted); }
+  #ctx .ctx-body { font-size: 17px; line-height: 1.45; }
+  #ctx .ctx-body div + div { margin-top: 6px; }
+  @keyframes slide { from { transform: translateX(60px); opacity: 0; } to { transform: none; opacity: 1; } }
+  svg#wires { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+  svg#wires path { fill: none; stroke-width: 3; stroke-dasharray: 8 6; animation: flow .7s linear infinite; }
+  @keyframes flow { to { stroke-dashoffset: -14; } }
+  @media (prefers-reduced-motion: reduce) { svg#wires path, .msg { animation: none; } }
+
+  #bar { position: fixed; right: 12px; bottom: 10px; font: 12px var(--mono); color: #9aa; background: rgba(0,0,0,.55); padding: 6px 10px; border-radius: 6px; }
+  #bar.hide { display: none; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <header>
+    <div class="hcol left"><span class="sub">The user's chat with their agent</span></div>
+    <div class="hcol right"><h1>Inside the memory</h1><span class="sub">TerraWeaver on NVIDIA Nemotron · every step as this run took it</span></div>
+    <span id="ff" hidden>⏩ time-lapse · work and small talk, never read into the graph</span>
+    <span id="mode">WRITING</span>
+  </header>
+  <section id="chatwrap" aria-label="The conversation">
+    <div class="tg-top"><div class="tg-ava">A</div><div><div class="tg-name">Agent</div><div class="tg-status">bot · personal memory on</div></div></div>
+    <div id="chat"></div>
+  </section>
+  <section id="mem">
+    <div id="decide">
+      <div class="col" id="col-left">DECIDES</div>
+      <div class="card w" id="c-gate"><h3>Gate <span class="chip">Nano · 1 token</span></h3><div class="q">Is it for the memory?</div><div class="out"></div></div>
+      <div class="card w" id="c-resolve"><h3>Resolve <small>agent-referring anaphora</small><span class="chip">Super</span></h3><div class="q">What in the agent's last message does it point to?</div><div class="out"></div></div>
+      <div class="card w" id="c-worth"><h3>Worth reading <span class="chip">Nano · 1 token</span></h3><div class="q">Does it matter a month from now?</div><div class="out"></div></div>
+      <div class="card w" id="c-reader"><h3>Reader <span class="chip">Super</span></h3><div class="q">Who? Which part of their world? Which topic? What is new?</div><div class="out"></div></div>
+      <div class="card r" id="c-search" hidden><h3>Search</h3><div class="q">Which facts bear on it? By words and by meaning.</div><div class="out"></div></div>
+      <div class="card r" id="c-world" hidden><h3>World</h3><div class="q">Whose parts does it name?</div><div class="out"></div></div>
+      <div class="card r" id="c-topic" hidden><h3>Topic <span class="chip">Nano · 1 token</span></h3><div class="q">Does it go on with one?</div><div class="out"></div></div>
+      <div class="card r" id="c-fit" hidden><h3>Fit <span class="chip">Super</span></h3><div class="q">What of it bears on this message?</div><div class="out"></div></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;min-height:0;height:100%">
+      <div class="col" id="col-right">WHERE IT SETTLES</div>
+      <div id="stores">
+        <div class="store" id="s-journal"><h2>Journal<small>the facts as said, with their day</small></h2><div class="items"></div></div>
+        <div class="store" id="s-world"><h2>User's world<small>people and their parts, now and was</small></h2><div class="items"></div></div>
+        <div class="store" id="s-topics"><h2>Topics<small>dated layers</small></h2><div class="items"></div></div>
+        <div class="store" id="s-portraits"><h2>Portraits<small>one text per person</small></h2><div class="items"></div></div>
+      </div>
+    </div>
+    <svg id="wires"></svg>
+    <aside id="ctx" hidden>
+      <div class="ctx-title">In the agent's context <span>· beside the user's message, unseen by the user</span></div>
+      <div class="ctx-body"></div>
+    </aside>
+  </section>
+</div>
+<div id="bar">space play/pause · → step · R restart · 1–4 speed · H hide</div>
+
+<script>
+const DATA = {"title": "demo-recall-birthday-20261030-032141", "events": [{"kind": "day", "date": "2026-09-24", "fast": true}, {"kind": "say", "role": "user", "text": "How do I turn a PDF into a Word document?", "time": "20:00", "fast": true}, {"kind": "gate", "p": 0.76, "kept": true, "fast": true}, {"kind": "resolve", "skip": true, "fast": true}, {"kind": "journal", "entry": 1, "day": "2026-09-24", "text": "How do I turn a PDF into a Word document?", "fast": true}, {"kind": "worth", "entry": 1, "p": 0.14, "read": false, "fast": true}, {"kind": "say", "role": "agent", "text": "Open it in Word directly, or use File > Export in Acrobat.", "time": "20:01", "fast": true}, {"kind": "say", "role": "user", "text": "Thanks. And will it keep the tables?", "time": "20:02"}, {"kind": "gate", "p": 0.68, "kept": true}, {"kind": "resolve", "skip": true}, {"kind": "journal", "entry": 2, "day": "2026-09-24", "text": "Thanks. And will it keep the tables?"}, {"kind": "worth", "entry": 2, "p": 0.39, "read": true}, {"kind": "read", "entry": 2, "world": [], "topics": [{"name": "PDF to Word conversion", "added": "Asks if tables will be kept (2026-09-24)"}], "portraits": []}, {"kind": "say", "role": "agent", "text": "Mostly yes; complex tables may need a little cleanup.", "time": "20:03"}, {"kind": "day", "date": "2026-09-26"}, {"kind": "say", "role": "user", "text": "Help me block out my calendar for November, it's getting busy.", "time": "20:00"}, {"kind": "gate", "p": 0.9, "kept": true}, {"kind": "resolve", "skip": true}, {"kind": "journal", "entry": 3, "day": "2026-09-26", "text": "Help me block out my calendar for November, it's getting busy."}, {"kind": "worth", "entry": 3, "p": 0.47, "read": true}, {"kind": "read", "entry": 3, "world": [], "topics": [{"name": "calendar scheduling", "added": "Wants to block out calendar for November as it's getting busy. (2026-09-26)"}], "portraits": [{"of": "the user", "added": "User is busy in November and plans to block out calendar. (2026-09-26)"}]}, {"kind": "say", "role": "agent", "text": "Sure. Anything fixed already that I should keep free?", "time": "20:01"}, {"kind": "say", "role": "user", "text": "The evening of 11 November, it's my wife Mila's birthday.", "time": "20:02"}, {"kind": "gate", "p": 0.95, "kept": true}, {"kind": "resolve", "said": "The evening of 11 November, it's my wife Mila's birthday.", "to": "The evening of 11 November is my wife Mila's birthday."}, {"kind": "journal", "entry": 4, "day": "2026-09-26", "text": "The evening of 11 November is my wife Mila's birthday."}, {"kind": "worth", "entry": 4, "p": 0.68, "read": true}, {"kind": "read", "entry": 4, "world": [{"who": "Mila", "part": "is the user's", "value": "spouse", "ended": false}, {"who": "Mila", "part": "born on", "value": "11 November", "ended": false}], "topics": [{"name": "wife's birthday", "added": "The evening of 11 November is my wife Mila's birthday (2026-09-26)"}], "portraits": [{"of": "the user", "added": "The user has a wife named Mila whose birthday is on the evening of 11 November (2026-09-26)."}, {"of": "Mila", "added": "Mila is the user's wife and her birthday is on the evening of 11 November (2026-09-26)."}]}, {"kind": "say", "role": "agent", "text": "Blocked. Want reminders a week and a day before?", "time": "20:03"}, {"kind": "say", "role": "user", "text": "Yes, both.", "time": "20:04"}, {"kind": "gate", "p": 0.86, "kept": true}, {"kind": "resolve", "said": "Yes, both.", "to": "Yes, I want reminders a week and a day before."}, {"kind": "journal", "entry": 5, "day": "2026-09-26", "text": "Yes, I want reminders a week and a day before."}, {"kind": "worth", "entry": 5, "p": 0.47, "read": true}, {"kind": "read", "entry": 5, "world": [], "topics": [{"name": "wife's birthday", "added": "Wants reminders a week and a day before (2026-09-26)."}], "portraits": [{"of": "the user", "added": "The user wants reminders a week and a day before (2026-09-26)."}]}, {"kind": "day", "date": "2026-09-28", "fast": true}, {"kind": "say", "role": "user", "text": "Summarise this article on interest rates in three bullet points.", "time": "20:00", "fast": true}, {"kind": "gate", "p": 0.61, "kept": true, "fast": true}, {"kind": "resolve", "skip": true, "fast": true}, {"kind": "journal", "entry": 6, "day": "2026-09-28", "text": "Summarise this article on interest rates in three bullet points.", "fast": true}, {"kind": "worth", "entry": 6, "p": 0.21, "read": false, "fast": true}, {"kind": "say", "role": "agent", "text": "Rates held; inflation is easing; cuts are expected next year.", "time": "20:01", "fast": true}, {"kind": "day", "date": "2026-09-30"}, {"kind": "say", "role": "user", "text": "Any ideas for this weekend? Something for the two of us.", "time": "20:00"}, {"kind": "gate", "p": 0.88, "kept": true}, {"kind": "resolve", "skip": true}, {"kind": "journal", "entry": 7, "day": "2026-09-30", "text": "Any ideas for this weekend? Something for the two of us."}, {"kind": "worth", "entry": 7, "p": 0.47, "read": true}, {"kind": "read", "entry": 7, "world": [], "topics": [{"name": "weekend plans", "added": "Asks for ideas for a weekend activity for two people (2026-09-30)"}], "portraits": [{"of": "the user", "added": "User is seeking weekend activity ideas for two people (2026-09-30)"}]}, {"kind": "say", "role": "agent", "text": "There's a big open-air music festival in the park on Saturday.", "time": "20:01"}, {"kind": "say", "role": "user", "text": "Not that one, Mila can't stand big crowds. She'd rather a small jazz gig.", "time": "20:02"}, {"kind": "gate", "p": 0.93, "kept": true}, {"kind": "resolve", "said": "Not that one, Mila can't stand big crowds. She'd rather a small jazz gig.", "to": "Not the big open-air music festival, Mila can't stand big crowds. She'd rather a small jazz gig."}, {"kind": "journal", "entry": 8, "day": "2026-09-30", "text": "Not the big open-air music festival, Mila can't stand big crowds. She'd rather a small jazz gig."}, {"kind": "worth", "entry": 8, "p": 0.61, "read": true}, {"kind": "read", "entry": 8, "world": [{"who": "Mila", "part": "dislikes", "value": "big open-air music festival", "ended": false}, {"who": "Mila", "part": "likes", "value": "small jazz gig", "ended": false}], "topics": [{"name": "weekend plans", "added": "Ruled out big open-air music festival due to Mila's dislike of crowds; prefers a small jazz gig (2026-09-30)"}], "portraits": [{"of": "Mila", "added": "Mila dislikes big crowds and prefers small jazz gigs (2026-09-30)"}]}, {"kind": "say", "role": "agent", "text": "Then a jazz trio at a small club on Saturday night, about 60 seats.", "time": "20:03"}, {"kind": "say", "role": "user", "text": "Perfect, that's her thing.", "time": "20:04"}, {"kind": "gate", "p": 0.8, "kept": true}, {"kind": "resolve", "said": "Perfect, that's her thing.", "to": "Perfect, the jazz trio at a small club on Saturday night, about 60 seats, is her thing."}, {"kind": "journal", "entry": 9, "day": "2026-09-30", "text": "Perfect, the jazz trio at a small club on Saturday night, about 60 seats, is her thing."}, {"kind": "worth", "entry": 9, "p": 0.61, "read": true}, {"kind": "read", "entry": 9, "world": [{"who": "Mila", "part": "likes", "value": "jazz trio at a small club on Saturday night, about 60 seats", "ended": false}], "topics": [{"name": "weekend plans", "added": "Confirms jazz trio at small club (~60 seats) as Mila's preferred Saturday night activity (2026-09-30)."}], "portraits": [{"of": "Mila", "added": "Mila likes the jazz trio at a small club (~60 seats) (2026-09-30)."}]}, {"kind": "day", "date": "2026-10-01", "fast": true}, {"kind": "say", "role": "user", "text": "Write me a polite email declining the Thursday meeting.", "time": "20:00", "fast": true}, {"kind": "gate", "p": 0.75, "kept": true, "fast": true}, {"kind": "resolve", "skip": true, "fast": true}, {"kind": "journal", "entry": 10, "day": "2026-10-01", "text": "Write me a polite email declining the Thursday meeting.", "fast": true}, {"kind": "worth", "entry": 10, "p": 0.26, "read": false, "fast": true}, {"kind": "say", "role": "agent", "text": "Here's a short draft: thank them, decline, offer another slot.", "time": "20:01", "fast": true}, {"kind": "say", "role": "user", "text": "Make it a bit warmer.", "time": "20:02", "fast": true}, {"kind": "gate", "p": 0.39, "kept": false, "fast": true}, {"kind": "say", "role": "agent", "text": "Done: I added a line thanking them for thinking of you.", "time": "20:03", "fast": true}, {"kind": "day", "date": "2026-10-03"}, {"kind": "say", "role": "user", "text": "Can you find us a place for dinner on Friday?", "time": "20:00"}, {"kind": "gate", "p": 0.92, "kept": true}, {"kind": "resolve", "skip": true}, {"kind": "journal", "entry": 11, "day": "2026-10-03", "text": "Can you find us a place for dinner on Friday?"}, {"kind": "worth", "entry": 11, "p": 0.36, "read": true}, {"kind": "read", "entry": 11, "world": [], "topics": [{"name": "dinner plans", "added": "Asks to find a place for dinner on Friday (2026-10-03)"}], "portraits": [{"of": "the user", "added": "Wants to find a place for dinner on Friday (2026-10-03)"}]}, {"kind": "say", "role": "agent", "text": "How about Bangkok Garden, the new Thai place near you?", "time": "20:01"}, {"kind": "say", "role": "user", "text": "No, we tried Thai last week and Mila had a reaction. Turns out she's seriously allergic to peanuts.", "time": "20:02"}, {"kind": "gate", "p": 0.93, "kept": true}, {"kind": "resolve", "said": "No, we tried Thai last week and Mila had a reaction. Turns out she's seriously allergic to peanuts.", "to": "No, I don't want to go to Bangkok Garden, the new Thai place near me. We tried Thai last week and Mila had a reaction. Turns out she's seriously allergic to peanuts."}, {"kind": "journal", "entry": 12, "day": "2026-10-03", "text": "No, I don't want to go to Bangkok Garden, the new Thai place near me. We tried Thai last week and Mila had a reaction. Turns out she's seriously allergic to peanuts."}, {"kind": "worth", "entry": 12, "p": 0.56, "read": true}, {"kind": "read", "entry": 12, "world": [{"who": "Mila", "part": "health", "value": "peanuts", "ended": false}, {"who": "the user", "part": "dislikes", "value": "Bangkok Garden", "ended": false}], "topics": [{"name": "dinner plans", "added": "Rejected Bangkok Garden due to Mila's peanut allergy (2026-10-03)"}], "portraits": [{"of": "Mila", "added": "Mila is seriously allergic to peanuts (2026-10-03)"}, {"of": "the user", "added": "User avoids Bangkok Garden because Mila is allergic to peanuts (2026-10-03)"}]}, {"kind": "say", "role": "agent", "text": "That sounds scary, I'm glad she's okay. Should I avoid Thai and Indian places from now on?", "time": "20:03"}, {"kind": "say", "role": "user", "text": "Yes, please.", "time": "20:04"}, {"kind": "gate", "p": 0.78, "kept": true}, {"kind": "resolve", "said": "Yes, please.", "to": "Yes, I should avoid Thai and Indian places from now on, please."}, {"kind": "journal", "entry": 13, "day": "2026-10-03", "text": "Yes, I should avoid Thai and Indian places from now on, please."}, {"kind": "worth", "entry": 13, "p": 0.45, "read": true}, {"kind": "read", "entry": 13, "world": [], "topics": [{"name": "dinner plans", "added": "User decides to avoid Thai and Indian places from now on (2026-10-03)"}], "portraits": [{"of": "the user", "added": "User dislikes Thai and Indian restaurants due to Mila's peanut allergy (2026-10-03)"}]}, {"kind": "say", "role": "agent", "text": "Understood. Then an Italian trattoria two streets away, quiet and well rated.", "time": "20:05"}, {"kind": "day", "date": "2026-10-06"}, {"kind": "say", "role": "user", "text": "What's the difference between a latte and a flat white?", "time": "20:00"}, {"kind": "gate", "p": 0.76, "kept": true}, {"kind": "resolve", "skip": true}, {"kind": "journal", "entry": 14, "day": "2026-10-06", "text": "What's the difference between a latte and a flat white?"}, {"kind": "worth", "entry": 14, "p": 0.31, "read": true}, {"kind": "read", "entry": 14, "world": [], "topics": [{"name": "coffee drink comparison", "added": "Asks what's the difference between a latte and a flat white (2026-10-06)"}], "portraits": []}, {"kind": "say", "role": "agent", "text": "A flat white has less milk and a thinner layer of microfoam.", "time": "20:01"}, {"kind": "day", "date": "2026-10-07", "fast": true}, {"kind": "say", "role": "user", "text": "Convert 180 degrees Fahrenheit to Celsius.", "time": "20:00", "fast": true}, {"kind": "gate", "p": 0.69, "kept": true, "fast": true}, {"kind": "resolve", "skip": true, "fast": true}, {"kind": "journal", "entry": 15, "day": "2026-10-07", "text": "Convert 180 degrees Fahrenheit to Celsius.", "fast": true}, {"kind": "worth", "entry": 15, "p": 0.16, "read": false, "fast": true}, {"kind": "say", "role": "agent", "text": "About 82 °C.", "time": "20:01", "fast": true}, {"kind": "day", "date": "2026-10-10"}, {"kind": "say", "role": "user", "text": "Help me write thank-you notes to the parents who came to Lev's party on Saturday.", "time": "20:00"}, {"kind": "gate", "p": 0.89, "kept": true}, {"kind": "resolve", "skip": true}, {"kind": "journal", "entry": 16, "day": "2026-10-10", "text": "Help me write thank-you notes to the parents who came to Lev's party on Saturday."}, {"kind": "worth", "entry": 16, "p": 0.34, "read": true}, {"kind": "read", "entry": 16, "world": [], "topics": [{"name": "thank-you notes", "added": "User asks for help writing thank-you notes to the parents who came to Lev's party on Saturday."}], "portraits": [{"of": "the user", "added": "User asks for help writing thank-you notes to the parents who came to Lev's party on Saturday."}, {"of": "Lev", "added": "Lev hosted a party on Saturday that parents attended."}, {"of": "parents", "added": "Parents attended Lev's party on Saturday."}]}, {"kind": "say", "role": "agent", "text": "Happy to. How old did Lev turn, and what was the party like?", "time": "20:01"}, {"kind": "say", "role": "user", "text": "Seven. A big Lego party at home, twenty kids. Fun, but chaos.", "time": "20:02"}, {"kind": "gate", "p": 0.85, "kept": true}, {"kind": "resolve", "said": "Seven. A big Lego party at home, twenty kids. Fun, but chaos.", "to": "Lev turned seven. The party was a big Lego party at home with twenty kids. It was fun, but chaotic."}, {"kind": "journal", "entry": 17, "day": "2026-10-10", "text": "Lev turned seven. The party was a big Lego party at home with twenty kids. It was fun, but chaotic."}, {"kind": "worth", "entry": 17, "p": 0.47, "read": true}, {"kind": "read", "entry": 17, "world": [{"who": "Lev", "part": "age", "value": "seven", "ended": false}], "topics": [{"name": "Lev's seventh birthday party", "added": "Lev turned seven. The party was a big Lego party at home with twenty kids. It was fun, but chaotic. (2026-10-10)"}], "portraits": [{"of": "Lev", "added": "Lev turned seven. The party was a big Lego party at home with twenty kids. It was fun, but chaotic. (2026-10-10)"}]}, {"kind": "say", "role": "agent", "text": "Here's a short note you can send to each family. How did Mila find it?", "time": "20:03"}, {"kind": "say", "role": "user", "text": "Exhausted. She said for her own birthday she wants something quiet, just the two of us.", "time": "20:04"}, {"kind": "gate", "p": 0.91, "kept": true}, {"kind": "resolve", "said": "Exhausted. She said for her own birthday she wants something quiet, just the two of us.", "to": "Exhausted. Mila said for Mila's own birthday Mila wants something quiet, just the two of us."}, {"kind": "journal", "entry": 18, "day": "2026-10-10", "text": "Exhausted. Mila said for Mila's own birthday Mila wants something quiet, just the two of us."}, {"kind": "worth", "entry": 18, "p": 0.53, "read": true}, {"kind": "read", "entry": 18, "world": [{"who": "the user", "part": "health", "value": "exhausted", "ended": false}, {"who": "Mila", "part": "likes", "value": "something quiet, just the two of us", "ended": false}, {"who": "the user", "part": "spouse", "value": "Mila", "ended": false}], "topics": [{"name": "wife's birthday", "added": "Mila wants a quiet birthday celebration just the two of us (2026-10-10)"}], "portraits": [{"of": "the user", "added": "The user feels exhausted (2026-10-10)"}, {"of": "Mila", "added": "Mila wants a quiet birthday celebration just with the user for her birthday (2026-10-10)"}]}, {"kind": "day", "date": "2026-10-13", "fast": true}, {"kind": "say", "role": "user", "text": "Remind me how to undo the last git commit.", "time": "20:00", "fast": true}, {"kind": "gate", "p": 0.75, "kept": true, "fast": true}, {"kind": "resolve", "skip": true, "fast": true}, {"kind": "journal", "entry": 19, "day": "2026-10-13", "text": "Remind me how to undo the last git commit.", "fast": true}, {"kind": "worth", "entry": 19, "p": 0.25, "read": false, "fast": true}, {"kind": "say", "role": "agent", "text": "git reset --soft HEAD~1 keeps the changes staged.", "time": "20:01", "fast": true}, {"kind": "day", "date": "2026-10-17"}, {"kind": "say", "role": "user", "text": "What's a good stretch for a stiff neck after a day at the laptop?", "time": "20:00"}, {"kind": "gate", "p": 0.85, "kept": true}, {"kind": "resolve", "skip": true}, {"kind": "journal", "entry": 20, "day": "2026-10-17", "text": "What's a good stretch for a stiff neck after a day at the laptop?"}, {"kind": "worth", "entry": 20, "p": 0.36, "read": true}, {"kind": "read", "entry": 20, "world": [], "topics": [{"name": "neck stretch", "added": "Asks for a good stretch for a stiff neck after a day at the laptop (2026-10-17)"}], "portraits": [{"of": "the user", "added": "Seeks a stretch for stiff neck after laptop use (2026-10-17)"}]}, {"kind": "say", "role": "agent", "text": "Slow chin tucks and side tilts, 30 seconds each, a few times a day.", "time": "20:01"}, {"kind": "day", "date": "2026-10-21"}, {"kind": "say", "role": "user", "text": "Can you plan dinners for the next two weeks? We'll be four at the table.", "time": "20:00"}, {"kind": "gate", "p": 0.95, "kept": true}, {"kind": "resolve", "skip": true}, {"kind": "journal", "entry": 21, "day": "2026-10-21", "text": "Can you plan dinners for the next two weeks? We'll be four at the table."}, {"kind": "worth", "entry": 21, "p": 0.52, "read": true}, {"kind": "read", "entry": 21, "world": [], "topics": [{"name": "dinner plans", "added": "Asks to plan dinners for the next two weeks for four people (2026-10-21)"}], "portraits": [{"of": "the user", "added": "The user wants to plan dinners for the next two weeks for a group of four (2026-10-21)."}]}, {"kind": "say", "role": "agent", "text": "Sure. Who's joining?", "time": "20:01"}, {"kind": "say", "role": "user", "text": "My mother-in-law Vesna is coming to stay with us for two weeks from next Monday.", "time": "20:02"}, {"kind": "gate", "p": 0.93, "kept": true}, {"kind": "resolve", "skip": true}, {"kind": "journal", "entry": 22, "day": "2026-10-21", "text": "My mother-in-law Vesna is coming to stay with us for two weeks from next Monday."}, {"kind": "worth", "entry": 22, "p": 0.59, "read": true}, {"kind": "read", "entry": 22, "world": [{"who": "Vesna", "part": "is the user's", "value": "relative", "ended": false}], "topics": [{"name": "Mother-in-law visit", "added": "Mother-in-law Vesna is coming to stay with us for two weeks from next Monday (2026-10-21)"}], "portraits": [{"of": "Vesna", "added": "Vesna is coming to stay with the user for two weeks starting next Monday (2026-10-21)"}, {"of": "the user", "added": "User's mother-in-law Vesna will be staying with them for two weeks from next Monday (2026-10-21)"}]}, {"kind": "say", "role": "agent", "text": "Got it. Any dietary needs I should plan around?", "time": "20:03"}, {"kind": "say", "role": "user", "text": "Just no peanuts, for Mila.", "time": "20:04"}, {"kind": "gate", "p": 0.83, "kept": true}, {"kind": "resolve", "said": "Just no peanuts, for Mila.", "to": "Just no peanuts for Mila."}, {"kind": "journal", "entry": 23, "day": "2026-10-21", "text": "Just no peanuts for Mila."}, {"kind": "worth", "entry": 23, "p": 0.34, "read": true}, {"kind": "read", "entry": 23, "world": [{"who": "Mila", "part": "health", "value": "peanuts", "ended": false}], "topics": [{"name": "dinner plans", "added": "Reiterates that Mila must avoid peanuts (2026-10-21)"}], "portraits": [{"of": "Mila", "added": "Mila must avoid peanuts (2026-10-21)"}]}, {"kind": "say", "role": "agent", "text": "Noted. Here's a two-week plan, peanut-free throughout.", "time": "20:05"}, {"kind": "say", "role": "user", "text": "Draft a short message to the team: the release slips a week.", "time": "20:06", "fast": true}, {"kind": "gate", "p": 0.41, "kept": false, "fast": true}, {"kind": "say", "role": "agent", "text": "Here's a draft: the release moves by one week, with the reason and the new date.", "time": "20:07", "fast": true}, {"kind": "say", "role": "user", "text": "Translate 'see you tomorrow' into German.", "time": "20:08", "fast": true}, {"kind": "gate", "p": 0.35, "kept": false, "fast": true}, {"kind": "say", "role": "agent", "text": "Bis morgen.", "time": "20:09", "fast": true}, {"kind": "mode", "to": "read"}, {"kind": "say", "role": "user", "text": "Help me plan something nice for my wife's birthday evening.", "time": "21:14"}, {"kind": "search", "entries": [4, 5, 7, 10, 11, 16, 18, 21, 22, 23]}, {"kind": "world", "who": ["Mila", "the user"]}, {"kind": "topic", "names": ["wife's birthday", "weekend plans", "Mother-in-law visit", "calendar scheduling"]}, {"kind": "note", "text": "[4] Evening of 11 November is my wife Mila's birthday (2026-09-26)  \n[5] I want reminders a week and a day before (2026-09-26)  \n[18] Mila said for Mila's own birthday Mila wants something quiet, just the two of us (2026-10-10)  \n[23] Just no peanuts for Mila (said by user, 2026-10-21)  \n[9] Mila likes the jazz trio at a small club (~60 seats) (2026-09-30)  \n[8] Mila dislikes big open-air music festival (2026-09-30)  \n[21] Plan dinners for the next two weeks—we'll be four at the table (2026-10-21)  \n[22] Mother-in-law Vesna is coming to stay for two weeks from next Monday (2026-10-21)  \n\n(Note: Since Mila’s birthday is on 11 November and Vesna’s stay begins “from next Monday” relative to 2026-10-21, Vesna will likely still be present during the birthday period, which may affect plans for a quiet evening just the two of us.)"}, {"kind": "say", "role": "agent", "text": "Here's a plan built on what your memory holds about Mila.\n\n**What I know**\n- Her birthday is the evening of 11 November (a Wednesday), 12 days away.\n- She wants something quiet, just the two of you.\n- She likes the small jazz trio club (about 60 seats) and dislikes big open-air festivals.\n- No peanuts.\n- Her mother Vesna is staying for two weeks from last Monday's arrival, so she'll probably still be there on the 11th.\n\n**Suggested evening**\n1. **Early:** Vesna covers the house, or goes out herself, so you two leave alone. This is the part that makes it \"just us\".\n2. **Dinner:** a small, quiet restaurant with a table for two. When you book, tell them about the peanut allergy. Ask for a corner or window table.\n3. **After dinner:** the jazz trio club if they play that night. With only 60 seats, book ahead.\n4. **Home:** a small gift and a dessert, with no peanuts in it.\n\n**Next steps**\n- Check whether the club has a show on Wednesday 11 November, and book it this week.\n- Book the restaurant.\n- Set the reminders you wanted, a week before (4 Nov) and a day before (10 Nov). I can't set them from here, so tell me if you want them somewhere specific.\n\n**Questions**\n- Is Vesna fine staying home or making herself scarce that evening?\n- What's your budget, and which part of town?\n- Do you have a gift in mind, or should I suggest some?\n\nIf you tell me the city, I can search for jazz clubs and restaurants with dates and availability.", "final": true, "time": "21:15"}]};
+const $ = (s, el = document) => el.querySelector(s);
+const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+const cut = (t, n) => (t = String(t || "")).length > n ? t.slice(0, n - 1) + "…" : t;
+const stage = $("#stage");
+function fit() {
+  const k = Math.min(innerWidth / 1920, innerHeight / 1080);
+  stage.style.transform = `translate(${(innerWidth - 1920 * k) / 2}px, ${(innerHeight - 1080 * k) / 2}px) scale(${k})`;
+}
+addEventListener("resize", fit); fit();
+
+function md(text) {
+  const out = [];
+  let list = null;
+  for (const raw of String(text).split("\n")) {
+    let line = esc(raw.trim()).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");
+    if (/^[-*] /.test(line) || /^\d+\. /.test(line)) {
+      if (!list) { list = []; }
+      list.push(line.replace(/^([-*]|\d+\.) /, ""));
+      continue;
+    }
+    if (list) { out.push("<ul>" + list.map(l => `<li>${l}</li>`).join("") + "</ul>"); list = null; }
+    if (line) out.push(`<div>${line}</div>`);
+  }
+  if (list) out.push("<ul>" + list.map(l => `<li>${l}</li>`).join("") + "</ul>");
+  return out.join("");
+}
+
+// --- state ---------------------------------------------------------------------------------
+let world, topics, portraits, journalEls;
+function reset() {
+  $("#chat").innerHTML = "";
+  document.querySelectorAll(".store .items").forEach(el => el.innerHTML = "");
+  document.querySelectorAll(".card .out").forEach(el => el.innerHTML = "");
+  world = {}; topics = {}; portraits = {}; journalEls = {};
+  $("#ctx").hidden = true;
+  setMode("write");
+  clearOn();
+}
+function setMode(m) {
+  const read = m === "read";
+  $("#stage").classList.toggle("read-mode", read);
+  $("#mode").textContent = read ? "READING" : "WRITING";
+  $("#mode").classList.toggle("read", read);
+  document.querySelectorAll(".card.w").forEach(c => c.hidden = read);
+  document.querySelectorAll(".card.r").forEach(c => c.hidden = !read);
+  $("#col-right").textContent = read ? "WHAT IT READS" : "WHERE IT SETTLES";
+}
+function clearOn() {
+  document.querySelectorAll(".on").forEach(e => e.classList.remove("on"));
+  document.querySelectorAll(".item.new").forEach(e => e.classList.remove("new"));
+  $("#wires").innerHTML = "";
+}
+function on(id) { const el = $(id); el.classList.add("on"); return el; }
+function out(id, html) { $(id + " .out").innerHTML = html; }
+function wire(from, to, reverse) {
+  const box = $("#mem").getBoundingClientRect(), k = box.width / $("#mem").offsetWidth;
+  const a = $(from).getBoundingClientRect(), b = $(to).getBoundingClientRect();
+  const x1 = (a.right - box.left) / k, y1 = (a.top + a.height / 2 - box.top) / k;
+  const x2 = (b.left - box.left) / k, y2 = (b.top + Math.min(b.height / 2, 60) - box.top) / k;
+  const mid = (x1 + x2) / 2;
+  const d = reverse ? `M${x2},${y2} C${mid},${y2} ${mid},${y1} ${x1 + 8},${y1}` : `M${x1},${y1} C${mid},${y1} ${mid},${y2} ${x2 - 8},${y2}`;
+  const color = getComputedStyle(document.documentElement).getPropertyValue(reverse ? "--read" : "--write");
+  $("#wires").insertAdjacentHTML("beforeend", `<path d="${d}" style="stroke:${color}"/>`);
+}
+function chat(html, cls) {
+  const el = document.createElement("div");
+  el.className = cls; el.innerHTML = html;
+  $("#chat").appendChild(el);
+  return el;
+}
+function add(store, html, cls = "item new") {
+  const el = document.createElement("div");
+  el.className = cls; el.innerHTML = html;
+  $(store + " .items").appendChild(el);
+  return el;
+}
+
+function personCard(name) {
+  if (!world[name]) {
+    world[name] = add("#s-world", `<h4>${esc(name)}</h4><div class="parts"></div>`, "item person new");
+  }
+  return world[name];
+}
+function topicCard(name) {
+  if (!topics[name]) topics[name] = add("#s-topics", `<h4>${esc(name)}</h4>`, "item topic new");
+  return topics[name];
+}
+function portraitCard(name) {
+  if (!portraits[name]) portraits[name] = add("#s-portraits", `<h4>${esc(name)}</h4>`, "item person new");
+  return portraits[name];
+}
+function bump(el) { el.classList.add("new"); el.parentNode.appendChild(el); }
+
+// --- steps -----------------------------------------------------------------------------------
+const pct = p => p == null ? "—" : p.toFixed(2);
+const RUN = {
+  more() { return typing(); },
+  day(e) {
+    const d = new Date(e.date + "T12:00:00");
+    chat(isNaN(d) ? esc(e.date) : d.toLocaleDateString("en-GB", {day: "numeric", month: "long"}), "day");
+    return e.fast ? 120 : 600;
+  },
+  say(e) {
+    const time = `<span class="time">${esc(e.time || "")}${e.role === "user" ? " ✓✓" : ""}</span>`;
+    if (e.final) {
+      // The reply as a messenger would show it: one message per part, each after "typing…".
+      clearOn();
+      const parts = String(e.text).split(/\n\s*\n(?=\*\*|[A-Z])/).reduce((acc, block) => {
+        if (acc.length && (/^\s*([-*]|\d+\.)\s/.test(block) || acc[acc.length - 1].trim().endsWith(":") || /^\*\*[^*]+\*\*\s*$/.test(acc[acc.length - 1].trim()))) {
+          acc[acc.length - 1] += "\n\n" + block;
+        } else acc.push(block);
+        return acc;
+      }, []);
+      finalParts = parts; finalTime = time;
+      return typing();
+    }
+    chat(`${esc(e.text)}${time}`, `msg ${e.role}${e.fast ? " fast" : ""}`);
+    return e.role === "user" ? 1700 : 1300;
+  },
+  gate(e) {
+    clearOn(); on("#c-gate");
+    out("#c-gate", e.kept ? `p = <b>${pct(e.p)}</b> → kept` : `p = <b>${pct(e.p)}</b> → not kept`);
+    out("#c-resolve", ""); out("#c-worth", ""); out("#c-reader", "");
+    return 1100;
+  },
+  resolve(e) {
+    on("#c-resolve");
+    out("#c-resolve", e.skip ? "no agent message before → kept as said"
+      : `<b>"${esc(cut(e.said, 40))}"</b><br>→ <b>"${esc(cut(e.to, 70))}"</b>`);
+    return e.skip ? 700 : 2200;
+  },
+  journal(e) {
+    on("#s-journal"); wire("#c-resolve", "#s-journal");
+    journalEls[e.entry] = add("#s-journal", `<span class="n">#${e.entry} · ${esc(e.day)}</span>${esc(cut(e.text, 120))}`);
+    return 1200;
+  },
+  worth(e) {
+    clearOn(); on("#c-worth");
+    out("#c-worth", e.read ? `p = <b>${pct(e.p)}</b> → read` : `p = <b>${pct(e.p)}</b> → journal only`);
+    if (journalEls[e.entry]) wire("#c-worth", "#s-journal", true);
+    return 1000;
+  },
+  read(e) {
+    on("#c-reader");
+    const said = [];
+    if (e.world.length) {
+      on("#s-world"); wire("#c-reader", "#s-world");
+      for (const w of e.world) {
+        const card = personCard(w.who);
+        bump(card);
+        if (w.part === "is the user's") {
+          const h = $("h4", card); if (!h.dataset.role) { h.dataset.role = 1; h.innerHTML += ` <span class="part">· ${esc(w.value)}</span>`; }
+        } else {
+          $(".parts", card).insertAdjacentHTML("beforeend", `<div class="part${w.ended ? " ended" : ""}">${esc(w.part)} · ${esc(w.value)}</div>`);
+        }
+      }
+      said.push(`${e.world.length} part${e.world.length > 1 ? "s" : ""}`);
+    }
+    if (e.topics.length) {
+      on("#s-topics"); wire("#c-reader", "#s-topics");
+      for (const t of e.topics) { const c = topicCard(t.name); bump(c); c.insertAdjacentHTML("beforeend", `<div class="layer">${esc(cut(t.added, 110))}</div>`); }
+      said.push(`${e.topics.length} topic layer${e.topics.length > 1 ? "s" : ""}`);
+    }
+    const people = e.portraits.filter(p => p.of !== "the user");
+    if (people.length) {
+      on("#s-portraits"); wire("#c-reader", "#s-portraits");
+      for (const p of people) { const c = portraitCard(p.of); bump(c); c.insertAdjacentHTML("beforeend", `<div class="layer">${esc(cut(p.added, 110))}</div>`); }
+      said.push(`${people.length} portrait line${people.length > 1 ? "s" : ""}`);
+    }
+    out("#c-reader", said.length ? "+ " + said.join(" · ") : "nothing new");
+    return 2400;
+  },
+  mode(e) {
+    clearOn(); setMode(e.to);
+    chat("Today", "day");
+    return 1600;
+  },
+  search(e) {
+    clearOn(); on("#c-search"); on("#s-journal");
+    for (const n of e.entries) journalEls[n] && journalEls[n].classList.add("hit");
+    if (e.entries.length) wire("#c-search", "#s-journal", true);
+    out("#c-search", `found <b>${e.entries.map(n => "#" + n).join(" ")}</b>`);
+    return 1800;
+  },
+  world(e) {
+    on("#c-world");
+    const hit = e.who.filter(w => world[w] || portraits[w]);
+    for (const w of hit) { world[w] && world[w].classList.add("hit"); portraits[w] && portraits[w].classList.add("hit"); }
+    if (hit.some(w => world[w])) { on("#s-world"); wire("#c-world", "#s-world", true); }
+    if (hit.some(w => portraits[w])) { on("#s-portraits"); wire("#c-world", "#s-portraits", true); }
+    out("#c-world", hit.length ? `<b>${hit.map(esc).join(", ")}</b>` : "none named");
+    return 1600;
+  },
+  topic(e) {
+    on("#c-topic");
+    const hit = e.names.filter(n => topics[n]);
+    for (const n of hit) topics[n].classList.add("hit");
+    if (hit.length) { on("#s-topics"); wire("#c-topic", "#s-topics", true); }
+    out("#c-topic", hit.length ? `goes on with <b>${hit.map(esc).join(", ")}</b>` : "none");
+    return 1600;
+  },
+  note(e) {
+    // The note goes to the agent, not into the user's chat: it is shown where it is made.
+    on("#c-fit");
+    out("#c-fit", "→ one note, <b>sent to the agent</b>");
+    const text = e.text.replace(/^Here are the relevant facts from memory:\s*/i, "")
+      .replace(/^Kept as entry #\d+\.\s*/i, "").replace(/^From before, for this message[^\n]*\n/i, "");
+    $("#ctx .ctx-body").innerHTML = md(text);
+    $("#ctx").hidden = false;
+    return 6000;
+  },
+};
+
+let finalParts = [], finalTime = "";
+function typing() {
+  if (!finalParts.length) return 300;
+  const dots = chat(`<span class="typing">Agent is typing<i>.</i><i>.</i><i>.</i></span>`, "msg agent");
+  const part = finalParts.shift();
+  const left = finalParts.length;
+  setTimeout(() => {
+    dots.remove();
+    chat(`${md(part)}${finalTime}`, "msg agent final");
+  }, 900 / speed);
+  // The next part after this one is read: about a second per line.
+  const pause = 900 + Math.min(6000, 700 + part.split("\n").length * 650);
+  if (left) DATA.events.splice(at, 0, {kind: "more"});
+  return pause;
+}
+
+// --- player ----------------------------------------------------------------------------------
+let at = 0, timer = null, speed = 1;
+function step() {
+  if (at >= DATA.events.length) { timer = null; return false; }
+  const e = DATA.events[at++];
+  $("#ff").hidden = !e.fast;
+  const wait = (RUN[e.kind] || (() => 300))(e);
+  return e.fast ? Math.min(wait / 8, 220) : wait;
+}
+function play() {
+  const wait = step();
+  timer = wait === false ? null : setTimeout(play, wait / speed);
+}
+function pause() { clearTimeout(timer); timer = null; }
+addEventListener("keydown", ev => {
+  if (ev.key === " ") { ev.preventDefault(); timer ? pause() : play(); }
+  else if (ev.key === "ArrowRight") { pause(); step(); }
+  else if (ev.key.toLowerCase() === "r") { pause(); at = 0; DATA.events = DATA.events.filter(e => e.kind !== "more"); finalParts = []; reset(); }
+  else if ("1234".includes(ev.key)) speed = [0.5, 1, 1.5, 2.5][+ev.key - 1];
+  else if (ev.key.toLowerCase() === "h") $("#bar").classList.toggle("hide");
+});
+reset();
+setTimeout(play, 1200);
+</script>
+</body>
+</html>

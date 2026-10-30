@@ -1,0 +1,4 @@
+{"from": "the user", "relation": "started", "common": false, "to": "Project Hail Mary", "text": 19, "day": "2026-09-29 20:00:00", "quote": "Started the audiobook of 'Project Hail Mary'", "when": "2026-09-29", "class": "did"}
+{"from": "the user", "relation": "likes", "common": true, "to": "Station Eleven", "text": 31, "day": "2026-10-15 20:00:00", "quote": "couldn't put it down", "when": "2026-10-15"}
+{"from": "book club", "relation": "likes", "common": true, "to": "Normal People", "text": 36, "day": "2026-10-21 20:00:00", "quote": "picked 'Normal People'", "when": "2026-10-21"}
+{"from": "the user", "relation": "started_reading", "common": false, "to": "Tomorrow, and Tomorrow, and Tomorrow", "text": 39, "day": "2026-10-27 20:00:00", "quote": "Started 'Tomorrow, and Tomorrow, and Tomorrow'", "when": "2026-10-27", "class": "now"}

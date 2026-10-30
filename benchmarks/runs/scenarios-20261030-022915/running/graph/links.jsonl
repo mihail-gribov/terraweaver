@@ -1,0 +1,9 @@
+{"from": "the user", "relation": "health", "common": true, "to": "legs are dead", "text": 8, "day": "2026-10-02 20:00:00", "quote": "My legs are dead.", "when": "2026-10-02"}
+{"from": "the user", "relation": "did", "common": false, "to": "weights and rowing", "text": 14, "day": "2026-10-10 20:00:00", "quote": "weights and rowing", "when": "2026-10-10", "class": "did"}
+{"from": "the user", "relation": "listened_to", "common": false, "to": "podcast", "text": 15, "day": "2026-10-11 20:00:00", "quote": "Listened to a podcast", "when": "2026-10-11", "class": "did"}
+{"from": "the user", "relation": "hobby", "common": true, "to": "first 10 km run", "text": 17, "day": "2026-10-13 20:00:00", "quote": "Did my first 10 km run!", "when": "2026-10-13"}
+{"from": "Marko", "relation": "neighbour", "common": false, "to": "the user", "text": 21, "day": "2026-10-17 20:00:00", "quote": "my neighbour Marko", "when": "2026-10-17"}
+{"from": "the user", "relation": "did", "common": false, "to": "Easy 6 km run", "text": 21, "day": "2026-10-17 20:00:00", "quote": "Easy 6 km run", "when": "2026-10-17", "class": "did"}
+{"from": "knee", "relation": "health", "common": true, "to": "fine", "text": 31, "day": "2026-10-27 20:00:00", "quote": "My knee is fine again.", "when": "2026-10-27"}
+{"from": "the user", "relation": "owns", "common": true, "to": "headphones", "text": 32, "day": "2026-10-28 20:00:00", "quote": "Ordered new headphones", "when": "2026-10-28"}
+{"from": "the user", "relation": "considering", "common": false, "to": "half marathon", "text": 34, "day": "2026-10-30 19:00:00", "quote": "Thinking of signing up for a half marathon in four weeks.", "when": "2026-10-30", "class": "plans"}

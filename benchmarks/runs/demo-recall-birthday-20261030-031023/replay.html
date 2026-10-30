@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TerraWeaver Replay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  /* Layout: a fixed 1920x1080 stage scaled to the window. The conversation on the left; the memory on
+     the right, the deciding blocks beside the four stores. Every step comes from the run's trace. */
+  :root {
+    --bg: #eef0ec;
+    --panel: #ffffff;
+    --ink: #1d2320;
+    --muted: #66706a;
+    --line: #cfd4cf;
+    --write: #3d4a43;
+    --read: #1f6fd1;
+    --read-soft: #e3eefb;
+    --store: #e4e8e2;
+    --new: #fff3c4;
+    --model: #6b5a2e;
+    --model-soft: #f1ead6;
+    --user: #dfe9e2;
+    --display: "IBM Plex Sans Condensed", "Arial Narrow", sans-serif;
+    --body: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    color-scheme: light;
+  }
+  html, body { margin: 0; height: 100%; background: #0d0f0e; overflow: hidden; }
+  #stage {
+    position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0;
+    background: var(--bg); color: var(--ink); font-family: var(--body);
+    display: grid; grid-template-columns: 700px 1fr; grid-template-rows: 76px 1fr;
+  }
+  header { grid-column: 1 / -1; display: flex; align-items: center; gap: 28px; padding: 0 36px; border-bottom: 1px solid var(--line); background: var(--panel); }
+  header h1 { font-family: var(--display); font-weight: 600; font-size: 30px; margin: 0; letter-spacing: .01em; }
+  header .sub { color: var(--muted); font-size: 18px; }
+  #mode { margin-left: auto; font-family: var(--display); font-weight: 600; font-size: 22px; letter-spacing: .06em; padding: 8px 20px; border-radius: 6px; background: var(--write); color: #fff; transition: background .4s; }
+  #mode.read { background: var(--read); }
+
+  /* the conversation */
+  #chat { border-right: 1px solid var(--line); overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; padding: 18px 26px; gap: 12px; background: var(--panel); }
+  #chat > * { flex: none; }
+  .day { align-self: center; font-family: var(--mono); font-size: 15px; color: var(--muted); padding: 4px 12px; border: 1px solid var(--line); border-radius: 20px; }
+  .msg { max-width: 560px; font-size: 19px; line-height: 1.4; padding: 12px 16px; border-radius: 12px; animation: pop .35s ease-out; }
+  .msg.user { align-self: flex-end; background: var(--user); border-bottom-right-radius: 3px; }
+  .msg.agent { align-self: flex-start; background: var(--bg); border-bottom-left-radius: 3px; }
+  .msg.agent.final { max-width: 640px; font-size: 16px; line-height: 1.42; }
+  .msg.agent.final ul { margin: 4px 0; padding-left: 20px; }
+  .msg.note { align-self: stretch; max-width: none; background: var(--read-soft); border: 1.5px solid var(--read); font-size: 15.5px; line-height: 1.4; }
+  .msg .who { display: block; font-family: var(--display); font-weight: 600; font-size: 14px; letter-spacing: .08em; color: var(--muted); margin-bottom: 3px; text-transform: uppercase; }
+  .msg.note .who { color: var(--read); }
+  @keyframes pop { from { transform: translateY(10px); opacity: .3; } to { transform: none; opacity: 1; } }
+
+  /* the memory */
+  #mem { position: relative; display: grid; grid-template-columns: 400px 1fr; gap: 26px; padding: 22px 30px; min-height: 0; }
+  #decide { display: flex; flex-direction: column; gap: 14px; min-height: 0; }
+  .col { font-family: var(--display); font-weight: 600; font-size: 15px; letter-spacing: .14em; color: var(--muted); }
+  .card { background: var(--panel); border: 2px solid var(--line); border-radius: 10px; padding: 14px 16px; transition: border-color .3s, box-shadow .3s, opacity .3s; }
+  .card h3 { font-family: var(--display); font-weight: 600; font-size: 23px; margin: 0; display: flex; align-items: center; gap: 10px; }
+  .card h3 small { font-family: var(--mono); font-weight: 400; font-size: 13px; color: var(--muted); }
+  .card .q { font-size: 16.5px; margin-top: 4px; }
+  .chip { margin-left: auto; font-family: var(--mono); font-size: 13px; font-weight: 400; color: var(--model); background: var(--model-soft); padding: 2px 8px; border-radius: 4px; }
+  .card .out { font-family: var(--mono); font-size: 14.5px; margin-top: 8px; min-height: 20px; color: var(--muted); }
+  .card .out b { color: var(--ink); font-weight: 500; }
+  .card.on { border-color: var(--write); box-shadow: 0 0 0 4px rgba(61, 74, 67, .12); }
+  .read-mode .card.on { border-color: var(--read); box-shadow: 0 0 0 4px rgba(31, 111, 209, .15); }
+  .card.dim { opacity: .45; }
+  .read-mode .card h3 { color: var(--read); }
+
+  #stores { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 18px; min-height: 0; }
+  .store { background: var(--store); border-radius: 10px; padding: 14px 16px; min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 8px; border: 2px solid transparent; transition: border-color .3s; }
+  .store.on { border-color: var(--write); }
+  .read-mode .store.on { border-color: var(--read); }
+  .store h2 { font-family: var(--display); font-weight: 600; font-size: 24px; margin: 0; }
+  .store h2 small { font-family: var(--body); font-weight: 400; font-size: 14px; color: var(--muted); margin-left: 8px; }
+  .items { display: flex; flex-direction: column; gap: 6px; overflow: hidden; justify-content: flex-end; flex: 1; min-height: 0; }
+  .item { background: var(--panel); border-radius: 6px; padding: 7px 10px; font-size: 15px; line-height: 1.35; transition: background 1.2s, outline-color .3s; outline: 2px solid transparent; }
+  .item.new { background: var(--new); }
+  .item.hit { outline-color: var(--read); background: var(--read-soft); }
+  .item .n { font-family: var(--mono); font-size: 13px; color: var(--muted); margin-right: 6px; }
+  .person h4, .topic h4 { margin: 0 0 3px; font-size: 16px; font-weight: 600; }
+  .part { font-family: var(--mono); font-size: 13.5px; }
+  .part.ended { text-decoration: line-through; color: var(--muted); }
+  .layer { font-size: 14px; color: var(--ink); }
+  .layer + .layer { margin-top: 2px; }
+
+  svg#wires { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+  svg#wires path { fill: none; stroke-width: 3; stroke-dasharray: 8 6; animation: flow .7s linear infinite; }
+  @keyframes flow { to { stroke-dashoffset: -14; } }
+  @media (prefers-reduced-motion: reduce) { svg#wires path, .msg { animation: none; } }
+
+  #bar { position: fixed; right: 12px; bottom: 10px; font: 12px var(--mono); color: #9aa; background: rgba(0,0,0,.55); padding: 6px 10px; border-radius: 6px; }
+  #bar.hide { display: none; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <header>
+    <h1>TerraWeaver</h1>
+    <span class="sub">a personal memory for any agent · on NVIDIA Nemotron</span>
+    <span id="mode">WRITING</span>
+  </header>
+  <section id="chat" aria-label="The conversation"></section>
+  <section id="mem">
+    <div id="decide">
+      <div class="col" id="col-left">DECIDES</div>
+      <div class="card w" id="c-gate"><h3>Gate <span class="chip">Nano · 1 token</span></h3><div class="q">Is it for the memory?</div><div class="out"></div></div>
+      <div class="card w" id="c-resolve"><h3>Resolve <small>agent-referring anaphora</small><span class="chip">Super</span></h3><div class="q">What in the agent's last message does it point to?</div><div class="out"></div></div>
+      <div class="card w" id="c-worth"><h3>Worth reading <span class="chip">Nano · 1 token</span></h3><div class="q">Does it matter a month from now?</div><div class="out"></div></div>
+      <div class="card w" id="c-reader"><h3>Reader <span class="chip">Super</span></h3><div class="q">Who? Which part of their world? Which topic? What is new?</div><div class="out"></div></div>
+      <div class="card r" id="c-search" hidden><h3>Search</h3><div class="q">Which facts bear on it? By words and by meaning.</div><div class="out"></div></div>
+      <div class="card r" id="c-world" hidden><h3>World</h3><div class="q">Whose parts does it name?</div><div class="out"></div></div>
+      <div class="card r" id="c-topic" hidden><h3>Topic <span class="chip">Nano · 1 token</span></h3><div class="q">Does it go on with one?</div><div class="out"></div></div>
+      <div class="card r" id="c-fit" hidden><h3>Fit <span class="chip">Super</span></h3><div class="q">What of it bears on this message?</div><div class="out"></div></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;min-height:0">
+      <div class="col" id="col-right">WHERE IT SETTLES</div>
+      <div id="stores">
+        <div class="store" id="s-journal"><h2>Journal<small>the facts as said, with their day</small></h2><div class="items"></div></div>
+        <div class="store" id="s-world"><h2>User's world<small>people and their parts, now and was</small></h2><div class="items"></div></div>
+        <div class="store" id="s-topics"><h2>Topics<small>dated layers</small></h2><div class="items"></div></div>
+        <div class="store" id="s-portraits"><h2>Portraits<small>one text per person</small></h2><div class="items"></div></div>
+      </div>
+    </div>
+    <svg id="wires"></svg>
+  </section>
+</div>
+<div id="bar">space play/pause · → step · R restart · 1–4 speed · H hide</div>
+
+<script>
+const DATA = {"title": "demo-recall-birthday-20261030-031023", "events": [{"kind": "day", "date": "2026-09-26"}, {"kind": "say", "role": "user", "text": "Note for later: my wife Mila's birthday is on 11 November."}, {"kind": "gate", "p": 0.93, "kept": true}, {"kind": "resolve", "skip": true}, {"kind": "journal", "entry": 1, "day": "2026-09-26", "text": "Note for later: my wife Mila's birthday is on 11 November."}, {"kind": "worth", "entry": 1, "p": 0.66, "read": true}, {"kind": "read", "entry": 1, "world": [{"who": "Mila", "part": "is the user's", "value": "spouse", "ended": false}, {"who": "Mila", "part": "born on", "value": "11 November", "ended": false}], "topics": [{"name": "Mila's birthday", "added": "Mila's birthday is on 11 November (2026-09-26)"}], "portraits": [{"of": "the user", "added": "The user has a wife named Mila (2026-09-26)"}, {"of": "Mila", "added": "Mila's birthday is on 11 November (2026-09-26)"}]}, {"kind": "say", "role": "agent", "text": "Noted. Anything you'd like to plan?"}, {"kind": "say", "role": "user", "text": "Not yet. She loves jazz, especially small live venues, and she can't stand big crowds."}, {"kind": "gate", "p": 0.93, "kept": true}, {"kind": "resolve", "said": "Not yet. She loves jazz, especially small live venues, and she can't stand big crowds.", "to": "Not yet, I don't have anything I'd like to plan. She loves jazz, especially small live venues, and she can't stand big crowds."}, {"kind": "journal", "entry": 2, "day": "2026-09-26", "text": "Not yet, I don't have anything I'd like to plan. She loves jazz, especially small live venues, and she can't stand big crowds."}, {"kind": "worth", "entry": 2, "p": 0.72, "read": true}, {"kind": "read", "entry": 2, "world": [{"who": "Mila", "part": "likes", "value": "jazz", "ended": false}, {"who": "Mila", "part": "likes", "value": "small live venues", "ended": false}, {"who": "Mila", "part": "dislikes", "value": "big crowds", "ended": false}], "topics": [{"name": "Mila's preferences", "added": "She loves jazz, especially small live venues, and she can't stand big crowds (2026-09-26)."}], "portraits": [{"of": "Mila", "added": "She loves jazz, especially small live venues, and she can't stand big crowds (2026-09-26)."}, {"of": "the user", "added": "The user has nothing they'd like to plan at the moment (2026-09-26)."}]}, {"kind": "day", "date": "2026-10-03"}, {"kind": "say", "role": "user", "text": "Ugh, Mila had a reaction at a restaurant yesterday, she's seriously allergic to nuts."}, {"kind": "gate", "p": 0.94, "kept": true}, {"kind": "resolve", "skip": true}, {"kind": "journal", "entry": 3, "day": "2026-10-03", "text": "Ugh, Mila had a reaction at a restaurant yesterday, she's seriously allergic to nuts."}, {"kind": "worth", "entry": 3, "p": 0.42, "read": true}, {"kind": "read", "entry": 3, "world": [{"who": "Mila", "part": "health", "value": "allergic to nuts", "ended": false}], "topics": [{"name": "Mila's allergy", "added": "Mila is seriously allergic to nuts (reported after a reaction at a restaurant yesterday) (2026-10-03)"}], "portraits": [{"of": "Mila", "added": "Mila is seriously allergic to nuts (after a reaction at a restaurant yesterday) (2026-10-03)"}]}, {"kind": "day", "date": "2026-10-10"}, {"kind": "say", "role": "user", "text": "Our son Lev turned seven, we did a Lego party. Mila said next time she wants a quiet evening."}, {"kind": "gate", "p": 0.93, "kept": true}, {"kind": "resolve", "skip": true}, {"kind": "journal", "entry": 4, "day": "2026-10-10", "text": "Our son Lev turned seven, we did a Lego party. Mila said next time she wants a quiet evening."}, {"kind": "worth", "entry": 4, "p": 0.73, "read": true}, {"kind": "read", "entry": 4, "world": [{"who": "Lev", "part": "is the user's", "value": "child", "ended": false}, {"who": "Lev", "part": "age", "value": "seven", "ended": false}, {"who": "Mila", "part": "likes", "value": "quiet evening", "ended": false}], "topics": [{"name": "Mila's preferences", "added": "She prefers a quiet evening for future celebrations (2026-10-10)"}, {"name": "Lev's birthday celebration", "added": "Lev turned seven; they held a Lego party for his birthday (2026-10-10)"}], "portraits": [{"of": "the user", "added": "They have a son named Lev who turned seven; they hosted a Lego party for his birthday (2026-10-10)"}, {"of": "Mila", "added": "She prefers a quiet evening for future celebrations (2026-10-10)"}, {"of": "Lev", "added": "He is seven years old (2026-10-10)"}]}, {"kind": "day", "date": "2026-10-21"}, {"kind": "say", "role": "user", "text": "My mother-in-law Vesna is coming to stay with us for two weeks from next Monday."}, {"kind": "gate", "p": 0.81, "kept": true}, {"kind": "resolve", "skip": true}, {"kind": "journal", "entry": 5, "day": "2026-10-21", "text": "My mother-in-law Vesna is coming to stay with us for two weeks from next Monday."}, {"kind": "worth", "entry": 5, "p": 0.52, "read": true}, {"kind": "read", "entry": 5, "world": [{"who": "Vesna", "part": "is the user's", "value": "relative", "ended": false}], "topics": [{"name": "Mother-in-law visit", "added": "Mother-in-law Vesna is coming to stay with us for two weeks from next Monday (2026-10-21)."}], "portraits": [{"of": "the user", "added": "Mother-in-law Vesna is coming to stay with them for two weeks from next Monday (2026-10-21)."}, {"of": "Vesna", "added": "She is coming to stay with her child-in-law (the user) for two weeks from next Monday (2026-10-21)."}]}, {"kind": "mode", "to": "read"}, {"kind": "say", "role": "user", "text": "Help me plan something nice for my wife's birthday evening."}, {"kind": "search", "entries": [1, 2, 3, 4, 5]}, {"kind": "world", "who": ["Mila", "the user"]}, {"kind": "topic", "names": ["Mila's birthday", "Mila's preferences", "Lev's birthday celebration", "Mother-in-law visit"]}, {"kind": "note", "text": "[2026-09-26] Mila's birthday is on 11 November  \n[2026-09-26] She loves jazz, especially small live venues, and she can't stand big crowds  \n[2026-10-03] Mila is seriously allergic to nuts after a reaction at a restaurant yesterday  \n[2026-10-10] Mila said next time she wants a quiet evening  \n[2026-10-21] Mother-in-law Vesna is coming to stay with us for two weeks from next Monday"}, {"kind": "say", "role": "agent", "text": "Here's a plan built around what I know about Mila. Her birthday is 11 November, a Wednesday.\n\n**What shapes it**\n- She loves jazz, especially small live venues.\n- She can't stand crowds, and said she wants a quiet evening next time.\n- She has a serious nut allergy.\n- Your mother-in-law Vesna is staying with you for two weeks from Monday 2 November. That covers the birthday.\n\n**Option A: small jazz night out (my pick)**\n- Book a small jazz club or a restaurant with live jazz. Pick an early slot or a weeknight set, and a table away from the crowd.\n- Reserve ahead. Tell them about the nut allergy when you book, and ask whether the kitchen can handle it. Jazz bars often serve nut-heavy snacks and desserts.\n- Ask Vesna to look after the kids that evening, so it's a real night off for you two.\n\n**Option B: quiet evening at home**\n- Cook her favorite dinner yourself, with no nuts anywhere, including the dessert and the cake.\n- Play a jazz record or a streamed live set, and light candles.\n- Vesna takes the kids out or keeps them busy for a few hours. If she's staying in, plan around her.\n\n**Option C: both**\n- Have a quiet early dinner out, then go home to a jazz playlist and dessert.\n\n**Steps**\n1. This week: decide between A, B and C, and ask Vesna if she can cover the evening.\n2. Before 4 November: book the venue and confirm the allergy handling, or order the ingredients and cake for home.\n3. A gift that fits: tickets to a small jazz concert, a vinyl record, or a good speaker.\n4. On the day: the plan is the gift, so keep it low-key and skip any surprise party.\n\n**What I don't have**\nI don't know your city, budget, her favorite cuisine, or how she feels about a surprise. Tell me your city and budget and I'll look for specific jazz venues with a nut-safe menu. Tell me her favorite food and I'll draft the dinner plan.", "final": true}]};
+const $ = (s, el = document) => el.querySelector(s);
+const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+const cut = (t, n) => (t = String(t || "")).length > n ? t.slice(0, n - 1) + "…" : t;
+const stage = $("#stage");
+function fit() {
+  const k = Math.min(innerWidth / 1920, innerHeight / 1080);
+  stage.style.transform = `translate(${(innerWidth - 1920 * k) / 2}px, ${(innerHeight - 1080 * k) / 2}px) scale(${k})`;
+}
+addEventListener("resize", fit); fit();
+
+function md(text) {
+  const out = [];
+  let list = null;
+  for (const raw of String(text).split("\n")) {
+    let line = esc(raw.trim()).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");
+    if (/^[-*] /.test(line) || /^\d+\. /.test(line)) {
+      if (!list) { list = []; }
+      list.push(line.replace(/^([-*]|\d+\.) /, ""));
+      continue;
+    }
+    if (list) { out.push("<ul>" + list.map(l => `<li>${l}</li>`).join("") + "</ul>"); list = null; }
+    if (line) out.push(`<div>${line}</div>`);
+  }
+  if (list) out.push("<ul>" + list.map(l => `<li>${l}</li>`).join("") + "</ul>");
+  return out.join("");
+}
+
+// --- state ---------------------------------------------------------------------------------
+let world, topics, portraits, journalEls;
+function reset() {
+  $("#chat").innerHTML = "";
+  document.querySelectorAll(".store .items").forEach(el => el.innerHTML = "");
+  document.querySelectorAll(".card .out").forEach(el => el.innerHTML = "");
+  world = {}; topics = {}; portraits = {}; journalEls = {};
+  setMode("write");
+  clearOn();
+}
+function setMode(m) {
+  const read = m === "read";
+  $("#stage").classList.toggle("read-mode", read);
+  $("#mode").textContent = read ? "READING" : "WRITING";
+  $("#mode").classList.toggle("read", read);
+  document.querySelectorAll(".card.w").forEach(c => c.hidden = read);
+  document.querySelectorAll(".card.r").forEach(c => c.hidden = !read);
+  $("#col-right").textContent = read ? "WHAT IT READS" : "WHERE IT SETTLES";
+}
+function clearOn() {
+  document.querySelectorAll(".on").forEach(e => e.classList.remove("on"));
+  document.querySelectorAll(".item.new").forEach(e => e.classList.remove("new"));
+  $("#wires").innerHTML = "";
+}
+function on(id) { const el = $(id); el.classList.add("on"); return el; }
+function out(id, html) { $(id + " .out").innerHTML = html; }
+function wire(from, to, reverse) {
+  const box = $("#mem").getBoundingClientRect(), k = box.width / $("#mem").offsetWidth;
+  const a = $(from).getBoundingClientRect(), b = $(to).getBoundingClientRect();
+  const x1 = (a.right - box.left) / k, y1 = (a.top + a.height / 2 - box.top) / k;
+  const x2 = (b.left - box.left) / k, y2 = (b.top + Math.min(b.height / 2, 60) - box.top) / k;
+  const mid = (x1 + x2) / 2;
+  const d = reverse ? `M${x2},${y2} C${mid},${y2} ${mid},${y1} ${x1 + 8},${y1}` : `M${x1},${y1} C${mid},${y1} ${mid},${y2} ${x2 - 8},${y2}`;
+  const color = getComputedStyle(document.documentElement).getPropertyValue(reverse ? "--read" : "--write");
+  $("#wires").insertAdjacentHTML("beforeend", `<path d="${d}" style="stroke:${color}"/>`);
+}
+function chat(html, cls) {
+  const el = document.createElement("div");
+  el.className = cls; el.innerHTML = html;
+  $("#chat").appendChild(el);
+  return el;
+}
+function add(store, html, cls = "item new") {
+  const el = document.createElement("div");
+  el.className = cls; el.innerHTML = html;
+  $(store + " .items").appendChild(el);
+  return el;
+}
+
+function personCard(name) {
+  if (!world[name]) {
+    world[name] = add("#s-world", `<h4>${esc(name)}</h4><div class="parts"></div>`, "item person new");
+  }
+  return world[name];
+}
+function topicCard(name) {
+  if (!topics[name]) topics[name] = add("#s-topics", `<h4>${esc(name)}</h4>`, "item topic new");
+  return topics[name];
+}
+function portraitCard(name) {
+  if (!portraits[name]) portraits[name] = add("#s-portraits", `<h4>${esc(name)}</h4>`, "item person new");
+  return portraits[name];
+}
+function bump(el) { el.classList.add("new"); el.parentNode.appendChild(el); }
+
+// --- steps -----------------------------------------------------------------------------------
+const pct = p => p == null ? "—" : p.toFixed(2);
+const RUN = {
+  day(e) { chat(esc(e.date), "day"); return 500; },
+  say(e) {
+    if (e.final) {
+      clearOn();
+      chat(`<span class="who">Agent</span>${md(e.text)}`, "msg agent final");
+      return 9000;
+    }
+    chat(`<span class="who">${e.role === "user" ? "User" : "Agent"}</span>${esc(e.text)}`, `msg ${e.role}`);
+    return e.role === "user" ? 1700 : 1300;
+  },
+  gate(e) {
+    clearOn(); on("#c-gate");
+    out("#c-gate", e.kept ? `p = <b>${pct(e.p)}</b> → kept` : `p = <b>${pct(e.p)}</b> → not kept`);
+    out("#c-resolve", ""); out("#c-worth", ""); out("#c-reader", "");
+    return 1100;
+  },
+  resolve(e) {
+    on("#c-resolve");
+    out("#c-resolve", e.skip ? "no agent message before → kept as said"
+      : `<b>"${esc(cut(e.said, 40))}"</b><br>→ <b>"${esc(cut(e.to, 70))}"</b>`);
+    return e.skip ? 700 : 2200;
+  },
+  journal(e) {
+    on("#s-journal"); wire("#c-resolve", "#s-journal");
+    journalEls[e.entry] = add("#s-journal", `<span class="n">#${e.entry} · ${esc(e.day)}</span>${esc(cut(e.text, 120))}`);
+    return 1200;
+  },
+  worth(e) {
+    clearOn(); on("#c-worth");
+    out("#c-worth", e.read ? `p = <b>${pct(e.p)}</b> → read` : `p = <b>${pct(e.p)}</b> → journal only`);
+    if (journalEls[e.entry]) wire("#c-worth", "#s-journal", true);
+    return 1000;
+  },
+  read(e) {
+    on("#c-reader");
+    const said = [];
+    if (e.world.length) {
+      on("#s-world"); wire("#c-reader", "#s-world");
+      for (const w of e.world) {
+        const card = personCard(w.who);
+        bump(card);
+        if (w.part === "is the user's") {
+          const h = $("h4", card); if (!h.dataset.role) { h.dataset.role = 1; h.innerHTML += ` <span class="part">· ${esc(w.value)}</span>`; }
+        } else {
+          $(".parts", card).insertAdjacentHTML("beforeend", `<div class="part${w.ended ? " ended" : ""}">${esc(w.part)} · ${esc(w.value)}</div>`);
+        }
+      }
+      said.push(`${e.world.length} part${e.world.length > 1 ? "s" : ""}`);
+    }
+    if (e.topics.length) {
+      on("#s-topics"); wire("#c-reader", "#s-topics");
+      for (const t of e.topics) { const c = topicCard(t.name); bump(c); c.insertAdjacentHTML("beforeend", `<div class="layer">${esc(cut(t.added, 110))}</div>`); }
+      said.push(`${e.topics.length} topic layer${e.topics.length > 1 ? "s" : ""}`);
+    }
+    const people = e.portraits.filter(p => p.of !== "the user");
+    if (people.length) {
+      on("#s-portraits"); wire("#c-reader", "#s-portraits");
+      for (const p of people) { const c = portraitCard(p.of); bump(c); c.insertAdjacentHTML("beforeend", `<div class="layer">${esc(cut(p.added, 110))}</div>`); }
+      said.push(`${people.length} portrait line${people.length > 1 ? "s" : ""}`);
+    }
+    out("#c-reader", said.length ? "+ " + said.join(" · ") : "nothing new");
+    return 2400;
+  },
+  mode(e) {
+    clearOn(); setMode(e.to);
+    chat("a month later · a new session", "day");
+    return 1600;
+  },
+  search(e) {
+    clearOn(); on("#c-search"); on("#s-journal");
+    for (const n of e.entries) journalEls[n] && journalEls[n].classList.add("hit");
+    if (e.entries.length) wire("#c-search", "#s-journal", true);
+    out("#c-search", `found <b>${e.entries.map(n => "#" + n).join(" ")}</b>`);
+    return 1800;
+  },
+  world(e) {
+    on("#c-world");
+    const hit = e.who.filter(w => world[w] || portraits[w]);
+    for (const w of hit) { world[w] && world[w].classList.add("hit"); portraits[w] && portraits[w].classList.add("hit"); }
+    if (hit.some(w => world[w])) { on("#s-world"); wire("#c-world", "#s-world", true); }
+    if (hit.some(w => portraits[w])) { on("#s-portraits"); wire("#c-world", "#s-portraits", true); }
+    out("#c-world", hit.length ? `<b>${hit.map(esc).join(", ")}</b>` : "none named");
+    return 1600;
+  },
+  topic(e) {
+    on("#c-topic");
+    const hit = e.names.filter(n => topics[n]);
+    for (const n of hit) topics[n].classList.add("hit");
+    if (hit.length) { on("#s-topics"); wire("#c-topic", "#s-topics", true); }
+    out("#c-topic", hit.length ? `goes on with <b>${hit.map(esc).join(", ")}</b>` : "none");
+    return 1600;
+  },
+  note(e) {
+    on("#c-fit");
+    out("#c-fit", "→ one note beside the message");
+    const text = e.text.replace(/^Here are the relevant facts from memory:\s*/i, "");
+    chat(`<span class="who">Memory · beside the message</span>${md(text)}`, "msg note");
+    return 4500;
+  },
+};
+
+// --- player ----------------------------------------------------------------------------------
+let at = 0, timer = null, speed = 1;
+function step() {
+  if (at >= DATA.events.length) { timer = null; return false; }
+  const e = DATA.events[at++];
+  return (RUN[e.kind] || (() => 300))(e);
+}
+function play() {
+  const wait = step();
+  timer = wait === false ? null : setTimeout(play, wait / speed);
+}
+function pause() { clearTimeout(timer); timer = null; }
+addEventListener("keydown", ev => {
+  if (ev.key === " ") { ev.preventDefault(); timer ? pause() : play(); }
+  else if (ev.key === "ArrowRight") { pause(); step(); }
+  else if (ev.key.toLowerCase() === "r") { pause(); at = 0; reset(); }
+  else if ("1234".includes(ev.key)) speed = [0.5, 1, 1.5, 2.5][+ev.key - 1];
+  else if (ev.key.toLowerCase() === "h") $("#bar").classList.toggle("hide");
+});
+reset();
+setTimeout(play, 1200);
+</script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+{"of": "the user", "added": "Cooks lentil soup that lasts three days (2026-09-18).", "day": "2026-09-18 20:00:00", "entries": [1], "version": 1}
+{"of": "the user", "added": "Wants a new TV for the living room, around 55 inches (2026-09-20)", "day": "2026-09-20 20:00:00", "entries": [1, 2], "version": 2}
+{"of": "the user", "added": "Considers Sony TV too expensive; thinks LG TV would cause glare in bright living room (2026-09-20)", "day": "2026-09-20 20:04:00", "entries": [1, 2, 3], "version": 3}
+{"of": "the user", "added": "Decided to take a Samsung TV (2026-09-20)", "day": "2026-09-20 20:06:00", "entries": [1, 2, 3, 4], "version": 4}
+{"of": "the user", "added": "Had a long day, ate pizza, and went to bed early (2026-09-23)", "day": "2026-09-23 20:00:00", "entries": [1, 2, 3, 4, 5], "version": 5}
+{"of": "the user", "added": "Hears neighbours drilling again on a Sunday (2026-09-24)", "day": "2026-09-24 20:00:00", "entries": [1, 2, 3, 4, 5, 6], "version": 6}
+{"of": "the user", "added": "Bought LG C4 TV for 1,290 euros and installed blinds (2026-10-02)", "day": "2026-10-02 20:00:00", "entries": [1, 2, 3, 4, 5, 6, 9], "version": 7}
+{"of": "the user", "added": "Listened to a podcast about sleep, apparently I need more of it. (2026-10-04)", "day": "2026-10-04 20:00:00", "entries": [1, 2, 3, 4, 5, 6, 9, 11], "version": 8}
+{"of": "the user", "added": "Rent increased from 1,000 to 1,150 euros (2026-10-05)", "day": "2026-10-05 20:00:00", "entries": [1, 2, 3, 4, 5, 6, 9, 11, 12], "version": 9}
+{"of": "the user", "added": "Tired today, slept badly. (2026-10-06)", "day": "2026-10-06 20:00:00", "entries": [1, 2, 3, 4, 5, 6, 9, 11, 12, 13], "version": 10}
+{"of": "the user", "added": "Spent the whole evening fixing a bug in our CI pipeline.", "day": "2026-10-11 20:00:00", "entries": [1, 2, 3, 4, 5, 6, 9, 11, 12, 13, 17], "version": 11}
+{"of": "the user", "added": "Talked to landlord about rent, agreed to 1,100 euros for two‑year lease and signed (2026-10-12)", "day": "2026-10-12 20:00:00", "entries": [1, 2, 3, 4, 5, 6, 9, 11, 12, 13, 17, 18], "version": 12}
+{"of": "the landlord", "added": "User talked to landlord, agreed to rent 1,100 euros for two‑year lease and signed (2026-10-12)", "day": "2026-10-12 20:00:00", "entries": [18], "version": 1}
+{"of": "the user", "added": "Spent an hour on the phone with the bank and resolved the issue (2026-10-14)", "day": "2026-10-14 20:00:00", "entries": [1, 2, 3, 4, 5, 6, 9, 11, 12, 13, 17, 18, 19], "version": 13}
+{"of": "the user", "added": "Owns a Sonos Beam soundbar bought for 450 euros. (2026-10-15)", "day": "2026-10-15 20:00:00", "entries": [1, 2, 3, 4, 5, 6, 9, 11, 12, 13, 17, 18, 19, 20], "version": 14}
+{"of": "neighbour", "added": "Their Golf was stolen last night in front of the building (2026-10-19)", "day": "2026-10-19 20:00:00", "entries": [23], "version": 1}
+{"of": "the user", "added": "The user's washing machine broke and repair cost 180 euros (2026-10-22)", "day": "2026-10-22 20:00:00", "entries": [1, 2, 3, 4, 5, 6, 9, 11, 12, 13, 17, 18, 19, 20, 24], "version": 15}
+{"of": "the user", "added": "Ordered new headphones, they arrive Friday. (2026-10-24)", "day": "2026-10-24 20:00:00", "entries": [1, 2, 3, 4, 5, 6, 9, 11, 12, 13, 17, 18, 19, 20, 24, 25], "version": 16}
+{"of": "the user", "added": "Had the leaking tap fixed by a plumber for 95 euros. (2026-10-26)", "day": "2026-10-26 20:00:00", "entries": [1, 2, 3, 4, 5, 6, 9, 11, 12, 13, 17, 18, 19, 20, 24, 25, 26], "version": 17}
+{"of": "the user", "added": "Had many meetings on Monday (2026-10-27)", "day": "2026-10-27 20:00:00", "entries": [1, 2, 3, 4, 5, 6, 9, 11, 12, 13, 17, 18, 19, 20, 24, 25, 26, 27], "version": 18}
+{"of": "the user", "added": "No longer owns a VW Golf and now owns a Skoda Octavia (2026-10-28)", "day": "2026-10-28 20:00:00", "entries": [1, 2, 3, 4, 5, 6, 9, 11, 12, 13, 17, 18, 19, 20, 24, 25, 26, 27, 28], "version": 19}
+{"of": "the user", "added": "User needs a new remote for the living room TV (2026-10-30)", "day": "2026-10-30 19:00:00", "entries": [1, 2, 3, 4, 5, 6, 9, 11, 12, 13, 17, 18, 19, 20, 24, 25, 26, 27, 28, 29], "version": 20}
+{"of": "the user", "added": "User is worried about car theft in the area and is thinking about installing a car alarm (2026-10-30)", "day": "2026-10-30 19:00:00", "entries": [1, 2, 3, 4, 5, 6, 9, 11, 12, 13, 17, 18, 19, 20, 24, 25, 26, 27, 28, 29, 30], "version": 21}

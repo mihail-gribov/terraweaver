@@ -1,0 +1,13 @@
+{"text": 1, "dialogue": 0, "day": "2026-09-26 20:00:00", "entity": "the user", "kind": "person", "as": "my"}
+{"text": 1, "dialogue": 1, "day": "2026-09-26 20:00:00", "entity": "Mila", "kind": "person", "as": "Mila"}
+{"text": 2, "dialogue": 0, "day": "2026-09-26 20:00:00", "entity": "the user", "kind": "person", "as": "I"}
+{"text": 2, "dialogue": 1, "day": "2026-09-26 20:00:00", "entity": "Mila", "kind": "person", "as": "She"}
+{"text": 3, "dialogue": 3, "day": "2026-10-03 20:00:00", "entity": "Mila", "kind": "person", "as": "Mila"}
+{"text": 3, "dialogue": 3, "day": "2026-10-03 20:00:00", "entity": "restaurant", "kind": "place", "as": "restaurant"}
+{"text": 4, "dialogue": 4, "day": "2026-10-10 20:00:00", "entity": "Lev", "kind": "person", "as": "Lev"}
+{"text": 4, "dialogue": 4, "day": "2026-10-10 20:00:00", "entity": "Lego party", "kind": "event", "as": "Lego party"}
+{"text": 5, "dialogue": 0, "day": "2026-10-21 20:00:00", "entity": "the user", "kind": "person", "as": "us"}
+{"text": 5, "dialogue": 5, "day": "2026-10-21 20:00:00", "entity": "Vesna", "kind": "person", "as": "my mother-in-law Vesna"}
+{"text": 6, "dialogue": 0, "day": "2026-10-30 03:12:07", "entity": "the user", "kind": "person", "as": "me"}
+{"text": 6, "dialogue": 6, "day": "2026-10-30 03:12:07", "entity": "Mila", "kind": "person", "as": "my wife"}
+{"text": 6, "dialogue": 6, "day": "2026-10-30 03:12:07", "entity": "wife's birthday evening", "kind": "event", "as": "my wife's birthday evening"}
