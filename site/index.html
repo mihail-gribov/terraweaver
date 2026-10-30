@@ -172,9 +172,9 @@
     <div class="paths">
       <div class="path main">
         <h3>Your own memory</h3>
-        <p class="tagline">Runs on your machine. This is the real thing.</p>
+        <p class="tagline">Runs on your machine and listens on it only: <strong>no key needed</strong> to reach it. This is the real thing.</p>
         <ol>
-          <li>Needs Python 3.12+, <a href="https://claude.com/claude-code">Claude Code</a>, and keys for Nebius Token Factory and Tavily.</li>
+          <li>Needs Python 3.12+, <a href="https://claude.com/claude-code">Claude Code</a>, and your own keys for Nebius Token Factory and Tavily (for the models and the web, not for the memory).</li>
           <li>Clone, install and start the memory:
 <pre>git clone https://github.com/mihail-gribov/terraweaver
 cd terraweaver
@@ -187,7 +187,7 @@ python3 -m venv .venv &amp;&amp; .venv/bin/pip install -r requirements.txt
       </div>
       <div class="path">
         <h3>The hosted demo</h3>
-        <p class="tagline">For evaluation. Not a place for your life.</p>
+        <p class="tagline">For evaluation, <strong>by key</strong>. Not a place for your life.</p>
         <ol>
           <li><a href="/auth/login">Sign in with Google</a> for a key (<code>tw_…</code>, shown once), or use a token you were given.</li>
           <li>Point your agent at it:
