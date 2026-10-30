@@ -131,7 +131,9 @@ can change outside the user's words: a venue closes, a price moves, a season sta
 a web refresh is the **topic**, and the result is a message attached to it:
 
 - *Fresh* means the topic's latest web entry is younger than a month (`FRESH`, 30 days). Freshness
-  is read from that message, not kept as a flag.
+  is read from that message. A check that found nothing keeps no entry (a "nothing" read into a
+  topic would be noise), so it is recorded as a check beside the graph (`web_checks.jsonl`) and
+  counts the same, also across a restart; so does a topic whose outside does not change.
 - *Dormant* topics are left alone: if the user has not come back to a topic for three months
   (`DORMANT`, 90 days; counted from the latest **user** entry, never a web one, or a refreshed topic
   would keep itself alive) it is no longer relevant and is not refreshed.
