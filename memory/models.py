@@ -11,7 +11,7 @@ decision model, calibrated for the models it was fitted on.
 """
 import os
 
-from terraweaver.nemotron import Nemotron
+from memory.nemotron import Nemotron
 
 ROLES = {
     # Writes the program that solves a task, and sorts the user's limits from wishes: one call

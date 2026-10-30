@@ -8,7 +8,7 @@ A stratified slice of LongMemEval `oracle` (the sessions that hold the answer; b
 without single-session-assistant: those ask what the assistant said, and the memory drops the
 agent's messages by design (`--with-assistant` puts them back).
 
-- **memory:** a fresh memory per question (`python -m memory.server`, `--no-world` unless `--graph`). Every turn of
+- **memory:** a fresh memory per question (`python -m memory.server`, `--no-graph` unless `--graph`). Every turn of
   every session goes in by `/say` as the hooks would pass it — the user's and the assistant's, with
   the session's date as `now`. Then the question goes to `/ask` with `gather: false`: from what the
   memory holds only, never the web. Without `--graph`, journal and search only; with it, every entry
@@ -77,7 +77,7 @@ def by_memory(instance, port: int, out: Path) -> dict:
     name = f"lme-{out.name}-{instance.id}"
     log = open(out / f"{instance.id}.server.log", "w")
     server = subprocess.Popen([sys.executable, "-m", "memory.server", "--name", name, "--port", str(port)]
-                              + ([] if GRAPH else ["--no-world"]), cwd=ROOT, stdout=log, stderr=subprocess.STDOUT)
+                              + ([] if GRAPH else ["--no-graph"]), cwd=ROOT, stdout=log, stderr=subprocess.STDOUT)
     began = time.time()
     try:
         for _ in range(60):
@@ -207,7 +207,7 @@ def main() -> int:
         rows = list(pool.map(lambda instance: one(instance, modes, ports, out), picked))
 
     summary = {"slice": args.data, "raw": args.raw, "count": len(rows), "seed": args.seed, "with_assistant": args.with_assistant, "answerer": role("reader").model,
-               "judge": JUDGE, "memory": f"memory.server{'' if args.graph else ' --no-world'}, /ask gather=false"}
+               "judge": JUDGE, "memory": f"memory.server{'' if args.graph else ' --no-graph'}, /ask gather=false"}
     for mode in modes:
         by_kind = defaultdict(list)
         for r in rows:

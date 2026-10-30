@@ -86,7 +86,7 @@ def main() -> int:
                        if any(args.message in (m.get("text") or "") for m in h["heard"])), "")
         print("  what the memory put beside the message:\n")
         print("\n".join(f"    | {line}" for line in (beside or "(nothing)").splitlines()))
-        print(f"\n  agent:\n\n" + "\n".join(f"    {line}" for line in run.stdout.strip().splitlines()))
+        print("\n  agent:\n\n" + "\n".join(f"    {line}" for line in run.stdout.strip().splitlines()))
         print(f"\nThe memory: {where}")
     finally:
         server.terminate()

@@ -9,8 +9,8 @@ nothing about it:
   asked: not to be answered there and then — that is the agent's, through `ask` — but to say
   what the memory should get ready, from what it holds, for the next time it comes up
   (2026-10-28, the user);
-- answers the agent's own `ask` always, waiting for it: the only door that gathers from the web
-  (`memory/solve.py`), and the same gathering again while it is fresh;
+- answers the agent's own `ask` always, waiting for it: from what it holds; given a solver, the
+  only door that gathers (from the web too), and the same gathering again while it is fresh;
 - takes out what the user asks to be forgotten, but only once the user has confirmed which
   entries — a forget is never done on a guess;
 - and gives, with any answer, what it has come to since the last one ("the memory remembered").
@@ -126,6 +126,9 @@ class Listener:
         question = (question or "").strip()
         if not question:
             return "nothing"
+        # Gathering takes a solver (a program over the memory and the web); without one, every
+        # question is answered from what the memory holds.
+        gather = gather and self._solve is not None
         got = await self._sort(question, "", only=("find",), who="The agent asks") if gather else {"find": 0.0}
         if got["find"] >= 0.5:
             return await self._gather(question, wait, progress)
@@ -354,7 +357,7 @@ class Listener:
         self.wanted = [j for j in held.values() if "asked" in j and j["by"] == "user" and "future" not in j]
         self.jobs = [j for j in held.values() if "asked" in j and j not in self.wanted]
         for j in self.jobs:
-            if "future" not in j:
+            if "future" not in j and self._solve is not None:
                 self._start(j["asked"], j["by"], job=j)
 
     def interests(self) -> list[dict]:

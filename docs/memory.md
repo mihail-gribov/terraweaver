@@ -19,8 +19,7 @@ in the words that said it, and the model reads it there.
    kept append-only. Everything else — dialogues, topics, entities, links — is derived from those
    words and rebuilt from them at any time.
 3. **A fact stands on what was said, never on what the model wrote.** A mention, a link, a fact
-   about the user stands on an entry, a fact about the world on a web page, each with the words it
-   comes from, checked by code to be there. A topic's text, which the model writes, helps to find
+   about the user stands on an entry, with the words it comes from, checked by code to be there. A topic's text, which the model writes, helps to find
    and to sum up, never to prove: it cannot confirm itself.
 4. **The texts are the links.** "My wife Mila loves jazz" joins the user, Mila and jazz by being
    said. Nothing is drawn out of it as a formal triple but a few plain links worth following
@@ -29,12 +28,11 @@ in the words that said it, and the model reads it there.
 5. **Newer holds; older stays.** Every text carries its day. What was said later says what holds
    now, and what was said before stays beside it: a topic says what was chosen, and also what was
    ruled out and why.
-6. **Facts, not decisions.** The memory gathers, stores, structures and finds. It gives the agent
+6. **Facts, not decisions.** The memory stores, structures and finds. It gives the agent
    facts with the words and days they stand on, and the user's limits. Choosing is the agent's,
    with the user.
 7. **Private and under the user's control.** It runs on the user's machine; secrets are withheld
-   before any model sees them; a web query that names a person from the memory is refused; neither
-   the agent nor the memory removes anything.
+   before any model sees them; an entry is forgotten only when the user asks and confirms which.
 
 ## An example
 
@@ -72,7 +70,7 @@ glare, which the blinds later solved (fact 3); the Samsung chosen at first and t
 | **The user** | the one entity every dialogue shares: every entry is the user's, so "I", "we", "my" are the user — a fact of the source, made one by code | everything said of the user's people hangs on them: "my wife Mila" is *Mila — spouse — the user* |
 | **Image** | one entity as the memory knows it now: every entry that mentions it, the newest first, its links and its topics | built when asked for, never stored |
 | **Interest** | a question the user asked, with how often it came back | the interests log |
-| **Finding** | what a gathering read on the web, with the page and words it stands on | lives a TTL from its last use; about the world, never about the user |
+| **Portrait** | everything personal known of one person, as a text the reader writes over itself, each line with its day — the flesh the user's world is drawn from | every version (`portraits.jsonl`) |
 
 ## The user's world
 
@@ -125,9 +123,7 @@ time.
 by words and meaning, each with its number and day; the graph adds the topics those entries belong
 to and the images of the entities they and the question name. Nemotron Super, thinking, answers from
 that with the numbers and days of the facts it used, works out how long or how many, and says when
-the memory does not say. When something has to be found outside, it gathers: a program written by
-Nemotron Ultra over the memory and the web, every candidate returned with each of the user's
-conditions judged against the page.
+the memory does not say. Searching outside is the agent's: the memory answers from what it holds.
 
 ## What it is not
 
@@ -141,13 +137,13 @@ conditions judged against the page.
 - **Not an advisor.** It does not pick the concert or the TV; it gives the facts and the limits the
   pick must meet.
 
-## Where it stands (2026-10-29)
+## Where it stands (2026-10-30)
 
 | | |
 |---|---|
-| Built and measured | hearing through hooks; the gate and the rewrite; the journal with days; interests; `ask` from the journal; gathering over the web with conditions judged; secrets withheld; person names kept out of web queries |
-| Built, measured on one story | the graph: each entry read as it is kept into mentions, links and layered topics, given to `ask` (`tests/test_graph.py`, offline and `--live`) |
-| Set aside | the ontology grown automatically — a class hierarchy, its methods generated as code (`memory/world.py` over `terraweaver/`, still there behind `--world`) — since growing it proved a large work of its own; identity across dialogues that can be undone; rebuilding a topic from all its entries now and then; preparing ahead by interest; forgetting on the user's word; hooks for agents other than Claude Code |
+| Built and measured | hearing through hooks; the gate and the rewrite; the journal with days; interests; `ask` from the journal and the graph (LongMemEval `_s`, seed 1, judged by Sonnet: 20 of 30, against 24 of 30 for the whole history in context); recall beside each message; secrets withheld; forgetting on the user's confirmed word |
+| Built, measured on stories | the graph: each entry read as it is kept into mentions, links, layered topics and portraits; the user's world filled from four family talks, 13 of 13 values (`scripts/demo_world.py`) |
+| Set aside | the ontology grown automatically and gathering over the web — the earlier world engine, kept on the `topics` branch and in the history; identity across dialogues that can be undone; rebuilding a topic from all its entries now and then; preparing ahead by interest; hooks for agents other than Claude Code |
 
 ## Open
 

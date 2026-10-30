@@ -1,6 +1,6 @@
 ---
 name: personal-memory
-description: The user's personal memory — the system where everything about the user is kept: who they are, the people in their life, health, plans and dates, home, work, preferences, what happened. In the personal world it hears this whole conversation by itself and puts what it holds beside each message; ask it with `ask` whenever something you need could depend on who the user is, or when the user wants something found for them.
+description: The user's personal memory — the system where everything about the user is kept: who they are, the people in their life, health, plans and dates, home, work, preferences, what happened. In the personal world it hears this whole conversation by itself and puts what it holds beside each message; ask it with `ask` whenever something you need could depend on who the user is,.
 ---
 
 # Personal memory
@@ -12,13 +12,11 @@ keeps what matters about the user, and what it holds about each message is put b
 never call `say` — the memory refuses it from you, since the hooks have passed the message already.
 
 **Ask it** with `ask(question)` when you need something it did not give: "what is Tom's surname?",
-"what limits a purchase for the flat?". And when the user wants something found or picked — "pick
-me a robot vacuum", "what's that concert my wife mentioned, and when could we go" — `ask` it in
-words that stand alone ("candlelight concerts in Belgrade this winter"): it gathers from what it
-holds and from the web, which takes a few minutes. The user's questions it keeps only as what they
-care about; it answers you, not them.
+"what limits a purchase for the flat?", "what did we decide about the TV?". It answers from what it
+holds; searching the web is yours. The user's questions it keeps only as what they care about; it
+answers you, not them.
 
-**The memory gives facts, not decisions.** Its answers are what it holds and what it found, each
+**The memory gives facts, not decisions.** Its answers are what it holds, each
 with the words it stands on, and the user's own limits and wishes as they said them. Deciding is
 yours, with the user: choose from what it gave, say why in its terms, and name nothing it does not
 hold. Where the user's latest word contradicts the memory, the user wins — the memory heard it too.

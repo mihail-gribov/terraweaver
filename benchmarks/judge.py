@@ -10,8 +10,16 @@ history, and the right response is to say so; that is a string check against a r
 semantic match, and it is the one place where being strict is fairer than being clever.
 """
 import re
+import subprocess
 
-from host import plain
+
+def plain(prompt: str, model: str = "haiku", timeout: int = 300) -> str:
+    """One model call with no tools, through the `claude` CLI: the judge needs no API key of its own."""
+    run = subprocess.run(["claude", "-p", prompt, "--model", model, "--strict-mcp-config",
+                          "--allowedTools", ""], capture_output=True, text=True,
+                         stdin=subprocess.DEVNULL, timeout=timeout)
+    return (run.stdout or "").strip()
+
 
 RUBRIC = {
     "temporal-reasoning":

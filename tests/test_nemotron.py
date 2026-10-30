@@ -1,4 +1,4 @@
-"""`terraweaver.nemotron`, with the model stood in: both orders, the temperature, the shapes of
+"""`memory.nemotron`, with the model stood in: both orders, the temperature, the shapes of
 answer, and the same client speaking as an LLM.
 
     .venv/bin/python tests/test_nemotron.py
@@ -9,7 +9,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from terraweaver.nemotron import CALIBRATION, CutOff, Nemotron, Reader, calibrate, fitted_for  # noqa: E402
+from memory.nemotron import CALIBRATION, CutOff, Nemotron, Reader, calibrate, fitted_for  # noqa: E402
 
 failures = []
 

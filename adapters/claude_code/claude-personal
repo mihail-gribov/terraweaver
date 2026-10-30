@@ -3,7 +3,7 @@
 # The memory server must be running (PERSONAL_MEMORY_URL, default http://127.0.0.1:7110; on another
 # machine also PERSONAL_MEMORY_TOKEN, the token beside its journal).
 here=$(dirname "$(readlink -f "$0")")
-# The memory's `task` takes minutes: tool calls may run half an hour, and a quiet one is not cut off.
+# A first `ask` may wait while the memory reads: a quiet tool call is not cut off.
 MCP_TOOL_TIMEOUT=${MCP_TOOL_TIMEOUT:-1800000} CLAUDE_CODE_MCP_TOOL_IDLE_TIMEOUT=${CLAUDE_CODE_MCP_TOOL_IDLE_TIMEOUT:-0} \
 # One memory of the user: Claude Code's own auto-memory is off, or facts go to its files instead.
 CLAUDE_CODE_DISABLE_AUTO_MEMORY=1 PERSONAL_WORLD=on exec claude --plugin-dir "$here/plugin" "$@"
