@@ -41,7 +41,7 @@ TerraWeaver solves one class of tasks well: **a long personal history where the 
 4. **Where we left off.** A new session, a month later: "I want a soundbar for the living-room TV." Nobody asks the memory. It puts the matter the message goes on with beside it, and the agent answers for the LG C4 it now knows is on the wall.
 5. **What changes in the world.** A topic is kept fresh: when its latest web update is more than a month old (and the user came back to it within three months), the memory looks up what changed outside — places, events, prices — in the background, at most once an hour, and keeps what matters in the journal marked as from the web. The memory gives facts; the choice stays with the agent and the user.
 
-Measured on the scenarios benchmark: five short personal histories (a dozen talks over two months among thirty of everyday talk, told through `say` on a fresh memory), each question checked by words. **43 of 45** after the fixes the first run's misses pointed at (39 of 45 before them; the histories were seen during development): latest value 11/11, time 8/8, count 7/7, who is who 4/4, recall without a question 7/8, "never said" 6/7. The two misses are in the run, not hidden. LongMemEval_S, the public benchmark for this class of task, was not run in full: a whole history is read entry by entry, which takes hours (see What's next).
+Measured on the scenarios benchmark: five short personal histories (a dozen talks over two months among thirty of everyday talk, told through `say` on a fresh memory), each question checked by words. **43 of 45** after the fixes the first run's misses pointed at (39 of 45 before them; the histories were seen during development): latest value 11/11, time 8/8, count 7/7, who is who 4/4, recall without a question 7/8, "never said" 6/7. The two misses are in the run, not hidden.
 
 How it hears and keeps:
 - **Hears everything, decides nothing for the agent.** A Claude Code plugin passes every message to the memory's `say`. The agent has one door of its own, `ask`.
@@ -71,7 +71,7 @@ The hard part of personal memory is not storage or retrieval; it is **what to ke
 
 ### What's next
 
-- **Full public benchmarks:** LongMemEval and LoCoMo in full, with baselines, ablations and confidence intervals. Today only the scenarios benchmark is measured, and LongMemEval_S was not run in full.
+- **Wider measurement:** public memory benchmarks with baselines, ablations and confidence intervals. Today only the scenarios benchmark is measured.
 - **One memory across two agents,** with automatic recall in both.
 - **Memory control:** view, edit, forget everywhere (the heard and trace logs included) and export. Forgetting an entry already drops it from the journal, the vectors and the graph.
 - **Cost:** the price per 1,000 messages and how it grows at 10k, 100k and 1M.

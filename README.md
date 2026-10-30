@@ -212,7 +212,7 @@ memory/                the product: the active memory
   refresh.py, web.py   a topic the user comes back to, checked on the web (Tavily)
   models.py            which Nemotron plays which role
 adapters/claude_code/  the plugin: hooks, the skill, claude-personal
-benchmarks/            scenarios.py: the scenarios benchmark; the LongMemEval loader and judge
+benchmarks/            scenarios.py: the scenarios benchmark, and the runs kept as evidence
 scripts/               demo_recall.py and the replay player behind the demo video
 experiments/           numbered experiments, each with what it measured
 tests/                 one script per subject, run_all.py runs them
@@ -238,16 +238,13 @@ The two misses are real: a car alarm question that did not bring up the user's S
 a sale of a Golf that was never told, which the memory answered instead of declining. The run, its
 journals, traces and tokens are kept under `benchmarks/runs/`.
 
-**Not measured in full:** LongMemEval_S. The loader is `benchmarks/longmemeval.py` and the runner `experiments/14_longmemeval/run.py`; a full run
-reads a ~115k-token history per question, entry by entry, which takes hours.
-
 Every number, and every change made because of one, is in `docs/decisions.md`. One run measures
 little here: the spread between runs is as large as the differences.
 
 ## What's next
 
-- **Full public benchmarks.** LongMemEval and LoCoMo in full, with baselines, ablations and
-  confidence intervals; today only the scenarios benchmark above is measured.
+- **Wider measurement.** Public memory benchmarks with baselines, ablations and confidence
+  intervals; today only the scenarios benchmark above is measured.
 - **One memory across two agents.** A demo of the same memory serving two different agents, with
   automatic recall in both.
 - **Memory control.** View, edit, forget everywhere (the derived heard and trace logs included) and

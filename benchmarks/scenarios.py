@@ -1,6 +1,6 @@
 """Scenarios: short personal histories, each check one class of task the memory claims, scored by words.
 
-LongMemEval measures the memory against a long history, but a failure there takes an hour to find.
+A long history is slow to read and a failure in it takes an hour to find.
 A scenario is a dozen talks over two months among thirty of everyday talk, told through the
 memory's own door (`say`), then checked:
 
@@ -30,10 +30,19 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from judge import declined  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
+
+# An answer that says the memory does not know: what an "unknown" check wants.
+DECLINES = ("don't know", "do not know", "not know", "no record", "nothing in", "not in my",
+            "cannot find", "can't find", "couldn't find", "no information", "isn't recorded",
+            "is not recorded", "not recorded", "nothing recorded", "unable to find",
+            "doesn't say", "does not say", "no mention", "not mentioned", "unsure")
+
+
+def declined(answer: str) -> bool:
+    lowered = answer.lower()
+    return any(phrase in lowered for phrase in DECLINES)
 NOW = datetime(2026, 10, 30, 19, 0)
 
 # name: {"talks": [(days before NOW, [(who, what was said)])],
