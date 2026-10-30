@@ -1,0 +1,29 @@
+{"from": "the user", "relation": "finished", "common": false, "to": "The Martian", "text": 1, "day": "2026-08-16 20:00:00", "quote": "Finished 'The Martian'", "when": "2026-08-16", "class": "likes"}
+{"from": "the user", "relation": "likes", "common": true, "to": "The Martian", "text": 1, "day": "2026-08-16 20:00:00", "quote": "perfect beach read", "when": "2026-08-16"}
+{"from": "the user", "relation": "owns", "common": true, "to": "headphones", "text": 2, "day": "2026-08-20 20:00:00", "quote": "I ordered new headphones", "when": "2026-08-20"}
+{"from": "the user", "relation": "reading", "common": false, "to": "The Overstory", "text": 6, "day": "2026-09-15 20:00:00", "quote": "Started 'The Overstory' today", "when": "2026-09-15", "class": "did"}
+{"from": "the user", "relation": "phoned", "common": false, "to": "the bank", "text": 8, "day": "2026-09-20 20:00:00", "quote": "on the phone with the bank", "when": "2026-09-20", "class": "did"}
+{"from": "the user", "relation": "gave_up_on", "common": false, "to": "The Overstory", "text": 9, "day": "2026-09-22 20:00:00", "quote": "I gave up on 'The Overstory'", "when": "2026-09-22", "class": "likes"}
+{"from": "the user", "relation": "fixed", "common": false, "to": "CI pipeline", "text": 10, "day": "2026-09-23 20:00:00", "quote": "fixing a bug in our CI pipeline", "when": "2026-09-23", "class": "did"}
+{"from": "the user", "relation": "listened_to", "common": false, "to": "podcast about sleep", "text": 11, "day": "2026-09-25 20:00:00", "quote": "Listened to a podcast about sleep", "when": "2026-09-25", "class": "did"}
+{"from": "the user", "relation": "needs", "common": false, "to": "more of it", "text": 11, "day": "2026-09-25 20:00:00", "quote": "apparently I need more of it", "when": "2026-09-25", "class": "now"}
+{"from": "the user", "relation": "started", "common": false, "to": "Project Hail Mary", "text": 12, "day": "2026-09-29 20:00:00", "quote": "Started the audiobook of 'Project Hail Mary'", "when": "2026-09-29", "class": "did"}
+{"from": "the user", "relation": "owns", "common": true, "to": "long day", "text": 13, "day": "2026-09-30 20:00:00", "quote": "Long day.", "when": "2026-09-30"}
+{"from": "the user", "relation": "ate", "common": false, "to": "pizza", "text": 13, "day": "2026-09-30 20:00:00", "quote": "Pizza", "when": "2026-09-30", "class": "did"}
+{"from": "the user", "relation": "owns", "common": true, "to": "early night", "text": 13, "day": "2026-09-30 20:00:00", "quote": "an early night", "when": "2026-09-30"}
+{"from": "the user", "relation": "feels", "common": false, "to": "tired", "text": 14, "day": "2026-10-01 20:00:00", "quote": "Tired today", "when": "2026-10-01", "class": "now"}
+{"from": "the user", "relation": "slept", "common": false, "to": "badly", "text": 14, "day": "2026-10-01 20:00:00", "quote": "slept badly", "when": "2026-10-01", "class": "now"}
+{"from": "the supermarket", "relation": "out_of", "common": false, "to": "oat milk", "text": 15, "day": "2026-10-02 20:00:00", "quote": "was out of", "when": "2026-10-02"}
+{"from": "the user", "relation": "made", "common": false, "to": "lentil soup", "text": 16, "day": "2026-10-03 20:00:00", "quote": "Made a big pot of lentil soup", "when": "2026-10-03", "class": "did"}
+{"from": "the user", "relation": "works_at", "common": true, "to": "team", "text": 17, "day": "2026-10-04 20:00:00", "quote": "Our team", "when": "2026-10-04"}
+{"from": "the user", "relation": "works_at", "common": true, "to": "the office", "text": 19, "day": "2026-10-10 20:00:00", "quote": "the office", "when": "2026-10-10"}
+{"from": "the coffee machine", "relation": "at", "common": false, "to": "the office", "text": 19, "day": "2026-10-10 20:00:00", "quote": "at the office", "when": "2026-10-10"}
+{"from": "the user", "relation": "finished_reading", "common": false, "to": "Klara and the Sun", "text": 20, "day": "2026-10-11 20:00:00", "quote": "Finished 'Klara and the Sun'", "when": "2026-10-11", "class": "did"}
+{"from": "the user", "relation": "likes", "common": true, "to": "Klara and the Sun", "text": 21, "day": "2026-10-12 20:00:00", "quote": "'Klara and the Sun' stayed with me all day, what a quiet ending.", "when": "2026-10-12"}
+{"from": "the user", "relation": "read", "common": false, "to": "Station Eleven", "text": 23, "day": "2026-10-15 20:00:00", "quote": "Polished off 'Station Eleven' over the weekend, couldn't put it down.", "when": "2026-10-15", "class": "likes"}
+{"from": "the user", "relation": "reading", "common": false, "to": "The Remains of the Day", "text": 25, "day": "2026-10-18 20:00:00", "quote": "Almost done with 'The Remains of the Day', twenty pages left.", "when": "2026-10-18", "class": "now"}
+{"from": "the book club", "relation": "picked", "common": false, "to": "Normal People", "text": 27, "day": "2026-10-21 20:00:00", "quote": "picked 'Normal People'", "when": "2026-10-21"}
+{"from": "the user", "relation": "owns", "common": true, "to": "too many meetings", "text": 28, "day": "2026-10-23 20:00:00", "quote": "Too many meetings today.", "when": "2026-10-23"}
+{"from": "the user", "relation": "forgets_to_water", "common": false, "to": "plants", "text": 29, "day": "2026-10-24 20:00:00", "quote": "I keep forgetting to water the plants", "when": "2026-10-24", "class": "now"}
+{"from": "the user", "relation": "finished", "common": false, "to": "The Remains of the Day", "text": 30, "day": "2026-10-25 20:00:00", "quote": "Finished 'The Remains of the Day' at last.", "when": "2026-10-25", "class": "likes"}
+{"from": "the user", "relation": "stopped_reading", "common": false, "to": "Normal People", "text": 32, "day": "2026-10-29 20:00:00", "quote": "Gave 'Normal People' a go early, not for me, stopped at chapter three.", "when": "2026-10-29", "class": "likes"}

@@ -1,0 +1,14 @@
+{"of": "the user", "added": "Enjoyed a long weekend in Vienna and thought the museums were great (2026-09-02).", "day": "2026-09-02 20:00:00", "entries": [1], "version": 1}
+{"of": "the user", "added": "Booked flights to Lisbon for mid-October (2026-09-08).", "day": "2026-09-08 20:00:00", "entries": [1, 2], "version": 2}
+{"of": "the user", "added": "Spent an hour on the phone with the bank and finally sorted it out (2026-09-10).", "day": "2026-09-10 20:00:00", "entries": [1, 2, 3], "version": 3}
+{"of": "the user", "added": "Made a big pot of lentil soup, good for three days (2026-09-13).", "day": "2026-09-13 20:00:00", "entries": [1, 2, 3, 5], "version": 4}
+{"of": "the user", "added": "Had a team retro where everyone complained about deadlines (2026-09-20).", "day": "2026-09-20 20:00:00", "entries": [1, 2, 3, 5, 8], "version": 5}
+{"of": "the user", "added": "Went on a three-day work trip to Munich and saw nothing but the office (2026-09-22).", "day": "2026-09-22 20:00:00", "entries": [1, 2, 3, 5, 8, 10], "version": 6}
+{"of": "the user", "added": "Forgets to water the plants (2026-09-27).", "day": "2026-09-27 20:00:00", "entries": [1, 2, 3, 5, 8, 10, 11], "version": 7}
+{"of": "the user", "added": "The Lisbon trip is cancelled because the airline is on strike (2026-09-30).", "day": "2026-09-30 20:00:00", "entries": [1, 2, 3, 5, 8, 10, 11, 12], "version": 8}
+{"of": "the user", "added": "Spent a weekend in Ljubljana with their wife and called it a lovely little city (2026-10-08).", "day": "2026-10-08 20:00:00", "entries": [1, 2, 3, 5, 8, 10, 11, 12, 14], "version": 9}
+{"of": "the user's wife", "added": "Went to Ljubljana for a weekend with the user (2026-10-08).", "day": "2026-10-08 20:00:00", "entries": [14], "version": 1}
+{"of": "the user", "added": "Spent the whole evening fixing a bug in the CI pipeline (2026-10-14).", "day": "2026-10-14 20:00:00", "entries": [1, 2, 3, 5, 8, 10, 11, 12, 14, 16], "version": 10}
+{"of": "the user", "added": "Felt tired and slept badly (2026-10-15).", "day": "2026-10-15 20:00:00", "entries": [1, 2, 3, 5, 8, 10, 11, 12, 14, 16, 17], "version": 11}
+{"of": "the user", "added": "Booked a two-week trip to Japan for April, going to Tokyo and Kyoto (2026-10-16).", "day": "2026-10-16 20:00:00", "entries": [1, 2, 3, 5, 8, 10, 11, 12, 14, 16, 17, 18], "version": 12}
+{"of": "the user", "added": "Had too many meetings on Monday (2026-10-17).", "day": "2026-10-17 20:00:00", "entries": [1, 2, 3, 5, 8, 10, 11, 12, 14, 16, 17, 18, 19], "version": 13}

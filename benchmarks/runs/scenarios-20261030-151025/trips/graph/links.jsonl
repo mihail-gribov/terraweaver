@@ -1,0 +1,16 @@
+{"from": "the user", "relation": "visited", "common": false, "to": "Vienna", "text": 1, "day": "2026-09-02 20:00:00", "quote": "Back from a long weekend in Vienna", "when": "2026-09-02", "class": "did"}
+{"from": "the user", "relation": "booked", "common": false, "to": "Lisbon", "text": 2, "day": "2026-09-08 20:00:00", "quote": "Booked flights to Lisbon for mid-October.", "when": "2026-09-08", "class": "did"}
+{"from": "the user", "relation": "phoned", "common": false, "to": "the bank", "text": 3, "day": "2026-09-10 20:00:00", "quote": "Spent an hour on the phone with the bank", "when": "2026-09-10", "class": "did"}
+{"from": "the supermarket", "relation": "out_of", "common": false, "to": "oat milk", "text": 4, "day": "2026-09-11 20:00:00", "quote": "was out of", "when": "2026-09-11"}
+{"from": "the user", "relation": "made", "common": false, "to": "lentil soup", "text": 5, "day": "2026-09-13 20:00:00", "quote": "Made a big pot of lentil soup", "when": "2026-09-13", "class": "did"}
+{"from": "the user", "relation": "works_at", "common": true, "to": "the user's team", "text": 8, "day": "2026-09-20 20:00:00", "quote": "Our team", "when": "2026-09-20"}
+{"from": "the user", "relation": "visited", "common": false, "to": "Munich", "text": 10, "day": "2026-09-22 20:00:00", "quote": "Work trip to Munich", "when": "2026-09-22", "class": "did"}
+{"from": "the user", "relation": "saw", "common": false, "to": "the office", "text": 10, "day": "2026-09-22 20:00:00", "quote": "saw nothing but the office", "when": "2026-09-22", "class": "did"}
+{"from": "the user", "relation": "forgets", "common": false, "to": "to water the plants", "text": 11, "day": "2026-09-27 20:00:00", "quote": "I keep forgetting to water the plants", "when": "2026-09-27", "class": "now"}
+{"from": "the user's wife", "relation": "spouse", "common": true, "to": "the user", "text": 14, "day": "2026-10-08 20:00:00", "quote": "my wife", "when": "2026-10-08"}
+{"from": "the user", "relation": "visited", "common": false, "to": "Ljubljana", "text": 14, "day": "2026-10-08 20:00:00", "quote": "Weekend in Ljubljana", "when": "2026-10-08", "class": "did"}
+{"from": "the user", "relation": "likes", "common": true, "to": "Ljubljana", "text": 14, "day": "2026-10-08 20:00:00", "quote": "lovely little city", "when": "2026-10-08"}
+{"from": "the user", "relation": "fixed", "common": false, "to": "a bug", "text": 16, "day": "2026-10-14 20:00:00", "quote": "fixing a bug in our CI pipeline", "when": "2026-10-14", "class": "did"}
+{"from": "a bug", "relation": "in", "common": false, "to": "CI pipeline", "text": 16, "day": "2026-10-14 20:00:00", "quote": "a bug in our CI pipeline", "when": "2026-10-14"}
+{"from": "the user", "relation": "health", "common": true, "to": "slept badly", "text": 17, "day": "2026-10-15 20:00:00", "quote": "slept badly", "when": "2026-10-15"}
+{"from": "the user", "relation": "booked", "common": false, "to": "Japan", "text": 18, "day": "2026-10-16 20:00:00", "quote": "Booked Japan for April: Tokyo and Kyoto, two weeks.", "when": "2026-10-16", "class": "did"}

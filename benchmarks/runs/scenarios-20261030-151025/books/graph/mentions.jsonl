@@ -1,0 +1,48 @@
+{"text": 1, "dialogue": 0, "day": "2026-08-16 20:00:00", "entity": "the user", "kind": "person", "as": ""}
+{"text": 1, "dialogue": 1, "day": "2026-08-16 20:00:00", "entity": "The Martian", "kind": "book", "as": "'The Martian'"}
+{"text": 2, "dialogue": 0, "day": "2026-08-20 20:00:00", "entity": "the user", "kind": "person", "as": "I"}
+{"text": 2, "dialogue": 2, "day": "2026-08-20 20:00:00", "entity": "headphones", "kind": "headphones", "as": "new headphones"}
+{"text": 6, "dialogue": 0, "day": "2026-09-15 20:00:00", "entity": "the user", "kind": "person", "as": ""}
+{"text": 6, "dialogue": 6, "day": "2026-09-15 20:00:00", "entity": "The Overstory", "kind": "book", "as": "'The Overstory'"}
+{"text": 8, "dialogue": 8, "day": "2026-09-20 20:00:00", "entity": "the bank", "kind": "organisation", "as": "the bank"}
+{"text": 9, "dialogue": 0, "day": "2026-09-22 20:00:00", "entity": "the user", "kind": "person", "as": "I"}
+{"text": 9, "dialogue": 9, "day": "2026-09-22 20:00:00", "entity": "The Overstory", "kind": "book", "as": "'The Overstory'"}
+{"text": 10, "dialogue": 0, "day": "2026-09-23 20:00:00", "entity": "the user", "kind": "person", "as": "our"}
+{"text": 10, "dialogue": 10, "day": "2026-09-23 20:00:00", "entity": "CI pipeline", "kind": "system", "as": "our CI pipeline"}
+{"text": 11, "dialogue": 0, "day": "2026-09-25 20:00:00", "entity": "the user", "kind": "person", "as": "I"}
+{"text": 11, "dialogue": 11, "day": "2026-09-25 20:00:00", "entity": "podcast about sleep", "kind": "thing", "as": "podcast about sleep"}
+{"text": 11, "dialogue": 11, "day": "2026-09-25 20:00:00", "entity": "more of it", "kind": "thing", "as": "more of it"}
+{"text": 12, "dialogue": 0, "day": "2026-09-29 20:00:00", "entity": "the user", "kind": "person", "as": "my"}
+{"text": 12, "dialogue": 12, "day": "2026-09-29 20:00:00", "entity": "Project Hail Mary", "kind": "book", "as": "'Project Hail Mary'"}
+{"text": 13, "dialogue": 13, "day": "2026-09-30 20:00:00", "entity": "long day", "kind": "thing", "as": "long day"}
+{"text": 13, "dialogue": 13, "day": "2026-09-30 20:00:00", "entity": "pizza", "kind": "thing", "as": "pizza"}
+{"text": 13, "dialogue": 13, "day": "2026-09-30 20:00:00", "entity": "early night", "kind": "thing", "as": "early night"}
+{"text": 14, "dialogue": 0, "day": "2026-10-01 20:00:00", "entity": "the user", "kind": "person", "as": ""}
+{"text": 14, "dialogue": 14, "day": "2026-10-01 20:00:00", "entity": "tired", "kind": "thing", "as": "tired"}
+{"text": 14, "dialogue": 14, "day": "2026-10-01 20:00:00", "entity": "badly", "kind": "thing", "as": "badly"}
+{"text": 15, "dialogue": 15, "day": "2026-10-02 20:00:00", "entity": "the supermarket", "kind": "thing", "as": "The supermarket"}
+{"text": 15, "dialogue": 15, "day": "2026-10-02 20:00:00", "entity": "oat milk", "kind": "thing", "as": "oat milk"}
+{"text": 16, "dialogue": 0, "day": "2026-10-03 20:00:00", "entity": "the user", "kind": "person", "as": ""}
+{"text": 16, "dialogue": 16, "day": "2026-10-03 20:00:00", "entity": "lentil soup", "kind": "thing", "as": "lentil soup"}
+{"text": 17, "dialogue": 0, "day": "2026-10-04 20:00:00", "entity": "the user", "kind": "person", "as": "Our"}
+{"text": 17, "dialogue": 17, "day": "2026-10-04 20:00:00", "entity": "team", "kind": "organisation", "as": "Our team"}
+{"text": 19, "dialogue": 19, "day": "2026-10-10 20:00:00", "entity": "the coffee machine", "kind": "thing", "as": "The coffee machine"}
+{"text": 19, "dialogue": 19, "day": "2026-10-10 20:00:00", "entity": "the office", "kind": "organisation", "as": "the office"}
+{"text": 20, "dialogue": 20, "day": "2026-10-11 20:00:00", "entity": "Klara and the Sun", "kind": "book", "as": "'Klara and the Sun'"}
+{"text": 21, "dialogue": 0, "day": "2026-10-12 20:00:00", "entity": "the user", "kind": "person", "as": "me"}
+{"text": 21, "dialogue": 21, "day": "2026-10-12 20:00:00", "entity": "Klara and the Sun", "kind": "book", "as": "'Klara and the Sun'"}
+{"text": 23, "dialogue": 23, "day": "2026-10-15 20:00:00", "entity": "Station Eleven", "kind": "book", "as": "'Station Eleven'"}
+{"text": 24, "dialogue": 24, "day": "2026-10-16 20:00:00", "entity": "the user's neighbours", "kind": "person", "as": "The neighbours"}
+{"text": 25, "dialogue": 0, "day": "2026-10-18 20:00:00", "entity": "the user", "kind": "person", "as": ""}
+{"text": 25, "dialogue": 25, "day": "2026-10-18 20:00:00", "entity": "The Remains of the Day", "kind": "book", "as": "'The Remains of the Day'"}
+{"text": 27, "dialogue": 27, "day": "2026-10-21 20:00:00", "entity": "the book club", "kind": "organisation", "as": "The book club"}
+{"text": 27, "dialogue": 27, "day": "2026-10-21 20:00:00", "entity": "Normal People", "kind": "book", "as": "'Normal People'"}
+{"text": 28, "dialogue": 0, "day": "2026-10-23 20:00:00", "entity": "the user", "kind": "person", "as": ""}
+{"text": 28, "dialogue": 28, "day": "2026-10-23 20:00:00", "entity": "too many meetings", "kind": "thing", "as": "too many meetings"}
+{"text": 29, "dialogue": 0, "day": "2026-10-24 20:00:00", "entity": "the user", "kind": "person", "as": "I"}
+{"text": 29, "dialogue": 29, "day": "2026-10-24 20:00:00", "entity": "plants", "kind": "thing", "as": "the plants"}
+{"text": 30, "dialogue": 0, "day": "2026-10-25 20:00:00", "entity": "the user", "kind": "person", "as": ""}
+{"text": 30, "dialogue": 30, "day": "2026-10-25 20:00:00", "entity": "The Remains of the Day", "kind": "book", "as": "'The Remains of the Day'"}
+{"text": 32, "dialogue": 0, "day": "2026-10-29 20:00:00", "entity": "the user", "kind": "person", "as": "me"}
+{"text": 32, "dialogue": 32, "day": "2026-10-29 20:00:00", "entity": "Normal People", "kind": "book", "as": "'Normal People'"}
+{"text": 33, "dialogue": 0, "day": "2026-10-30 19:00:00", "entity": "the user", "kind": "person", "as": "I"}

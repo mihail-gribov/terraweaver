@@ -111,7 +111,7 @@ it needs to.
 
 **Reads at once, beside the conversation** (`memory/graph.py`). An entry is read as soon as it is
 kept, in the background, while the talk goes on: what was just said is what the next request is
-likely to need. One call to Nemotron Super per entry, shown the entry, what the user said earlier in
+likely to need. One call to Nemotron 3.5 Super VL per entry, shown the entry, what the user said earlier in
 the dialogue, the entities and kinds already known, and the topics' last texts. It gives the
 entities the entry mentions, the links it states, and the topics it belongs to with their new text.
 Code keeps a mention or a link only when its words are in the entry, and makes every "I", "we",
@@ -121,7 +121,7 @@ time.
 
 **Answers.** The agent asks through `ask`. The memory finds the entries that bear on the question,
 by words and meaning, each with its number and day; the graph adds the topics those entries belong
-to and the images of the entities they and the question name. Nemotron Super, thinking, answers from
+to and the images of the entities they and the question name. Nemotron 3.5 Super VL, thinking, answers from
 that with the numbers and days of the facts it used, works out how long or how many, and says when
 the memory does not say. The memory does not search the web for a question: it answers from what it
 holds, including what it has kept from the web itself (below).

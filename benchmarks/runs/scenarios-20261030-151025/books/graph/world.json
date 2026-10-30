@@ -1,0 +1,338 @@
+{
+ "the user": {
+  "named": true,
+  "kind": "person",
+  "portrait": [
+   {
+    "text": "Reads 'The Martian' on holiday and calls it a perfect beach read (2026-08-16). Ordered new headphones due Friday (2026-08-20). Started reading 'The Overstory' today, called it huge (2026-09-15). Spent an hour on the phone with the bank and finally sorted it out (2026-09-20). Gave up on 'The Overstory', too slow for them (2026-09-22). Spent the whole evening fixing a bug in their CI pipeline (2026-09-23). Listened to a podcast about sleep and apparently needs more of it (2026-09-25). Began the 'Project Hail Mary' audiobook for their commute (2026-09-29). Had a long day, ate pizza and had an early night (2026-09-30). Slept badly and felt tired (2026-10-01). Found the supermarket out of oat milk again (2026-10-02). Made a big pot of lentil soup, good for three days (2026-10-03). Had a team retro today; everyone complained about deadlines (2026-10-04). The coffee machine at their office is broken again (2026-10-10). Finished reading 'Klara and the Sun' on the train home (2026-10-11). 'Klara and the Sun' stayed with them all day; they called the ending quiet (2026-10-12). Finished 'Station Eleven' over the weekend, couldn't put it down (2026-10-15). The user's neighbours are drilling again on a Sunday (2026-10-16). Almost done with 'The Remains of the Day', twenty pages left (2026-10-18). Had too many meetings on a Monday (2026-10-23). Keeps forgetting to water the plants (2026-10-24). Finished reading 'The Remains of the Day' (2026-10-25). Gave 'Normal People' a go early but stopped at chapter three; not for them (2026-10-29).",
+    "day": "2026-10-29",
+    "facts": [
+     1,
+     2,
+     6,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     19,
+     20,
+     21,
+     23,
+     24,
+     25,
+     28,
+     29,
+     30,
+     32
+    ]
+   }
+  ],
+  "known_as": [],
+  "parts": {
+   "spouse": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "partner": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "child": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "parent": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "sibling": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "relative": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "pet": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "friend": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "colleague": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "manager": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "born_on": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "age": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "lives_in": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "works_at": {
+    "size": "one",
+    "now": [
+     {
+      "value": "the office",
+      "kind": "organisation",
+      "fact": 19,
+      "day": "2026-10-10",
+      "quote": "the office"
+     }
+    ],
+    "was": [
+     {
+      "value": "team",
+      "kind": "organisation",
+      "fact": 17,
+      "day": "2026-10-04",
+      "quote": "Our team"
+     }
+    ]
+   },
+   "job": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "studies_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "owns": {
+    "size": "many",
+    "now": [
+     {
+      "value": "too many meetings",
+      "kind": "thing",
+      "fact": 28,
+      "day": "2026-10-23",
+      "quote": "Too many meetings today."
+     },
+     {
+      "value": "early night",
+      "kind": "thing",
+      "fact": 13,
+      "day": "2026-09-30",
+      "quote": "an early night"
+     },
+     {
+      "value": "long day",
+      "kind": "thing",
+      "fact": 13,
+      "day": "2026-09-30",
+      "quote": "Long day."
+     },
+     {
+      "value": "headphones",
+      "kind": "headphones",
+      "fact": 2,
+      "day": "2026-08-20",
+      "quote": "I ordered new headphones"
+     }
+    ],
+    "was": []
+   },
+   "skill": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "speaks": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "hobby": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "health": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "likes": {
+    "size": "many",
+    "now": [
+     {
+      "value": "Klara and the Sun",
+      "kind": "book",
+      "fact": 21,
+      "day": "2026-10-12",
+      "quote": "'Klara and the Sun' stayed with me all day, what a quiet ending."
+     },
+     {
+      "value": "The Martian",
+      "kind": "book",
+      "fact": 1,
+      "day": "2026-08-16",
+      "quote": "perfect beach read"
+     }
+    ],
+    "was": []
+   },
+   "dislikes": {
+    "size": "many",
+    "now": [],
+    "was": []
+   }
+  }
+ },
+ "the user's neighbours": {
+  "named": false,
+  "kind": "person",
+  "portrait": [],
+  "known_as": [],
+  "parts": {
+   "spouse": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "partner": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "child": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "parent": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "sibling": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "relative": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "pet": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "friend": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "colleague": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "manager": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "born_on": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "age": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "lives_in": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "works_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "job": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "studies_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "owns": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "skill": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "speaks": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "hobby": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "health": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "likes": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "dislikes": {
+    "size": "many",
+    "now": [],
+    "was": []
+   }
+  }
+ }
+}

@@ -1,0 +1,26 @@
+{"text": 1, "dialogue": 0, "day": "2026-09-02 20:00:00", "entity": "the user", "kind": "person", "as": ""}
+{"text": 1, "dialogue": 1, "day": "2026-09-02 20:00:00", "entity": "Vienna", "kind": "city", "as": "Vienna"}
+{"text": 2, "dialogue": 0, "day": "2026-09-08 20:00:00", "entity": "the user", "kind": "person", "as": "the user"}
+{"text": 2, "dialogue": 2, "day": "2026-09-08 20:00:00", "entity": "Lisbon", "kind": "city", "as": "Lisbon"}
+{"text": 3, "dialogue": 3, "day": "2026-09-10 20:00:00", "entity": "the bank", "kind": "organisation", "as": "the bank"}
+{"text": 4, "dialogue": 4, "day": "2026-09-11 20:00:00", "entity": "the supermarket", "kind": "place", "as": "the supermarket"}
+{"text": 4, "dialogue": 4, "day": "2026-09-11 20:00:00", "entity": "oat milk", "kind": "product", "as": "oat milk"}
+{"text": 5, "dialogue": 5, "day": "2026-09-13 20:00:00", "entity": "lentil soup", "kind": "product", "as": "lentil soup"}
+{"text": 8, "dialogue": 0, "day": "2026-09-20 20:00:00", "entity": "the user", "kind": "person", "as": "Our"}
+{"text": 8, "dialogue": 8, "day": "2026-09-20 20:00:00", "entity": "the user's team", "kind": "organisation", "as": "Our team"}
+{"text": 10, "dialogue": 10, "day": "2026-09-22 20:00:00", "entity": "Munich", "kind": "city", "as": "Munich"}
+{"text": 10, "dialogue": 10, "day": "2026-09-22 20:00:00", "entity": "the office", "kind": "place", "as": "the office"}
+{"text": 11, "dialogue": 0, "day": "2026-09-27 20:00:00", "entity": "the user", "kind": "person", "as": "I"}
+{"text": 11, "dialogue": 11, "day": "2026-09-27 20:00:00", "entity": "plants", "kind": "plant", "as": "the plants"}
+{"text": 11, "dialogue": 11, "day": "2026-09-27 20:00:00", "entity": "to water the plants", "kind": "thing", "as": "to water the plants"}
+{"text": 12, "dialogue": 12, "day": "2026-09-30 20:00:00", "entity": "Lisbon", "kind": "city", "as": "Lisbon"}
+{"text": 12, "dialogue": 12, "day": "2026-09-30 20:00:00", "entity": "the airline", "kind": "organisation", "as": "the airline"}
+{"text": 14, "dialogue": 0, "day": "2026-10-08 20:00:00", "entity": "the user", "kind": "person", "as": "my"}
+{"text": 14, "dialogue": 14, "day": "2026-10-08 20:00:00", "entity": "the user's wife", "kind": "person", "as": "my wife"}
+{"text": 14, "dialogue": 14, "day": "2026-10-08 20:00:00", "entity": "Ljubljana", "kind": "city", "as": "Ljubljana"}
+{"text": 16, "dialogue": 0, "day": "2026-10-14 20:00:00", "entity": "the user", "kind": "person", "as": "I"}
+{"text": 16, "dialogue": 16, "day": "2026-10-14 20:00:00", "entity": "a bug", "kind": "thing", "as": "a bug"}
+{"text": 16, "dialogue": 16, "day": "2026-10-14 20:00:00", "entity": "CI pipeline", "kind": "thing", "as": "our CI pipeline"}
+{"text": 18, "dialogue": 18, "day": "2026-10-16 20:00:00", "entity": "Japan", "kind": "place", "as": "Japan"}
+{"text": 18, "dialogue": 18, "day": "2026-10-16 20:00:00", "entity": "Tokyo", "kind": "city", "as": "Tokyo"}
+{"text": 18, "dialogue": 18, "day": "2026-10-16 20:00:00", "entity": "Kyoto", "kind": "city", "as": "Kyoto"}

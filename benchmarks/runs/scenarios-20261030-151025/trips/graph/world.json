@@ -1,0 +1,312 @@
+{
+ "the user": {
+  "named": true,
+  "kind": "person",
+  "portrait": [
+   {
+    "text": "Enjoyed a long weekend in Vienna and thought the museums were great (2026-09-02). Booked flights to Lisbon for mid-October (2026-09-08). Spent an hour on the phone with the bank and finally sorted it out (2026-09-10). Made a big pot of lentil soup, good for three days (2026-09-13). Had a team retro where everyone complained about deadlines (2026-09-20). Went on a three-day work trip to Munich and saw nothing but the office (2026-09-22). Forgets to water the plants (2026-09-27). The Lisbon trip is cancelled because the airline is on strike (2026-09-30). Spent a weekend in Ljubljana with their wife and called it a lovely little city (2026-10-08). Spent the whole evening fixing a bug in the CI pipeline (2026-10-14). Felt tired and slept badly (2026-10-15). Booked a two-week trip to Japan for April, going to Tokyo and Kyoto (2026-10-16).",
+    "day": "2026-10-16",
+    "facts": [
+     1,
+     2,
+     3,
+     5,
+     8,
+     10,
+     11,
+     12,
+     14,
+     16,
+     17,
+     18
+    ]
+   }
+  ],
+  "known_as": [],
+  "parts": {
+   "spouse": {
+    "size": "one",
+    "now": [
+     {
+      "value": "the user's wife",
+      "fact": 14,
+      "day": "2026-10-08",
+      "quote": "my wife"
+     }
+    ],
+    "was": []
+   },
+   "partner": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "child": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "parent": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "sibling": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "relative": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "pet": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "friend": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "colleague": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "manager": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "born_on": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "age": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "lives_in": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "works_at": {
+    "size": "one",
+    "now": [
+     {
+      "value": "the user's team",
+      "kind": "organisation",
+      "fact": 8,
+      "day": "2026-09-20",
+      "quote": "Our team"
+     }
+    ],
+    "was": []
+   },
+   "job": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "studies_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "owns": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "skill": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "speaks": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "hobby": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "health": {
+    "size": "many",
+    "now": [
+     {
+      "value": "slept badly",
+      "fact": 17,
+      "day": "2026-10-15",
+      "quote": "slept badly"
+     }
+    ],
+    "was": []
+   },
+   "likes": {
+    "size": "many",
+    "now": [
+     {
+      "value": "Ljubljana",
+      "kind": "city",
+      "fact": 14,
+      "day": "2026-10-08",
+      "quote": "lovely little city"
+     }
+    ],
+    "was": []
+   },
+   "dislikes": {
+    "size": "many",
+    "now": [],
+    "was": []
+   }
+  }
+ },
+ "the user's wife": {
+  "named": false,
+  "kind": "person",
+  "portrait": [
+   {
+    "text": "Went to Ljubljana for a weekend with the user (2026-10-08).",
+    "day": "2026-10-08",
+    "facts": [
+     14
+    ]
+   }
+  ],
+  "known_as": [],
+  "parts": {
+   "spouse": {
+    "size": "one",
+    "now": [
+     {
+      "value": "the user",
+      "fact": 14,
+      "day": "2026-10-08",
+      "quote": "my wife"
+     }
+    ],
+    "was": []
+   },
+   "partner": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "child": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "parent": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "sibling": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "relative": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "pet": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "friend": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "colleague": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "manager": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "born_on": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "age": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "lives_in": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "works_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "job": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "studies_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "owns": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "skill": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "speaks": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "hobby": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "health": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "likes": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "dislikes": {
+    "size": "many",
+    "now": [],
+    "was": []
+   }
+  }
+ }
+}

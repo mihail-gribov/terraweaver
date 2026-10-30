@@ -1,0 +1,772 @@
+{
+ "the user": {
+  "named": true,
+  "kind": "person",
+  "portrait": [
+   {
+    "text": "Wants a new TV, around 55 inches, for the living room (2026-09-20). Rules out the Sony Bravia 8 as too dear and the LG C4 OLED because the bright living room would make it glare (2026-09-20). Chose the Samsung TV (2026-09-20). Had a long day, then pizza and an early night (2026-09-23). Neighbours are drilling again on a Sunday (2026-09-24). Keeps forgetting to water the plants (2026-09-25). Changed from the Samsung TV to the LG C4 after all, put up blinds, paid 1,290 euros (2026-10-02). Listened to a podcast about sleep; apparently needs more sleep (2026-10-04). Rents their home; the landlord raised the rent from 1,000 to 1,150 euros (2026-10-05). Tired today, slept badly (2026-10-06). Spent the whole evening fixing a bug in their CI pipeline (2026-10-11). Signed a two-year lease at 1,100 euros after talking to the landlord (2026-10-12). Works at the office (2026-10-13). Spent an hour on the phone with the bank; finally sorted (2026-10-14). A neighbour's Golf was stolen outside the building (2026-10-19). The user's washing machine broke; the repair cost 180 euros (2026-10-22). Ordered new headphones, arriving Friday (2026-10-24). Had a plumber fix a leaking tap for 95 euros (2026-10-26). Sold their old VW Golf and bought a Skoda Octavia (2026-10-28). Needs a new remote for the living room TV (2026-10-30).",
+    "day": "2026-10-30",
+    "facts": [
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     10,
+     12,
+     13,
+     14,
+     18,
+     19,
+     20,
+     21,
+     24,
+     26,
+     27,
+     28,
+     30,
+     31
+    ]
+   }
+  ],
+  "known_as": [],
+  "parts": {
+   "spouse": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "partner": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "child": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "parent": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "sibling": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "relative": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "pet": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "friend": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "colleague": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "manager": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "born_on": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "age": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "lives_in": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "works_at": {
+    "size": "one",
+    "now": [
+     {
+      "value": "the office",
+      "kind": "place",
+      "fact": 20,
+      "day": "2026-10-13",
+      "quote": "at the office"
+     }
+    ],
+    "was": []
+   },
+   "job": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "studies_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "owns": {
+    "size": "many",
+    "now": [
+     {
+      "value": "LG C4",
+      "kind": "thing",
+      "fact": 31,
+      "day": "2026-10-30",
+      "quote": "the living room TV"
+     },
+     {
+      "value": "Skoda Octavia",
+      "kind": "thing",
+      "fact": 30,
+      "day": "2026-10-28",
+      "quote": "bought a Skoda Octavia"
+     },
+     {
+      "value": "the leaking tap",
+      "kind": "thing",
+      "fact": 28,
+      "day": "2026-10-26",
+      "quote": "the leaking tap"
+     },
+     {
+      "value": "headphones",
+      "kind": "thing",
+      "fact": 27,
+      "day": "2026-10-24",
+      "quote": "Ordered new headphones"
+     },
+     {
+      "value": "washing machine",
+      "kind": "thing",
+      "fact": 26,
+      "day": "2026-10-22",
+      "quote": "The washing machine"
+     },
+     {
+      "value": "blinds",
+      "kind": "thing",
+      "fact": 10,
+      "day": "2026-10-02",
+      "quote": "put up blinds"
+     },
+     {
+      "value": "the plants",
+      "kind": "thing",
+      "fact": 7,
+      "day": "2026-09-25",
+      "quote": "the plants"
+     },
+     {
+      "value": "early night",
+      "kind": "thing",
+      "fact": 5,
+      "day": "2026-09-23",
+      "quote": "an early night"
+     },
+     {
+      "value": "Pizza",
+      "kind": "thing",
+      "fact": 5,
+      "day": "2026-09-23",
+      "quote": "Pizza"
+     }
+    ],
+    "was": [
+     {
+      "value": "Golf",
+      "kind": "thing",
+      "fact": 30,
+      "day": "2026-10-28",
+      "quote": "our old VW Golf",
+      "ended": true
+     }
+    ]
+   },
+   "skill": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "speaks": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "hobby": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "health": {
+    "size": "many",
+    "now": [
+     {
+      "value": "tired today, slept badly",
+      "fact": 14,
+      "day": "2026-10-06",
+      "quote": "Tired today, slept badly."
+     }
+    ],
+    "was": []
+   },
+   "likes": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "dislikes": {
+    "size": "many",
+    "now": [
+     {
+      "value": "LG C4 OLED",
+      "kind": "thing",
+      "fact": 3,
+      "day": "2026-09-20",
+      "quote": "the LG C4 OLED would glare."
+     },
+     {
+      "value": "Sony Bravia 8",
+      "kind": "thing",
+      "fact": 3,
+      "day": "2026-09-20",
+      "quote": "The Sony Bravia 8 is too dear."
+     }
+    ],
+    "was": []
+   }
+  }
+ },
+ "the landlord": {
+  "named": true,
+  "kind": "person",
+  "portrait": [
+   {
+    "text": "Offered the user 1,100 euros for a two-year lease; the user signed (2026-10-12).",
+    "day": "2026-10-12",
+    "facts": [
+     19
+    ]
+   }
+  ],
+  "known_as": [],
+  "parts": {
+   "spouse": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "partner": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "child": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "parent": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "sibling": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "relative": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "pet": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "friend": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "colleague": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "manager": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "born_on": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "age": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "lives_in": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "works_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "job": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "studies_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "owns": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "skill": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "speaks": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "hobby": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "health": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "likes": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "dislikes": {
+    "size": "many",
+    "now": [],
+    "was": []
+   }
+  }
+ },
+ "the neighbours": {
+  "named": true,
+  "kind": "person",
+  "portrait": [],
+  "known_as": [],
+  "parts": {
+   "spouse": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "partner": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "child": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "parent": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "sibling": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "relative": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "pet": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "friend": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "colleague": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "manager": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "born_on": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "age": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "lives_in": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "works_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "job": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "studies_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "owns": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "skill": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "speaks": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "hobby": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "health": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "likes": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "dislikes": {
+    "size": "many",
+    "now": [],
+    "was": []
+   }
+  }
+ },
+ "the plumber": {
+  "named": true,
+  "kind": "person",
+  "portrait": [],
+  "known_as": [],
+  "parts": {
+   "spouse": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "partner": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "child": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "parent": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "sibling": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "relative": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "pet": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "friend": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "colleague": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "manager": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "born_on": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "age": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "lives_in": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "works_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "job": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "studies_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "owns": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "skill": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "speaks": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "hobby": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "health": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "likes": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "dislikes": {
+    "size": "many",
+    "now": [],
+    "was": []
+   }
+  }
+ },
+ "the user's neighbour": {
+  "named": false,
+  "kind": "person",
+  "portrait": [
+   {
+    "text": "Owns a Golf (2026-10-19).",
+    "day": "2026-10-19",
+    "facts": [
+     24
+    ]
+   }
+  ],
+  "known_as": [],
+  "parts": {
+   "spouse": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "partner": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "child": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "parent": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "sibling": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "relative": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "pet": {
+    "size": "few",
+    "now": [],
+    "was": []
+   },
+   "friend": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "colleague": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "manager": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "born_on": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "age": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "lives_in": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "works_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "job": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "studies_at": {
+    "size": "one",
+    "now": [],
+    "was": []
+   },
+   "owns": {
+    "size": "many",
+    "now": [],
+    "was": [
+     {
+      "value": "Golf",
+      "kind": "thing",
+      "fact": 24,
+      "day": "2026-10-19",
+      "quote": "Our neighbour's Golf got stolen last night",
+      "ended": true
+     }
+    ]
+   },
+   "skill": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "speaks": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "hobby": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "health": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "likes": {
+    "size": "many",
+    "now": [],
+    "was": []
+   },
+   "dislikes": {
+    "size": "many",
+    "now": [],
+    "was": []
+   }
+  }
+ }
+}

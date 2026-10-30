@@ -1,0 +1,75 @@
+[
+ {
+  "scenario": "trips",
+  "class": "count",
+  "text": "How many trips abroad have I actually taken in the last two months?",
+  "words": [
+   [
+    "four",
+    "4"
+   ]
+  ],
+  "said": "The memory contains the following facts about trips the user actually took (i.e., not just booked or cancelled) and their dates:\n\n- **Fact 1** [2026‑09‑02]: “Back from a long weekend in Vienna, the museums were great.” → Vienna trip taken.  \n- **Fact 10** [2026‑09‑22]: “Work trip to Munich, three days, saw nothing but the office.” → Munich work trip taken.  \n- **Fact 14** [2026‑10‑08]: “Weekend in Ljubljana with my wife, lovely little city.” → Ljubljana trip taken.  \n- **Fact 22** [2026‑10‑20]: “I flew to Athens for a friend's wedding, back on Sunday, exhausted.” → Athens trip taken.  \n\nFact 12 [2026‑09‑30] notes that the Lisbon trip was cancelled, so it does **not** count as an actual trip.\n\nAll four trips (Vienna, Munich, Ljubljana, Athens) fall within the last two months from today’s date (2026‑10‑30), i.e., after 2026‑08‑30.\n\n**Number of trips abroad taken in the last two months: 4.**  \n\n(Facts used: 1, 10, 14, 22; cancellation noted via fact 12.)",
+  "passed": true
+ },
+ {
+  "scenario": "trips",
+  "class": "time",
+  "text": "Which trip was more recent, Munich or Vienna?",
+  "words": [
+   [
+    "Munich"
+   ]
+  ],
+  "said": "The memory shows:\n\n- **Fact 1** – “Back from a long weekend in Vienna” – dated **[2026‑09‑02]** → Vienna trip occurred on 2026‑09‑02.  \n- **Fact 10** – “Work trip to Munich … saw nothing but the office” – dated **[2026‑09‑22]** → Munich trip occurred on 2026‑09‑22.\n\nSince 2026‑09‑22 is after 2026‑09‑02, the Munich trip is more recent. It took place **20 days** after the Vienna trip (Sep 22 − Sep 2 = 20 days).\n\n**Used facts:** 1, 10.",
+  "passed": true
+ },
+ {
+  "scenario": "trips",
+  "class": "latest",
+  "text": "Am I still going to Lisbon?",
+  "words": [
+   [
+    "cancel"
+   ]
+  ],
+  "said": "The most recent information about your Lisbon plans comes from **fact 12** ([2026‑09‑30]): “The Lisbon trip is cancelled, the airline is on strike.”  \n\nEarlier, **fact 2** ([2026‑09‑08]) stated that you had booked flights to Lisbon for mid‑October, but fact 12, being newer, overrides that booking. Since no later fact mentions a reinstatement or change, the memory indicates that you are **no longer going to Lisbon**.  \n\n**Used facts:** 2, 12.",
+  "passed": true
+ },
+ {
+  "scenario": "trips",
+  "class": "latest",
+  "text": "Is the Japan trip booked?",
+  "words": [
+   [
+    "April",
+    "booked",
+    "yes"
+   ]
+  ],
+  "said": "Yes – the Japan trip is booked.  \n**Fact 18:** “[2026‑10‑16] Booked Japan for April: Tokyo and Kyoto, two weeks.” This indicates the booking was made on 2026‑10‑16 and remains current (no later fact cancels or changes it).",
+  "passed": true
+ },
+ {
+  "scenario": "trips",
+  "class": "recall",
+  "text": "Should I start learning some Japanese?",
+  "words": [
+   [
+    "April",
+    "Tokyo",
+    "Kyoto"
+   ]
+  ],
+  "said": "From before, for this message (fact numbers and days; the user's latest word wins):\n[2026-10-16] Booked Japan for April: Tokyo and Kyoto, two weeks.  \n[2026-09-15] Dreaming about Japan next spring, nothing booked, just looking.",
+  "passed": true
+ },
+ {
+  "scenario": "trips",
+  "class": "unknown",
+  "text": "Which hotel did we stay at in Ljubljana?",
+  "words": [],
+  "said": "The memory contains no fact that mentions staying at a hotel in Ljubljana. The only reference to Ljubljana is fact 14 (“Weekend in Ljubljana with my wife, lovely little city,” dated 2026‑10‑08), which does not specify a hotel. Therefore, the memory does not say which hotel was used.  \n\n**Used facts:** none (no fact bears on the question).",
+  "passed": true
+ }
+]

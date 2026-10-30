@@ -43,7 +43,7 @@ on the agent remembering to. This one acts by itself:
 | It… | How |
 |---|---|
 | **hears** every message, the user's and the agent's | Claude Code hooks pass both sides; the agent passes nothing |
-| **keeps** what is personal, in the user's words | the decision model gates; Nemotron Super resolves "it", "those", "up to 400" from the agent's message, then the agent's message is dropped |
+| **keeps** what is personal, in the user's words | the decision model gates; Nemotron 3.5 Super VL resolves "it", "those", "up to 400" from the agent's message, then the agent's message is dropped |
 | **reads in the quiet** | as soon as an entry is kept, beside the conversation, the memory reads it into things, values and links |
 | **notes interests** | every question of the user's is kept with how often it comes back: what to get ready for next time |
 | **keeps topics fresh** | a topic without a web update for a month is looked up in the background (Tavily), at most once an hour; what matters is kept in the journal, marked as from the web |
@@ -95,7 +95,7 @@ and the words they stand on.
 
 **The intake** (`memory/intake/`) reads one user message with the agent's message just before
 it — never more: what came earlier the memory already holds. The decision model, shown the last
-four messages, says whether there is anything personal; Nemotron Super, thinking, rewrites the
+four messages, says whether there is anything personal; Nemotron 3.5 Super VL, thinking, rewrites the
 message to stand alone and copies its questions out. The prompts are plain files in
 `memory/intake/prompts/`.
 
@@ -111,26 +111,22 @@ for the topic (places, events, prices — not the user's own plans or people), t
 person's name or private detail, Tavily finds pages, and what matters goes into the same journal
 as an entry marked as from the web. The agent hears of it with the memory's next answer.
 
-## NVIDIA Nemotron on Nebius Token Factory
+## Models: NVIDIA Nemotron on Nebius Token Factory
 
-Every model is bound to a role in `memory/models.py`; any role can be moved to another model by
-an environment variable (`TERRAWEAVER_<ROLE>=…`).
+Every language-model call is a Nemotron model on Token Factory. Three jobs, each on the model that
+fits it:
 
-| Role | Model | What it does |
+| Job | Model | How it runs |
 |---|---|---|
-| resolver | Nemotron 3 Super 120B-A12B, thinking | rewrites a user message to stand alone; new topic; its questions |
-| sorter | Nemotron 3 Super | the gate: personal or not; the kind of a question; same question as before? |
-| reader | Nemotron 3 Super | reads the journal and web pages into things, values, links and topics |
-| judge | Nemotron 3 Nano 30B-A3B | closed questions as probabilities from **logprobs**: "does this quote say that?", "does this matter?" — one token, calibrated |
-| embeddings | NVIDIA Nemotron embed (`nvidia/nemotron-3.5-embed-1b`) via OpenRouter | search by meaning; `fastembed` locally by default |
+| **Understand.** Is this personal? Rewrite it so it stands alone. Read the entry into people, links and topics. | Nemotron 3.5 Super VL | a few calls per message |
+| **Decide.** "Does this quote say that?", "does this matter?", "does the topic change outside?" | Nemotron 3.5 Lightning | hundreds of calls; the answer is read from the **first token's logprobs**: one token, a probability instead of a guess |
+| **Find by meaning.** | NVIDIA Nemotron embed 1B, through OpenRouter (the hosted demo); a small local model by default | one vector per entry |
 
-One client (`memory/nemotron.py`) serves a model both as an LLM and as a **decision model**:
-yes/no and choice questions are answered from the first token's logprobs, so a gate costs one
-token and comes with a probability instead of a guess. Token Factory made it possible to put the
-middle model where text is read and rewritten (a few calls per message) and the small one where
-hundreds of calls each decide a little (the judge), by changing one name.
-
-**Tavily** is the web: `memory/web.py` searches and takes the pages' text through it.
+The roles live in `memory/models.py`; any of them moves to another model with an environment
+variable (`TERRAWEAVER_READER`, `_JUDGE`, `_SORTER`, `_RESOLVER`). One client (`memory/nemotron.py`)
+serves a model as an LLM and as a decision model, calibrated per model in `memory/decision.json`.
+Token Factory is what makes the split cheap: the large model reads and rewrites, the fast one
+answers the hundreds of yes/no questions. Web search is **Tavily** (`memory/web.py`).
 
 ## Try it
 
@@ -225,20 +221,23 @@ docs/decisions.md      every behaviour change with its reason
 
 **Scenarios** (`benchmarks/scenarios.py`): five short personal histories (family, books, running,
 home, trips), a dozen talks over two months among thirty of everyday talk, each told through `say`
-on a fresh memory, then checked by words. The first run of the day gave 39 of 45, and after the fixes the misses pointed at, **43 of 45**. The histories were seen during development, so the second number is tuned on them.
+on a fresh memory, then checked by words. On the final models: **40 of 45**.
 
 | Class of task | Passed |
 |---|---|
 | latest value (what holds now) | 11 / 11 |
 | time (days, order, how long ago) | 8 / 8 |
-| count (events spread over talks) | 7 / 7 |
 | who is who | 4 / 4 |
-| recall (nobody asks) | 7 / 8 |
-| never said, so "I don't know" | 6 / 7 |
+| count (events spread over talks) | 6 / 7 |
+| recall (nobody asks) | 6 / 8 |
+| never said, so "I don't know" | 5 / 7 |
 
-The two misses are real: a car alarm question that did not bring up the user's Skoda Octavia, and
-a sale of a Golf that was never told, which the memory answered instead of declining. The run, its
-journals, traces and tokens are kept under `benchmarks/runs/`.
+The same histories gave 39, then 43 (on the earlier models) and 40 of 45 the same day: the runs
+differ by a few checks, and the histories were seen during development, so read the number as
+tuned on them. The five misses are in the kept run, `benchmarks/runs/scenarios-20261030-151025`
+(a family dinner not tied to the mother-in-law, a favourite musician and a book-club book that were
+never told but got an answer, a half marathon that did not bring up the user's runs, one home spend
+not counted).
 
 Every number, and every change made because of one, is in `docs/decisions.md`. One run measures
 little here: the spread between runs is as large as the differences.

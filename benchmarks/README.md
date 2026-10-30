@@ -34,8 +34,8 @@ the total.
 
 A run is kept under `benchmarks/runs/scenarios-<stamp>/`: per story the journal (`facts.md`), what was
 heard and said back, the trace of every step, the graph, the tokens, and `results.json` with every
-check and the answer it was scored on. The run in this repository, `scenarios-20261030-035627`,
-scored 43 of 45; replay it with `scripts/replay.py`. The histories were seen during development, so
+check and the answer it was scored on. The final run in this repository, `scenarios-20261030-151025`,
+scored 40 of 45 (an earlier run on other models, `scenarios-20261030-035627`, 43); replay one with `scripts/replay.py`. The histories were seen during development, so
 treat the number as tuned on them; the stories are in `scenarios.py`, and a new one is a dict
 of talks and checks.
 

@@ -1,0 +1,38 @@
+{"from": "the user", "relation": "ran", "common": false, "to": "5 km along the river", "text": 2, "day": "2026-09-25 20:00:00", "quote": "Ran 5 km along the river", "when": "2026-09-25", "class": "did"}
+{"from": "the user", "relation": "fixed", "common": false, "to": "bug in our CI pipeline", "text": 3, "day": "2026-09-26 20:00:00", "quote": "fixing a bug in our CI pipeline", "when": "2026-09-26", "class": "did"}
+{"from": "The supermarket", "relation": "out_of", "common": false, "to": "oat milk", "text": 4, "day": "2026-09-29 20:00:00", "quote": "was out of", "when": "2026-09-29"}
+{"from": "the user", "relation": "ran", "common": false, "to": "5 km", "text": 6, "day": "2026-10-02 20:00:00", "quote": "I ran 5 km this morning", "when": "2026-10-02", "class": "did"}
+{"from": "the user", "relation": "health", "common": true, "to": "legs are dead", "text": 6, "day": "2026-10-02 20:00:00", "quote": "My legs are dead", "when": "2026-10-02"}
+{"from": "the user", "relation": "ran", "common": false, "to": "Yesterday's run", "text": 7, "day": "2026-10-03 20:00:00", "quote": "Yesterday's run left me sore", "when": "2026-10-02", "class": "did"}
+{"from": "the user", "relation": "health", "common": true, "to": "sore", "text": 7, "day": "2026-10-03 20:00:00", "quote": "Yesterday's run left me sore", "when": "2026-10-03"}
+{"from": "the user", "relation": "took", "common": false, "to": "stairs", "text": 7, "day": "2026-10-03 20:00:00", "quote": "I took the stairs very slowly", "when": "2026-10-03", "class": "did"}
+{"from": "the user", "relation": "member_of", "common": false, "to": "team", "text": 8, "day": "2026-10-04 20:00:00", "quote": "Our team", "when": "2026-10-04", "class": "likes"}
+{"from": "the user", "relation": "attended", "common": false, "to": "a retro", "text": 8, "day": "2026-10-04 20:00:00", "quote": "Our team had a retro today", "when": "2026-10-04", "class": "did"}
+{"from": "team", "relation": "complained_about", "common": false, "to": "deadlines", "text": 8, "day": "2026-10-04 20:00:00", "quote": "everyone complained about deadlines", "when": "2026-10-04"}
+{"from": "the user", "relation": "ran", "common": false, "to": "5 km", "text": 9, "day": "2026-10-06 20:00:00", "quote": "Another 5 km run today, 27 minutes.", "when": "2026-10-06", "class": "likes"}
+{"from": "the user", "relation": "owns", "common": true, "to": "the plants", "text": 10, "day": "2026-10-07 20:00:00", "quote": "the plants", "when": "2026-10-07"}
+{"from": "the user", "relation": "forgets_to_water", "common": false, "to": "the plants", "text": 10, "day": "2026-10-07 20:00:00", "quote": "forgetting to water the plants", "when": "2026-10-07", "class": "now"}
+{"from": "the user", "relation": "feels", "common": false, "to": "tired", "text": 11, "day": "2026-10-08 20:00:00", "quote": "Tired today", "when": "2026-10-08", "class": "now"}
+{"from": "the user", "relation": "slept", "common": false, "to": "badly", "text": 11, "day": "2026-10-08 20:00:00", "quote": "slept badly", "when": "2026-10-08", "class": "now"}
+{"from": "the user", "relation": "wanted", "common": false, "to": "a run", "text": 12, "day": "2026-10-09 20:00:00", "quote": "Wanted to go for a run", "when": "2026-10-09", "class": "plans"}
+{"from": "the user", "relation": "did", "common": false, "to": "Gym session", "text": 13, "day": "2026-10-10 20:00:00", "quote": "Gym session today", "when": "2026-10-10", "class": "did"}
+{"from": "Gym session", "relation": "included", "common": false, "to": "weights", "text": 13, "day": "2026-10-10 20:00:00", "quote": "weights and rowing", "when": "2026-10-10"}
+{"from": "Gym session", "relation": "included", "common": false, "to": "rowing", "text": 13, "day": "2026-10-10 20:00:00", "quote": "weights and rowing", "when": "2026-10-10"}
+{"from": "the user", "relation": "made", "common": false, "to": "lentil soup", "text": 15, "day": "2026-10-12 20:00:00", "quote": "Made a big pot of lentil soup", "when": "2026-10-12", "class": "did"}
+{"from": "the user", "relation": "ran", "common": false, "to": "10 km run", "text": 16, "day": "2026-10-13 20:00:00", "quote": "Did my first 10 km run!", "when": "2026-10-13", "class": "did"}
+{"from": "the user", "relation": "ran_in", "common": false, "to": "58 minutes", "text": 16, "day": "2026-10-13 20:00:00", "quote": "58 minutes.", "when": "2026-10-13", "class": "likes"}
+{"from": "the user", "relation": "ate", "common": false, "to": "Pizza", "text": 17, "day": "2026-10-14 20:00:00", "quote": "Pizza", "when": "2026-10-14", "class": "did"}
+{"from": "Marko", "relation": "neighbour", "common": false, "to": "the user", "text": 18, "day": "2026-10-17 20:00:00", "quote": "my neighbour Marko", "when": "2026-10-17"}
+{"from": "the user", "relation": "ran", "common": false, "to": "Easy 6 km run", "text": 18, "day": "2026-10-17 20:00:00", "quote": "Easy 6 km run", "when": "2026-10-17", "class": "likes"}
+{"from": "the user", "relation": "running_partner", "common": false, "to": "Marko", "text": 19, "day": "2026-10-18 20:00:00", "quote": "yesterday's run with Marko", "when": "2026-10-17", "class": "likes"}
+{"from": "the user", "relation": "ran", "common": false, "to": "7 km", "text": 19, "day": "2026-10-18 20:00:00", "quote": "yesterday's run with Marko was 7 km", "when": "2026-10-17", "class": "did"}
+{"from": "the user", "relation": "owns", "common": true, "to": "watch", "text": 19, "day": "2026-10-18 20:00:00", "quote": "my watch"}
+{"from": "the user", "relation": "health", "common": true, "to": "knee hurts", "text": 20, "day": "2026-10-20 20:00:00", "quote": "my knee hurts", "when": "2026-10-20"}
+{"from": "the physio", "relation": "advised", "common": false, "to": "the user", "text": 22, "day": "2026-10-23 20:00:00", "quote": "no running for a week", "when": "2026-10-23"}
+{"from": "the user", "relation": "health", "common": true, "to": "mild strain", "text": 22, "day": "2026-10-23 20:00:00", "quote": "it's a mild strain", "when": "2026-10-23"}
+{"from": "the neighbours", "relation": "neighbour", "common": false, "to": "the user", "text": 23, "day": "2026-10-25 20:00:00", "quote": "The neighbours", "when": "2026-10-25"}
+{"from": "the user", "relation": "owns", "common": true, "to": "knee", "text": 24, "day": "2026-10-27 20:00:00", "quote": "My knee", "when": "2026-10-27"}
+{"from": "the user", "relation": "health", "common": true, "to": "fine again", "text": 24, "day": "2026-10-27 20:00:00", "quote": "My knee is fine again.", "when": "2026-10-27"}
+{"from": "the user", "relation": "ran", "common": false, "to": "8 km today without pain", "text": 24, "day": "2026-10-27 20:00:00", "quote": "I ran 8 km today without pain.", "when": "2026-10-27", "class": "now"}
+{"from": "the user", "relation": "owns", "common": true, "to": "headphones", "text": 25, "day": "2026-10-28 20:00:00", "quote": "Ordered new headphones", "when": "2026-10-28"}
+{"from": "the user", "relation": "plans", "common": false, "to": "half marathon", "text": 26, "day": "2026-10-30 19:00:00", "quote": "Thinking of signing up for a half marathon in four weeks.", "when": "2026-10-30", "class": "plans"}

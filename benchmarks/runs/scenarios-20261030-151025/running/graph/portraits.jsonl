@@ -1,0 +1,25 @@
+{"of": "the user", "added": "Ran 5 km along the river this evening (2026-09-25).", "day": "2026-09-25 20:00:00", "entries": [2], "version": 1}
+{"of": "the user", "added": "Spent the whole evening fixing a bug in the CI pipeline (2026-09-26).", "day": "2026-09-26 20:00:00", "entries": [2, 3], "version": 2}
+{"of": "the user", "added": "Ran 5 km this morning; legs are dead (2026-10-02).", "day": "2026-10-02 20:00:00", "entries": [2, 3, 6], "version": 3}
+{"of": "the user", "added": "Yesterday's run left them sore; they took the stairs very slowly (2026-10-03).", "day": "2026-10-03 20:00:00", "entries": [2, 3, 6, 7], "version": 4}
+{"of": "the user", "added": "Works in a team that held a retro today where everyone complained about deadlines (2026-10-04).", "day": "2026-10-04 20:00:00", "entries": [2, 3, 6, 7, 8], "version": 5}
+{"of": "the user", "added": "Ran another 5 km in 27 minutes (2026-10-06).", "day": "2026-10-06 20:00:00", "entries": [2, 3, 6, 7, 8, 9], "version": 6}
+{"of": "the user", "added": "keeps forgetting to water the plants (2026-10-07).", "day": "2026-10-07 20:00:00", "entries": [2, 3, 6, 7, 8, 9, 10], "version": 7}
+{"of": "the user", "added": "Tired today; slept badly (2026-10-08).", "day": "2026-10-08 20:00:00", "entries": [2, 3, 6, 7, 8, 9, 10, 11], "version": 8}
+{"of": "the user", "added": "Wanted to run but it poured all day, so stayed in (2026-10-09).", "day": "2026-10-09 20:00:00", "entries": [2, 3, 6, 7, 8, 9, 10, 11, 12], "version": 9}
+{"of": "the user", "added": "Did a gym session today: weights and rowing (2026-10-10).", "day": "2026-10-10 20:00:00", "entries": [2, 3, 6, 7, 8, 9, 10, 11, 12, 13], "version": 10}
+{"of": "the user", "added": "Listened to a podcast about sleep and apparently needs more of it (2026-10-11).", "day": "2026-10-11 20:00:00", "entries": [2, 3, 6, 7, 8, 9, 10, 11, 12, 13, 14], "version": 11}
+{"of": "the user", "added": "Made a big pot of lentil soup, good for three days (2026-10-12).", "day": "2026-10-12 20:00:00", "entries": [2, 3, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], "version": 12}
+{"of": "the user", "added": "Ran their first 10 km in 58 minutes (2026-10-13).", "day": "2026-10-13 20:00:00", "entries": [2, 3, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16], "version": 13}
+{"of": "the user", "added": "Ate pizza and had an early night after a long day (2026-10-14).", "day": "2026-10-14 20:00:00", "entries": [2, 3, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17], "version": 14}
+{"of": "the user", "added": "Ran an easy 6 km with neighbour Marko (2026-10-17).", "day": "2026-10-17 20:00:00", "entries": [2, 3, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18], "version": 15}
+{"of": "Marko", "added": "The user's neighbour; ran an easy 6 km with the user (2026-10-17).", "day": "2026-10-17 20:00:00", "entries": [18], "version": 1}
+{"of": "the user", "added": "Corrected that the run with Marko was 7 km, not 6 km, because their watch was wrong (2026-10-18).", "day": "2026-10-18 20:00:00", "entries": [2, 3, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19], "version": 16}
+{"of": "Marko", "added": "Ran 7 km with the user, not 6 km as previously recorded (2026-10-18).", "day": "2026-10-18 20:00:00", "entries": [18, 19], "version": 2}
+{"of": "the user", "added": "Skipped running this week; knee hurts (2026-10-20).", "day": "2026-10-20 20:00:00", "entries": [2, 3, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20], "version": 17}
+{"of": "the user", "added": "Physio says it's a mild strain; no running for a week (2026-10-23).", "day": "2026-10-23 20:00:00", "entries": [2, 3, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22], "version": 18}
+{"of": "the neighbours", "added": "They drill on a Sunday (2026-10-25).", "day": "2026-10-25 20:00:00", "entries": [23], "version": 1}
+{"of": "the user", "added": "The neighbours drill again on a Sunday (2026-10-25).", "day": "2026-10-25 20:00:00", "entries": [2, 3, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 23], "version": 19}
+{"of": "the user", "added": "Knee recovered; completed an 8 km run without pain (2026-10-27).", "day": "2026-10-27 20:00:00", "entries": [2, 3, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 23, 24], "version": 20}
+{"of": "the user", "added": "Ordered new headphones; they arrive Friday (2026-10-28).", "day": "2026-10-28 20:00:00", "entries": [2, 3, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 23, 24, 25], "version": 21}
+{"of": "the user", "added": "Considering signing up for a half marathon in four weeks (2026-10-30).", "day": "2026-10-30 19:00:00", "entries": [2, 3, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 23, 24, 25, 26], "version": 22}

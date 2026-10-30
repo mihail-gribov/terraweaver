@@ -1,0 +1,120 @@
+[
+ {
+  "scenario": "running",
+  "class": "count",
+  "text": "How many times did I go running in October?",
+  "words": [
+   [
+    "five",
+    "5"
+   ]
+  ],
+  "said": "The memory records the following running events in October:\n\n- **Fact 6** [2026‑10‑02]: “I ran 5 km this morning.”  \n- **Fact 9** [2026‑10‑06]: “Another 5 km run today, 27 minutes.”  \n- **Fact 16** [2026‑10‑13]: “Did my first 10 km run!”  \n- **Fact 18** [2026‑10‑17]: “Easy 6 km run with my neighbour Marko.”  \n- **Fact 24** [2026‑10‑27]: “My knee is fine again. I ran 8 km today without pain.”\n\nThese five facts each describe a distinct run that actually occurred in October. Therefore, the user went running **5 times** in October.  \n\n**Facts used:** 6, 9, 16, 18, 24.",
+  "passed": true
+ },
+ {
+  "scenario": "running",
+  "class": "count",
+  "text": "How many kilometres did I run in October in total?",
+  "words": [
+   [
+    "35"
+   ]
+  ],
+  "said": "The memory records the following runs in October 2026:\n\n- **Fact 6** [2026‑10‑02]: “I ran 5 km this morning.” → 5 km  \n- **Fact 9** [2026‑10‑06]: “Another 5 km run today, 27 minutes.” → 5 km  \n- **Fact 16** [2026‑10‑13]: “Did my first 10 km run! 58 minutes.” → 10 km  \n- **Fact 19** [2026‑10‑18]: “Correction: yesterday’s run with Marko was 7 km, my watch had it wrong.” (corrects Fact 18) → 7 km for the run on 2026‑10‑17  \n- **Fact 24** [2026‑10‑27]: “My knee is fine again. I ran 8 km today without pain.” → 8 km  \n\nAdding these distances:  \n5 km + 5 km + 10 km + 7 km + 8 km = **35 km**.\n\nSo, according to the facts, you ran **35 kilometres** in October.  \n(Facts used: 6, 9, 16, 19, 24.)",
+  "passed": true
+ },
+ {
+  "scenario": "running",
+  "class": "latest",
+  "text": "How long was my run with Marko?",
+  "words": [
+   [
+    "7 km",
+    "7km",
+    "seven"
+   ]
+  ],
+  "said": "The memory contains two facts about the run with Marko:\n\n- **Fact 18** – [2026‑10‑17] “Easy 6 km run with my neighbour Marko.”  \n- **Fact 19** – [2026‑10‑18] “Correction: yesterday’s run with Marko was 7 km, my watch had it wrong.”\n\nBecause fact 19 has a higher number (and therefore a later date) than fact 18, it overrides the earlier statement. Thus, according to the most recent information, the run with Marko was **7 km** long.\n\n**Facts used:** 18, 19.",
+  "passed": true
+ },
+ {
+  "scenario": "running",
+  "class": "time",
+  "text": "How many days ago did I run my first 10 km?",
+  "words": [
+   [
+    "17",
+    "seventeen"
+   ]
+  ],
+  "said": "The memory records the first 10 km run in fact 16:\n\n- **Fact 16** – [2026‑10‑13] “Did my first 10 km run! 58 minutes.”  \n\nThis indicates the run occurred on 2026‑10‑13.\n\nToday’s date is 2026‑10‑30.  \nDifference: 2026‑10‑30 − 2026‑10‑13 = 17 days.\n\n**Answer:** You ran your first 10 km 17 days ago.  \n(Fact 16)",
+  "passed": true
+ },
+ {
+  "scenario": "running",
+  "class": "time",
+  "text": "When was my longest run?",
+  "words": [
+   [
+    "13 October",
+    "October 13",
+    "13 Oct",
+    "Oct 13",
+    "2026-10-13",
+    "17 days"
+   ]
+  ],
+  "said": "The memory records several runs with their distances:\n\n- **Fact 2** (said 2026‑09‑25): “Ran 5 km along the river” – 5 km  \n- **Fact 6** (said 2026‑10‑02): “I ran 5 km this morning” – 5 km  \n- **Fact 9** (said 2026‑10‑06): “Another 5 km run today, 27 minutes.” – 5 km  \n- **Fact 16** (said 2026‑10‑13): “Did my first 10 km run! 58 minutes.” – **10 km**  \n- **Fact 18** (said 2026‑10‑17): “Easy 6 km run with my neighbour Marko.” – 6 km  \n- **Fact 19** (said 2026‑10‑18): “Correction: yesterday’s run with Marko was 7 km… ” – 7 km  \n- **Fact 24** (said 2026‑10‑27): “My knee is fine again. I ran 8 km today without pain.” – 8 km  \n\nAmong these, the greatest distance is the **10 km run** recorded in **Fact 16**, which occurred on **2026‑10‑13** (the day the fact was said). No later fact reports a longer run.\n\n**Answer:** Your longest run was the 10 km run on 2026‑10‑13.  \n(Fact 16 provides the distance and date; facts 2, 6, 9, 18, 19, 24 show all other runs were shorter.)",
+  "passed": true
+ },
+ {
+  "scenario": "running",
+  "class": "latest",
+  "text": "Is my knee still a problem?",
+  "words": [
+   [
+    "fine",
+    "without pain",
+    "recovered",
+    "no longer"
+   ]
+  ],
+  "said": "The most recent information about your knee comes from **fact 24** (dated 2026‑10‑27):\n\n- “My knee is fine again. I ran 8 km today without pain.”\n\nSince this statement is newer than the earlier notes of knee pain (fact 20 – 2026‑10‑20) and the physio’s advice (fact 22 – 2026‑10‑23), it supersedes them. As of today (2026‑10‑30), the memory indicates that your knee is **not** a problem.\n\n**Facts used:** 24.",
+  "passed": true
+ },
+ {
+  "scenario": "running",
+  "class": "world",
+  "text": "Who do I sometimes run with?",
+  "words": [
+   [
+    "Marko"
+   ]
+  ],
+  "said": "The memory indicates that you sometimes run with your neighbour **Marko**.\n\n- Fact 18 (2026‑10‑17): “Easy 6 km run with my neighbour Marko.”  \n- Fact 19 (2026‑10‑18): “Correction: yesterday’s run with Marko was 7 km, my watch had it wrong.”\n\nThese two facts show that Marko is the person you occasionally run together with. No other running companions are mentioned in the provided facts.",
+  "passed": true
+ },
+ {
+  "scenario": "running",
+  "class": "recall",
+  "text": "Thinking of signing up for a half marathon in four weeks.",
+  "words": [
+   [
+    "knee",
+    "strain",
+    "physio"
+   ]
+  ],
+  "said": "Kept as entry #26.",
+  "passed": false
+ },
+ {
+  "scenario": "running",
+  "class": "unknown",
+  "text": "Which running shoes do I use?",
+  "words": [],
+  "said": "The memory contains no information about which running shoes you use. No fact among those provided mentions your running shoes. Therefore, the answer is: **the memory does not say**. (No fact numbers apply.)",
+  "passed": true
+ }
+]

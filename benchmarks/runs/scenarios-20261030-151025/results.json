@@ -1,0 +1,557 @@
+[
+ {
+  "scenario": "family",
+  "class": "world",
+  "text": "Who is Vesna?",
+  "words": [
+   [
+    "mother-in-law",
+    "mother in law",
+    "wife's mother",
+    "Mila's mother"
+   ]
+  ],
+  "said": "Vesna is the user’s mother‑in‑law.  \n\n- Fact 20 (2026‑10‑10): “My mother‑in‑law Vesna is staying with us for two weeks from 2 November.”  \n- Fact 29 (2026‑10‑28): “Vesna’s visit is postponed to December; her flight got cancelled.”  \n\nThese facts show that Vesna is the user’s mother‑in‑law, whose planned stay beginning 2 Nov was later postponed to December due to a cancelled flight. No other facts provide additional information about Vesna.",
+  "passed": true
+ },
+ {
+  "scenario": "family",
+  "class": "world",
+  "text": "What is my wife allergic to?",
+  "words": [
+   [
+    "nut"
+   ]
+  ],
+  "said": "The memory states that your wife is allergic to nuts. This comes from fact 4, which was said on 2026‑09‑16: “She’s allergic to nuts, so no chocolates.”  \n\n**Fact used:** 4 (2026‑09‑16).",
+  "passed": true
+ },
+ {
+  "scenario": "family",
+  "class": "latest",
+  "text": "Where does my sister live?",
+  "words": [
+   [
+    "Belgrade"
+   ]
+  ],
+  "said": "The memory says your sister Ana lives in Belgrade, ten minutes from you.  \n- Fact 24 (2026‑10‑18): “Ana moved again! Porto didn’t work out, she lives in Belgrade now, ten minutes from us.”  \n\n(Although Fact 28 (2026‑10‑26) mentions another Ana – a new colleague at Globex – who lives in Novi Sad, that refers to the colleague, not your sister.)  \n\nSo, based on the most recent information about your sister, she lives in Belgrade.  \n\n**Fact used:** 24.",
+  "passed": true
+ },
+ {
+  "scenario": "family",
+  "class": "world",
+  "text": "Who is Ana?",
+  "words": [
+   [
+    "sister"
+   ],
+   [
+    "colleague"
+   ]
+  ],
+  "said": "Ana is the user’s sister.  \n\n- **Fact 7** [2026‑09‑20] – “My sister Ana moved from Lisbon to Porto for a new job.” establishes that Ana is the user’s sister.  \n- **Fact 24** [2026‑10‑18] – “Ana moved again! Porto didn’t work out, she lives in Belgrade now, ten minutes from us.” shows a later move to Belgrade (superseded by a newer fact).  \n- **Fact 28** [2026‑10‑26] – “Funny, my new colleague at Globex is also called Ana. She lives in Novi Sad and commutes.” gives the most recent information: Ana now lives in Novi Sad, commutes, and works at Globex (where the user is also employed as a product designer).  \n\nBecause fact 28 is newer than fact 24, it overrides the Belgrade location and tells us Ana’s current situation. Thus, as of the latest record (2026‑10‑26), Ana is the user’s sister, residing in Novi Sad and commuting to her job at Globex.",
+  "passed": true
+ },
+ {
+  "scenario": "family",
+  "class": "recall",
+  "text": "What should I get my wife for her birthday?",
+  "words": [
+   [
+    "jazz"
+   ]
+  ],
+  "said": "Kept as entry #30.\n\nFrom before, for this message (fact numbers and days; the user's latest word wins):\n[2026-09-16] I need gift ideas, my wife's birthday is on 11 November.  \n[2026-09-16] She loves jazz and small venues. She's allergic to nuts, so no chocolates.",
+  "passed": true
+ },
+ {
+  "scenario": "family",
+  "class": "latest",
+  "text": "Where do I work now?",
+  "words": [
+   [
+    "Globex"
+   ]
+  ],
+  "said": "**Relevant facts**\n\n- **Fact 27** [2026‑10‑24]: “Started at Globex as a product designer on Monday. Left Acme after five years.”  \n- **Fact 28** [2026‑10‑26]: “Funny, my new colleague at Globex is also called Ana. She lives in Novi Sad and commutes.”  \n- *(Supporting)* **Fact 16** [2026‑10‑04]: “Turned down the Initech job because the commute would have been awful.” (shows the user did **not** take the Initech offer.)\n\n**Conclusion**\n\nThe most recent information indicates that the user **works at Globex** (as a product designer), having started there on 2026‑10‑24 and still being there as of 2026‑10‑26. No later fact changes this, so the current workplace is Globex.",
+  "passed": true
+ },
+ {
+  "scenario": "family",
+  "class": "latest",
+  "text": "When is Vesna coming to stay with us?",
+  "words": [
+   [
+    "December"
+   ]
+  ],
+  "said": "The memory says:\n\n- **Fact 20** (2026‑10‑10): “My mother‑in‑law Vesna is staying with us for two weeks from 2 November.”  \n- **Fact 29** (2026‑10‑28): “Vesna’s visit is postponed to December; her flight got cancelled.”\n\nBecause fact 29 is newer, it overrides the earlier plan. So Vesna is now expected to come in **December** (the exact day in December isn’t specified in the facts).  \n\n**Facts used:** 20, 29.",
+  "passed": true
+ },
+ {
+  "scenario": "family",
+  "class": "count",
+  "text": "How many times has my sister moved since September?",
+  "words": [
+   [
+    "two",
+    "2",
+    "twice"
+   ]
+  ],
+  "said": "The memory records two moves by your sister Ana since September:\n\n- **Fact 7** – [2026‑09‑20] “My sister Ana moved from Lisbon to Porto for a new job.”  \n- **Fact 24** – [2026‑10‑18] “Ana moved again! Porto didn't work out, she lives in Belgrade now, ten minutes from us.”\n\nThese two facts show that Ana has moved **twice** since September.  \n\n**Facts used:** 7, 24.",
+  "passed": true
+ },
+ {
+  "scenario": "family",
+  "class": "time",
+  "text": "How many days are left until my wife's birthday?",
+  "words": [
+   [
+    "12",
+    "twelve"
+   ]
+  ],
+  "said": "The memory states:\n\n- Fact 3 [2026‑09‑16]: “my wife’s birthday is on 11 November.”  \n- Fact 30 [2026‑10‑30]: the user is asking what to get his wife for her birthday, confirming the date is still forthcoming.\n\nFrom today’s date (2026‑10‑30) to 11 November 2026 is:\n\n- October 31 → 1 day  \n- November 1 – November 11 → 11 days  \n\nTotal = 1 + 11 = **12 days** left until the wife’s birthday.  \n\n**Facts used:** 3, 30.",
+  "passed": true
+ },
+ {
+  "scenario": "family",
+  "class": "time",
+  "text": "How old will Lev turn on his next birthday?",
+  "words": [
+   [
+    "eight",
+    "8"
+   ]
+  ],
+  "said": "Fact 10 tells us that on 2026‑09‑23 Lev “turned seven last weekend.”  \nThat means his most recent birthday (when he turned seven) occurred around 2026‑09‑19 or 2026‑09‑20.  \nTherefore, on his next birthday (approximately one year later, around 2026‑09‑19/20 2027) Lev will be **eight** years old.  \n\n**Used fact:** 10.",
+  "passed": true
+ },
+ {
+  "scenario": "family",
+  "class": "recall",
+  "text": "Can you book a table for my wife's birthday dinner? Somewhere with great desserts.",
+  "words": [
+   [
+    "nut"
+   ]
+  ],
+  "said": "Kept as entry #31.\n\nFrom before, for this message (fact numbers and days; the user's latest word wins):\n[2026-10-30] Can you book a table for my wife's birthday dinner? Somewhere with great desserts.  \n[2026-09-16] She loves jazz and small venues. She's allergic to nuts, so no chocolates.  \n[2026-09-16] I need gift ideas, my wife's birthday is on 11 November.  \n[2026-10-30] What should I get my wife for her birthday?",
+  "passed": true
+ },
+ {
+  "scenario": "family",
+  "class": "recall",
+  "text": "Let's plan a family dinner with my mother-in-law on 5 November.",
+  "words": [
+   [
+    "December",
+    "postpone"
+   ]
+  ],
+  "said": "Kept as entry #32.\n\nFrom before, for this message (fact numbers and days; the user's latest word wins):\n[2026-10-30] Let's plan a family dinner with my mother-in-law on 5 November.  \n[2026-10-10] My mother-in-law Vesna is staying with us for two weeks from 2 November.",
+  "passed": false
+ },
+ {
+  "scenario": "family",
+  "class": "unknown",
+  "text": "Which company did Ana move to Porto for?",
+  "words": [],
+  "said": "The memory records that Ana moved to Porto for a new job, but it does not specify which company that job was with.\n\n**Fact used:**  \n- **Fact 7** – “[2026‑09‑20] My sister Ana moved from Lisbon to Porto for a new job.”  \n\nNo further fact names the company, so the memory does not say which company Ana moved to Porto for.",
+  "passed": true
+ },
+ {
+  "scenario": "family",
+  "class": "unknown",
+  "text": "Who is my wife's favourite jazz musician?",
+  "words": [],
+  "said": "The memory tells us that the user’s wife **loves jazz** (Fact 4, [2026‑09‑16]), but it never names a particular jazz musician as her favourite. No other fact mentions any specific jazz artist.  \n\nTherefore, based on the available facts, the memory does **not** say who her favourite jazz musician is.  \n\n**Facts consulted:** 4 (for the statement that she loves jazz). No further facts provide the requested detail.",
+  "passed": false
+ },
+ {
+  "scenario": "books",
+  "class": "count",
+  "text": "How many books have I finished in the last two months?",
+  "words": [
+   [
+    "five",
+    "5"
+   ]
+  ],
+  "said": "The memory records the following books finished between 2026‑08‑30 and 2026‑10‑30:\n\n- **Fact 4** – [2026‑09‑10] “Just finished ‘Piranesi’ by Susanna Clarke.”  \n- **Fact 18** – [2026‑10‑06] “Finished ‘Project Hail Mary’, loved the ending.”  \n- **Fact 20** – [2026‑10‑11] “Finished ‘Klara and the Sun’ on the train home.”  \n- **Fact 23** – [2026‑10‑15] “Polished off ‘Station Eleven’ over the weekend, couldn’t put it down.”  \n- **Fact 30** – [2026‑10‑25] “Finished ‘The Remains of the Day’ at last.”\n\nThat’s **5 books** finished in the last two months.  \n\n(Used facts 4, 18, 20, 23, 30.)",
+  "passed": true
+ },
+ {
+  "scenario": "books",
+  "class": "count",
+  "text": "How many books did I give up on?",
+  "words": [
+   [
+    "two",
+    "2"
+   ]
+  ],
+  "said": "**Facts that bear on “books I gave up on”**\n\n- **Fact 9** [2026‑09‑22]: *“I gave up on ‘The Overstory’, too slow for me.”*  \n- **Fact 32** [2026‑10‑29]: *“Gave ‘Normal People’ a go early, not for me, stopped at chapter three.”*  \n\nThese two statements each describe abandoning a book before finishing it. Therefore, according to the memory, the user has given up on **2 books**.",
+  "passed": true
+ },
+ {
+  "scenario": "books",
+  "class": "latest",
+  "text": "What am I reading right now?",
+  "words": [
+   [
+    "Tomorrow"
+   ]
+  ],
+  "said": "The memory shows that the most recent reading activity is the start of **‘Tomorrow, and Tomorrow, and Tomorrow’** on 2026‑10‑27 (fact 31). Since then there is no fact indicating they have finished or set it aside, so that is what they are reading now.\n\n**Facts used:**  \n- Fact 31 [2026‑10‑27] – “Started ‘Tomorrow, and Tomorrow, and Tomorrow’ tonight.”  \n- Fact 30 [2026‑10‑25] – “Finished ‘The Remains of the Day’ at last.” (shows the previous book was completed just before the new one began).  \n\nNo later fact changes this status, so the current read is *Tomorrow, and Tomorrow, and Tomorrow*.",
+  "passed": true
+ },
+ {
+  "scenario": "books",
+  "class": "time",
+  "text": "Which did I finish first, 'Klara and the Sun' or 'Project Hail Mary'?",
+  "words": [
+   [
+    "Hail Mary"
+   ]
+  ],
+  "said": "The memory shows that **‘Project Hail Mary’** was finished first.\n\n- Fact 18: “[2026‑10‑06] Finished ‘Project Hail Mary’, loved the ending.”  \n- Fact 20: “[2026‑10‑11] Finished ‘Klara and the Sun’ on the train home.”\n\nSince October 6 comes before October 11, the completion of *Project Hail Mary* precedes that of *Klara and the Sun*.  \n\nFacts used: **18**, **20**.",
+  "passed": true
+ },
+ {
+  "scenario": "books",
+  "class": "time",
+  "text": "How long did it take me to get through 'Project Hail Mary'?",
+  "words": [
+   [
+    "7 days",
+    "seven days",
+    "a week",
+    "one week",
+    "1 week"
+   ]
+  ],
+  "said": "The memory shows that you began listening to *Project Hail Mary* on **2026‑09‑29** (fact 12) and finished it on **2026‑10‑06** (fact 18).  \n\nFrom those dates, the elapsed time is:\n\n- 2026‑09‑29 → 2026‑09‑30: 1 day  \n- 2026‑10‑01 → 2026‑10‑06: 6 days  \n\nTotal = **7 days**.\n\n**Facts used:** 12 (started 2026‑09‑29) and 18 (finished 2026‑10‑06).",
+  "passed": true
+ },
+ {
+  "scenario": "books",
+  "class": "recall",
+  "text": "Any idea what I should read next?",
+  "words": [
+   [
+    "Normal People"
+   ]
+  ],
+  "said": "Kept as entry #33.\n\nFrom before, for this message (fact numbers and days; the user's latest word wins):\nBased on your recent reading history:\n\nYou’ve enjoyed fast-paced, engaging stories like *The Martian* (perfect beach read, Fact 1), *Project Hail Mary* (loved the ending, Fact 18), *Klara and the Sun* (stayed with you all day, Fact 21), and *Station Eleven* (couldn’t put it down, Fact 23). You also finished *The Remains of the Day* (Fact 30) after nearly completing it (Fact 25).\n\nYou didn’t connect with *Normal People* (stopped at chapter three, Fact 32) or *The Overstory* (found it too slow, Fact 9).\n\nYou’ve just started *Tomorrow, and Tomorrow, and Tomorrow* (Fact 31, 2026-10-27).\n\nGiven your taste for compelling narratives with strong momentum and emotional resonance, consider books similar to those you’ve liked—particularly sci-fi with heart (*Project Hail Mary*, *The Martian*) or literary fiction that grips you (*Station Eleven*, *Klara and the Sun*). Since you’re already into *Tomorrow, and Tomorrow, and Tomorrow*, you might see how that one unfolds before choosing your next read.",
+  "passed": true
+ },
+ {
+  "scenario": "books",
+  "class": "unknown",
+  "text": "Who recommended 'Piranesi' to me?",
+  "words": [],
+  "said": "The memory contains no information about who recommended *Piranesi* to you.  \nFact 4 tells you that you finished the book on 2026‑09‑10 (“Just finished ‘Piranesi’ by Susanna Clarke. Strange and beautiful.”), but it does not mention anyone suggesting or recommending it. Therefore, according to the supplied facts, the memory does not say who recommended the book.  \n\n**Used fact:** 4 (shows you read it, but gives no recommender).  \nIf no fact bears on the question, the answer is that the memory does not say.",
+  "passed": true
+ },
+ {
+  "scenario": "books",
+  "class": "unknown",
+  "text": "Which book is the book club reading this month?",
+  "words": [],
+  "said": "The book club picked **‘Normal People’** for the month following the fact’s date (they chose it on 2026‑10‑21 for “next month”).  \n**Fact used:** 27 [2026‑10‑21] – “The book club picked ‘Normal People’ for next month.”",
+  "passed": false
+ },
+ {
+  "scenario": "running",
+  "class": "count",
+  "text": "How many times did I go running in October?",
+  "words": [
+   [
+    "five",
+    "5"
+   ]
+  ],
+  "said": "The memory records the following running events in October:\n\n- **Fact 6** [2026‑10‑02]: “I ran 5 km this morning.”  \n- **Fact 9** [2026‑10‑06]: “Another 5 km run today, 27 minutes.”  \n- **Fact 16** [2026‑10‑13]: “Did my first 10 km run!”  \n- **Fact 18** [2026‑10‑17]: “Easy 6 km run with my neighbour Marko.”  \n- **Fact 24** [2026‑10‑27]: “My knee is fine again. I ran 8 km today without pain.”\n\nThese five facts each describe a distinct run that actually occurred in October. Therefore, the user went running **5 times** in October.  \n\n**Facts used:** 6, 9, 16, 18, 24.",
+  "passed": true
+ },
+ {
+  "scenario": "running",
+  "class": "count",
+  "text": "How many kilometres did I run in October in total?",
+  "words": [
+   [
+    "35"
+   ]
+  ],
+  "said": "The memory records the following runs in October 2026:\n\n- **Fact 6** [2026‑10‑02]: “I ran 5 km this morning.” → 5 km  \n- **Fact 9** [2026‑10‑06]: “Another 5 km run today, 27 minutes.” → 5 km  \n- **Fact 16** [2026‑10‑13]: “Did my first 10 km run! 58 minutes.” → 10 km  \n- **Fact 19** [2026‑10‑18]: “Correction: yesterday’s run with Marko was 7 km, my watch had it wrong.” (corrects Fact 18) → 7 km for the run on 2026‑10‑17  \n- **Fact 24** [2026‑10‑27]: “My knee is fine again. I ran 8 km today without pain.” → 8 km  \n\nAdding these distances:  \n5 km + 5 km + 10 km + 7 km + 8 km = **35 km**.\n\nSo, according to the facts, you ran **35 kilometres** in October.  \n(Facts used: 6, 9, 16, 19, 24.)",
+  "passed": true
+ },
+ {
+  "scenario": "running",
+  "class": "latest",
+  "text": "How long was my run with Marko?",
+  "words": [
+   [
+    "7 km",
+    "7km",
+    "seven"
+   ]
+  ],
+  "said": "The memory contains two facts about the run with Marko:\n\n- **Fact 18** – [2026‑10‑17] “Easy 6 km run with my neighbour Marko.”  \n- **Fact 19** – [2026‑10‑18] “Correction: yesterday’s run with Marko was 7 km, my watch had it wrong.”\n\nBecause fact 19 has a higher number (and therefore a later date) than fact 18, it overrides the earlier statement. Thus, according to the most recent information, the run with Marko was **7 km** long.\n\n**Facts used:** 18, 19.",
+  "passed": true
+ },
+ {
+  "scenario": "running",
+  "class": "time",
+  "text": "How many days ago did I run my first 10 km?",
+  "words": [
+   [
+    "17",
+    "seventeen"
+   ]
+  ],
+  "said": "The memory records the first 10 km run in fact 16:\n\n- **Fact 16** – [2026‑10‑13] “Did my first 10 km run! 58 minutes.”  \n\nThis indicates the run occurred on 2026‑10‑13.\n\nToday’s date is 2026‑10‑30.  \nDifference: 2026‑10‑30 − 2026‑10‑13 = 17 days.\n\n**Answer:** You ran your first 10 km 17 days ago.  \n(Fact 16)",
+  "passed": true
+ },
+ {
+  "scenario": "running",
+  "class": "time",
+  "text": "When was my longest run?",
+  "words": [
+   [
+    "13 October",
+    "October 13",
+    "13 Oct",
+    "Oct 13",
+    "2026-10-13",
+    "17 days"
+   ]
+  ],
+  "said": "The memory records several runs with their distances:\n\n- **Fact 2** (said 2026‑09‑25): “Ran 5 km along the river” – 5 km  \n- **Fact 6** (said 2026‑10‑02): “I ran 5 km this morning” – 5 km  \n- **Fact 9** (said 2026‑10‑06): “Another 5 km run today, 27 minutes.” – 5 km  \n- **Fact 16** (said 2026‑10‑13): “Did my first 10 km run! 58 minutes.” – **10 km**  \n- **Fact 18** (said 2026‑10‑17): “Easy 6 km run with my neighbour Marko.” – 6 km  \n- **Fact 19** (said 2026‑10‑18): “Correction: yesterday’s run with Marko was 7 km… ” – 7 km  \n- **Fact 24** (said 2026‑10‑27): “My knee is fine again. I ran 8 km today without pain.” – 8 km  \n\nAmong these, the greatest distance is the **10 km run** recorded in **Fact 16**, which occurred on **2026‑10‑13** (the day the fact was said). No later fact reports a longer run.\n\n**Answer:** Your longest run was the 10 km run on 2026‑10‑13.  \n(Fact 16 provides the distance and date; facts 2, 6, 9, 18, 19, 24 show all other runs were shorter.)",
+  "passed": true
+ },
+ {
+  "scenario": "running",
+  "class": "latest",
+  "text": "Is my knee still a problem?",
+  "words": [
+   [
+    "fine",
+    "without pain",
+    "recovered",
+    "no longer"
+   ]
+  ],
+  "said": "The most recent information about your knee comes from **fact 24** (dated 2026‑10‑27):\n\n- “My knee is fine again. I ran 8 km today without pain.”\n\nSince this statement is newer than the earlier notes of knee pain (fact 20 – 2026‑10‑20) and the physio’s advice (fact 22 – 2026‑10‑23), it supersedes them. As of today (2026‑10‑30), the memory indicates that your knee is **not** a problem.\n\n**Facts used:** 24.",
+  "passed": true
+ },
+ {
+  "scenario": "running",
+  "class": "world",
+  "text": "Who do I sometimes run with?",
+  "words": [
+   [
+    "Marko"
+   ]
+  ],
+  "said": "The memory indicates that you sometimes run with your neighbour **Marko**.\n\n- Fact 18 (2026‑10‑17): “Easy 6 km run with my neighbour Marko.”  \n- Fact 19 (2026‑10‑18): “Correction: yesterday’s run with Marko was 7 km, my watch had it wrong.”\n\nThese two facts show that Marko is the person you occasionally run together with. No other running companions are mentioned in the provided facts.",
+  "passed": true
+ },
+ {
+  "scenario": "running",
+  "class": "recall",
+  "text": "Thinking of signing up for a half marathon in four weeks.",
+  "words": [
+   [
+    "knee",
+    "strain",
+    "physio"
+   ]
+  ],
+  "said": "Kept as entry #26.",
+  "passed": false
+ },
+ {
+  "scenario": "running",
+  "class": "unknown",
+  "text": "Which running shoes do I use?",
+  "words": [],
+  "said": "The memory contains no information about which running shoes you use. No fact among those provided mentions your running shoes. Therefore, the answer is: **the memory does not say**. (No fact numbers apply.)",
+  "passed": true
+ },
+ {
+  "scenario": "home",
+  "class": "latest",
+  "text": "Which TV did we end up buying?",
+  "words": [
+   [
+    "LG"
+   ]
+  ],
+  "said": "Based on the provided memory facts, the TV the user ended up buying is the LG C4. Here's the reasoning with relevant facts:\n\n- Fact 4 ([2026-09-20]) states: \"Ok, let's take the Samsung.\" (This was an initial preference.)\n- Fact 10 ([2026-10-02]) states: \"We went with the LG C4 after all and put up blinds. Paid 1,290 euros.\" (This overrides the earlier Samsung choice, indicating a change of mind.)\n\nThe memory's summary confirms this progression: under \"what the memory knows of the user (as of 2026-10-28)\", it explicitly states: \"Changed from the Samsung TV to the LG C4 after all, put up blinds, paid 1,290 euros (2026-10-02).\" No later facts contradict this (e.g., facts 11-30 mention other events like rent, car purchase, or headphones, but no TV changes).\n\nThus, the final TV purchased was the LG C4, as stated in fact 10 from 2026-10-02.\n\n**Facts used:** 4, 10  \n**Key fact for the answer:** 10 (newer than fact 4, so it holds)  \n**Day the fact was said:** 2026-10-02 (for the LG C4 purchase)",
+  "passed": true
+ },
+ {
+  "scenario": "home",
+  "class": "latest",
+  "text": "How much is our rent now?",
+  "words": [
+   [
+    "1,100",
+    "1100",
+    "1 100"
+   ]
+  ],
+  "said": "The memory states that the rent is currently 1,100 euros per month, based on the most recent rent-related fact.  \n\n**Relevant facts:**  \n- Fact 19 ([2026-10-12]): \"Talked to the landlord: 1,100 euros if we sign for two years. We signed.\" This fact sets the rent at 1,100 euros for a two-year lease starting from 2026-10-12.  \n- Fact 13 ([2026-10-05]): \"The landlord raised our rent from 1,000 to 1,150 euros.\" However, fact 19 (newer, higher number) overrides this, as confirmed in the topic summary for \"rent increase\": \"Negotiated with the landlord down to 1,100 euros for a two-year lease and signed (2026-10-12).\"  \n\nNo later facts (up to fact 30 on 2026-10-28) mention any further rent changes. Since today is 2026-10-30 (after the lease signing on 2026-10-12), the rent remains 1,100 euros.  \n\n**Answer:** 1,100 euros  \n**Fact used:** 19  \n**Day fact was said:** 2026-10-12 (time matters as it establishes the current rate; no newer rent fact exists to update it).",
+  "passed": true
+ },
+ {
+  "scenario": "home",
+  "class": "latest",
+  "text": "What car do we drive?",
+  "words": [
+   [
+    "Octavia",
+    "Skoda"
+   ]
+  ],
+  "said": "Based on the user's memory facts, the most recent information about their car is:\n\n- Fact 30: [2026-10-28] We sold our old VW Golf and bought a Skoda Octavia.\n\nThis fact indicates that as of October 28, 2026 (which is before today's date of October 30, 2026), the user sold their VW Golf and purchased a Skoda Octavia. No later facts mention a change in vehicle, so the Skoda Octavia is the current car driven.\n\n**Answer:** Skoda Octavia  \n**Fact used:** 30  \n**Day fact was said:** 2026-10-28  \n\n*(No calculation of duration or quantity is needed for this question, as it asks for the current car model.)*",
+  "passed": true
+ },
+ {
+  "scenario": "home",
+  "class": "count",
+  "text": "How much have we spent on the home since October: the TV, the soundbar and repairs?",
+  "words": [
+   [
+    "2,015",
+    "2015",
+    "2 015"
+   ]
+  ],
+  "said": "Based on the facts provided, the relevant expenditures since October (from October 1, 2026 onward) for the TV, soundbar, and repairs are:\n\n- **TV**: Fact 10 ([2026-10-02]) states: \"We went with the LG C4 after all and put up blinds. Paid 1,290 euros.\" This indicates a payment of 1,290 euros for the LG C4 TV (and blinds, but the TV cost is embedded in this amount as no separate TV-only figure is given; the memory treats this as the TV expenditure per Fact 10 and the ownership confirmation in the \"what the memory knows\" section).\n- **Soundbar**: Fact 22 ([2026-10-15]) states: \"Bought a Sonos Beam soundbar for 450 euros.\" This is a direct soundbar purchase.\n- **Repairs**: Fact 26 ([2026-10-22]) states: \"The washing machine broke, the repair was 180 euros.\" This is a home repair expense.\n\nNo other facts mention TV, soundbar, or home repair costs since October. Conflicting earlier facts (e.g., Fact 2 about needing a TV, Fact 4 about choosing Samsung) are superseded by Fact 10, which records the actual purchase.\n\n**Calculation**:  \nTV (from Fact 10): 1,290 euros  \nSoundbar (from Fact 22): 450 euros  \nRepairs (from Fact 26): 180 euros  \n**Total**: 1,290 + 450 + 180 = 1,930 euros  \n\n**Facts used**: 10, 22, 26  \n\n*Note: The memory does not provide a breakdown of the 1,290 euros between TV and blinds, so the full amount is taken as the TV-related expenditure per the available fact. The question specifically asks for \"the TV,\" and Fact 10 is the sole record of the TV purchase payment.*  \n\nAnswer: 1,930 euros (from facts 10, 22, and 26).",
+  "passed": false
+ },
+ {
+  "scenario": "home",
+  "class": "time",
+  "text": "How many days after picking the Samsung did we buy the LG?",
+  "words": [
+   [
+    "12",
+    "twelve"
+   ]
+  ],
+  "said": "**Facts that bear on the question**\n\n- **Fact 4** – *[2026‑09‑20]* “Ok, let’s take the Samsung.” → the day the Samsung was picked.  \n- **Fact 10** – *[2026‑10‑02]* “We went with the LG C4 after all and put up blinds. Paid 1,290 euros.” → the day the LG was bought.\n\n**Calculation**\n\n- Date of picking Samsung: 2026‑09‑20  \n- Date of buying LG: 2026‑10‑02  \n\nDifference = 2026‑10‑02 − 2026‑09‑20 = 12 days.\n\n**Answer:** The LG was bought **12 days** after the Samsung was chosen.  \n\n*(Facts used: 4, 10)*",
+  "passed": true
+ },
+ {
+  "scenario": "home",
+  "class": "recall",
+  "text": "I need a new remote for the living room TV, which one should I look for?",
+  "words": [
+   [
+    "LG"
+   ]
+  ],
+  "said": "Kept as entry #31.\n\nFrom before, for this message (fact numbers and days; the user's latest word wins):\nYou need a new remote for the living room TV, which you identified as the LG C4 after changing from the Samsung and putting up blinds, paying 1,290 euros on 2026-10-02.  \n[2026-10-30] I need a new remote for the living room TV, which one should I look for?  \n[2026-10-02] Changed from the Samsung to the LG C4 after all, put up blinds, paid 1,290 euros.",
+  "passed": true
+ },
+ {
+  "scenario": "home",
+  "class": "recall",
+  "text": "Should I get a car alarm? Cars are getting stolen around here.",
+  "words": [
+   [
+    "Octavia",
+    "Skoda"
+   ]
+  ],
+  "said": "Kept as entry #32.\n\nFrom before, for this message (fact numbers and days; the user's latest word wins):\n[2026-10-30] Fact 32: \"Should I get a car alarm? Cars are getting stolen around here.\"  \n[2026-10-19] Fact 24: \"Neighbour's Golf was stolen last night in front of the building.\"  \n[2026-10-28] Fact 30: \"Sold the old VW Golf and bought a Skoda Octavia.\"",
+  "passed": true
+ },
+ {
+  "scenario": "home",
+  "class": "unknown",
+  "text": "How much did we sell the Golf for?",
+  "words": [],
+  "said": "The memory does not state how much the Golf was sold for.  \nFact 30 ([2026-10-28]) confirms the sale: \"We sold our old VW Golf and bought a Skoda Octavia,\" but it provides no sale price or financial details about the transaction. No other facts mention the sale amount of the Golf.  \n\n**Used fact:** 30  \n**Conclusion:** The memory does not say.",
+  "passed": true
+ },
+ {
+  "scenario": "trips",
+  "class": "count",
+  "text": "How many trips abroad have I actually taken in the last two months?",
+  "words": [
+   [
+    "four",
+    "4"
+   ]
+  ],
+  "said": "The memory contains the following facts about trips the user actually took (i.e., not just booked or cancelled) and their dates:\n\n- **Fact 1** [2026‑09‑02]: “Back from a long weekend in Vienna, the museums were great.” → Vienna trip taken.  \n- **Fact 10** [2026‑09‑22]: “Work trip to Munich, three days, saw nothing but the office.” → Munich work trip taken.  \n- **Fact 14** [2026‑10‑08]: “Weekend in Ljubljana with my wife, lovely little city.” → Ljubljana trip taken.  \n- **Fact 22** [2026‑10‑20]: “I flew to Athens for a friend's wedding, back on Sunday, exhausted.” → Athens trip taken.  \n\nFact 12 [2026‑09‑30] notes that the Lisbon trip was cancelled, so it does **not** count as an actual trip.\n\nAll four trips (Vienna, Munich, Ljubljana, Athens) fall within the last two months from today’s date (2026‑10‑30), i.e., after 2026‑08‑30.\n\n**Number of trips abroad taken in the last two months: 4.**  \n\n(Facts used: 1, 10, 14, 22; cancellation noted via fact 12.)",
+  "passed": true
+ },
+ {
+  "scenario": "trips",
+  "class": "time",
+  "text": "Which trip was more recent, Munich or Vienna?",
+  "words": [
+   [
+    "Munich"
+   ]
+  ],
+  "said": "The memory shows:\n\n- **Fact 1** – “Back from a long weekend in Vienna” – dated **[2026‑09‑02]** → Vienna trip occurred on 2026‑09‑02.  \n- **Fact 10** – “Work trip to Munich … saw nothing but the office” – dated **[2026‑09‑22]** → Munich trip occurred on 2026‑09‑22.\n\nSince 2026‑09‑22 is after 2026‑09‑02, the Munich trip is more recent. It took place **20 days** after the Vienna trip (Sep 22 − Sep 2 = 20 days).\n\n**Used facts:** 1, 10.",
+  "passed": true
+ },
+ {
+  "scenario": "trips",
+  "class": "latest",
+  "text": "Am I still going to Lisbon?",
+  "words": [
+   [
+    "cancel"
+   ]
+  ],
+  "said": "The most recent information about your Lisbon plans comes from **fact 12** ([2026‑09‑30]): “The Lisbon trip is cancelled, the airline is on strike.”  \n\nEarlier, **fact 2** ([2026‑09‑08]) stated that you had booked flights to Lisbon for mid‑October, but fact 12, being newer, overrides that booking. Since no later fact mentions a reinstatement or change, the memory indicates that you are **no longer going to Lisbon**.  \n\n**Used facts:** 2, 12.",
+  "passed": true
+ },
+ {
+  "scenario": "trips",
+  "class": "latest",
+  "text": "Is the Japan trip booked?",
+  "words": [
+   [
+    "April",
+    "booked",
+    "yes"
+   ]
+  ],
+  "said": "Yes – the Japan trip is booked.  \n**Fact 18:** “[2026‑10‑16] Booked Japan for April: Tokyo and Kyoto, two weeks.” This indicates the booking was made on 2026‑10‑16 and remains current (no later fact cancels or changes it).",
+  "passed": true
+ },
+ {
+  "scenario": "trips",
+  "class": "recall",
+  "text": "Should I start learning some Japanese?",
+  "words": [
+   [
+    "April",
+    "Tokyo",
+    "Kyoto"
+   ]
+  ],
+  "said": "From before, for this message (fact numbers and days; the user's latest word wins):\n[2026-10-16] Booked Japan for April: Tokyo and Kyoto, two weeks.  \n[2026-09-15] Dreaming about Japan next spring, nothing booked, just looking.",
+  "passed": true
+ },
+ {
+  "scenario": "trips",
+  "class": "unknown",
+  "text": "Which hotel did we stay at in Ljubljana?",
+  "words": [],
+  "said": "The memory contains no fact that mentions staying at a hotel in Ljubljana. The only reference to Ljubljana is fact 14 (“Weekend in Ljubljana with my wife, lovely little city,” dated 2026‑10‑08), which does not specify a hotel. Therefore, the memory does not say which hotel was used.  \n\n**Used facts:** none (no fact bears on the question).",
+  "passed": true
+ }
+]
