@@ -50,6 +50,7 @@ def question(name: str) -> tuple[str, str, str]:
 
 FOR_MEMORY = question("for_memory")
 SAME_QUESTION = question("same_question")
+ASKS = question("asks")
 KINDS_ASKED, *_kinds = prompt("kinds").splitlines()
 KINDS = [tuple(part.strip() for part in line.split(":", 1)) for line in _kinds]
 RESOLVE_SYSTEM, RESOLVE = prompt("resolve_system"), prompt("resolve")
@@ -110,15 +111,20 @@ def read(messages: list[dict], upto: int, decide, resolver) -> Read:
     if out.for_memory < 0.5:
         out.note = "nothing for the memory"
         return out
-    got = resolver.say(RESOLVE_SYSTEM, RESOLVE.format(conversation=shown(win)), room=THINK_ROOM, thinking=True)
-    try:
-        parsed = json.loads(got[got.find("{"):got.rfind("}") + 1])
-    except ValueError:
-        out.note = "the resolver gave no JSON"
-        parsed = {}
+    if len(win) > 1:
+        got = resolver.say(RESOLVE_SYSTEM, RESOLVE.format(conversation=shown(win)), room=THINK_ROOM, thinking=True)
+        try:
+            parsed = json.loads(got[got.find("{"):got.rfind("}") + 1])
+        except ValueError:
+            out.note = "the resolver gave no JSON"
+            parsed = {}
+    else:
+        # No agent's message before it: nothing to resolve, and the resolver's thinking was spent on
+        # the questions alone. Whether it asks is one token; what it asks, the message as said.
+        asks = decide.noul(shown(win), *ASKS)["p"]["yes"] >= 0.5
+        parsed = {"new_topic": True, "message": said, "questions": [said] if asks else []}
     out.new_topic = 1.0 if parsed.get("new_topic") is True else 0.0
-    # No agent's message before it (a session's first): nothing to resolve, the message as said.
-    out.information = [" ".join(str(parsed.get("message") or said).split()) if len(win) > 1 else said]
+    out.information = [" ".join(str(parsed.get("message") or said).split())]
     for question in parsed.get("questions") or []:
         question = " ".join(str(question).split())
         context = f'{shown(win)}\n\nThe question, taken out of the last message: "{question}"'

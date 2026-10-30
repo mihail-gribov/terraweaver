@@ -1,0 +1,3 @@
+Does the user's last message ask something or request something — a question, or something to be found, done or remembered?
+yes, it asks or requests something
+no, it only tells

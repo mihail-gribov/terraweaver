@@ -5502,3 +5502,28 @@ words for it, the reader's synonyms, its inverse. Everything else is read from t
 A fix it brought: recall matched "my mother" against every link of the user, so a son, linked as
 "the user — parent → Lev", came back for "my mother". Read through the parts, the user's mother is
 only who fills the user's `parent` part.
+
+## 2026-10-30 — Reading costs the same on the first day and after a year
+
+The reader wrote every topic and portrait whole on every entry that touched it, and was shown every
+one whole. Output and input both grew with the history: in the family scenario the user's portrait
+was written 19 times in 30 entries, small talk included. A memory whose every entry costs more than
+the last has no point.
+
+- The reader writes only the layer an entry adds; the code puts it after the text. On disk each
+  version keeps its layer (`added`), folded back on load; a join of two names keeps the whole text.
+- The reader, the "goes on with this topic" question and the recall are shown the last 1,200
+  characters of a topic or portrait (`TAIL`). `ask` still gets the whole text. Topics touched by a
+  dialogue are capped like the rest. A test reads 40 entries of one topic: the prompt grows until
+  the tail and the dialogue window fill, then stays flat.
+- The resolver runs only when an agent's message comes before the user's: without one there is
+  nothing to resolve, and its thinking went on finding questions. Whether the message asks is one
+  token of the decision model (`intake/prompts/asks.txt`).
+- The graph reads an entry only when the decision model says it is worth remembering a month later
+  (`WORTH`). Small talk and general questions stay in the journal and are found by search; two
+  thirds of the scenarios' entries were such, each a full reading and a topic ("Flour measurement
+  query").
+
+Measured before these (5 scenarios, ~200 entries): reader 40% of tokens, 87% of its output thinking;
+Nano part questions 35%; intake 25%. Every call is now counted when `TERRAWEAVER_USAGE` names a file
+(`scripts/usage.py` sums it).

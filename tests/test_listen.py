@@ -55,6 +55,8 @@ class Judge:
             yes = any(w in said for w in ("mila", "flat", "400", "flight", "find", "forget", "?"))
         elif "something the user asks" in q:
             yes = True
+        elif "ask something or request" in q:
+            yes = "?" in said or said.startswith(("find", "please find", "please forget", "forget", "can you"))
         elif "give what was asked" in q:
             yes = "does not say" not in state.lower()
         elif "general knowledge" in q:

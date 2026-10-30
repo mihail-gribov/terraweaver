@@ -50,6 +50,9 @@ PAUSE = timedelta(hours=1)
 # entry and those its dialogue already touched, and the entities its dialogue and the user's own
 # people bring — never everything, so a reading costs the same in the first week and the third year.
 SHOWN_TOPICS, SHOWN_ENTITIES = 8, 40
+# How much of a topic's or a portrait's text the reader is shown: its latest layers. Every input of
+# a reading is bounded, so a history costs in proportion to its length.
+TAIL = 1200
 USER = "the user"
 # Recalling a topic beside the user's message: sure enough to say where it stood, or only to name it
 # in a line, for the agent to `ask` if it needs it — as a person who is sure says "oh, I thought about
@@ -138,6 +141,13 @@ GROUPS = {
     "self": "personal details of anyone, the user included: a birthday, an age, skills, languages, hobbies, health, "
             "diet, what they like, love, prefer or dislike",
 }
+# Whether an entry is read at all: small talk and general questions stay in the journal, found by
+# search, and cost no reading (2026-10-30: two thirds of the scenarios' entries were small talk, each
+# a full reading and a topic of its own — "Flour measurement query").
+WORTH = ("something about the user's life or the people in it worth remembering a month from now: what "
+         "they did, got, have, plan, like or dislike, how they or their health, work, home or money stand, "
+         "who is who — not passing small talk (the weather, a meal, a mood today) and not a general "
+         "question or task for the assistant")
 # The closing of a part is asked once, beside the groups.
 ENDED = "something that no longer holds: sold, gave away, replaced, left a job, moved out, broke up"
 RELATIONS = {k: p.say for k, p in PARTS.items()}
@@ -191,8 +201,8 @@ The new entry, said on {day}:
 Answer with JSON only:
 {{"entities": [{{"name": "...", "kind": "...", "as": "the entry's exact words that name it"}}],
  "links": [{{"from": "<entity>", "relation": "...", "to": "<entity>", "quote": "the entry's exact words that say it", "when": "YYYY-MM-DD, only when said", "ended": false}}],
- "topics": [{{"topic": <id, or "new">, "name": "a short name", "text": "the topic's whole new text"}}],
- "portraits": [{{"of": "<person>", "text": "that person's whole new portrait"}}]}}
+ "topics": [{{"topic": <id, or "new">, "name": "a short name", "text": "what this entry adds to the topic"}}],
+ "portraits": [{{"of": "<person>", "text": "what this entry adds to that person's portrait"}}]}}
 
 Entities: the people, places, things, organisations and events the entry names. "I", "me", "my" \
 are "{user}"; so are "we" and "us", with whoever the entry says is with them as entities of their own. \
@@ -219,22 +229,20 @@ product, starting a business, a trip, a family event — named as one would name
 ("choosing a TV", "starting the bakery", "back pain"). When the entry goes on with a topic above, \
 join it, even in other words or months later; make a new one only for a new matter. An entry may \
 belong to more than one, or to none if it is small talk. A topic's \
-text says what it has come to, layered and dated: what was considered, what was ruled out and why, \
-what was chosen, what changed — the latest last. Write it over the topic's last text and the new \
-entry; keep what still matters, and never drop what was ruled out or why. Every layer keeps its \
-day. A choice later changed stays a choice with its day, and the change is a new layer after it: \
-"chose X (day); then changed to Y (day)" — never "looked at X". Summarise in your own \
-short words, do not copy the entries. Only what the entries say. For example: "Planning a trip to \
-Japan in spring with Tom. Looked at Kyoto and Osaka. Osaka ruled out, too crowded for Tom \
-(2026-03-02). Settled on Kyoto, the ryokan in Gion (2026-03-02). Moved the trip from April to May \
-(2026-03-20)."
+text is layered and dated: what was considered, what was ruled out and why, what was chosen, what \
+changed — the latest last. Write only the new layer this entry adds, with its day; the memory puts \
+it after the topic's text above, so do not repeat what is there. A choice later changed stays a \
+choice with its day, and the change is a new layer: "then changed to Y (day)" — never "looked at \
+X". Short words of your own, not the entry's. Only what the entry says. For example, over "Planning \
+a trip to Japan in spring with Tom. Looked at Kyoto and Osaka (2026-03-02).", an entry that settles \
+it adds: "Osaka ruled out, too crowded for Tom; settled on Kyoto, the ryokan in Gion (2026-03-02)."
 Portraits: for each person the entry tells something personal about — the user, or anyone in their \
-life — write their whole portrait anew, over their last portrait above and the entry: everything \
-personal known of them, in short plain sentences, each with its day. Where and how they live (a \
-house or a flat, which city, whether they like it), family, work, health, tastes, habits, what they \
-think and want. Everything you gave as a link of theirs is in it too, with what the words around it \
-add. Keep what was said before; when the entry changes something, say what it was, what it is now, \
-and when. A person not named is "the user's wife", "the user's sister". Only what the entries say. """
+life — write what the entry adds to their portrait, in short plain sentences, each with its day: \
+where and how they live (a house or a flat, which city, whether they like it), family, work, health, \
+tastes, habits, what they think and want, with what the words around a link of theirs add. The \
+memory puts it after their portrait above, so do not repeat what is there; when the entry changes \
+something, say what it was, what it is now, and when. Small talk adds nothing to a portrait. A \
+person not named is "the user's wife", "the user's sister". Only what the entry says. """
 
 IMAGE_HEAD = ("What the memory has read of {names}, from the facts that mention them (fact numbers "
               "and days; the newest says what holds now). A topic's text is the memory's summary: where "
@@ -268,11 +276,35 @@ def _named(name) -> str:
 
 
 
-def _version(before: list[dict], text: str, day: str, n: int, **keys) -> dict:
-    """A text written anew over the versions before it: the entries it stands on and its number grow."""
-    return {**keys, "text": str(text).strip(), "day": day,
+def _version(before: list[dict], added: str, day: str, n: int, **keys) -> dict:
+    """The text before it with what the entry adds after it: the reader writes only the new layer, so
+    what it writes stays the size of the entry, not of everything said of the thing before
+    (2026-10-30: every portrait written whole made the reading grow with the history)."""
+    text = " ".join(dict.fromkeys([str(b["text"]).strip() for b in before if str(b["text"]).strip()]
+                                  + [str(added).strip()]))
+    # On disk only the layer, unless two texts were joined here (a person kept under two names).
+    return {**keys, "text": text, **({"added": str(added).strip()} if len(before) <= 1 else {}), "day": day,
             "entries": sorted({e for b in before for e in b["entries"]} | {n}),
             "version": max([b["version"] for b in before] + [0]) + 1}
+
+
+def _tail(text: str, room: int = TAIL) -> str:
+    """The end of a text that keeps growing: what the reader is shown of a topic or a portrait, so that
+    reading one entry costs the same on the first day and after a year."""
+    return text if len(text) <= room else "… " + text[-room:].split(" ", 1)[-1]
+
+
+def _layer(row: dict) -> dict:
+    """A version as kept on disk: what it added, not the whole text again, so the files grow with
+    what was said and not with its square."""
+    return {k: v for k, v in row.items() if k != "text"} if "added" in row else row
+
+
+def _folded(before: dict | None, row: dict) -> dict:
+    """A version read back: its layer after the text before it."""
+    if "text" in row:
+        return row
+    return {**row, "text": " ".join(x for x in ((before or {}).get("text", ""), row["added"]) if x)}
 
 class Graph:
     """The mentions and topics of one memory, under `where`; `entries()` gives the journal as
@@ -292,7 +324,7 @@ class Graph:
             "yes, it mentions that", "no, it does not")["p"]["yes"])
         # How likely this message goes on with this topic: the decision model, yes or no.
         self.goes_on = goes_on or (lambda message, t: role("judge").noul(
-            f'A topic the user talked about before, "{t["name"]}": {t["text"]}\n\nThe user now says: "{message}"',
+            f'A topic the user talked about before, "{t["name"]}": {_tail(t["text"])}\n\nThe user now says: "{message}"',
             "Does the user's message go on with this topic, the same matter?", "yes, the same matter",
             "no, another matter")["p"]["yes"])
         # Texts -> vectors, to find topics by meaning; without it, by the words they share.
@@ -319,7 +351,7 @@ class Graph:
         self.portraits = self._lines("portraits.jsonl")
         self.latest_portrait = {}
         for r in self.portraits:
-            self.latest_portrait[r["of"].lower()] = r
+            self.latest_portrait[r["of"].lower()] = _folded(self.latest_portrait.get(r["of"].lower()), r)
         state = self.where / "state.json"
         self.read_upto = json.loads(state.read_text())["read_upto"] if state.exists() else 0
         # Indexes, so that finding by an entity, an entry or a topic never walks everything.
@@ -349,7 +381,7 @@ class Graph:
             for end in (l["from"], l["to"]):
                 self.links_of.setdefault(end.lower(), []).append(l)
         for t in topics:
-            self.latest[t["topic"]] = t
+            self.latest[t["topic"]] = _folded(self.latest.get(t["topic"]), t)
 
     def _lines(self, name: str) -> list[dict]:
         path = self.where / name
@@ -401,6 +433,16 @@ class Graph:
         if not new:
             return False
         n, heading, text = new[0]
+        try:
+            worth = float(self.about(text, WORTH))
+        except Exception:  # noqa: BLE001 - not known to be small talk: read
+            log.exception("asking whether an entry is worth reading failed")
+            worth = 1.0
+        if worth < 0.5:
+            with self.lock:
+                self.read_upto = n
+                (self.where / "state.json").write_text(json.dumps({"read_upto": n}))
+            return True
         dialogue = self.dialogue_of(n, held)
         earlier = [(m, t) for m, _, t in held if m in dialogue and m < n][-20:]
         topics = self.near_topics(text, SHOWN_TOPICS, touched=[m for m, _ in earlier])
@@ -411,12 +453,12 @@ class Graph:
         got = self.reader("Answer with JSON only.", READ.format(
             entities="\n".join(f"- {name} — {kind}" for name, kind in entities) or "none yet",
             kinds=", ".join(sorted(set(self.kinds.values()))[:60]) or "none yet",
-            topics="\n".join(f"{t['topic']}. {t['name']}: {t['text']}" for t in topics) or "none yet",
+            topics="\n".join(f"{t['topic']}. {t['name']}: {_tail(t['text'])}" for t in topics) or "none yet",
             dialogue="\n".join(f"{m}. {t}" for m, t in earlier) or "nothing yet", day=_day(heading)[:10], entry=text,
             user=USER, people="; ".join(f"{k} ({p.say})" for k, p in PARTS.items() if p.who),
             own="; ".join(f"{k} ({p.say})" for k, p in PARTS.items() if not p.who),
             parts=(", ".join(parts) if parts else "none of them"),
-            portraits="\n".join(f"{r['of']}: {r['text']}" for r in portraits) or "none yet")) or {}
+            portraits="\n".join(f"{r['of']}: {_tail(r['text'])}" for r in portraits) or "none yet")) or {}
         with self.lock:
             links, versions = self._keep_reading(n, heading, text, dialogue[0], got)
         self._classify(text, links, versions)
@@ -518,9 +560,9 @@ class Graph:
                     # One person's portrait, whatever names it was kept under before they were joined.
                     written.append(_version(self.portraits_of(of), r["text"], day, n, of=of))
         for r in written:
-            self.portraits.append(r)
+            self.portraits.append(_layer(r))
             self.latest_portrait[r["of"].lower()] = r
-        self._append("portraits.jsonl", written)
+        self._append("portraits.jsonl", [_layer(r) for r in written])
         self.mentions += mentions
         self._index(mentions, [], [])
         self._append("mentions.jsonl", mentions)
@@ -597,10 +639,10 @@ class Graph:
                     log.exception("classifying a topic failed")
         with self.lock:
             self.links += links
-            self.topics += versions
+            self.topics += [_layer(t) for t in versions]
             self._index([], links, versions)
             self._append("links.jsonl", links)
-            self._append("topics.jsonl", versions)
+            self._append("topics.jsonl", [_layer(t) for t in versions])
             if links:
                 self._settle_people(links[0]["text"], links[0]["day"])
                 self._write_world()
@@ -639,12 +681,12 @@ class Graph:
         mine = [t for t in self.latest.values() if touched & set(t["entries"])]
         rest = [t for t in self.latest.values() if t not in mine]
         if not rest or limit <= len(mine):
-            return mine[:max(limit, len(mine))]
+            return mine[-limit:]
         if self.embed is not None:
             try:
                 q = self._vector(("q", text), text)
                 def score(t):
-                    v = self._vector((t["topic"], t["version"]), f"{t['name']}. {t['text']}")
+                    v = self._vector((t["topic"], t["version"]), f"{t['name']}. {_tail(t['text'])}")
                     dot = sum(a * b for a, b in zip(q, v))
                     return dot / (math.sqrt(sum(a * a for a in q)) * math.sqrt(sum(b * b for b in v)) or 1)
                 self._vectors.pop(("q", text), None)
@@ -870,7 +912,7 @@ class Graph:
         lines = []
         for t in sure:
             lines.append(f'We discussed this before: "{t["name"]}", last on {t["day"][:10]} (facts '
-                         f'{", ".join(map(str, t["entries"][-30:]))}). Where it stood: {t["text"]}')
+                         f'{", ".join(map(str, t["entries"][-30:]))}). Where it stood: {_tail(t["text"])}')
         if sure:
             with self.lock:
                 lines += self._said_of_self(set(n for t in sure for n in t["entries"]), limit=15)

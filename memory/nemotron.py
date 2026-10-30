@@ -40,6 +40,28 @@ SYSTEM = ("You answer a closed question about a text. Reply with the letter of e
 UNSEEN = 4.0
 
 
+def _spent(model: str, answer) -> None:
+    """Every call's tokens, to the file `TERRAWEAVER_USAGE` names, with the memory's step that made
+    it: what costs is read off a run instead of guessed."""
+    path = os.environ.get("TERRAWEAVER_USAGE")
+    usage = getattr(answer, "usage", None)
+    if not path or usage is None:
+        return
+    import sys
+    frame, step = sys._getframe(2), "?"
+    while frame is not None:
+        name = frame.f_code.co_filename
+        if "/memory/" in name and not name.endswith(("nemotron.py", "models.py")):
+            step = f"{Path(name).stem}.{frame.f_code.co_name}"
+            break
+        frame = frame.f_back
+    details = getattr(usage, "completion_tokens_details", None)
+    line = {"model": model.split("/")[-1], "step": step, "in": usage.prompt_tokens,
+            "out": usage.completion_tokens, "thought": getattr(details, "reasoning_tokens", None)}
+    with open(path, "a") as file:
+        file.write(json.dumps(line) + "\n")
+
+
 def softmax(logits: dict, temperature: float = 1.0) -> dict:
     top = max(logits.values())
     weights = {k: math.exp((v - top) / temperature) for k, v in logits.items()}
@@ -106,6 +128,7 @@ class Nemotron:
             extra_body={"chat_template_kwargs": {"enable_thinking": thinking}},
             messages=[{"role": "system", "content": system},
                       {"role": "user", "content": [{"type": "text", "text": prompt}]}])
+        _spent(self.model, answer)
         choice = answer.choices[0]
         said = choice.message.content or ""
         if not said.strip() and choice.finish_reason == "length":
@@ -133,6 +156,7 @@ class Nemotron:
             model=self.model, temperature=0, max_tokens=1, logprobs=True, top_logprobs=20,
             extra_body={"chat_template_kwargs": {"enable_thinking": False}},
             messages=messages(state, question, options, marks))
+        _spent(self.model, answer)
         content = answer.choices[0].logprobs.content if answer.choices[0].logprobs else None
         allowed = set(marks[:len(options)])
         seen: dict[str, float] = {}

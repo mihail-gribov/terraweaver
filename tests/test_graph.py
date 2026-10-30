@@ -10,7 +10,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from memory.graph import USER, Graph  # noqa: E402
+from memory.graph import USER, WORTH, Graph  # noqa: E402
 
 failures: list[str] = []
 
@@ -42,8 +42,8 @@ def told(answers):
 
 
 def nobody(text, what):
-    """A decision model that finds no part of anyone's world in any entry."""
-    return 0.0
+    """A decision model that finds no part of anyone's world in any entry, and reads every one."""
+    return 1.0 if what == WORTH else 0.0
 
 
 def first(state, question, options):
@@ -332,12 +332,40 @@ def live_world() -> None:
         check("live filling: what was said before the name is hers", "born on: 3 May" in "\n".join(g.world_lines("Mila")))
 
 
+def grows_in_layers() -> None:
+    """A topic and a portrait grow by what each entry adds: the reader writes the layer, the disk keeps
+    the layer, a restart folds the layers back, and the reader is never shown more than a tail."""
+    entries = [(n, f"2026-03-01 {n // 4 + 8:02d}:{n % 4 * 15:02d}:00", f"Day {n} of the bakery: step {n}.") for n in range(1, 41)]
+    layer = "Step {n} of the bakery done, " + "with flour and patience " * 4 + "(2026-03-01)."
+    readings = [{"topics": [{"topic": "new" if n == 1 else 1, "name": "starting the bakery", "text": layer.format(n=n)}],
+                 "portraits": [{"of": "I", "text": f"Works on the bakery, step {n} (2026-03-01)."}]}
+                for n in range(1, 41)]
+    prompts = []
+
+    def reader(system, prompt):
+        prompts.append(len(prompt))
+        return readings.pop(0) if readings else {}
+    with tempfile.TemporaryDirectory() as tmp:
+        g = Graph(Path(tmp), journal(entries), reader=reader, decide=first, goes_on=lambda m, t: 0.0, about=nobody)
+        g.wait(30)
+        topic = g.latest[1]["text"]
+        check("layers: the topic holds every step, each once", all(topic.count(f"Step {n} ") == 1 for n in range(1, 41)), topic[:200])
+        disk = (Path(tmp) / "topics.jsonl").stat().st_size
+        check("layers: the disk keeps each layer once, not the whole text again", disk < 40 * 600, str(disk))
+        check("layers: the reader's prompt stops growing", max(prompts[-10:]) - min(prompts[-10:]) < 50, str(prompts[-12:]))
+        g2 = Graph(Path(tmp), journal(entries), reader=told([]), decide=first, goes_on=lambda m, t: 0.0, about=nobody)
+        check("layers: a restart folds them back", g2.latest[1]["text"] == topic)
+        check("layers: the portrait too", g2.portraits_of(USER)[0]["text"] == g.portraits_of(USER)[0]["text"]
+              and "step 40" in g2.portraits_of(USER)[0]["text"] and "step 1 " in g2.portraits_of(USER)[0]["text"])
+
+
 def main() -> int:
     offline()
     at_scale()
     said_of_self()
     personal_world()
     filled_from_messages()
+    grows_in_layers()
     if "--live" in sys.argv:
         live()
         live_world()
