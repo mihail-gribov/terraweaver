@@ -113,9 +113,25 @@ hundreds of calls each decide a little (the judge), by changing one name.
 
 ## Try it
 
-**The demo instance** (for evaluation only): https://terraweaver.life. The page says how to connect
-Claude Code (or another MCP client) to it with a key. It is one shared memory: **do not tell it anything personal**. For
-real use, run the memory on your own machine, below.
+**The demo instance** (for evaluation only): https://terraweaver.life. It is one shared memory:
+**do not tell it anything personal**, talk about an invented life. For real use, run the memory on
+your own machine, below.
+
+You need [Claude Code](https://claude.com/claude-code) or another MCP client, and a key:
+
+- sign in with Google on the page to get a key (`tw_...`, shown once; a new one retires the old), or
+- a reviewer token, given with the submission, if you have no Google account.
+
+```bash
+export PERSONAL_MEMORY_URL=https://terraweaver.life
+export PERSONAL_MEMORY_TOKEN=<the tw_ key or the reviewer token>
+adapters/claude_code/claude-personal        # Claude Code with the plugin, from a clone of this repository
+```
+
+Other MCP clients: URL `https://terraweaver.life/mcp`, header `Authorization: Bearer <key>`. Then talk
+about an invented life in passing, and ask for something that depends on it; the first `ask` may
+wait while the memory reads. The key is for the hosted memory only; your own `NEBIUS_API_KEY` and
+`TAVILY_API_KEY` are needed only when you run it locally.
 
 ## Run it
 
