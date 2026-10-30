@@ -5,7 +5,7 @@
 # (not started: there is no code and no keys yet) and /opt/terraweaver/deploy.sh.
 set -e
 export DEBIAN_FRONTEND=noninteractive
-apt-get install -y -q python3-venv python3-pip >/dev/null
+apt-get install -y -q python3-venv python3-pip git rsync curl >/dev/null
 python3 -m venv /opt/uv-venv && /opt/uv-venv/bin/pip install -q uv && ln -sf /opt/uv-venv/bin/uv /usr/local/bin/uv
 id terraweaver >/dev/null 2>&1 || useradd --system --create-home --home-dir /opt/terraweaver --shell /usr/sbin/nologin terraweaver
 install -d -o terraweaver -g terraweaver /opt/terraweaver/data
@@ -81,12 +81,19 @@ git fetch -q origin
 git checkout -q "$ref"
 git reset -q --hard "origin/$ref"
 [ -d .venv ] || uv venv --python 3.12 .venv
-uv pip install -q --python .venv/bin/python mcp openai
+# requirements.txt without fastembed (the embeddings go through OpenRouter), plus numpy, which the search imports
+grep -v '^fastembed' requirements.txt | uv pip install -q --python .venv/bin/python -r - numpy
 chown -R terraweaver:terraweaver /opt/terraweaver/app
 rsync -a --delete site/index.html site/privacy.html site/style.css site/robots.txt site/sitemap.xml site/demo site/account /var/www/terraweaver/
 systemctl daemon-reload
 systemctl restart terraweaver-memory terraweaver-auth
 git log --oneline -1
+# Smoke check: the memory answers behind its token, and both services are up.
+sleep 8
+set -a; . /opt/terraweaver/.env; set +a
+printf 'GET /world with the token: '
+curl -s -o /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $TERRAWEAVER_TOKEN" http://127.0.0.1:7110/world || true
+for u in terraweaver-memory terraweaver-auth; do printf '%s: ' "$u"; systemctl is-active "$u" || true; done
 D
 chmod 755 /opt/terraweaver/deploy.sh
 systemctl daemon-reload
