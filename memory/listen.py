@@ -33,7 +33,7 @@ from memory import trace
 
 log = logging.getLogger("listen")
 # An answer prepared this recently answers the same question again, instead of a new search:
-# three days, as fresh as what a task chooses from (memory/tools.py FRESH).
+# three days.
 FRESH_JOB = 3 * 24 * 3600
 # Meaning finds the candidates, the judge says which is the same question. Measured on bge-small
 # (2026-10-27): repeats sat at 0.64–0.85 ("who are my colleagues now?" ~ "who do I work with at
@@ -67,7 +67,8 @@ class Listener:
         self.waiting_forget: dict | None = None
         self.recent: list[dict] = []  # the last messages heard, both sides: what the gate reads with
         self.jobs: list[dict] = []    # the agent's gatherings, each with its answer once done
-        self.wanted: list[dict] = []  # the user's questions: their interests, never looked into here
+        self.wanted: list[dict] = []  # the user's questions: their interests, each with its entries and extensions
+        self.asking: list[int] = []   # the questions of the message being answered
         self.interests_path, self._embed = interests_path, embed
         self.heard_path = heard_path  # every `say`: what was heard and what was answered
         self.notes: list[str] = []
@@ -89,7 +90,9 @@ class Listener:
         by, never a fact alone; what the memory said itself is never taken back in. Nothing else is
         heard: what the agent read (mail, files, pages) reaches the memory when the user answers it."""
         parts = []
-        remembered = self.take_notes()
+        heard_user = any(str(m.get("role") or "user").lower() == "user" and (m.get("text") or "").strip()
+                         for m in messages or [])
+        remembered = self.take_notes() if heard_user else []
         if remembered:
             parts.append("The memory remembered, since it last answered:\n" + "\n\n".join(remembered))
         for m in messages or []:
@@ -155,12 +158,17 @@ class Listener:
         forget = [r for r in got.requests if r["kind"] == "memory"]
         if forget:
             return [await self._prepare_forget(forget[0]["text"])]
-        parts = []
+        parts, entry = [], None
         if got.for_memory >= 0.5:
-            kept = self._remember(got.information[0] if got.information else said, said, now,
-                                  withheld=said != " ".join(message.split()))
-            if kept:
-                parts.append(kept)
+            entry = self._remember(got.information[0] if got.information else said, said, now,
+                                   withheld=said != " ".join(message.split()))
+            if entry is not None:
+                parts.append(f"Kept as entry #{entry}." + (" (A secret in it was withheld.)"
+                                                            if said != " ".join(message.split()) else ""))
+        # Every question of the user's is a wish to know: kept as one, with the entry it was asked in,
+        # before the recall — a topic this message goes on with is extended for it (memory/refresh.py).
+        # An action is the agent's.
+        self.asking = [await self._wanted(r["text"], entry) for r in got.requests if r["kind"] == "know"]
         # At once, beside each other: what bears on the message, the topic and people it goes on
         # with, and the answer to each question of the user's, from the memory only.
         recall, narrow = getattr(self.base, "graph_recall", None), getattr(self.base, "narrow", None)
@@ -203,10 +211,6 @@ class Listener:
                 # The user's own question, answered from the memory, is never fitted away.
                 parts += [a for a in answers if a]
         parts += looking
-        # Every question of the user's is a wish to know: kept as one. An action is the agent's.
-        for request in got.requests:
-            if request["kind"] == "know":
-                await self._wanted(request["text"])
         return parts
 
     async def _fitted(self, message: str, gathered: list[str]) -> str:
@@ -242,7 +246,7 @@ class Listener:
             log.warning("say: %r", wrong)
             return Read(said, for_memory=1.0, information=[said], note="unread")
 
-    async def _wanted(self, question: str) -> None:
+    async def _wanted(self, question: str, entry: int | None = None) -> int:
         """A question of the user's, kept as their interest: how often they come back to a thing says
         what the memory should prepare first. Not answered here and not searched for: the agent
         answers, asking the memory; a search from here raced the agent's own `ask` for the same
@@ -251,11 +255,31 @@ class Listener:
         now = f"{datetime.now():%Y-%m-%d %H:%M:%S}"
         if same is not None:
             same["times"] += 1
-            self._record({"id": same["id"], "asked_again": now})
-            return
-        wish = {"id": self._next_id(), "asked": question, "by": "user", "at": datetime.now(), "times": 1}
+            same["entries"] += [entry] if entry is not None else []
+            self._record({"id": same["id"], "asked_again": now, **({"entry": entry} if entry is not None else {})})
+            return same["id"]
+        wish = {"id": self._next_id(), "asked": question, "by": "user", "at": datetime.now(), "times": 1,
+                "entries": [entry] if entry is not None else [], "extended": {}}
         self.wanted.append(wish)
-        self._record({"id": wish["id"], "asked": question, "by": "user", "at": now})
+        self._record({"id": wish["id"], "asked": question, "by": "user", "at": now,
+                      **({"entry": entry} if entry is not None else {})})
+        return wish["id"]
+
+    def questions_of(self, topic: dict) -> list[dict]:
+        """The user's questions on a topic: those asked in its entries, and those of the message being
+        answered (its entry is not read into the topic yet). Each with when it was last extended
+        for this topic."""
+        on = set(topic["entries"])
+        return [{"id": w["id"], "asked": w["asked"], "extended": w["extended"].get(str(topic["topic"]))}
+                for w in self.wanted if on & set(w["entries"]) or w["id"] in self.asking]
+
+    def extended(self, question: int, topic: int, day: str, entry: int | None) -> None:
+        """A topic was extended from the web for a question: when, and the web entry it gave (None:
+        nothing new that mattered)."""
+        for w in self.wanted:
+            if w["id"] == question:
+                w["extended"][str(topic)] = day
+        self._record({"id": question, "extended": topic, "on": day, "entry": entry})
 
     def _next_id(self) -> int:
         return max((j["id"] for j in self.jobs + self.wanted), default=0) + 1
@@ -276,12 +300,12 @@ class Listener:
         # Unanswered is not a search: nothing is looked into on a question nobody answered.
         return {k: got.get(k) or 0.0 for k in QUESTIONS}
 
-    def _remember(self, text: str, said: str, now: str | None, withheld: bool) -> str:
+    def _remember(self, text: str, said: str, now: str | None, withheld: bool) -> int | None:
         """The message as the intake rewrote it to stand alone, with the words as said beside it
         when they differ. Not the agent's message: the rewrite is what makes the user's understood
         without it (the user, 2026-10-28)."""
         if not said.replace("[withheld]", "").strip():
-            return ""
+            return None
         told = None
         try:
             told = datetime.fromisoformat((now or "").strip())
@@ -290,10 +314,10 @@ class Listener:
         text = " ".join(text.split())
         if text != said:
             text = f'{text}\n(said: "{said}")'
-        number = self._keep(text, "the user", told)
+        number = self._keep(text, self.base.USER, told)
         trace.step("kept", entry=number, text=text, day=f"{told:%Y-%m-%d %H:%M}" if told else None)
         self._changed()
-        return f"Kept as entry #{number}." + (" (A secret in it was withheld.)" if withheld else "")
+        return number
 
     def _start(self, asked: str, by: str, job: dict | None = None) -> dict:
         """A gathering in the background; its question and, once done, its answer are kept beside
@@ -354,10 +378,16 @@ class Listener:
             except ValueError:
                 continue
             j = held.setdefault(r["id"], {"id": r["id"], "delivered": False})
+            j.setdefault("entries", [])
+            j.setdefault("extended", {})
             if "asked" in r:
                 j.update(asked=r["asked"], by=r.get("by", "user"), at=datetime.fromisoformat(r["at"]), times=1)
             if "asked_again" in r:
                 j["times"] = j.get("times", 1) + 1
+            if "entry" in r and "extended" not in r and r["entry"] is not None:
+                j["entries"].append(r["entry"])
+            if "extended" in r:
+                j["extended"][str(r["extended"])] = r["on"]
             if "answer" in r:
                 j["future"] = Future()
                 j["future"].set_result(r["answer"])

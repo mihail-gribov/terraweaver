@@ -67,6 +67,8 @@ GRAPH = False
 # Raw: every user turn kept as said, by `/tell`, without the gate and the rewrite — for histories too
 # long to pass through the intake by the deadline (LongMemEval_S: ~500 user turns a question). It
 # measures finding in a long history, not the rewrite.
+from memory import journal  # noqa: E402
+
 RAW = False
 DATA = "oracle"
 # Haiku judged 3 of 30 verdicts wrong, both ways, on LongMemEval_S (2026-10-29): Sonnet.
@@ -91,8 +93,11 @@ def by_memory(instance, port: int, out: Path) -> dict:
             for turn in session.turns:
                 role_of = "user" if turn["role"] == "user" else "agent"
                 if RAW:
+                    # Every turn of the user's as said, past the gate: written to the journal directly,
+                    # since the server keeps only what its doors let in.
                     if role_of == "user" and turn["content"].strip():
-                        call(port, "/tell", {"text": turn["content"], "source": "the user", "now": now})
+                        journal.facts = ROOT / "var" / "memory" / name / "facts.md"
+                        journal._keep(turn["content"], "the user", session.date)
                     continue
                 call(port, "/say", {"messages": [{"role": role_of, "text": turn["content"]}], "now": now})
         told = round(time.time() - began)

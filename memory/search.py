@@ -14,6 +14,7 @@ here is entry numbers; the texts are what the answer is made of.
 import hashlib
 import json
 import math
+import os
 import re
 from collections import Counter
 from pathlib import Path
@@ -34,6 +35,33 @@ def _tokens(text: str) -> list[str]:
             continue
         out.append(w[:-1] if len(w) > 4 and w.endswith("s") and not w.endswith("ss") else w)
     return out
+
+
+class OpenRouterEncoder:
+    """The same two calls as fastembed's `TextEmbedding`, over OpenRouter's embeddings API.
+
+    For a machine with no room for a local model. Vectors are normalised, since the search ranks
+    by a dot product. The model is `TERRAWEAVER_EMBED_MODEL`; the vectors kept beside a journal
+    belong to one model, so a journal is not switched between encoders.
+    """
+    BATCH = 64
+
+    def __init__(self):
+        from openai import OpenAI
+        self.model = os.environ.get("TERRAWEAVER_EMBED_MODEL", "nvidia/nemotron-3.5-embed-1b:free")
+        self.client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=os.environ["OPENROUTER_API_KEY"],
+                             max_retries=5)
+
+    def embed(self, texts):
+        texts = list(texts)
+        for i in range(0, len(texts), self.BATCH):
+            batch = self.client.embeddings.create(model=self.model, input=texts[i:i + self.BATCH])
+            for item in sorted(batch.data, key=lambda d: d.index):
+                v = item.embedding
+                norm = math.sqrt(sum(x * x for x in v)) or 1.0
+                yield [x / norm for x in v]
+
+    query_embed = embed
 
 
 class Search:
@@ -93,8 +121,11 @@ class Search:
 
     def _encoder(self):
         if self._model is None:
-            from fastembed import TextEmbedding
-            self._model = TextEmbedding(self.model_name)
+            if os.environ.get("TERRAWEAVER_EMBEDDINGS") == "openrouter":
+                self._model = OpenRouterEncoder()
+            else:
+                from fastembed import TextEmbedding
+                self._model = TextEmbedding(self.model_name)
         return self._model
 
     def _embed(self, held: dict[int, str]) -> None:

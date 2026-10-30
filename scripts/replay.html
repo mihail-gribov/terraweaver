@@ -68,6 +68,9 @@
   .msg.user .time { color: #5fa65a; }
   .msg.user { align-self: flex-end; background: #e2fdc9; border-bottom-right-radius: 4px; }
   .msg.agent { align-self: flex-start; background: #ffffff; border-bottom-left-radius: 4px; }
+  .msg.web { align-self: flex-start; background: #e8f1fd; border: 1.5px solid #9cc0ec; border-bottom-left-radius: 4px; font-size: 15.5px; max-width: 600px; }
+  .msg.web b.who { display: block; color: var(--read); font-size: 14px; margin-bottom: 3px; }
+  .item.web { border-left: 4px solid var(--read); }
   .msg.fast { opacity: .6; font-size: 15.5px; }
   .msg.agent.final { font-size: 16.5px; line-height: 1.4; }
   .typing { color: #3a9bdc; font-size: 16px; }
@@ -479,6 +482,31 @@ const RUN = {
     }
     out("#c-reader", said.length ? "+ " + said.join(" · ") : "nothing new");
     return 1700;
+  },
+  web(e) {
+    // Later, after the reply: the memory extends the topic from the web for the user's questions.
+    clearOn(); clearTrail(); setMode("write");
+    $("#ctx").hidden = true;
+    $("#mem").insertAdjacentHTML("beforeend", `<div id="switch"><b style="color:var(--write)">Later: the web ↓</b><span>the topic "${esc(e.topic)}" is extended for the user's questions on it</span></div>`);
+    setTimeout(() => $("#switch") && $("#switch").remove(), 2600 / speed);
+    setTimeout(() => {
+      const bubble = chat(`<b class="who">🌐 the web · for ${e.questions.map(q => "“" + esc(cut(q, 60)) + "”").join(", ")}</b>${md(e.found)}`, "msg web");
+      bubble.scrollIntoView({block: "end"});
+      const el = add("#s-journal", `<span class="n">#${e.entry} · the web</span>${esc(cut(e.found.replace(/\(https?:[^)]*\)/g, ""), 120))}`, "item new web");
+      journalEls[e.entry] = el;
+      fly(bubble, el, `#${e.entry} · web`, "", 600);
+      fly(el, "#c-reader", `#${e.entry}`, "", 1500);
+      setTimeout(() => {
+        on("#c-reader"); out("#c-reader", "the web's words: <b>only the topic</b>");
+        for (const t of e.added) { const c = topicCard(t.name); bump(c); c.insertAdjacentHTML("beforeend", `<div class="layer">${esc(cut(t.added, 140))}</div>`); fly("#c-reader", c, t.name, "", 200); }
+      }, 2500 / speed);
+      if (e.later) setTimeout(() => {
+        $(".ctx-title").firstChild.textContent = "Told to the agent, with its next answer ";
+        $("#ctx .ctx-body").innerHTML = md(e.later.replace(/^Looked on the web for /, "Looked on the web for "));
+        $("#ctx").hidden = false;
+      }, 4500 / speed);
+    }, 2700 / speed);
+    return 14000;
   },
   mode(e) {
     clearOn(); clearTrail(); setMode(e.to);

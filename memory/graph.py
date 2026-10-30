@@ -41,6 +41,7 @@ from pathlib import Path
 from typing import NamedTuple
 
 from memory import trace
+from memory.journal import WEB, source_of, topic_of
 from memory.models import role
 
 log = logging.getLogger("memory.graph")
@@ -182,6 +183,17 @@ TOPIC_KINDS = {
     "habit": "a habit or routine: sleep, food, exercise, spending",
     "interest": "a hobby or interest the user keeps up",
 }
+
+# A web entry is read into the topic it was found for, the same way and nothing more.
+READ_WEB = """You keep a personal memory. A topic the user keeps coming back to: "{name}".
+Where it stands: {text}
+
+The memory looked on the web for the user's questions on it; this is what the web said on {day} \
+(not the user's words):
+{entry}
+
+Write what it adds to the topic, in one to three sentences: the places, events, dates and prices, \
+each with its address, and that it is from the web on that day. Answer as JSON: {{"added": "..."}}"""
 
 READ = """You keep a personal memory. Below is one new entry: what the user just said, rewritten \
 to stand alone. Say which entities it mentions and which topics it belongs to.
@@ -442,6 +454,9 @@ class Graph:
         if not new:
             return False
         n, heading, text = new[0]
+        if source_of(heading) == WEB:
+            self._read_web(n, heading, text)
+            return True
         try:
             worth = float(self.about(text, WORTH))
         except Exception:  # noqa: BLE001 - not known to be small talk: read
@@ -481,6 +496,31 @@ class Graph:
             self.read_upto = n
             (self.where / "state.json").write_text(json.dumps({"read_upto": n}))
         return True
+
+    def _read_web(self, n: int, heading: str, text: str) -> None:
+        """A web page's words, found for a topic of the user's: they extend that topic as a layer,
+        and nothing else — no person, no link, no portrait: they are not the user's words."""
+        topic = topic_of(heading)
+        with self.lock:
+            before = self.latest.get(topic)
+        added = ""
+        if before:
+            got = self.reader("Answer with JSON only.", READ_WEB.format(
+                name=before["name"], text=_tail(before["text"]), day=_day(heading)[:10], entry=text)) or {}
+            added = str(got.get("added") or "").strip()
+        versions = []
+        if added:
+            versions = [_version([before], added, _day(heading), n, topic=before["topic"], name=before["name"],
+                                 **({"kind": before["kind"]} if before.get("kind") else {}))]
+            with self.lock:
+                self.topics += [_layer(v) for v in versions]
+                self._index([], [], versions)
+                self._append("topics.jsonl", [_layer(v) for v in versions])
+        trace.step("read", entry=n, source=WEB, parts=[], links=[], portraits=[],
+                   topics=[{"topic": v["topic"], "name": v["name"], "added": v.get("added", v["text"])} for v in versions])
+        with self.lock:
+            self.read_upto = n
+            (self.where / "state.json").write_text(json.dumps({"read_upto": n}))
 
     def parts_of(self, text: str) -> list[str]:
         """The parts of a person's world the entry speaks of, down the tree: the groups, then the parts
@@ -895,19 +935,6 @@ class Graph:
                 lines.append(f'  {l["from"]} is the {l["relation"].replace("_", " ")} of {l["to"]} '
                              f'(fact {l["text"]} [{l["day"][:10]}]: "{l["quote"]}")')
         return IMAGE_HEAD.format(names="what the question bears on") + "\n" + "\n".join(lines) if lines else ""
-
-    def add_to_topic(self, topic, added: str, day: str) -> None:
-        """A layer that came from outside the conversation (the web, memory/refresh.py): kept on the
-        topic like any other, standing on the same entries, with its source in its words."""
-        with self.lock:
-            before = self.latest.get(topic)
-            if not before:
-                return
-            v = _version([before], added, day, before["entries"][-1], topic=before["topic"], name=before["name"],
-                         **({"kind": before["kind"]} if before.get("kind") else {}))
-            self.topics.append(_layer(v))
-            self._index([], [], [v])
-            self._append("topics.jsonl", [_layer(v)])
 
     def recall(self, message: str, numbers=(), limit: int = 2) -> str:
         """For the agent, beside the user's message: the topics it goes on with, said as a talk had

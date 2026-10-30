@@ -59,7 +59,8 @@ writing = asyncio.Lock()
 # departs only where the contract makes it: an ask says when the memory does not say.
 ASK = """Below is what the user told their personal memory, one fact a line: its number, the day \
 it was said, and what was said. Facts are numbered in the order they were said; when two conflict, \
-the one with the larger number is newer and is the one that holds.
+the one with the larger number is newer and is the one that holds. A fact marked "(from the web)" \
+is what a web page said for one of the user's topics, not what the user said.
 
 {memory}
 
@@ -73,7 +74,8 @@ bears on it, say that the memory does not say."""
 
 CONTEXT = """Below is a list of facts, numbered in the order they were stated, each with the day \
 it was said. Some facts were later updated: when two facts conflict, the one with the larger \
-number is newer and is the one that holds.
+number is newer and is the one that holds. A fact marked "(from the web)" is what a web page said, \
+not the user.
 
 {memory}
 
@@ -168,6 +170,30 @@ def _purge() -> None:
         _bin().write_text("".join(json.dumps(b, ensure_ascii=False) + "\n" for b in left))
 
 
+# Who said an entry: the third field of its heading. The user, or a web page the memory read for a
+# topic of the user's — then the fourth field is the topic: "#42 · 2026-10-30 12:40:00 · the web · topic 7".
+# Read here and only here, so no part of the memory takes the web's words for the user's.
+USER, WEB = "the user", "the web"
+
+
+def source_of(heading: str) -> str:
+    """Who said the entry: WEB for a web page, else USER (every older entry is the user's)."""
+    parts = heading.split(" · ")
+    return WEB if len(parts) > 2 and parts[2].strip() == WEB else USER
+
+
+def topic_of(heading: str) -> int | None:
+    """The topic a web entry was found for, or None."""
+    parts = heading.split(" · ")
+    last = parts[3].strip() if len(parts) > 3 else ""
+    return int(last.removeprefix("topic ")) if last.startswith("topic ") and last[6:].isdigit() else None
+
+
+def keep_web(text: str, topic: int | None, told: datetime | None = None) -> int:
+    """A web page's words for a topic of the user's: kept in the journal, marked as the web's."""
+    return _keep(text, WEB + (f" · topic {topic}" if topic is not None else ""), told)
+
+
 def _entries(memory: str) -> list[tuple[int, str, str]]:
     """The file's entries: their number, their heading line, and what was said."""
     out = []
@@ -205,7 +231,9 @@ def _for_the_model(memory: str, dated: bool = False) -> str:
     """
     # Dated where the question may be about time (`ask`, `context`): without the day, "how many
     # days ago did I buy the smoker?" had nothing to be answered from (LongMemEval, 2026-10-29).
-    return "\n".join(f"{n}. " + (f"[{_day(heading)}] " if dated else "") + " ".join(text.split())
+    # A web entry says it is one: what a page said is never read as what the user said.
+    return "\n".join(f"{n}. " + (f"[{_day(heading)}] " if dated else "")
+                     + ("(from the web) " if source_of(heading) == WEB else "") + " ".join(text.split())
                      for n, heading, text in _entries(memory))
 
 

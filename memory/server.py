@@ -113,6 +113,13 @@ def _beat(ctx: Context):
     return beat
 
 
+# The journal's own routes go, every one: its /ask, registered first, took every call and this
+# one was never reached (2026-10-29), and /tell, /add_memory, /forget, /debug/facts wrote, forgot and
+# showed the journal past the gate, the secrets filter and the user's confirmation (review W0001,
+# 2026-10-30). The memory's routes are registered below; only they are served.
+base.server._custom_starlette_routes.clear()
+
+
 @base.server.custom_route("/say", ["POST"])
 async def http_say(request):
     """`say` for a hook: {"messages": [...]}, or {"message": ..., "role": ...}. Answers at once with
@@ -124,11 +131,6 @@ async def http_say(request):
     return PlainTextResponse(await listener.say(messages, body.get("now"), wait=bool(body.get("wait", False))))
 
 
-# The journal has an /ask of its own, the question alone; registered first, it took every call and
-# this one was never reached — `now` and `gather` were lost, so LongMemEval's memory answered as of
-# the machine's day (found 2026-10-29). The journal's goes; this one is the memory's.
-base.server._custom_starlette_routes[:] = [r for r in base.server._custom_starlette_routes
-                                           if getattr(r, "path", None) != "/ask"]
 
 
 @base.server.custom_route("/ask", ["POST"])
@@ -192,8 +194,8 @@ def main() -> None:
     global graph, search, listener
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--name", default="main", help="var/memory/<name>/: facts.md and what is read from it")
-    parser.add_argument("--engine", default="tavily", help="the web search a gathering uses: tavily, keenable; "
-                        "off: no web at all (a benchmark measures the memory, not the web)")
+    parser.add_argument("--engine", default="tavily", help="tavily: topics are extended from the web; off: no "
+                        "web at all (a benchmark measures the memory, not the web)")
     parser.add_argument("--model", default="nvidia/nemotron-3-super-120b-a12b",
                         help="the model that reads the journal: Token Factory, or `haiku` via the claude CLI")
     parser.add_argument("--port", type=int, default=7110)
@@ -223,30 +225,27 @@ def main() -> None:
                       embed=lambda texts: search._encoder().embed(texts))
         base.graph_facts = graph.facts_for
         base.graph_recall = graph.recall
-        if args.engine != "off":
-            # Topics whose outside changes are searched again when the user comes back to them.
-            from memory.refresh import Refresher
-            refresher = Refresher(where / "graph", keep=graph.add_to_topic)
-            graph.on_topics = refresher.touched
+
     base.confirm_forget = confirm_forget
     from memory.listen import Listener
     from memory import trace
     trace.to(where / "trace.jsonl")
-    def solve(task: str) -> str:
-        # The agent asked for something to be found or worked out: a program over the memory and
-        # the web (memory/solve.py), run to its end; what it found, the agent decides from.
-        from datetime import datetime
-        from memory import solve as solving
-        out = base.ROOT / "var" / "solve" / f"{args.name}-{datetime.now():%Y%m%d-%H%M%S}"
-        out.mkdir(parents=True, exist_ok=True)
-        return solving.run(task, args.name, args.engine, 2, out)
-
-    listener = Listener(base, base._keep, base.context, base.ask, solve if args.engine != "off" else None, _journal_changed,
+    listener = Listener(base, base._keep, base.context, base.ask, None, _journal_changed,
                         interests_path=where / "interests.jsonl", heard_path=where / "heard.jsonl",
                         embed=lambda texts: search._encoder().embed(texts))
     listener.load_interests()
-    if graph is not None and getattr(graph, "on_topics", None):
+    if graph is not None and args.engine != "off":
+        # A topic the user comes back to is extended from the web for their questions on it
+        # (memory/refresh.py); what is found is the web's entry in the journal, read into the topic.
+        from memory.refresh import Refresher
+
+        def keep_web(text: str, topic: int) -> int:
+            n = base.keep_web(text, topic)
+            _journal_changed()
+            return n
+        refresher = Refresher(keep_web, questions_of=listener.questions_of, extended=listener.extended)
         refresher.tell = listener.note
+        graph.on_topics = refresher.touched
     # Two doors (docs/decisions.md, 2026-10-27): the conversation goes in by `say` — from a hook,
     # where the agent has hooks, or from the agent — and the agent asks by `ask`. The journal's own
     # calls stay in it for its tests, not for the agent.

@@ -12,7 +12,7 @@ birthday, that she loves small jazz gigs and hates crowds, that she is allergic 
 Thai or Indian: "Yes, please"), that she wants a quiet evening for two, that her mother is staying.
 Today they ask for help planning the evening, and nothing of it is said again.
 
-Run: set -a; . ./.env; set +a; .venv/bin/python scripts/demo_recall.py [--story tv|birthday] [--model sonnet] [--port 7130]
+Run: set -a; . ./.env; set +a; .venv/bin/python scripts/demo_recall.py [--story tv|birthday|home|jazz] [--model sonnet] [--port 7130]
 """
 import argparse
 import json
@@ -159,11 +159,23 @@ HOME = [
     (4, "agent", "A plumber. It's usually a worn washer or cartridge, a quick job."),
     (4, "user", "the plumber came this morning and fixed the tap. 95 euros"),
 ]
+JAZZ = [
+    # A topic talked about once, a month ago, with a question nobody could answer then; today the user
+    # comes back to it, and the memory extends it from the web for that question (memory/refresh.py).
+    (30, "user", "Mila and I want to get back into live jazz this autumn. are there any good jazz concerts in Belgrade in November?"),
+    (30, "agent", "The November programmes aren't out yet. Worth checking again closer to the date."),
+    (30, "user", "ok. we used to go to Bitef Jazz Club every week before Lev was born"),
+    (30, "agent", "Bitef is a lovely spot. I hope you get back there soon."),
+]
+
 STORIES = {
     "tv": (TV, "I want to get a soundbar for the living room TV. What would you suggest?"),
     "birthday": (with_filler(BIRTHDAY, "birthday"), "Help me plan something nice for my wife's birthday evening."),
     # The answer is 2,015 euros: the TV, the soundbar, the washing machine and the tap; not the car.
     "home": (with_filler(HOME, "home"), "How much have we spent on the home since the start of October?"),
+    # The memory says it is looking on the web, and what it found comes after the agent's reply.
+    "jazz": (with_filler(JAZZ, "jazz"), "My mother-in-law can take Lev on Saturday the 14th, so we finally have "
+                                        "a free evening for jazz. Any ideas?"),
 }
 
 
@@ -226,14 +238,21 @@ def main() -> int:
         print("  what the memory put beside the message:\n")
         print("\n".join(f"    | {line}" for line in (beside or "(nothing)").splitlines()))
         print("\n  agent:\n\n" + "\n".join(f"    {line}" for line in reply.strip().splitlines()))
+        # What the memory came to after the reply — a topic extended from the web — waited for.
+        later = call(args.port, "/notes?wait=300", timeout=360)
+        later = "" if later == "nothing" else later
+        if later:
+            print("\n  the memory, later:\n\n" + "\n".join(f"    | {line}" for line in later.splitlines()))
+        call(args.port, "/settle?wait=300", timeout=360)
         kept = ROOT / "benchmarks" / "runs" / name
         kept.mkdir(parents=True)
-        for f in ("facts.md", "heard.jsonl", "trace.jsonl", "agent.jsonl", "graph"):
+        for f in ("facts.md", "heard.jsonl", "trace.jsonl", "interests.jsonl", "agent.jsonl", "graph"):
             if (where / f).is_dir():
                 shutil.copytree(where / f, kept / f)
             elif (where / f).exists():
                 shutil.copy2(where / f, kept / f)
-        (kept / "today.json").write_text(json.dumps({"model": args.model, "message": args.message, "reply": reply}, indent=1))
+        (kept / "today.json").write_text(json.dumps({"model": args.model, "message": args.message, "reply": reply,
+                                                     "later": later}, indent=1))
         print(f"\nThe memory: {where}\nKept: {kept}")
     finally:
         server.terminate()

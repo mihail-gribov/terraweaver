@@ -157,6 +157,13 @@ def build(run: Path, speed: float = 1.0) -> dict:
                    {"kind": "note", "text": (recall or {}).get("note", "")},
                    {"kind": "say", "role": "agent", "text": today.get("reply", ""), "final": True,
                     "time": _later(today.get("time", "21:14"))}]
+    # Later: a topic extended from the web for the user's questions (memory/refresh.py) — the web's
+    # reply, kept in the journal as the web's, read into the topic, told to the agent.
+    for w in [s for s in steps if s["step"] == "web" and s.get("entry")]:
+        read = next((r for r in steps if r["step"] == "read" and r.get("source") == "the web" and r["entry"] == w["entry"]), {})
+        events.append({"kind": "web", "topic": w["topic"], "questions": w["questions"], "found": w["found"],
+                       "entry": w["entry"], "added": [{"name": t["name"], "added": t["added"]} for t in read.get("topics", [])],
+                       "later": today.get("later", "")})
     return {"title": run.name, "speed": speed, "events": events}
 
 

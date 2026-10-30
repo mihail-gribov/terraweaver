@@ -5528,28 +5528,42 @@ Measured before these (5 scenarios, ~200 entries): reader 40% of tokens, 87% of 
 Nano part questions 35%; intake 25%. Every call is now counted when `TERRAWEAVER_USAGE` names a file
 (`scripts/usage.py` sums it).
 
-## 2026-10-30 — Topics kept fresh from the web: answer now, look, tell what was found
+## 2026-10-30 — A topic extended from the web for the user's own questions on it
 
-**What.** A message that goes on with a topic is answered at once, from what the memory holds.
-Beside it, the decision model is asked, of the message with its topic, whether what is current
-outside would help — places, events, prices, what is on sale, what changes within weeks; not the
-user's own plans or people. If yes and the topic was not searched in seven days, the answer says
-"Looking on the web: … tell the user you will check online", and a search runs in the background
-(`memory/refresh.py`): the reader writes two queries (the place and the kind of thing, never a name
-or a private detail), Tavily finds the pages, the reader says what on them bears on it, with
-addresses. A second one-token question asks whether that matters; if it does, it becomes a memory —
-a layer of the topic, "From the web, <day>: …" — and either way the agent is told with the memory's
-next answer: what was found, or that nothing new was. Every search is kept in `graph/web.jsonl`.
+**What.** A message is answered at once, from what the memory holds. When it goes on with a topic,
+the user's questions on that topic are taken: those kept as their interests and asked in the
+topic's entries (each question now keeps the entries it was asked in), and the message's own. Each
+not extended for this topic in seven days is due. If any is, and the decision model says what is
+current outside would help (places, events, prices — not the user's own plans or people), the
+answer says "Looking on the web: … tell the user you will check online", and in the background
+(`memory/refresh.py`) each due question becomes queries (the place, the kind of thing, the month;
+never a name or a private detail), Tavily (`memory/web.py`) finds pages, the reader says what on
+them answers it, with addresses, and a one-token question asks whether it matters. If it does, it
+is one reply of the web's: kept in the journal as the web's entry for that topic and read into the
+topic as a layer, like the user's entries. Each question is marked with when it was extended for
+the topic and the entry it gave (or none). The agent is told with the memory's next answer: what
+was found, or that nothing new was.
 
-**Why.** The user's design: the memory knows which of the user's matters live on the outside world,
-and keeps them current the way a person would — "I'll look it up" — without the agent having to
-think of it. Asked of the message, not once per topic: "Schedule blocking" is the user's own matter
-on most days and needs the web only when the evening is to be filled. The place comes from the
-message or the topic: without it, the first run searched "romantic dinner restaurants" and brought
-San Diego and New York; with it, Belgrade. Pages about another city or a general list are refused
-twice, when what was found is written and when it is judged. Never the journal: the web is a
-second narrator, not the user.
+**One journal, two speakers, never confused.** An entry's heading carries who said it: `the user`,
+or `the web · topic N`. `journal.source_of`/`topic_of` are the only readers of that field. The
+graph reads a web entry into its topic and nothing else — no person, link or portrait, since they
+are not the user's words; every model that reads the journal sees it marked "(from the web)", and
+the ask and context prompts say what that means.
 
-**Also.** The agent's `ask` gathers again with the program solver (`memory/solve.py`, restored with
-its modules); benchmarks run the server with `--engine off`, since they measure the memory, not
-the web.
+**Why.** The user's design: the web extends a topic the way the user's messages do, so it is one
+more speaker in the journal, not a second store; and it searches for what the user actually asked,
+not for what a model guesses the topic needs. Asked per message whether the web would help:
+"Schedule blocking" is the user's own matter on most days. The place and the month come from the
+question: without them the first run brought San Diego and New York, then "October" for an
+11 November birthday.
+
+**What went.** The program solver brought back this morning (`memory/solve.py` with `tools`,
+`programs`, `cleaner`, `parse`, `model`, `ttl`, `classes.json`: 1,900 lines) — a second web path
+with its own journal parser and store, which read an empty structure and could write a duplicate
+entry number (review W0001). The agent's `ask` answers from the memory only. Benchmarks run the
+server with `--engine off`.
+
+**Also from the review.** The journal's own HTTP routes (`/tell`, `/add_memory`, `/forget`,
+`/debug/facts`, …) are no longer served by the memory server: they wrote and forgot past the gate,
+the secrets filter and the user's confirmation. Notes are given only with an answer to a message of
+the user's: the Stop hook's agent-only `say` threw them away.
