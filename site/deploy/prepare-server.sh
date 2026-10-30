@@ -83,7 +83,7 @@ git reset -q --hard "origin/$ref"
 [ -d .venv ] || uv venv --python 3.12 .venv
 uv pip install -q --python .venv/bin/python mcp openai
 chown -R terraweaver:terraweaver /opt/terraweaver/app
-rsync -a --delete site/index.html site/privacy.html site/style.css site/robots.txt site/sitemap.xml site/demo /var/www/terraweaver/
+rsync -a --delete site/index.html site/privacy.html site/style.css site/robots.txt site/sitemap.xml site/demo site/account /var/www/terraweaver/
 systemctl daemon-reload
 systemctl restart terraweaver-memory terraweaver-auth
 git log --oneline -1

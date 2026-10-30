@@ -36,7 +36,7 @@ the sign-in service on `127.0.0.1:7120`. The machine, its address and the exact 
 this repository.
 
 ```bash
-rsync -a --delete site/index.html site/privacy.html site/style.css site/robots.txt site/sitemap.xml site/demo "$SERVER":/var/www/terraweaver/
+rsync -a --delete site/index.html site/privacy.html site/style.css site/robots.txt site/sitemap.xml site/demo site/account "$SERVER":/var/www/terraweaver/
 scp site/deploy/Caddyfile "$SERVER":/tmp/Caddyfile.new       # then: caddy validate, copy to /etc/caddy, reload
 bash -s < site/deploy/prepare-server.sh                       # once, on the machine, as root
 sh /opt/terraweaver/deploy.sh                                 # on the machine: the pushed main, then restart

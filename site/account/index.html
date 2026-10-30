@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="robots" content="noindex">
+<title>Account: TerraWeaver</title>
+<link rel="stylesheet" href="account.css">
+</head>
+<body>
+<div id="auth" class="auth" hidden>
+  <div class="auth-card">
+    <a class="brand" href="/">Terra<span>Weaver</span></a>
+    <h1>Sign in</h1>
+    <p class="dim">Get a key for the hosted demo memory. Signing in for the first time makes your account.</p>
+    <a class="btn btn-primary btn-wide" href="/auth/login">
+      <span class="g" aria-hidden="true">G</span>
+      Continue with Google</a>
+    <p class="note warn-note"><strong>Evaluation demo.</strong> One shared memory: do not enter personal data.
+      For real use, run it on your own machine; no key is needed there.</p>
+    <p class="small dim">By continuing you accept the <a href="/privacy.html">privacy notice</a>.</p>
+  </div>
+</div>
+
+<div id="app" class="app" hidden>
+  <aside class="side" id="side">
+    <a class="brand" href="/">Terra<span>Weaver</span></a>
+    <nav class="menu" id="menu">
+      <a href="#overview" data-view="overview">Overview</a>
+      <a href="#keys" data-view="keys">API keys</a>
+      <a href="#connect" data-view="connect">Connect</a>
+      <a href="#profile" data-view="profile">Profile</a>
+    </nav>
+    <div class="side-foot">
+      <a href="https://github.com/mihail-gribov/terraweaver/tree/main/docs" target="_blank" rel="noopener">Documentation</a>
+      <a href="/privacy.html">Privacy</a>
+      <div class="who" id="who"></div>
+    </div>
+  </aside>
+  <div class="main">
+    <header class="mobilebar">
+      <a class="brand" href="/">Terra<span>Weaver</span></a>
+      <button class="btn btn-sm" id="burger" aria-label="Menu" aria-expanded="false">Menu</button>
+    </header>
+    <main id="view" class="view"></main>
+  </div>
+</div>
+
+<div class="modal" id="modal" hidden><div class="modal-card" id="modalCard" role="dialog" aria-modal="true"></div></div>
+<div class="toast" id="toast" hidden></div>
+<noscript><p style="padding:2rem">The account needs JavaScript.</p></noscript>
+<script src="account.js"></script>
+</body>
+</html>

@@ -36,6 +36,7 @@
       <li><a href="#connect">Connect</a></li>
       <li><a href="https://github.com/mihail-gribov/terraweaver/tree/main/docs">Documentation</a></li>
       <li><a href="#contact">Contact</a></li>
+      <li><a href="/account/">Account</a></li>
     </ul>
   </div>
 </nav>
@@ -131,7 +132,7 @@
       <tr><td>Never said, so "I don't know"</td><td>6 / 7</td></tr>
     </table>
     <p class="lead" style="margin-top:1rem">The misses are real: a car-alarm question that did not bring up the user's Skoda Octavia, and a sale of a Golf that was never told, which the memory answered instead of declining.
-    LongMemEval_S has not been run in full. One run measures little here: the spread between runs is as large as the differences.</p>
+    One run measures little here: the spread between runs is as large as the differences. You can run it yourself: <code>set -a; . ./.env; set +a; .venv/bin/python benchmarks/scenarios.py --only books</code> (needs a Nebius key, about nine minutes for one story; see the <a href="https://github.com/mihail-gribov/terraweaver/blob/main/benchmarks/README.md">benchmark notes</a>).</p>
   </div>
 </section>
 
@@ -140,7 +141,7 @@
     <p class="eyebrow">What's next</p>
     <h2 id="next-h">Not done yet, and said so.</h2>
     <div class="classes">
-      <div class="row"><b>Wider measurement</b><span>The full LongMemEval and LoCoMo with baselines, ablations and confidence intervals. For now: our scenarios benchmark, 43 of 45.</span></div>
+      <div class="row"><b>Wider measurement</b><span>Public memory benchmarks with baselines, ablations and confidence intervals. For now: our scenarios benchmark, 43 of 45.</span></div>
       <div class="row"><b>Portability, shown</b><span>A demo of history built up in one agent and used automatically in another.</span></div>
       <div class="row"><b>Memory control</b><span>View, edit, full forget (including derived logs and indexes) and export.</span></div>
       <div class="row"><b>Cost and speed</b><span>The cost per 1,000 messages, and how latency grows at 10k, 100k and 1M messages.</span></div>
@@ -174,7 +175,7 @@ python3 -m venv .venv &amp;&amp; .venv/bin/pip install -r requirements.txt
         <h3>The hosted demo</h3>
         <p class="tagline">For evaluation, <strong>by key</strong>. Not a place for your life.</p>
         <ol>
-          <li>You need <a href="https://claude.com/claude-code">Claude Code</a> or another MCP client, and a key: <a href="/auth/login">sign in with Google</a> (a Google account is the only requirement) to get one (<code>tw_…</code>, shown once). No Google account? A reviewer token works the same way; it is given with the submission.</li>
+          <li>You need <a href="https://claude.com/claude-code">Claude Code</a> or another MCP client, and a key: <a href="/account/">sign in with Google</a> (a Google account is the only requirement) and make one in your account (<code>tw_…</code>, shown once). No Google account? A reviewer token works the same way; it is given with the submission.</li>
           <li>Point your agent at it:
 <pre>export PERSONAL_MEMORY_URL=https://terraweaver.life
 export PERSONAL_MEMORY_TOKEN=tw_...

@@ -23,7 +23,7 @@ code. The demo instance must never look like a place to put real data.
 
 ## Open
 
-- No LongMemEval number is printed: LongMemEval_S was not run in full.
+- No public benchmark is named or shown: only our scenarios benchmark, with how to run it.
 - A link to the demo video when it is uploaded.
 - Whether the live demo should be reachable from the page, once a prefilled demo world and a daily reset exist.
 - An Open Graph image for link previews.
