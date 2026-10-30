@@ -23,7 +23,7 @@ code. The demo instance must never look like a place to put real data.
 
 ## Open
 
-- Numbers from LongMemEval_S once the seed-1 run is final (they are placeholders in `docs/submission.md`).
+- No LongMemEval number is printed: LongMemEval_S was not run in full.
 - A link to the demo video when it is uploaded.
 - Whether the live demo should be reachable from the page, once the prefilled world and the daily reset exist (`HOSTING.md`, "Still to do").
 - An Open Graph image for link previews.

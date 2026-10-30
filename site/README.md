@@ -5,7 +5,7 @@ this directory; the memory itself is the rest of the repository.
 
 ```
 site/
-  index.html          the landing page: one static file, no build step
+  index.html          the landing page; privacy.html, style.css, robots.txt, sitemap.xml beside it
   demo/               replays of two real runs, generated (see below)
   auth/app.py         sign in with Google, issue a key (Starlette, 127.0.0.1:7120)
   deploy/Caddyfile    the web server config of the demo machine
@@ -30,18 +30,17 @@ The replays are single self-contained pages made by `scripts/replay.py` from the
 
 ## Deploy
 
-The machine and its state are described in the private `HOSTING.md`. The page is copied to
-`/var/www/terraweaver/` and Caddy serves it, sending `/mcp`, `/say`, `/ask` and the other memory
-routes to `127.0.0.1:7110`:
+The page is copied to the web root of the demo machine (`/var/www/terraweaver/`) and Caddy serves
+it, sending `/mcp`, `/say`, `/ask` and the other memory routes to `127.0.0.1:7110` and `/auth/*` to
+the sign-in service on `127.0.0.1:7120`. The machine, its address and the exact commands are not in
+this repository.
 
 ```bash
-rsync -av --delete -e "ssh -i ~/.ssh/terraweaver" site/index.html site/demo root@51.15.66.70:/var/www/terraweaver/
-scp -i ~/.ssh/terraweaver site/deploy/Caddyfile root@51.15.66.70:/etc/caddy/Caddyfile
-ssh -i ~/.ssh/terraweaver root@51.15.66.70 systemctl reload caddy
+rsync -a --delete site/index.html site/privacy.html site/style.css site/robots.txt site/sitemap.xml site/demo "$SERVER":/var/www/terraweaver/
+scp site/deploy/Caddyfile "$SERVER":/tmp/Caddyfile.new       # then: caddy validate, copy to /etc/caddy, reload
+bash -s < site/deploy/prepare-server.sh                       # once, on the machine, as root
+sh /opt/terraweaver/deploy.sh                                 # on the machine: the pushed main, then restart
 ```
-
-The private repository `terraweaver-web` held the first version of the page and the Caddyfile;
-this directory supersedes it.
 
 ## Sign-in and keys
 
