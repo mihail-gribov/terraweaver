@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light">
-<title>TerraWeaver: a personal memory for any agent</title>
-<meta name="description" content="A personal memory for any agent. It hears your life in passing, keeps it in your own words on your machine, and answers with facts, never decisions. NVIDIA Nemotron on Nebius Token Factory.">
+<title>TerraWeaver: your memory, every AI agent</title>
+<meta name="description" content="One personal memory you own. It grows with every conversation and follows you from one agent to the next. An MCP server with two doors: say and ask.">
 <link rel="canonical" href="https://terraweaver.life/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="TerraWeaver">
-<meta property="og:title" content="TerraWeaver: a personal memory for any agent">
-<meta property="og:description" content="It hears your life in passing, keeps it in your own words on your machine, and answers with facts, never decisions.">
+<meta property="og:title" content="TerraWeaver: your memory, every AI agent">
+<meta property="og:description" content="One personal memory you own. It grows with every conversation and follows you from one agent to the next.">
 <meta property="og:url" content="https://terraweaver.life/">
 <meta name="twitter:card" content="summary">
 <link rel="stylesheet" href="style.css">
@@ -18,7 +18,7 @@
 {"@context":"https://schema.org","@graph":[
  {"@type":"WebSite","name":"TerraWeaver","url":"https://terraweaver.life/"},
  {"@type":"SoftwareApplication","name":"TerraWeaver","applicationCategory":"DeveloperApplication","operatingSystem":"Linux, macOS",
-  "description":"A personal memory for any agent: it hears the conversation, keeps what is personal in the user's own words, and answers with facts, never decisions.",
+  "description":"A personal memory the user owns, for any agent: an MCP server with two doors, say and ask. It remembers on its own, keeps the user's own words and follows the user from one agent to the next.",
   "url":"https://terraweaver.life/","codeRepository":"https://github.com/mihail-gribov/terraweaver","license":"https://opensource.org/license/mit",
   "author":{"@type":"Person","name":"Mihail Gribov","sameAs":["https://www.linkedin.com/in/mihail-gribov-rs/","https://github.com/mihail-gribov"]}}]}
 </script>
@@ -30,15 +30,12 @@
   <div class="wrap">
     <a class="brand" href="#top">Terra<span>Weaver</span></a>
     <ul>
-      <li><a href="#problems">Why</a></li>
-      <li><a href="#yours">Yours</a></li>
-      <li><a href="#how">How it works</a></li>
+      <li><a href="#why">Why</a></li>
       <li><a href="#measured">Measured</a></li>
       <li><a href="#demo">Demo</a></li>
       <li><a href="#connect">Connect</a></li>
       <li><a href="https://github.com/mihail-gribov/terraweaver/tree/main/docs">Documentation</a></li>
       <li><a href="#contact">Contact</a></li>
-      <li><a href="https://github.com/mihail-gribov/terraweaver">GitHub</a></li>
     </ul>
   </div>
 </nav>
@@ -46,11 +43,9 @@
 <header class="hero" id="top">
   <div class="wrap">
     <div>
-      <p class="eyebrow">A personal memory for any agent</p>
-      <h1>Your life, remembered <em>in your own words.</em></h1>
-      <p class="lead">You mention a birthday, an allergy, a repair, in passing, between work questions. A month later your agent
-      has forgotten, or kept it in words that are not yours. TerraWeaver listens by itself, keeps what is yours on your machine,
-      and gives the agent facts, never decisions.</p>
+      <p class="eyebrow">A personal memory you own</p>
+      <h1>Your memory. <em>Every AI agent.</em></h1>
+      <p class="lead">One personal memory you own. It grows with every conversation and follows you from one agent to the next.</p>
       <div class="buttons">
         <a class="btn primary" href="#connect">Run it on your machine</a>
         <a class="btn ghost" href="#demo">Watch it work</a>
@@ -69,49 +64,25 @@
 </header>
 
 <main>
-<section id="problems" aria-labelledby="problems-h">
+<section id="why" aria-labelledby="why-h">
   <div class="wrap">
-    <p class="eyebrow">Why another memory</p>
-    <h2 id="problems-h">What agent memory gets wrong today.</h2>
-    <p class="lead">Memory for agents is now a layer of its own, and the same problems stay open in most of it. Each is a kind of question a long personal history asks, and a place where TerraWeaver was built to be different.</p>
-    <div class="classes">
-      <div class="row"><b>Counting: all of them</b><span>"How many pieces of jewellery did I get in the last two months?" Similarity search returns the dozen entries most alike to the question, not every event. <strong>Here:</strong> each event is kept with its day and read into a graph; the answer gets every fact of the matter.</span></div>
-      <div class="row"><b>Time and the latest value</b><span>"What happened two weeks ago?" "Which TV did we take in the end?" <strong>Here:</strong> new lies over old, each layer dated; the old choice stays, marked as overridden.</span></div>
-      <div class="row"><b>Where we left off</b><span>Nobody asks the memory, yet the new message goes on with an old matter. <strong>Here:</strong> the matter is put beside it, so a soundbar question comes with the TV that is on the wall.</span></div>
-      <div class="row"><b>It waits to be told</b><span>The agent has to remember to write and to read, and mostly doesn't. <strong>Here:</strong> hooks hear every message of both sides; the agent passes nothing.</span></div>
-      <div class="row"><b>Facts in the agent's words</b><span>"Up to 400", "she": a fact with no idea what or who. <strong>Here:</strong> each message is rewritten to stand alone from the agent's message just before it, and kept in your words in a plain Markdown journal you can read.</span></div>
-      <div class="row"><b>Decisions made for you</b><span>Memory that picks and hides on its own authority. <strong>Here:</strong> facts and the words they stand on, never decisions; secrets are withheld before any model sees them.</span></div>
-    </div>
-  </div>
-</section>
-
-<section id="yours" aria-labelledby="yours-h">
-  <div class="wrap">
-    <p class="eyebrow">Personal means yours</p>
-    <h2 id="yours-h">It is about you, so it stays with you.</h2>
-    <p class="lead">A memory of a life is the most private thing an agent can hold. It is built to be read, checked and owned by the person it is about.</p>
-    <div class="own">
-      <div class="cards" style="margin-top:0">
-        <div class="card"><div class="ico">M</div><h3>Your words</h3><p>The journal is plain Markdown you can open and read. What the memory keeps is what you said, rewritten only so that it stands alone, with your original beside it.</p></div>
-        <div class="card"><div class="ico">⌂</div><h3>On your machine</h3><p>Run it yourself and the journal never leaves your machine. Only the model calls go out (reading, rewriting, deciding), and secrets are withheld before any of them.</p></div>
-        <div class="card"><div class="ico">✕</div><h3>Secrets withheld</h3><p>Passwords and keys are held back before any model sees them. A web query never carries a person's name or a private detail.</p></div>
-        <div class="card"><div class="ico">✓</div><h3>Nothing decided for you</h3><p>It gives the agent facts and the words they stand on. Choosing stays with you and your agent. It can take an entry out once you confirm which.</p></div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section id="how" aria-labelledby="how-h">
-  <div class="wrap">
-    <p class="eyebrow">Active, not a store</p>
-    <h2 id="how-h">It does the remembering, so you don't have to dictate.</h2>
-    <p class="lead">A passive memory depends on the agent remembering to write and to read. This one acts by itself.</p>
+    <p class="eyebrow">Why it is different</p>
+    <h2 id="why-h">The memory belongs to you, not to the app you use today.</h2>
+    <p class="lead">Today a memory lives inside one assistant and is tied to it. TerraWeaver is a layer of its own: yours, portable, and open to any agent.</p>
     <div class="cards">
-      <div class="card"><div class="ico">1</div><h3>Hears</h3><p>Claude Code hooks pass every message, yours and the agent's. The agent passes nothing.</p></div>
-      <div class="card"><div class="ico">2</div><h3>Keeps</h3><p>Only what is personal. "Up to 400" becomes "my budget for the vacuum is up to 400".</p></div>
-      <div class="card"><div class="ico">3</div><h3>Reads in the quiet</h3><p>Entries become people, things, values and links, each with the day it happened.</p></div>
-      <div class="card"><div class="ico">4</div><h3>Hands over facts</h3><p>When the agent asks, or a new message goes on with an old matter, it finds the entries by words, meaning and the graph, and hands over their texts.</p></div>
+      <div class="card"><div class="ico">1</div><h3>Yours, for any agent</h3><p>An MCP server with two doors: <code>say</code> (the conversation) and <code>ask</code> (the agent's questions). Works with the Claude Code plugin or any MCP client. Plain files per user, the journal <code>facts.md</code> and the graph as JSON lines, that you can copy and move. Switch agents and keep your history.</p></div>
+      <div class="card"><div class="ico">2</div><h3>Remembers on its own</h3><p>Nothing to tell it. It catches what matters in passing, between work questions, and settles "yes please" from the agent's question before it. Two one-token Nemotron filters keep the noise out.</p></div>
+      <div class="card"><div class="ico">3</div><h3>Trust: your own words</h3><p>Every fact keeps the entry it came from, with its day, so you can see what you actually said. Your private matters never reach the web, and names are stripped from web queries in code.</p></div>
+      <div class="card"><div class="ico">4</div><h3>Quality: time, change, links</h3><p>It knows what holds now and what used to; topics and people are linked. Topics you still care about are kept current from the web (one search per topic a month, never on dormant topics). Reading costs the same per message on day one as after a year.</p></div>
     </div>
+    <table>
+      <tr><th>A typical memory framework</th><th>TerraWeaver</th></tr>
+      <tr><td>The app's or the agent's memory</td><td>The user's own memory</td></tr>
+      <tr><td>The agent decides what to write</td><td>Written on its own</td></tr>
+      <tr><td>Tuned for search</td><td>Tuned to carry the context on</td></tr>
+      <tr><td>Keeps interpretations</td><td>Keeps the source words</td></tr>
+      <tr><td>Tied to a platform</td><td>A portable layer</td></tr>
+    </table>
   </div>
 </section>
 
@@ -161,6 +132,20 @@
     </table>
     <p class="lead" style="margin-top:1rem">The misses are real: a car-alarm question that did not bring up the user's Skoda Octavia, and a sale of a Golf that was never told, which the memory answered instead of declining.
     LongMemEval_S has not been run in full. One run measures little here: the spread between runs is as large as the differences.</p>
+  </div>
+</section>
+
+<section id="next" aria-labelledby="next-h">
+  <div class="wrap">
+    <p class="eyebrow">What's next</p>
+    <h2 id="next-h">Not done yet, and said so.</h2>
+    <div class="classes">
+      <div class="row"><b>Wider measurement</b><span>The full LongMemEval and LoCoMo with baselines, ablations and confidence intervals. For now: our scenarios benchmark, 43 of 45.</span></div>
+      <div class="row"><b>Portability, shown</b><span>A demo of history built up in one agent and used automatically in another.</span></div>
+      <div class="row"><b>Memory control</b><span>View, edit, full forget (including derived logs and indexes) and export.</span></div>
+      <div class="row"><b>Cost and speed</b><span>The cost per 1,000 messages, and how latency grows at 10k, 100k and 1M messages.</span></div>
+      <div class="row"><b>The central question</b><span>How much more useful is an agent with TerraWeaver than the same agent without it, in everyday work.</span></div>
+    </div>
   </div>
 </section>
 
