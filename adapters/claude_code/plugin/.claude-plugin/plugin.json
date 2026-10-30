@@ -1,5 +1,5 @@
 {
   "name": "personal-world",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "The user's personal memory in a Claude Code session: a mode in which every message is read against the memory and every turn is recorded into it."
 }
