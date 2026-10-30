@@ -200,7 +200,7 @@ def main() -> None:
                         "whole memory is this one folder of plain files (overrides --name)")
     parser.add_argument("--engine", default="tavily", help="tavily: topics are extended from the web; off: no "
                         "web at all (a benchmark measures the memory, not the web)")
-    parser.add_argument("--model", default="nvidia/nemotron-3-super-120b-a12b",
+    parser.add_argument("--model", default="nvidia/Nemotron-3.5-Super-VL",
                         help="the model that reads the journal: Token Factory, or `haiku` via the claude CLI")
     parser.add_argument("--port", type=int, default=7110)
     parser.add_argument("--host", default="127.0.0.1",

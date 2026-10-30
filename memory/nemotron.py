@@ -27,7 +27,7 @@ import os
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-MODEL = os.environ.get("TERRAWEAVER_DECISION", "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B")
+MODEL = os.environ.get("TERRAWEAVER_DECISION", "nvidia/Nemotron-3_5-Lightning")
 TOKEN_FACTORY = "https://api.tokenfactory.nebius.com/v1/"
 CALIBRATION = Path(__file__).with_name("decision.json")
 LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"

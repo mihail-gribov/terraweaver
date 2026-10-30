@@ -5598,3 +5598,14 @@ agent hears of it with the next answer to a message of the user's. The message-t
 for the record.
 A query naming a person the graph knows of is now dropped by the code before it is sent, not
 only by the prompt's word (lead's review, 2026-10-30).
+
+## 2026-10-30 — the defaults move to Nemotron 3.5
+
+Nebius retires `nemotron-3-super-120b-a12b` and `NVIDIA-Nemotron-3-Nano-30B-A3B` on 2026-11-09,
+so the shipped defaults move now, before the hosted demo is judged on them: the reader, the sorter
+and the resolver go to `nvidia/Nemotron-3.5-Super-VL`, the judge and the decision model to
+`nvidia/Nemotron-3_5-Lightning`; the server's `--model` follows. Both already have their fitted
+temperatures in `memory/decision.json`. The scenarios benchmark gave 40 of 45 on these against 43
+of 45 on the old pair, in one run each; the user's call: one run measures nothing, and three
+questions are within its noise. The old models stay reachable through `TERRAWEAVER_<ROLE>` and
+`TERRAWEAVER_DECISION` until they are retired.
