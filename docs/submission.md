@@ -4,7 +4,7 @@
 TerraWeaver
 
 ## Tagline (one line)
-A personal memory for any agent that answers what a long life history asks: what happened when, how many times, how it stands now, and where we left off — on NVIDIA Nemotron via Nebius Token Factory.
+Your memory, for every AI agent: one personal memory you own that grows with every conversation and follows you from one agent to the next — on NVIDIA Nemotron via Nebius Token Factory.
 
 ## Track
 Personal AI
@@ -22,7 +22,16 @@ Every assistant I use forgets what I said in passing — or remembers it in its 
 
 I wanted the opposite: a memory that is **active**. It hears the conversation by itself, keeps what you say about your life in your own words, works on it while you are away, and when the agent needs something, gives facts with the words they stand on — never decisions made for you.
 
-### What it does: the tasks it solves
+### What it does: your memory, for every AI agent
+
+One personal memory you own. It grows with every conversation and follows you from one agent to the next. It is not another retrieval layer: it is the user's, and any agent can use it.
+
+1. **Yours, for any agent.** MCP, two doors (`say`, `ask`), and plain files on your machine: a Markdown journal you can read.
+2. **It remembers on its own.** Hooks pass every message; the agent never has to remember to save.
+3. **Trust: your own words.** Every fact is shown with the entry it comes from, checked by code. Secrets are withheld before any model sees them, private matters never reach the web, and names are kept out of web queries by code.
+4. **Quality.** Time, change and links, topics kept current from the web, and a flat cost per message.
+
+### The tasks it solves
 
 TerraWeaver solves one class of tasks well: **a long personal history where the answer needs every fact that bears on it, its day, or its latest value.** Putting the whole history into the prompt stops working there, by size and by attention. A memory has to scale without losing what was said.
 
@@ -62,11 +71,12 @@ The hard part of personal memory is not storage or retrieval; it is **what to ke
 
 ### What's next
 
-The tasks not solved yet, each with where it sticks:
-- **Suggestions by taste** (LongMemEval's preference questions). The grading is a matter of taste, and the answer step under-uses the user's facts; the fix is to hand the agent "what to take into account" rather than to look for advice.
-- **A whole history at once** is read in hours, since each entry sees the topics of those before it. Live, entries come one by one over months; for a bulk import, reading must be parallel by dialogue.
-- **Labels.** The decision model sometimes puts a link in the wrong class ("chose" as a preference); the day is sometimes filled where none was said.
-- **Identity across dialogues** that can be undone, two "Toms" told apart; memory control: editing an entry, and forgetting everywhere, the heard and trace logs included (an entry the user asks to forget is already dropped from the journal, vectors and graph); hooks for agents beyond Claude Code.
+- **Full public benchmarks:** LongMemEval and LoCoMo in full, with baselines, ablations and confidence intervals. Today only the scenarios benchmark is measured, and LongMemEval_S was not run in full.
+- **One memory across two agents,** with automatic recall in both.
+- **Memory control:** view, edit, forget everywhere (the heard and trace logs included) and export. Forgetting an entry already drops it from the journal, the vectors and the graph.
+- **Cost:** the price per 1,000 messages and how it grows at 10k, 100k and 1M.
+- **Usefulness:** how much more useful an agent is with TerraWeaver than without it, in everyday work.
+- **Suggestions by taste:** the answer step under-uses the user's facts; the fix is to hand the agent what to take into account.
 
 ---
 

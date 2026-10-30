@@ -1,4 +1,6 @@
-# TerraWeaver — an active personal memory for any agent
+# TerraWeaver — your memory, for every AI agent
+
+**One personal memory you own. It grows with every conversation and follows you from one agent to the next.**
 
 Your agent forgets what you said in passing, or remembers it in its own words: "up to 400" with
 no idea that it was the budget for the vacuum, "she" with no idea who. You end up dictating
@@ -13,6 +15,23 @@ Built for the Nebius × NVIDIA Global AI Hackathon, **Personal AI** track. Every
 is an NVIDIA Nemotron model on **Nebius Token Factory**; search by meaning uses a small local
 embedding model by default, or an NVIDIA Nemotron embedding model through OpenRouter when set (the
 demo does); web search is **Tavily**.
+
+## Your memory. Every AI agent.
+
+One personal memory you own. It grows with every conversation and follows you from one agent to
+the next.
+
+1. **Yours, for any agent.** It speaks MCP through two doors, `say` and `ask`, so any agent can use
+   it, and what it keeps is plain files on your machine: a Markdown journal you can read.
+2. **It remembers on its own.** Hooks pass every message of the conversation; the agent is never
+   asked to remember to save, and cannot forget to.
+3. **Trust: your own words.** What is kept is what you said, rewritten only so that it stands alone;
+   every fact is shown with the entry it comes from, checked by code. Secrets are withheld before
+   any model sees them, private matters are not put into web queries, and names are kept out of
+   them by code.
+4. **Quality.** Time, change and links are kept (what happened when, how many, how it stands now,
+   where we left off), topics are kept current from the web, and reading costs the same for each
+   entry however long the history is.
 
 ## Active, not a store
 
@@ -227,13 +246,15 @@ little here: the spread between runs is as large as the differences.
 
 ## What's next
 
-- **Suggestions by taste.** Questions like "what should I get?" are graded on taste, and the answer
-  step under-uses the user's facts; the fix is to hand the agent what to take into account.
-- **A whole history at once.** Entries are read one after another, so a bulk import takes hours;
-  live use, entry by entry over months, does not. Reading must go parallel by dialogue.
-- **Labels.** The decision model sometimes puts a link in the wrong class, and a day is
-  sometimes filled where none was said.
-- **Memory control.** The memory forgets entries once the user confirms which, and drops their vectors and rebuilds the graph; next, editing an entry, and forgetting everywhere, the derived heard and trace logs included.
+- **Full public benchmarks.** LongMemEval and LoCoMo in full, with baselines, ablations and
+  confidence intervals; today only the scenarios benchmark above is measured.
+- **One memory across two agents.** A demo of the same memory serving two different agents, with
+  automatic recall in both.
+- **Memory control.** View, edit, forget everywhere (the derived heard and trace logs included) and
+  export; forgetting an entry already drops it from the journal, the vectors and the graph.
+- **Cost.** The price per 1,000 messages, and how it grows at 10k, 100k and 1M.
+- **Usefulness.** How much more useful an agent is with TerraWeaver than without it, in everyday
+  work.
 - **Hooks beyond Claude Code.** Any agent with MCP can use `say` and `ask` today, passing the
   messages itself; next, the same hooks for other agents.
 
