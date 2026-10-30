@@ -106,3 +106,5 @@
   .weave-wrap { margin-top:3rem; text-align:center; }
   .weave { display:block; width:100%; height:12rem; border-radius:18px; background:linear-gradient(180deg,#f3f8fe,#fbf4e0); border:1px solid var(--line); }
   .weave-cap { color:var(--muted); font-family:var(--serif); margin:.8rem 0 0; }
+  .video { margin-top:1.4rem; border-radius:18px; overflow:hidden; border:1px solid var(--line); box-shadow:0 14px 34px rgba(29,35,32,.10); background:#000; }
+  .video iframe { display:block; width:100%; aspect-ratio:16/9; border:0; }
