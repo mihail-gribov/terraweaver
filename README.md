@@ -10,8 +10,9 @@ that it stands alone — reads and structures it in the quiet, and answers the a
 and the words they stand on, never decisions**. It lives on your machine and keeps no secrets.
 
 Built for the Nebius × NVIDIA Global AI Hackathon, **Personal AI** track. Every language-model call
-is an NVIDIA Nemotron model on **Nebius Token Factory**; search by meaning uses an NVIDIA Nemotron
-embedding model through OpenRouter; web search is **Tavily**.
+is an NVIDIA Nemotron model on **Nebius Token Factory**; search by meaning uses a small local
+embedding model by default, or an NVIDIA Nemotron embedding model through OpenRouter when set (the
+demo does); web search is **Tavily**.
 
 ## Active, not a store
 
@@ -22,10 +23,10 @@ on the agent remembering to. This one acts by itself:
 |---|---|
 | **hears** every message, the user's and the agent's | Claude Code hooks pass both sides; the agent passes nothing |
 | **keeps** what is personal, in the user's words | the decision model gates; Nemotron Super resolves "it", "those", "up to 400" from the agent's message, then the agent's message is dropped |
-| **reads in the quiet** | after 30 s of silence the world reads the journal into things, values and links |
+| **reads in the quiet** | as soon as an entry is kept, beside the conversation, the memory reads it into things, values and links |
 | **notes interests** | every question of the user's is kept with how often it comes back: what to get ready for next time |
 | **keeps topics fresh** | a topic without a web update for a month is looked up in the background (Tavily), at most once an hour; what matters is kept in the journal, marked as from the web |
-| **protects** | secrets are withheld before any model sees them; a web query never carries a person's name or a private detail |
+| **protects** | secrets are withheld before any model sees them; web queries are made from the topic, and the model is told to leave out names and private details |
 
 ## What it looks like
 
@@ -102,7 +103,7 @@ an environment variable (`TERRAWEAVER_<ROLE>=…`).
 | judge | Nemotron 3 Nano 30B-A3B | closed questions as probabilities from **logprobs**: "does this quote say that?", "does this matter?" — one token, calibrated |
 | embeddings | NVIDIA Nemotron embed (`nvidia/nemotron-3.5-embed-1b`) via OpenRouter | search by meaning; `fastembed` locally by default |
 
-One client (`terraweaver/nemotron.py`) serves a model both as an LLM and as a **decision model**:
+One client (`memory/nemotron.py`) serves a model both as an LLM and as a **decision model**:
 yes/no and choice questions are answered from the first token's logprobs, so a gate costs one
 token and comes with a probability instead of a guess. Token Factory made it possible to put the
 middle model where text is read and rewritten (a few calls per message) and the small one where
@@ -113,7 +114,7 @@ hundreds of calls each decide a little (the judge), by changing one name.
 ## Try it
 
 **The demo instance** (for evaluation only): https://terraweaver.life. The page says how to connect
-Claude Code to it with a key. It is one shared memory: **do not tell it anything personal**. For
+Claude Code (or another MCP client) to it with a key. It is one shared memory: **do not tell it anything personal**. For
 real use, run the memory on your own machine, below.
 
 ## Run it
@@ -136,6 +137,10 @@ set -a; . ./.env; set +a
 # 2. in another terminal: Claude Code with the plugin, in the personal world from the first message
 adapters/claude_code/claude-personal
 ```
+
+What leaves your machine: the messages and entries go to the Nemotron models on Nebius Token Factory;
+web queries go to Tavily; entry texts go to OpenRouter only if you turn the embeddings on there. The
+first search downloads the small local embedding model (about 130 MB) from Hugging Face.
 
 Search by meaning runs locally (`fastembed`) unless you set `TERRAWEAVER_EMBEDDINGS=openrouter` and
 `OPENROUTER_API_KEY` (the NVIDIA Nemotron embedding model, no local model needed).
@@ -172,7 +177,7 @@ memory/                the product: the active memory
   refresh.py, web.py   a topic the user comes back to, checked on the web (Tavily)
   models.py            which Nemotron plays which role
 adapters/claude_code/  the plugin: hooks, the skill, claude-personal
-benchmarks/            scenarios.py: the scenarios benchmark; longmemeval.py
+benchmarks/            scenarios.py: the scenarios benchmark; the LongMemEval loader and judge
 scripts/               demo_recall.py and the replay player behind the demo video
 experiments/           numbered experiments, each with what it measured
 tests/                 one script per subject, run_all.py runs them
@@ -183,7 +188,7 @@ docs/decisions.md      every behaviour change with its reason
 
 **Scenarios** (`benchmarks/scenarios.py`): five short personal histories (family, books, running,
 home, trips), a dozen talks over two months among thirty of everyday talk, each told through `say`
-on a fresh memory, then checked by words: **43 of 45**.
+on a fresh memory, then checked by words. The first run of the day gave 39 of 45, and after the fixes the misses pointed at, **43 of 45**. The histories were seen during development, so the second number is tuned on them.
 
 | Class of task | Passed |
 |---|---|
@@ -198,7 +203,7 @@ The two misses are real: a car alarm question that did not bring up the user's S
 a sale of a Golf that was never told, which the memory answered instead of declining. The run, its
 journals, traces and tokens are kept under `benchmarks/runs/`.
 
-**Not measured in full:** LongMemEval_S. The runner is in `benchmarks/longmemeval.py`; a full run
+**Not measured in full:** LongMemEval_S. The loader is `benchmarks/longmemeval.py` and the runner `experiments/14_longmemeval/run.py`; a full run
 reads a ~115k-token history per question, entry by entry, which takes hours.
 
 Every number, and every change made because of one, is in `docs/decisions.md`. One run measures
@@ -212,7 +217,7 @@ little here: the spread between runs is as large as the differences.
   live use, entry by entry over months, does not. Reading must go parallel by dialogue.
 - **Labels.** The decision model sometimes puts a link in the wrong class, and a day is
   sometimes filled where none was said.
-- **Forgetting on the user's word,** and the words gone everywhere they reached.
+- **Forgetting everywhere.** The memory forgets entries once the user confirms which, and drops their vectors and rebuilds the graph; next, the words also gone from the heard and trace logs.
 - **Hooks beyond Claude Code.** Any agent with MCP can use `say` and `ask` today, passing the
   messages itself; next, the same hooks for other agents.
 
