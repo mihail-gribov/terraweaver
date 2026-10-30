@@ -26,7 +26,7 @@ on the agent remembering to. This one acts by itself:
 | **reads in the quiet** | as soon as an entry is kept, beside the conversation, the memory reads it into things, values and links |
 | **notes interests** | every question of the user's is kept with how often it comes back: what to get ready for next time |
 | **keeps topics fresh** | a topic without a web update for a month is looked up in the background (Tavily), at most once an hour; what matters is kept in the journal, marked as from the web |
-| **protects** | secrets are withheld before any model sees them; web queries are made from the topic, and the model is told to leave out names and private details |
+| **protects** | secrets are withheld before any model sees them; web queries are made from the topic, the model is told to leave out private details, and code drops any query that holds the name of a person in the memory |
 
 ## What it looks like
 
@@ -233,7 +233,7 @@ little here: the spread between runs is as large as the differences.
   live use, entry by entry over months, does not. Reading must go parallel by dialogue.
 - **Labels.** The decision model sometimes puts a link in the wrong class, and a day is
   sometimes filled where none was said.
-- **Forgetting everywhere.** The memory forgets entries once the user confirms which, and drops their vectors and rebuilds the graph; next, the words also gone from the heard and trace logs.
+- **Memory control.** The memory forgets entries once the user confirms which, and drops their vectors and rebuilds the graph; next, editing an entry, and forgetting everywhere, the derived heard and trace logs included.
 - **Hooks beyond Claude Code.** Any agent with MCP can use `say` and `ask` today, passing the
   messages itself; next, the same hooks for other agents.
 

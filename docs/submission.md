@@ -38,7 +38,7 @@ How it hears and keeps:
 - **Hears everything, decides nothing for the agent.** A Claude Code plugin passes every message to the memory's `say`. The agent has one door of its own, `ask`.
 - **Keeps the user's words, made to stand alone.** A gate says whether a message tells anything personal. Nemotron Super rewrites it using only the agent's message before it: "up to 400" becomes "My budget for the vacuum is up to 400". The agent's message is then dropped.
 - **Texts are the flesh, a skeleton over them.** Each entry is read as soon as it is kept, beside the conversation, into the entities it names, the plain links between them (spouse, friend, works at — or any other under its own name), what the user says they did, have, like or plan with its day, and the topics the user keeps coming back to, layered and dated. Every link stands on the entry's own words, checked by code. The skeleton finds; the answer is made from the texts.
-- **Protects.** Secrets are withheld before any model sees them. Web queries are made from the topic, and the model is told to leave out a person's name and any private detail.
+- **Protects.** Secrets are withheld before any model sees them. Web queries are made from the topic; the model is told to leave out private details, and code drops any query that holds the name of a person in the memory.
 
 ### How I built it
 
@@ -66,7 +66,7 @@ The tasks not solved yet, each with where it sticks:
 - **Suggestions by taste** (LongMemEval's preference questions). The grading is a matter of taste, and the answer step under-uses the user's facts; the fix is to hand the agent "what to take into account" rather than to look for advice.
 - **A whole history at once** is read in hours, since each entry sees the topics of those before it. Live, entries come one by one over months; for a bulk import, reading must be parallel by dialogue.
 - **Labels.** The decision model sometimes puts a link in the wrong class ("chose" as a preference); the day is sometimes filled where none was said.
-- **Identity across dialogues** that can be undone, two "Toms" told apart; forgetting also from the heard and trace logs (an entry the user asks to forget is already dropped from the journal, vectors and graph); hooks for agents beyond Claude Code.
+- **Identity across dialogues** that can be undone, two "Toms" told apart; memory control: editing an entry, and forgetting everywhere, the heard and trace logs included (an entry the user asks to forget is already dropped from the journal, vectors and graph); hooks for agents beyond Claude Code.
 
 ---
 

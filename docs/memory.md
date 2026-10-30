@@ -144,7 +144,7 @@ a web refresh is the **topic**, and the result is a message attached to it:
 - A one-token question to the small Nemotron says whether what is outside would change for this
   topic (places, events, prices, offers, news — not the user's own plans or people); a topic that
   does not change counts as checked. The queries are made from the topic and the user's questions on
-  it, and never carry a person's name or a private detail. Tavily finds the pages, the reader says
+  it, and carry no private detail: the model is told so, and code drops any query that holds the name of a person in the memory. Tavily finds the pages, the reader says
   what on them answers, each fact with its address, and a second one-token question says whether it
   matters.
 - What matters is kept in the **same journal** as a web entry (`## #N · time · the web · topic T`),
