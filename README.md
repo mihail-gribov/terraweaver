@@ -138,7 +138,7 @@ your own machine, below.
 
 You need [Claude Code](https://claude.com/claude-code) or another MCP client, and a key:
 
-- sign in with Google on the page to get a key (`tw_...`, shown once; a new one retires the old), or
+- sign in with Google at https://terraweaver.life/account/ (API keys → Make key; `tw_...`, shown once, up to five, each can be revoked), or
 - a reviewer token, given with the submission, if you have no Google account.
 
 ```bash
