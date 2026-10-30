@@ -123,7 +123,36 @@ time.
 by words and meaning, each with its number and day; the graph adds the topics those entries belong
 to and the images of the entities they and the question name. Nemotron Super, thinking, answers from
 that with the numbers and days of the facts it used, works out how long or how many, and says when
-the memory does not say. Searching outside is the agent's: the memory answers from what it holds.
+the memory does not say. The memory does not search the web for a question: it answers from what it
+holds, including what it has kept from the web itself (below).
+
+**Keeps topics fresh from the web** (`memory/refresh.py`, `memory/web.py`). What a topic is about
+can change outside the user's words: a venue closes, a price moves, a season starts. The object of
+a web refresh is the **topic**, and the result is a message attached to it:
+
+- *Fresh* means the topic's latest web entry is younger than a month (`FRESH`, 30 days). Freshness
+  is read from that message, not kept as a flag.
+- *Dormant* topics are left alone: if the user has not come back to a topic for three months
+  (`DORMANT`, 90 days; counted from the latest **user** entry, never a web one, or a refreshed topic
+  would keep itself alive) it is no longer relevant and is not refreshed.
+- Every topic that is neither fresh nor dormant is due. A scheduler inside the server wakes every
+  few minutes and, at most once an hour (`TERRAWEAVER_WEB_EVERY`, 3600 s, counted from the last
+  sweep and kept beside the graph so a restart does not reset it), sweeps the due topics, one at a
+  time and a bounded number per sweep. No outside cron and no HTTP route is needed.
+- A one-token question to the small Nemotron says whether what is outside would change for this
+  topic (places, events, prices, offers, news — not the user's own plans or people); a topic that
+  does not change counts as checked. The queries are made from the topic and the user's questions on
+  it, and never carry a person's name or a private detail. Tavily finds the pages, the reader says
+  what on them answers, each fact with its address, and a second one-token question says whether it
+  matters.
+- What matters is kept in the **same journal** as a web entry (`## #N · time · the web · topic T`),
+  read into the topic like the user's entries, and shown to every model as "(from the web)" — never
+  as the user's words. The agent hears of a sweep with the memory's next answer, whether it found
+  something or nothing new.
+
+The reasons are in `docs/decisions.md`: a price or an event list changes within weeks, so a month
+is the natural beat; one search per topic per month and one sweep per hour bound the cost and the
+noise, which matters most on the shared demo that spends the author's search key.
 
 ## What it is not
 
@@ -143,7 +172,7 @@ the memory does not say. Searching outside is the agent's: the memory answers fr
 |---|---|
 | Built and measured | hearing through hooks; the gate and the rewrite; the journal with days; interests; `ask` from the journal and the graph (LongMemEval `_s`, seed 1, judged by Sonnet: 20 of 30, against 24 of 30 for the whole history in context); recall beside each message; secrets withheld; forgetting on the user's confirmed word |
 | Built, measured on stories | the graph: each entry read as it is kept into mentions, links, layered topics and portraits; the user's world filled from four family talks, 13 of 13 values (`scripts/demo_world.py`) |
-| Set aside | the ontology grown automatically and gathering over the web — the earlier world engine, kept on the `topics` branch and in the history; identity across dialogues that can be undone; rebuilding a topic from all its entries now and then; preparing ahead by interest; hooks for agents other than Claude Code |
+| Set aside | the ontology grown automatically and gathering over the web at the agent's request — the earlier world engine, kept on the `topics` branch and in the history; identity across dialogues that can be undone; rebuilding a topic from all its entries now and then; preparing ahead by interest; hooks for agents other than Claude Code |
 
 ## Open
 

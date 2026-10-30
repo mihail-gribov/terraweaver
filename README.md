@@ -9,8 +9,9 @@ conversation by itself, keeps what you say about your life in your own words —
 that it stands alone — reads and structures it in the quiet, and answers the agent with **facts
 and the words they stand on, never decisions**. It lives on your machine and keeps no secrets.
 
-Built for the Nebius × NVIDIA Global AI Hackathon, **Personal AI** track. Every model call is an
-NVIDIA Nemotron model on **Nebius Token Factory**; web search is **Tavily**.
+Built for the Nebius × NVIDIA Global AI Hackathon, **Personal AI** track. Every language-model call
+is an NVIDIA Nemotron model on **Nebius Token Factory**; search by meaning uses an NVIDIA Nemotron
+embedding model through OpenRouter; web search is **Tavily**.
 
 ## Active, not a store
 
@@ -23,32 +24,25 @@ on the agent remembering to. This one acts by itself:
 | **keeps** what is personal, in the user's words | the decision model gates; Nemotron Super resolves "it", "those", "up to 400" from the agent's message, then the agent's message is dropped |
 | **reads in the quiet** | after 30 s of silence the world reads the journal into things, values and links |
 | **notes interests** | every question of the user's is kept with how often it comes back: what to get ready for next time |
-| **gathers** when the agent asks | a program written by Nemotron over the memory and the web (Tavily), checked condition by condition |
-| **protects** | secrets are withheld before any model sees them; a web query that names a person from the memory is refused |
+| **keeps topics fresh** | a topic without a web update for a month is looked up in the background (Tavily), at most once an hour; what matters is kept in the journal, marked as from the web |
+| **protects** | secrets are withheld before any model sees them; a web query never carries a person's name or a private detail |
 
 ## What it looks like
 
-Over a few sessions, in passing:
+Over a month, in passing, inside talks about a calendar, a weekend and a dinner:
 
-> My wife Mila and I live in Belgrade. · Mila said she'd love to go to one of those candlelight
-> concerts. · I like evenings out on Friday or Saturday; Sunday evenings I prepare for work. ·
-> Neither of us likes loud clubs.
+> The eleventh is my wife Mila's birthday. · Mila hates crowds, a small jazz gig would suit her. ·
+> Yes, please (to the agent's "skip the Thai place?") · A quiet evening, just the two of us. ·
+> Her mother Vesna may still be staying with us.
 
-A week later, in a new session:
+Today, in a new session, the user only says: *help me plan her birthday evening.* Nobody asks the
+memory anything. The hook passes the message, the memory puts beside it the facts it holds on that
+matter, and the agent answers: the date, quiet and just the two of them, jazz, no peanuts (Mila is
+seriously allergic), and Vesna who may be staying.
 
-> **User:** My wife mentioned some concert she'd love to go to, and I have no idea what it is. Can
-> you find out what it is and when we could go, on a weekend in the next three months?
-
-The memory had kept *"My wife mentioned the concert she'd love to go to… when my wife and I could
-go"* — and from before: candlelight, Belgrade, Friday or Saturday, no loud clubs. The agent asks
-it; it searches the web and answers with every candidate against every condition (`weekend: met`,
-`within three months: NOT met — "Jan 30, 2027"`). The agent tells the user the truth: candlelight
-concerts in Belgrade, none on a weekend inside the window, the nearest one two days after it.
-
-> **User:** Which of those is on a Saturday?
-
-The memory keeps it as *"Which of the listed concerts is on a Saturday?"* — the agent answers from
-what it just said.
+The same for a number: sums said in passing over weeks (a TV, a soundbar, a washing machine, a
+plumber; a car service that is not the home), then *how much have we spent on the home since
+October?* The memory gathers the facts with their days, and the agent adds them up.
 
 ## How it works
 
@@ -62,18 +56,20 @@ flowchart LR
       I --> J[("journal<br/>user's words")]
       I --> N[("interests")]
       J -. "in the quiet" .-> W["world<br/>things · values · links"]
-      Q --> P["program over<br/>memory + web"]
+      Q --> P["find: words,<br/>meaning, topics"]
       W --> P
       J --> P
+      N -. "a topic comes back" .-> R["refresh<br/>questions → queries"]
     end
-    P -- "Tavily" --> WEB[(web)]
+    R -- "Tavily" --> WEB[(web)]
+    R -- "what matters,<br/>marked as from the web" --> J
     P -- "facts + the words<br/>they stand on" --> A
 ```
 
 **Two doors.** `say(messages)` — what was said, with who said it; with the Claude Code plugin the
 hooks call it and the agent never does (`X-Personal-Hooks: on` tells the server so, and it refuses
-a second copy). `ask(question)` — the agent's own question: answered from what the memory holds,
-or gathered when something has to be found.
+a second copy). `ask(question)` — the agent's own question: answered with the facts the memory holds on it
+and the words they stand on.
 
 **The intake** (`memory/intake/`) reads one user message with the agent's message just before
 it — never more: what came earlier the memory already holds. The decision model, shown the last
@@ -81,8 +77,17 @@ four messages, says whether there is anything personal; Nemotron Super, thinking
 message to stand alone and copies its questions out. The prompts are plain files in
 `memory/intake/prompts/`.
 
-**Facts, not decisions.** A gathering returns candidates with each of the user's conditions
-judged against the words of the page. Choosing is the agent's, with the user.
+**Facts, not decisions.** The memory finds the entries a question needs (words and meaning
+fused, then the people and topics the graph knows) and hands over their texts. It never
+chooses for the agent or the user.
+
+**The web, for topics that change.** The object of a web refresh is the topic. A topic whose latest
+web entry is older than a month is due, unless the user has not come back to it for three months
+(then it is no longer relevant). A scheduler inside the server sweeps the due topics in the
+background, at most once an hour; a small Nemotron first asks whether what is outside would change
+for the topic (places, events, prices — not the user's own plans or people), the queries carry no
+person's name or private detail, Tavily finds pages, and what matters goes into the same journal
+as an entry marked as from the web. The agent hears of it with the memory's next answer.
 
 ## NVIDIA Nemotron on Nebius Token Factory
 
@@ -93,19 +98,23 @@ an environment variable (`TERRAWEAVER_<ROLE>=…`).
 |---|---|---|
 | resolver | Nemotron 3 Super 120B-A12B, thinking | rewrites a user message to stand alone; new topic; its questions |
 | sorter | Nemotron 3 Super | the gate: personal or not; the kind of a question; same question as before? |
-| reader | Nemotron 3 Super | reads the journal and web pages into things, values and links |
-| judge | Nemotron 3 Nano 30B-A3B | closed questions as probabilities from **logprobs**: "does this quote say that?" — one token, calibrated |
-| programmer | Nemotron 3 Ultra 550B-A55B | writes the program that solves a task, and sorts the user's limits from wishes |
-| embeddings | Token Factory embeddings | search by meaning |
+| reader | Nemotron 3 Super | reads the journal and web pages into things, values, links and topics |
+| judge | Nemotron 3 Nano 30B-A3B | closed questions as probabilities from **logprobs**: "does this quote say that?", "does this matter?" — one token, calibrated |
+| embeddings | NVIDIA Nemotron embed (`nvidia/nemotron-3.5-embed-1b`) via OpenRouter | search by meaning; `fastembed` locally by default |
 
 One client (`terraweaver/nemotron.py`) serves a model both as an LLM and as a **decision model**:
 yes/no and choice questions are answered from the first token's logprobs, so a gate costs one
 token and comes with a probability instead of a guess. Token Factory made it possible to put the
-biggest model where one call decides a lot (the programmer) and the small one where hundreds of
-calls each decide a little (the judge).
+middle model where text is read and rewritten (a few calls per message) and the small one where
+hundreds of calls each decide a little (the judge), by changing one name.
 
-**Tavily** is the web: `memory/tools.py` searches and takes the pages' text through it (directly,
-or through the author's `ait-search` when it is installed).
+**Tavily** is the web: `memory/web.py` searches and takes the pages' text through it.
+
+## Try it
+
+**The demo instance** (for evaluation only): https://terraweaver.life. The page says how to connect
+Claude Code to it with a key. It is one shared memory: **do not tell it anything personal**. For
+real use, run the memory on your own machine, below.
 
 ## Run it
 
@@ -128,20 +137,27 @@ set -a; . ./.env; set +a
 adapters/claude_code/claude-personal
 ```
 
+Search by meaning runs locally (`fastembed`) unless you set `TERRAWEAVER_EMBEDDINGS=openrouter` and
+`OPENROUTER_API_KEY` (the NVIDIA Nemotron embedding model, no local model needed).
+
 Talk about your life in passing, then ask for something that depends on it. What the memory keeps
 is plain Markdown: `var/memory/main/facts.md`. What it heard and answered: `heard.jsonl` beside it.
 Inside any Claude Code session with the plugin, `/personal` turns the mode on and `/personal off`
 leaves it.
 
-**The scripted dialogues** — a real Claude Code host, the history told over sessions, then the
-task, judged on the answers:
+**A month of ordinary use, told to a real Claude Code host** (the birthday story of the demo video):
 
 ```bash
-.venv/bin/python experiments/13_dialogues/run.py concert     # also: vacuum, colleagues, all
+.venv/bin/python scripts/demo_recall.py --story birthday     # also: tv, home, jazz
 ```
 
-**Tests:** `.venv/bin/python tests/run_all.py` (no model calls in the memory's tests; some of the
-world's call models).
+**The scenarios benchmark** (short histories, one class of task each, scored by words):
+
+```bash
+.venv/bin/python benchmarks/scenarios.py [--only family,books]
+```
+
+**Tests:** `.venv/bin/python tests/run_all.py`.
 
 ## Repository
 
@@ -151,11 +167,13 @@ memory/                the product: the active memory
   listen.py            what the memory does with what it hears
   intake/              one message read with the agent's before it; prompts/ as files
   journal.py           the journal of facts, in the user's words
-  world.py             reading the journal in the quiet
-  solve.py, programs.py, tools.py, parse.py, search.py   gathering and answering
+  graph.py             the skeleton: entities, links, topics in layers, the user's world
+  search.py            words and meaning, fused
+  refresh.py, web.py   a topic the user comes back to, checked on the web (Tavily)
   models.py            which Nemotron plays which role
 adapters/claude_code/  the plugin: hooks, the skill, claude-personal
-terraweaver/           the world engine: object model, ontology, formalisation, Nemotron client
+benchmarks/            scenarios.py: the scenarios benchmark; longmemeval.py
+scripts/               demo_recall.py and the replay player behind the demo video
 experiments/           numbered experiments, each with what it measured
 tests/                 one script per subject, run_all.py runs them
 docs/decisions.md      every behaviour change with its reason
@@ -163,27 +181,40 @@ docs/decisions.md      every behaviour change with its reason
 
 ## Measured
 
-- **Dialogues** (`experiments/13_dialogues`, Claude Haiku as the host): concert, vacuum (limits
-  told in passing over two sessions, a pick from the web) and colleagues (links that change
-  across sessions) pass.
-- **The rewrite**, 16 hand checks on the dialogues: 13–16 of 16 over six runs; "we/us" left as the
-  user said it when the agent's message does not say who: 32 of 32.
-- Every number, and every change made because of one, is in `docs/decisions.md`.
+**Scenarios** (`benchmarks/scenarios.py`): five short personal histories (family, books, running,
+home, trips), a dozen talks over two months among thirty of everyday talk, each told through `say`
+on a fresh memory, then checked by words: **43 of 45**.
+
+| Class of task | Passed |
+|---|---|
+| latest value (what holds now) | 11 / 11 |
+| time (days, order, how long ago) | 8 / 8 |
+| count (events spread over talks) | 7 / 7 |
+| who is who | 4 / 4 |
+| recall (nobody asks) | 7 / 8 |
+| never said, so "I don't know" | 6 / 7 |
+
+The two misses are real: a car alarm question that did not bring up the user's Skoda Octavia, and
+a sale of a Golf that was never told, which the memory answered instead of declining. The run, its
+journals, traces and tokens are kept under `benchmarks/runs/`.
+
+**Not measured in full:** LongMemEval_S. The runner is in `benchmarks/longmemeval.py`; a full run
+reads a ~115k-token history per question, entry by entry, which takes hours.
+
+Every number, and every change made because of one, is in `docs/decisions.md`. One run measures
+little here: the spread between runs is as large as the differences.
 
 ## What's next
 
-- **Preparing ahead by interest.** The user's questions are kept and counted; next, the world
-  reads first what the user keeps coming back to, so the answer is ready before it is asked again.
-- **Forgetting on the user's word.** The memory can take entries out once the user confirms which;
-  next, reading "forget everything about Olga" reliably, and the words gone everywhere they reached.
-- **Topics, each with its summary.** The journal cut into topics and joined across sessions, each
-  topic summarised and kept apart, updated as the topic goes on and rebuilt from the user's words:
-  "we talked about this last year" raises what that talk came to.
+- **Suggestions by taste.** Questions like "what should I get?" are graded on taste, and the answer
+  step under-uses the user's facts; the fix is to hand the agent what to take into account.
+- **A whole history at once.** Entries are read one after another, so a bulk import takes hours;
+  live use, entry by entry over months, does not. Reading must go parallel by dialogue.
+- **Labels.** The decision model sometimes puts a link in the wrong class, and a day is
+  sometimes filled where none was said.
+- **Forgetting on the user's word,** and the words gone everywhere they reached.
 - **Hooks beyond Claude Code.** Any agent with MCP can use `say` and `ask` today, passing the
-  messages itself; next, the same hooks for other agents, so none of them has to remember to.
-
-One run measures little here: the spread between runs is as large as the differences, so every
-number above comes with its repeats in `docs/decisions.md`.
+  messages itself; next, the same hooks for other agents.
 
 ## License
 

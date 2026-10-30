@@ -10,7 +10,7 @@ A personal memory for any agent that answers what a long life history asks: what
 Personal AI
 
 ## Built with
-python, mcp, claude-code, nvidia-nemotron, nebius-token-factory, tavily, fastembed
+python, mcp, claude-code, nvidia-nemotron, nebius-token-factory, tavily, openrouter, caddy, scaleway
 
 ---
 
@@ -30,21 +30,21 @@ TerraWeaver solves one class of tasks well: **a long personal history where the 
 2. **How many — all of them.** "How many pieces of jewellery did I get in the last two months?" The answer gets every event of the matter across sessions, not the twelve entries most alike to the question.
 3. **How it stands now.** "Which TV did we take in the end?" New lies over old, each layer dated: the Samsung chosen first, then the LG after the blinds went up. The old choice stays, marked as overridden.
 4. **Where we left off.** A new session, a month later: "I want a soundbar for the living-room TV." Nobody asks the memory. It puts the matter the message goes on with beside it, and the agent answers for the LG C4 it now knows is on the wall.
-5. **Facts for the agent's choice.** "Find me a concert…" The memory gathers over the web and judges each candidate against each of the user's conditions. It gives facts and limits; the choice stays with the agent and the user.
+5. **What changes in the world.** A topic is kept fresh: when its latest web update is more than a month old (and the user came back to it within three months), the memory looks up what changed outside — places, events, prices — in the background, at most once an hour, and keeps what matters in the journal marked as from the web. The memory gives facts; the choice stays with the agent and the user.
 
-Measured on LongMemEval_S (~115k tokens of history a question): on counting across sessions, temporal reasoning and knowledge updates, the memory scores **[seed-1 numbers]** against **[…]** for the same model with the whole history in its prompt, and **[…]** for the ceiling (only the sessions that hold the answer). Judged by Claude Sonnet; questions from a seed not used during development.
+Measured on the scenarios benchmark: five short personal histories (a dozen talks over two months among thirty of everyday talk, told through `say` on a fresh memory), each question checked by words. **43 of 45**: latest value 11/11, time 8/8, count 7/7, who is who 4/4, recall without a question 7/8, "never said" 6/7. The two misses are in the run, not hidden. LongMemEval_S, the public benchmark for this class of task, was not run in full: a whole history is read entry by entry, which takes hours (see What's next).
 
 How it hears and keeps:
 - **Hears everything, decides nothing for the agent.** A Claude Code plugin passes every message to the memory's `say`. The agent has one door of its own, `ask`.
 - **Keeps the user's words, made to stand alone.** A gate says whether a message tells anything personal. Nemotron Super rewrites it using only the agent's message before it: "up to 400" becomes "My budget for the vacuum is up to 400". The agent's message is then dropped.
 - **Texts are the flesh, a skeleton over them.** Each entry is read as soon as it is kept, beside the conversation, into the entities it names, the plain links between them (spouse, friend, works at — or any other under its own name), what the user says they did, have, like or plan with its day, and the topics the user keeps coming back to, layered and dated. Every link stands on the entry's own words, checked by code. The skeleton finds; the answer is made from the texts.
-- **Protects.** Secrets are withheld before any model sees them. A web query that names a person from the memory is refused.
+- **Protects.** Secrets are withheld before any model sees them. A web query never carries a person's name or a private detail.
 
 ### How I built it
 
 - **Two doors over MCP** (`memory/server.py`): `say(messages)` and `ask(question)`, plus an HTTP `/say` for hooks. The plugin's MCP config sends `X-Personal-Hooks: on`, so the server refuses a second copy of a message the hooks already passed.
 - **Nemotron as both LLM and decision model** (`terraweaver/nemotron.py`). Closed questions — personal or not? the same question as before? does this quote say that? — are answered from the first token's `top_logprobs`: one token, a probability instead of a guess, both option orders read to cancel the first-letter bias, temperatures calibrated per mode on public datasets (BoolQ, FEVER, ARC, ANLI and more).
-- **Each model where it pays.** Nano 30B-A3B for hundreds of small closed questions; Super 120B-A12B for reading and rewriting; Ultra 550B-A55B where a single call decides a lot — the program that solves a task. Roles are bound in one file and moved by an environment variable.
+- **Each model where it pays.** Nano 30B-A3B for hundreds of small closed questions (personal or not? does this matter? does this quote say that?); Super 120B-A12B for reading and rewriting, a few calls a message. Roles are bound in one file and moved by an environment variable. Search by meaning uses the NVIDIA Nemotron embedding model.
 - **A journal in plain Markdown** the user can read, append-only, with the user's words beside every rewrite. Everything else is derived from it and rebuilt from it: the graph (`memory/graph.py`) keeps mentions, links and every version of every topic as JSON lines, with indexes, so the reader of one entry is shown a bounded few topics and entities however large the memory grows.
 - **Measured, not guessed.** Scripted dialogues run a real Claude Code host over several sessions and judge the answers; every behaviour change and the number behind it is in `docs/decisions.md`.
 
@@ -53,7 +53,7 @@ How it hears and keeps:
 - **"We" is not "you and me".** The rewrite once turned "Neither of us likes loud clubs" into "Neither you nor I…" — the model counted the assistant in. A rule plus two examples took it from 15/16 to 32/32 on unseen exchanges.
 - **Long prompts invent things.** My first rewrite prompt produced "any model for the about 70 m²…". A short prompt, in the shape that worked on 8B models before, embedded in a three-task frame, went from 8–9 to 13–16 of 16 hand checks.
 - **Hooks are subtle.** An `async` Stop hook never reached the memory under `claude -p`; a first message was sometimes passed before the session was marked as personal; and Claude Code's own auto-memory quietly kept a second copy of the user's facts in its files. Each was found by a live run and fixed in code.
-- **The memory raced the agent.** It used to search the web for the user's question while the agent asked the same thing in sharper words — two searches for one concert. The fix was a change of idea, not of code: the user's questions mark interests; the agent's `ask` is the only door that gathers.
+- **The memory raced the agent.** It used to search the web for the user's question while the agent asked the same thing in sharper words — two searches for one concert. The fix was a change of idea, not of code: the memory no longer searches for the agent. The object of a web search is the topic, refreshed on a monthly beat in the background.
 - **Calibration is per question shape.** The decision model was right on public data and wrong on "are these two words one idea?". Asked instead "does the sentence say *Naomi older brother of Darren*?", it answers 0.01 — so we ask about the claim, not the word pair.
 
 ### What I learned
@@ -81,13 +81,13 @@ The repository was started on 2026-09-19, inside the submission period; all code
 - **`logprobs` / `top_logprobs` on Nemotron made the project.** They turn a 30B model into a calibrated decision model at one output token. Please keep them, document them for every Nemotron, and consider returning more than the top 20.
 - **First-letter bias is strong** on Nano-30B-A3B for lettered options (75–79% of yes/no questions went to whichever option came first). Reading both orders fixes it at twice the calls; a note in the docs would save others the discovery.
 - **A thinking switch per call** worked well (off for one-token decisions, on with a token budget for the rewrite). Clearer docs on how the thinking budget and `max_tokens` interact would help.
-- **Having Nano, Super and Ultra behind one API** let each role take the model it needs by changing one name: Ultra for the single call that writes a program, Nano for the hundreds of yes/no questions.
+- **Having Nano and Super behind one API** let each role take the model it needs by changing one name: Super for reading and rewriting, Nano for the hundreds of yes/no questions.
 - **Billing:** a run of ours hit `402 Payment Required` mid-session. An early warning before credits run out, or a soft limit, would avoid losing a run.
-- **Embeddings** on Token Factory removed our dependency on a local GPU, which mattered for a judge running on a clean machine.
+- **Embeddings:** we used an NVIDIA Nemotron embedding model through OpenRouter so a small hosted machine without a GPU needs no local model. Embeddings on Token Factory itself, with the same Nemotron embedding models, would keep the whole stack in one place; please consider them.
 
 ---
 
 ## Links
 - Code: https://github.com/mihail-gribov/terraweaver
 - Video: (YouTube link)
-- Try it: the README's "Run it" section — the memory server and Claude Code with the plugin, two commands.
+- Try it: https://terraweaver.life, an evaluation-only instance (one shared memory, no personal data please); the page says how to connect Claude Code with a key. For real use, the README's "Run it" section runs the memory locally: the server and Claude Code with the plugin, two commands.
