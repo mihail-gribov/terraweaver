@@ -76,13 +76,18 @@ set -e
 ref=${1:-main}
 app=/opt/terraweaver/app
 [ -d $app/.git ] || git clone -q https://github.com/mihail-gribov/terraweaver $app
+# the checkout belongs to the service user, the deploy runs as root
+git config --global --get-all safe.directory | grep -qx $app || git config --global --add safe.directory $app
 cd $app
 git fetch -q origin
 git checkout -q "$ref"
 git reset -q --hard "origin/$ref"
-[ -d .venv ] || uv venv --python 3.12 .venv
-# requirements.txt without fastembed (the embeddings go through OpenRouter), plus numpy, which the search imports
-grep -v '^fastembed' requirements.txt | uv pip install -q --python .venv/bin/python -r - numpy
+# the interpreter lives outside /root: the services run with ProtectHome and could not follow a link into it
+export UV_PYTHON_INSTALL_DIR=/opt/uv-python
+if [ ! -x .venv/bin/python ] || readlink -f .venv/bin/python | grep -q '^/root'; then rm -rf .venv; uv venv --python 3.12 .venv; fi
+chmod -R a+rX /opt/uv-python
+# requirements.txt without fastembed (the embeddings go through OpenRouter), plus numpy (the search imports it) and httpx (the sign-in service does)
+grep -v '^fastembed' requirements.txt | uv pip install -q --python .venv/bin/python -r - numpy httpx
 chown -R terraweaver:terraweaver /opt/terraweaver/app
 rsync -a --delete site/index.html site/privacy.html site/style.css site/robots.txt site/sitemap.xml site/demo site/account /var/www/terraweaver/
 systemctl daemon-reload
