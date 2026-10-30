@@ -3,7 +3,6 @@
 **The memory as it is now**
 - [memory.md](memory.md) — what the memory is: its principles, what it works with, what it does, where it stands
 - [decisions.md](decisions.md) — every behaviour change with the reason and the measurement behind it, newest last
-- [TODO.md](TODO.md) — what is queued, and why in that order
 
 **The field**
 - [landscape.md](landscape.md) — what the personal-agent and memory field converged on, September 2026

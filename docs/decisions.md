@@ -4934,7 +4934,7 @@ once, in `terraweaver/decision.json`. A module and not a package, on the user's 
 Nemotron is used through the API only; a verdict head on hidden states was started and dropped the
 same day, since it needs the weights served locally and this machine cannot serve them.
 
-**Any Nemotron, 2026-10-27** (the user: "надо, чтобы подставить можно было любой немотрон").
+**Any Nemotron, 2026-10-27** (the user: "it must be possible to plug in any Nemotron").
 `decision.json` holds one calibration per model; `Decision(model=...)` or `TERRAWEAVER_DECISION`
 picks the model and its own temperatures, and a model with no entry reads raw. Fitted on bench for
 Lightning, Super-VL, Super-120B and Ultra beside the Nano (table in experiments/09_decision/README.md).

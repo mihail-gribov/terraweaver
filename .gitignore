@@ -16,3 +16,5 @@ machine/
 docs/library/*.pdf
 HOSTING.md
 .claude/
+docs/TODO.md
+docs/hackaton-rules.md
