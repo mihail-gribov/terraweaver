@@ -9,3 +9,7 @@ reads them into topics, portraits and the user's world in the quiet, and answers
     search.py    the entries a question needs, by words and by meaning
     models.py    which Nemotron plays which role; nemotron.py is the client, the decision model too
 """
+
+# The version of the memory. The Claude Code plugin (adapters/claude_code/plugin/.claude-plugin/plugin.json)
+# carries the same number; tests/test_version.py fails when they differ. A release is the tag v<version>.
+__version__ = "1.0.0"
