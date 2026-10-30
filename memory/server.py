@@ -9,11 +9,13 @@ and the search the readers are shown entries by (`memory/search.py`).
     .venv/bin/python -m memory.server                     # var/memory/main/, port 7110
     .venv/bin/python -m memory.server --name demo --port 7111
     .venv/bin/python -m memory.server --host 0.0.0.0      # the local network, behind a token
+    .venv/bin/python -m memory.server --dir /media/usb/my-memory   # the whole memory in one folder
 """
 import argparse
 import asyncio
 import logging
 import os
+from pathlib import Path
 
 from mcp.server.mcpserver import Context
 
@@ -194,6 +196,8 @@ def main() -> None:
     global graph, search, listener
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--name", default="main", help="var/memory/<name>/: facts.md and what is read from it")
+    parser.add_argument("--dir", default=None, help="the memory's folder anywhere, a USB stick included: the user's "
+                        "whole memory is this one folder of plain files (overrides --name)")
     parser.add_argument("--engine", default="tavily", help="tavily: topics are extended from the web; off: no "
                         "web at all (a benchmark measures the memory, not the web)")
     parser.add_argument("--model", default="nvidia/nemotron-3-super-120b-a12b",
@@ -211,7 +215,7 @@ def main() -> None:
                          "set -a; . ./.env; set +a")
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
-    where = base.ROOT / "var" / "memory" / args.name
+    where = Path(args.dir).expanduser().resolve() if args.dir else base.ROOT / "var" / "memory" / args.name
     base.facts, base.model = where / "facts.md", args.model
     # Readers are shown what the search finds, not the whole journal: every entry by words and
     # meaning, twelve of them (docs/decisions.md, 2026-10-20).

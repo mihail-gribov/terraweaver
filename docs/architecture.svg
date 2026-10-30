@@ -130,15 +130,15 @@
 <text x="500" y="932" font-size="13" font-weight="600" fill="#1f6fd1" text-anchor="middle" paint-order="stroke" stroke="#ffffff" stroke-width="5" stroke-linejoin="round">ask → answer</text>
 <rect x="1330" y="145" width="240" height="120" rx="10" fill="#fff3ec" stroke="#c2410c" stroke-width="2"/>
 <text x="1342" y="171" font-size="17" font-weight="700" fill="#c2410c" text-anchor="start">Due?</text>
-<text x="1342" y="190" font-size="13" font-weight="500" fill="#6b6f6c" text-anchor="start">Nano · 1 token</text>
-<text x="1342" y="208" font-size="13" font-weight="400" fill="#1d2420" text-anchor="start">a topic come back to later;</text>
-<text x="1342" y="226" font-size="13" font-weight="400" fill="#1d2420" text-anchor="start">questions not extended in 7</text>
-<text x="1342" y="244" font-size="13" font-weight="400" fill="#1d2420" text-anchor="start">days; would the web help?</text>
+<text x="1342" y="190" font-size="13" font-weight="500" fill="#6b6f6c" text-anchor="start">hourly sweep · Nano</text>
+<text x="1342" y="208" font-size="13" font-weight="400" fill="#1d2420" text-anchor="start">not looked up in 30 days,</text>
+<text x="1342" y="226" font-size="13" font-weight="400" fill="#1d2420" text-anchor="start">spoken of in 90; would the</text>
+<text x="1342" y="244" font-size="13" font-weight="400" fill="#1d2420" text-anchor="start">web help? no → checked</text>
 <rect x="1330" y="290" width="240" height="100" rx="10" fill="#fff3ec" stroke="#c2410c" stroke-width="2"/>
 <text x="1342" y="316" font-size="17" font-weight="700" fill="#c2410c" text-anchor="start">Queries</text>
 <text x="1342" y="335" font-size="13" font-weight="500" fill="#6b6f6c" text-anchor="start">Super</text>
-<text x="1342" y="353" font-size="13" font-weight="400" fill="#1d2420" text-anchor="start">from each question: place,</text>
-<text x="1342" y="371" font-size="13" font-weight="400" fill="#1d2420" text-anchor="start">kind, month — no names</text>
+<text x="1342" y="353" font-size="13" font-weight="400" fill="#1d2420" text-anchor="start">from the user&#x27;s questions:</text>
+<text x="1342" y="371" font-size="13" font-weight="400" fill="#1d2420" text-anchor="start">place, kind, month; names dropped</text>
 <rect x="1330" y="415" width="240" height="70" rx="10" fill="#fff3ec" stroke="#c2410c" stroke-width="2"/>
 <text x="1342" y="441" font-size="17" font-weight="700" fill="#c2410c" text-anchor="start">Tavily</text>
 <text x="1342" y="459" font-size="13" font-weight="400" fill="#1d2420" text-anchor="start">pages, with their text</text>
@@ -156,13 +156,12 @@
 <path d="M1450,390 V411" fill="none" stroke="#c2410c" stroke-width="2.2" marker-end="url(#x)"/>
 <path d="M1450,485 V506" fill="none" stroke="#c2410c" stroke-width="2.2" marker-end="url(#x)"/>
 <path d="M1450,610 V631" fill="none" stroke="#c2410c" stroke-width="2.2" marker-end="url(#x)"/>
-<text x="1330" y="768" font-size="13" font-weight="700" fill="#c2410c" text-anchor="start">Each question is marked:</text>
-<text x="1330" y="786" font-size="13" font-weight="400" fill="#c2410c" text-anchor="start">extended for topic N, on &lt;day&gt;.</text>
-<text x="1330" y="812" font-size="13" font-weight="400" fill="#c2410c" text-anchor="start">The agent hears now: &quot;looking</text>
-<text x="1330" y="830" font-size="13" font-weight="400" fill="#c2410c" text-anchor="start">on the web&quot;; with the next</text>
-<text x="1330" y="848" font-size="13" font-weight="400" fill="#c2410c" text-anchor="start">answer: found / nothing new.</text>
+<text x="1330" y="768" font-size="13" font-weight="700" fill="#c2410c" text-anchor="start">The topic is marked:</text>
+<text x="1330" y="786" font-size="13" font-weight="400" fill="#c2410c" text-anchor="start">looked up on &lt;day&gt;; fresh a month.</text>
+<text x="1330" y="812" font-size="13" font-weight="400" fill="#c2410c" text-anchor="start">The agent hears with its next</text>
+<text x="1330" y="830" font-size="13" font-weight="400" fill="#c2410c" text-anchor="start">answer: found / nothing new.</text>
 <path d="M860,720 V748 H1590 V205 H1574" fill="none" stroke="#c2410c" stroke-width="2.2" stroke-dasharray="7 5" marker-end="url(#x)"/>
-<text x="1180" y="742" font-size="13" font-weight="600" fill="#c2410c" text-anchor="middle" paint-order="stroke" stroke="#ffffff" stroke-width="5" stroke-linejoin="round">the message goes on with a topic</text>
+<text x="1180" y="742" font-size="13" font-weight="600" fill="#c2410c" text-anchor="middle" paint-order="stroke" stroke="#ffffff" stroke-width="5" stroke-linejoin="round">the hourly sweep: stale topics</text>
 <path d="M1330,685 H1310 V560 H640 V514" fill="none" stroke="#ffffff" stroke-width="9"/>
 <path d="M1330,685 H1310 V560 H640 V514" fill="none" stroke="#c2410c" stroke-width="2.6" marker-end="url(#x)"/>
 <text x="880" y="554" font-size="13" font-weight="600" fill="#c2410c" text-anchor="middle" paint-order="stroke" stroke="#ffffff" stroke-width="5" stroke-linejoin="round">the web&#x27;s entry · topic N</text>
