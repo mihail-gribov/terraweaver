@@ -1,0 +1,19 @@
+terraweaver.life, www.terraweaver.life {
+	encode gzip
+
+	# The memory: MCP and the plain routes, behind the bearer token the server checks itself.
+	@memory path /mcp /mcp/* /say /ask /interests /world /settle /notes
+	reverse_proxy @memory 127.0.0.1:7110 {
+		flush_interval -1
+		transport http {
+			read_timeout 30m
+		}
+	}
+
+	# Sign in with Google and the key (site/auth/app.py).
+	reverse_proxy /auth/* 127.0.0.1:7120
+
+	# Everything else is the landing page and the replays.
+	root * /var/www/terraweaver
+	file_server
+}

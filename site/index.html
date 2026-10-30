@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>TerraWeaver: a personal memory for any agent</title>
+<meta name="description" content="A personal memory for any agent. It hears your life in passing, keeps it in your own words on your machine, and answers with facts, never decisions. NVIDIA Nemotron on Nebius Token Factory.">
+<link rel="canonical" href="https://terraweaver.life/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="TerraWeaver">
+<meta property="og:title" content="TerraWeaver: a personal memory for any agent">
+<meta property="og:description" content="It hears your life in passing, keeps it in your own words on your machine, and answers with facts, never decisions.">
+<meta property="og:url" content="https://terraweaver.life/">
+<meta name="twitter:card" content="summary">
+<link rel="stylesheet" href="style.css">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+ {"@type":"WebSite","name":"TerraWeaver","url":"https://terraweaver.life/"},
+ {"@type":"SoftwareApplication","name":"TerraWeaver","applicationCategory":"DeveloperApplication","operatingSystem":"Linux, macOS",
+  "description":"A personal memory for any agent: it hears the conversation, keeps what is personal in the user's own words, and answers with facts, never decisions.",
+  "url":"https://terraweaver.life/","codeRepository":"https://github.com/mihail-gribov/terraweaver","license":"https://opensource.org/license/mit",
+  "author":{"@type":"Person","name":"Mihail Gribov","sameAs":["https://www.linkedin.com/in/mihail-gribov-rs/","https://github.com/mihail-gribov"]}}]}
+</script>
+
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a class="brand" href="#top">Terra<span>Weaver</span></a>
+    <ul>
+      <li><a href="#problems">Why</a></li>
+      <li><a href="#yours">Yours</a></li>
+      <li><a href="#how">How it works</a></li>
+      <li><a href="#measured">Measured</a></li>
+      <li><a href="#demo">Demo</a></li>
+      <li><a href="#connect">Connect</a></li>
+      <li><a href="https://github.com/mihail-gribov/terraweaver/tree/main/docs">Documentation</a></li>
+      <li><a href="#contact">Contact</a></li>
+      <li><a href="https://github.com/mihail-gribov/terraweaver">GitHub</a></li>
+    </ul>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="wrap">
+    <div>
+      <p class="eyebrow">A personal memory for any agent</p>
+      <h1>Your life, remembered <em>in your own words.</em></h1>
+      <p class="lead">You mention a birthday, an allergy, a repair, in passing, between work questions. A month later your agent
+      has forgotten, or kept it in words that are not yours. TerraWeaver listens by itself, keeps what is yours on your machine,
+      and gives the agent facts, never decisions.</p>
+      <div class="buttons">
+        <a class="btn primary" href="#connect">Run it on your machine</a>
+        <a class="btn ghost" href="#demo">Watch it work</a>
+      </div>
+      <p class="warn"><strong>The hosted demo is for evaluation only:</strong> one shared memory, do not enter personal data.
+      For real use, run it on your own machine.</p>
+    </div>
+    <div class="chat" aria-label="An invented example of the memory at work">
+      <p class="bar"><span>A week later, a new session</span><span>invented example</span></p>
+      <div class="msg u">I want a soundbar for the living-room TV.</div>
+      <div class="note"><b>The memory puts beside it, in your words</b>
+        We took the LG C4 for the living room in the end · the Samsung was the first choice, overridden after the blinds went up</div>
+      <div class="msg a">For the LG C4 on your wall, a compact soundbar with HDMI eARC will do. Want me to compare three?</div>
+    </div>
+  </div>
+</header>
+
+<main>
+<section id="problems" aria-labelledby="problems-h">
+  <div class="wrap">
+    <p class="eyebrow">Why another memory</p>
+    <h2 id="problems-h">What agent memory gets wrong today.</h2>
+    <p class="lead">Memory for agents is now a layer of its own, and the same problems stay open in most of it. Each is a kind of question a long personal history asks, and a place where TerraWeaver was built to be different.</p>
+    <div class="classes">
+      <div class="row"><b>Counting: all of them</b><span>"How many pieces of jewellery did I get in the last two months?" Similarity search returns the dozen entries most alike to the question, not every event. <strong>Here:</strong> each event is kept with its day and read into a graph; the answer gets every fact of the matter.</span></div>
+      <div class="row"><b>Time and the latest value</b><span>"What happened two weeks ago?" "Which TV did we take in the end?" <strong>Here:</strong> new lies over old, each layer dated; the old choice stays, marked as overridden.</span></div>
+      <div class="row"><b>Where we left off</b><span>Nobody asks the memory, yet the new message goes on with an old matter. <strong>Here:</strong> the matter is put beside it, so a soundbar question comes with the TV that is on the wall.</span></div>
+      <div class="row"><b>It waits to be told</b><span>The agent has to remember to write and to read, and mostly doesn't. <strong>Here:</strong> hooks hear every message of both sides; the agent passes nothing.</span></div>
+      <div class="row"><b>Facts in the agent's words</b><span>"Up to 400", "she": a fact with no idea what or who. <strong>Here:</strong> each message is rewritten to stand alone from the agent's message just before it, and kept in your words in a plain Markdown journal you can read.</span></div>
+      <div class="row"><b>Decisions made for you</b><span>Memory that picks and hides on its own authority. <strong>Here:</strong> facts and the words they stand on, never decisions; secrets are withheld before any model sees them.</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="yours" aria-labelledby="yours-h">
+  <div class="wrap">
+    <p class="eyebrow">Personal means yours</p>
+    <h2 id="yours-h">It is about you, so it stays with you.</h2>
+    <p class="lead">A memory of a life is the most private thing an agent can hold. It is built to be read, checked and owned by the person it is about.</p>
+    <div class="own">
+      <div class="cards" style="margin-top:0">
+        <div class="card"><div class="ico">M</div><h3>Your words</h3><p>The journal is plain Markdown you can open and read. What the memory keeps is what you said, rewritten only so that it stands alone, with your original beside it.</p></div>
+        <div class="card"><div class="ico">⌂</div><h3>On your machine</h3><p>Run it yourself and the journal never leaves your machine. Only the model calls go out (reading, rewriting, deciding), and secrets are withheld before any of them.</p></div>
+        <div class="card"><div class="ico">✕</div><h3>Secrets withheld</h3><p>Passwords and keys are held back before any model sees them. A web query never carries a person's name or a private detail.</p></div>
+        <div class="card"><div class="ico">✓</div><h3>Nothing decided for you</h3><p>It gives the agent facts and the words they stand on. Choosing stays with you and your agent. It can take an entry out once you confirm which.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="how" aria-labelledby="how-h">
+  <div class="wrap">
+    <p class="eyebrow">Active, not a store</p>
+    <h2 id="how-h">It does the remembering, so you don't have to dictate.</h2>
+    <p class="lead">A passive memory depends on the agent remembering to write and to read. This one acts by itself.</p>
+    <div class="cards">
+      <div class="card"><div class="ico">1</div><h3>Hears</h3><p>Claude Code hooks pass every message, yours and the agent's. The agent passes nothing.</p></div>
+      <div class="card"><div class="ico">2</div><h3>Keeps</h3><p>Only what is personal. "Up to 400" becomes "my budget for the vacuum is up to 400".</p></div>
+      <div class="card"><div class="ico">3</div><h3>Reads in the quiet</h3><p>Entries become people, things, values and links, each with the day it happened.</p></div>
+      <div class="card"><div class="ico">4</div><h3>Hands over facts</h3><p>When the agent asks, or a new message goes on with an old matter, it finds the entries by words, meaning and the graph, and hands over their texts.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="demo" aria-labelledby="demo-h">
+  <div class="wrap">
+    <p class="eyebrow">Real runs, replayed</p>
+    <h2 id="demo-h">Watch the memory work.</h2>
+    <p class="lead">Left: an ordinary chat with an agent. Right: the memory, every step as the run took it. The people in these runs are invented.</p>
+    <div class="demo">
+      <div class="tabs">
+        <button type="button" data-src="demo/birthday.html" aria-pressed="true">A birthday, over weeks</button>
+        <button type="button" data-src="demo/home.html" aria-pressed="false">Counting what the home cost</button>
+      </div>
+      <iframe id="player" title="Replay of a real run" loading="lazy" src="demo/birthday.html"></iframe>
+      <p class="cap">Press <code>H</code> inside the player to hide its bar.</p>
+    </div>
+  </div>
+</section>
+
+<section id="questions" aria-labelledby="questions-h">
+  <div class="wrap">
+    <p class="eyebrow">What it answers</p>
+    <h2 id="questions-h">Long histories, exact answers.</h2>
+    <p class="lead">Where a whole life no longer fits in a prompt, and the answer needs every fact that bears on it.</p>
+    <div class="classes">
+      <div class="row"><b>What happened, and when</b><span>"What did I do in the garden two weeks ago?"</span></div>
+      <div class="row"><b>How many, all of them</b><span>"How many pieces of jewellery did I get in the last two months?"</span></div>
+      <div class="row"><b>How it stands now</b><span>"Which TV did we take in the end?" New lies over old, each layer dated.</span></div>
+      <div class="row"><b>Where we left off</b><span>"I want a soundbar for the living-room TV." Nobody asks the memory; it is there.</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="measured" aria-labelledby="measured-h">
+  <div class="wrap">
+    <p class="eyebrow">Measured</p>
+    <h2 id="measured-h">43 of 45, and the two misses.</h2>
+    <p class="lead">Five short personal histories (family, books, running, home, trips): a dozen talks over two months among thirty of everyday talk, each told to a fresh memory and checked by words.</p>
+    <table>
+      <tr><th>Class of task</th><th>Passed</th></tr>
+      <tr><td>Latest value: what holds now</td><td>11 / 11</td></tr>
+      <tr><td>Time: days, order, how long ago</td><td>8 / 8</td></tr>
+      <tr><td>Count: events spread over talks</td><td>7 / 7</td></tr>
+      <tr><td>Who is who</td><td>4 / 4</td></tr>
+      <tr><td>Recall, nobody asks</td><td>7 / 8</td></tr>
+      <tr><td>Never said, so "I don't know"</td><td>6 / 7</td></tr>
+    </table>
+    <p class="lead" style="margin-top:1rem">The misses are real: a car-alarm question that did not bring up the user's Skoda Octavia, and a sale of a Golf that was never told, which the memory answered instead of declining.
+    LongMemEval_S has not been run in full. One run measures little here: the spread between runs is as large as the differences.</p>
+  </div>
+</section>
+
+<section id="connect" aria-labelledby="connect-h">
+  <div class="wrap">
+    <p class="eyebrow">Connect</p>
+    <h2 id="connect-h">Two ways in. Only one is for your life.</h2>
+    <p class="lead">The memory is an MCP server: any agent can use <code>say</code> and <code>ask</code>. With the Claude Code plugin the hooks call <code>say</code> by themselves.</p>
+    <div class="paths">
+      <div class="path main">
+        <h3>Your own memory</h3>
+        <p class="tagline">Runs on your machine. This is the real thing.</p>
+        <ol>
+          <li>Needs Python 3.12+, <a href="https://claude.com/claude-code">Claude Code</a>, and keys for Nebius Token Factory and Tavily.</li>
+          <li>Clone, install and start the memory:
+<pre>git clone https://github.com/mihail-gribov/terraweaver
+cd terraweaver
+python3 -m venv .venv &amp;&amp; .venv/bin/pip install -r requirements.txt
+.venv/bin/python -m memory.server</pre></li>
+          <li>In another terminal, Claude Code with the plugin:
+<pre>adapters/claude_code/claude-personal</pre></li>
+          <li>Talk about your life in passing. What it keeps is in <code>var/memory/main/facts.md</code>.</li>
+        </ol>
+      </div>
+      <div class="path">
+        <h3>The hosted demo</h3>
+        <p class="tagline">For evaluation. Not a place for your life.</p>
+        <ol>
+          <li><a href="/auth/login">Sign in with Google</a> for a key (<code>tw_…</code>, shown once), or use a token you were given.</li>
+          <li>Point your agent at it:
+<pre>export PERSONAL_MEMORY_URL=https://terraweaver.life
+export PERSONAL_MEMORY_TOKEN=tw_...
+adapters/claude_code/claude-personal</pre>
+          Any other MCP client: <code>https://terraweaver.life/mcp</code>, header <code>Authorization: Bearer tw_...</code>.</li>
+        </ol>
+        <p class="warn"><strong>One shared memory, for evaluation only.</strong> Do not enter personal data: everything typed goes into a shared journal that anyone with a key can see, and it may be erased.
+        Use an invented person.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="models" aria-labelledby="models-h">
+  <div class="wrap">
+    <p class="eyebrow">Under the hood</p>
+    <h2 id="models-h">NVIDIA Nemotron on Nebius Token Factory.</h2>
+    <p class="lead">Each model sits where it pays. Closed questions are answered from the first token's logprobs: one token, a probability instead of a guess.</p>
+    <table>
+      <tr><th>Role</th><th>Model</th></tr>
+      <tr><td>Rewrite, read, decide</td><td>Nemotron 3 Super 120B-A12B</td></tr>
+      <tr><td>Judge: hundreds of small closed questions</td><td>Nemotron 3 Nano 30B-A3B</td></tr>
+      <tr><td>Search by meaning: embeddings (on the demo, through OpenRouter)</td><td>NVIDIA Nemotron embed 1B</td></tr>
+    </table>
+  </div>
+</section>
+<section id="contact" aria-labelledby="contact-h">
+  <div class="wrap">
+    <p class="eyebrow">Contact</p>
+    <h2 id="contact-h">Questions, ideas, or a memory you want to try.</h2>
+    <p class="lead">TerraWeaver is built by Mihail Gribov. The code, the issues and the details are open.</p>
+    <div class="contact">
+      <a href="https://github.com/mihail-gribov/terraweaver" rel="noopener"><b>GitHub</b><span>mihail-gribov/terraweaver: code, setup, issues</span></a>
+      <a href="https://www.linkedin.com/in/mihail-gribov-rs/" rel="me noopener"><b>LinkedIn</b><span>Mihail Gribov</span></a>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>TerraWeaver · MIT licence</span>
+    <span><a href="https://github.com/mihail-gribov/terraweaver/tree/main/docs">Documentation</a> · <a href="privacy.html">Privacy</a> · <a href="https://github.com/mihail-gribov/terraweaver">GitHub</a> · <a href="https://www.linkedin.com/in/mihail-gribov-rs/">LinkedIn</a></span>
+  </div>
+</footer>
+
+<script>
+  var player = document.getElementById('player');
+  document.querySelectorAll('.tabs button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      document.querySelectorAll('.tabs button').forEach(function (o) { o.setAttribute('aria-pressed', o === b); });
+      player.src = b.dataset.src;
+    });
+  });
+</script>
+</body>
+</html>

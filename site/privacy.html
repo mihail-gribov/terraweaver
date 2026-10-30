@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Privacy: TerraWeaver</title>
+<meta name="description" content="What the TerraWeaver demo keeps about you, who processes it, and how to have it removed.">
+<link rel="canonical" href="https://terraweaver.life/privacy.html">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav><div class="wrap"><a class="brand" href="/">Terra<span>Weaver</span></a>
+<ul><li><a href="/">Home</a></li><li><a href="https://github.com/mihail-gribov/terraweaver/tree/main/docs">Documentation</a></li><li><a href="privacy.html">Privacy</a></li><li><a href="https://github.com/mihail-gribov/terraweaver">GitHub</a></li></ul></div></nav>
+<main class="doc">
+<h1>Privacy</h1>
+<p>TerraWeaver is a personal memory that is meant to run on your own machine. This page is about the hosted demo at terraweaver.life, which is for evaluation only.</p>
+<h2>The hosted demo</h2>
+<ul>
+<li><strong>Do not enter personal data.</strong> The demo is one shared world: whatever is said to it is visible to everyone who holds a key, and it is erased now and then.</li>
+<li><strong>Sign in with Google.</strong> We ask only for your email address and the account's identifier, to issue one access key per account. We keep the email, the identifier, the date the key was issued, and a one-way hash of the key. We do not keep the key itself, and we do not use your email for anything else.</li>
+<li><strong>What you say to the demo</strong> is kept in its journal and sent to the model providers below to be read and answered.</li>
+<li>We do not sell or share data. We do not use analytics or advertising cookies. The sign-in uses a session cookie that lasts seven days.</li>
+</ul>
+<h2>What leaves the machine</h2>
+<p>On the demo and on your own machine alike, these are the only things that go out:</p>
+<ul>
+<li>The text of what is said goes to NVIDIA Nemotron models on <strong>Nebius Token Factory</strong>, to be read, rewritten and decided on.</li>
+<li>The text of journal entries goes to <strong>OpenRouter</strong> for the NVIDIA Nemotron embedding model, when <code>TERRAWEAVER_EMBEDDINGS=openrouter</code> is set, as on the demo. By default the embeddings are made locally and nothing goes out for them.</li>
+<li>Web queries go to <strong>Tavily</strong>. They carry no person's name and no private detail.</li>
+</ul>
+<p>Secrets are withheld before any model sees them. On the demo, everything typed is also in a shared journal that may be erased at any time.</p>
+<h2>Your own memory</h2>
+<p>When you run TerraWeaver yourself, the journal is a plain Markdown file on your machine and nothing is sent to us. Only the calls listed above go out.</p>
+<h2>Deleting your data</h2>
+<p>To remove your account's key and email from the demo, write to the author through the links below.</p>
+<h2>Contact</h2>
+<p>Mihail Gribov: <a href="https://www.linkedin.com/in/mihail-gribov-rs/" rel="me">LinkedIn</a> · <a href="https://github.com/mihail-gribov/terraweaver">GitHub</a>.</p>
+
+</main>
+<footer><div class="wrap"><span>TerraWeaver · MIT licence</span>
+<span><a href="/">Home</a> · <a href="https://github.com/mihail-gribov/terraweaver/tree/main/docs">Documentation</a> · <a href="privacy.html">Privacy</a> · <a href="https://github.com/mihail-gribov/terraweaver">GitHub</a> · <a href="https://www.linkedin.com/in/mihail-gribov-rs/">LinkedIn</a></span></div></footer>
+</body>
+</html>

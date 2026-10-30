@@ -612,6 +612,13 @@ def _token(path: Path) -> tuple[str, str]:
     return path.read_text().strip(), f"in {path}"
 
 
+def _issued(given: bytes) -> bool:
+    """A key issued to a signed-in account (memory/keys.py), beside the server's own token."""
+    from memory import keys
+    scheme, _, key = given.decode(errors="replace").partition(" ")
+    return scheme == "Bearer" and key.startswith(keys.PREFIX) and keys.valid(key)
+
+
 def _guarded(app, token: str):
     """Pass on only the requests that carry the token; answer 401 to the rest."""
     expected = f"Bearer {token}".encode()
@@ -619,7 +626,7 @@ def _guarded(app, token: str):
     async def guarded(scope, receive, send):
         if scope["type"] == "http":
             given = dict(scope["headers"]).get(b"authorization", b"")
-            if not hmac.compare_digest(given, expected):
+            if not hmac.compare_digest(given, expected) and not _issued(given):
                 await PlainTextResponse("unauthorized", status_code=401)(scope, receive, send)
                 return
         await app(scope, receive, send)
