@@ -1,23 +1,24 @@
 /* The account: the cabinet of ai-cordon in TerraWeaver's colours, laid out like the account of an LLM chat:
    a side menu, one section at a time, cards. Light only, by hand, no build step. */
 :root {
-  --bg:#f7f6f2; --surface:#fff; --surface-2:#f1efe8; --line:#e4e0d4; --line-strong:#d2cdbd;
-  --text:#1b2622; --text-2:#56625d; --muted:#8a948f;
-  --accent:#1f6f5c; --accent-hover:#175848; --accent-soft:#e4f1ec; --accent-line:#bfdcd1;
-  --warn:#8a5a00; --warn-soft:#fff4d6; --warn-line:#f0dca0;
+  /* The palette and the type of the replay player, so the account looks like the video. */
+  --bg:#eef0ec; --surface:#fff; --surface-2:#e4e8e2; --line:#cfd4cf; --line-strong:#b9c0ba;
+  --text:#1d2320; --text-2:#4f5a54; --muted:#7c867f;
+  --write:#3d4a43; --accent:#1f6fd1; --accent-hover:#1859a8; --accent-soft:#e3eefb; --accent-line:#b7d0f1;
+  --warn:#6b5a2e; --warn-soft:#fff3c4; --warn-line:#e6d78f;
   --danger:#b3261e; --danger-soft:#fdecea; --danger-line:#f3c2bd;
   --ok:#0f7b4f; --ok-soft:#e5f5ec;
   --r-sm:7px; --r-md:11px; --r-lg:16px;
-  --shadow:0 1px 2px rgba(27,38,34,.05); --shadow-2:0 18px 50px rgba(27,38,34,.18);
-  --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
-  --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-  --mono:ui-monospace,SFMono-Regular,Consolas,monospace;
+  --shadow:0 1px 2px rgba(29,35,32,.05); --shadow-2:0 18px 50px rgba(29,35,32,.18);
+  --serif:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
+  --sans:"IBM Plex Sans","Helvetica Neue",Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
 }
 *,*::before,*::after { box-sizing:border-box; }
 [hidden] { display:none !important; }
 body { margin:0; background:var(--bg); color:var(--text); font:15px/1.55 var(--sans); -webkit-font-smoothing:antialiased; }
 a { color:var(--accent); text-decoration:none; } a:hover { text-decoration:underline; }
-h1,h2,h3 { font-family:var(--serif); font-weight:600; margin:0; letter-spacing:-.01em; }
+h1,h2,h3 { font-family:var(--serif); font-weight:600; margin:0; letter-spacing:.005em; }
 code,.mono { font-family:var(--mono); font-size:.88em; }
 .dim { color:var(--text-2); } .small { font-size:13px; }
 .brand { font:700 1.2rem var(--serif); color:var(--text); } .brand span { color:var(--accent); } .brand:hover { text-decoration:none; }
@@ -26,12 +27,12 @@ code,.mono { font-family:var(--mono); font-size:.88em; }
   border-radius:var(--r-sm); border:1px solid var(--line-strong); background:var(--surface); color:var(--text); cursor:pointer; }
 .btn:hover { background:var(--surface-2); text-decoration:none; }
 .btn:disabled { opacity:.5; cursor:default; }
-.btn-primary { background:var(--accent); border-color:var(--accent); color:#fff; } .btn-primary:hover { background:var(--accent-hover); }
+.btn-primary { background:var(--write); border-color:var(--write); color:#fff; } .btn-primary:hover { background:#2e3832; }
 .btn-danger { color:var(--danger); border-color:var(--danger-line); } .btn-danger:hover { background:var(--danger-soft); }
 .btn-sm { padding:5px 10px; font-size:13px; } .btn-wide { width:100%; padding:11px 14px; }
 
 .auth { min-height:100vh; display:grid; place-items:center; padding:24px;
-  background:radial-gradient(50rem 24rem at 80% -10%,var(--accent-soft),transparent 70%),radial-gradient(36rem 20rem at -10% 10%,#fbefcf,transparent 70%),var(--bg); }
+  background:radial-gradient(50rem 24rem at 80% -10%,var(--accent-soft),transparent 70%),radial-gradient(36rem 20rem at -10% 10%,#fff3c4,transparent 70%),var(--bg); }
 .auth-card { width:100%; max-width:400px; background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg); padding:28px; box-shadow:var(--shadow-2); }
 .auth-card h1 { font-size:1.7rem; margin:18px 0 6px; } .auth-card p { margin:0 0 16px; }
 .note { border-radius:var(--r-md); padding:10px 12px; font-size:13px; }
@@ -79,17 +80,17 @@ tr:last-child td { border-bottom:0; } td.act { text-align:right; white-space:now
 .row { display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; } .row .field { flex:1 1 200px; margin-bottom:0; }
 .err { color:var(--danger); font-size:13px; margin:8px 0 0; }
 
-pre.code { background:#1b2622; color:#e8f2ee; border-radius:var(--r-sm); padding:12px 14px; overflow-x:auto; font:13px/1.55 var(--mono); margin:8px 0 0; position:relative; }
+pre.code { background:#1d2320; color:#e8eee9; border-radius:var(--r-sm); padding:12px 14px; overflow-x:auto; font:13px/1.55 var(--mono); margin:8px 0 0; position:relative; }
 .copy { position:absolute; top:6px; right:6px; }
 .tabs { display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap; }
 .tabs button { font:inherit; font-size:13px; padding:5px 12px; border-radius:999px; border:1px solid var(--line-strong); background:var(--surface); cursor:pointer; color:var(--text-2); }
-.tabs button.on { background:var(--accent); border-color:var(--accent); color:#fff; }
+.tabs button.on { background:var(--write); border-color:var(--write); color:#fff; }
 
-.modal { position:fixed; inset:0; background:rgba(27,38,34,.45); display:grid; place-items:center; padding:20px; z-index:50; }
+.modal { position:fixed; inset:0; background:rgba(29,35,32,.45); display:grid; place-items:center; padding:20px; z-index:50; }
 .modal-card { background:var(--surface); border-radius:var(--r-lg); padding:24px; width:100%; max-width:520px; box-shadow:var(--shadow-2); }
 .modal-card h2 { font-size:1.3rem; margin-bottom:8px; } .modal-card .actions { display:flex; gap:10px; justify-content:flex-end; margin-top:16px; }
 .keybox { background:var(--surface-2); border:1px solid var(--line-strong); border-radius:var(--r-sm); padding:12px; font:13px var(--mono); word-break:break-all; margin:10px 0; }
-.toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#1b2622; color:#fff; padding:9px 16px; border-radius:var(--r-sm); font-size:14px; z-index:60; }
+.toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#1d2320; color:#fff; padding:9px 16px; border-radius:var(--r-sm); font-size:14px; z-index:60; }
 .danger-zone { border-color:var(--danger-line); }
 .g { display:inline-grid; place-items:center; width:20px; height:20px; border-radius:50%; background:rgba(255,255,255,.22); font:700 12px var(--sans); }
 .auth-card .note { margin-top:16px; }
