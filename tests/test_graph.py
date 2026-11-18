@@ -359,6 +359,42 @@ def grows_in_layers() -> None:
               and "step 40" in g2.portraits_of(USER)[0]["text"] and "step 1 " in g2.portraits_of(USER)[0]["text"])
 
 
+def forget_while_reading() -> None:
+    """A rebuild (a confirmed forget) while an entry is being read: the reading is dropped, the
+    forgotten entry leaves nothing, and every entry left is read again from the start."""
+    import threading
+    entries = [(1, "2026-10-01 10:00:00", "My sister Anna lives in Lisbon."),
+               (2, "2026-10-02 10:00:00", "My old phone number is 555-0100."),
+               (3, "2026-10-03 10:00:00", "I bought a bicycle.")]
+    held = list(entries)
+    reading, go = threading.Event(), threading.Event()
+
+    def reader(system, prompt):
+        # The entry read is the latest one the prompt shows: the dialogue before it holds only earlier ones.
+        n = max(n for n, _, t in entries if t in prompt)
+        if n == 2 and not go.is_set():
+            reading.set()
+            go.wait(10)
+            return {"portraits": [{"of": "I", "text": "Phone 555-0100."}],
+                    "topics": [{"topic": "new", "name": "phone", "text": "Phone 555-0100."}]}
+        if n == 1:
+            return {"topics": [{"topic": "new", "name": "family", "text": "Sister Anna in Lisbon."}]}
+        return {"topics": [{"topic": "new", "name": "cycling", "text": "Bought a bicycle."}]}
+    with tempfile.TemporaryDirectory() as tmp:
+        g = Graph(Path(tmp), journal(held), reader=reader, decide=first, goes_on=lambda m, t: 0.0, about=nobody)
+        check("forget while reading: entry 2 is being read", reading.wait(10))
+        held.remove(entries[1])
+        g.rebuild()
+        go.set()
+        g.wait(10)
+        disk = " ".join((Path(tmp) / f).read_text() for f in ("topics.jsonl", "portraits.jsonl", "mentions.jsonl")
+                        if (Path(tmp) / f).exists())
+        check("forget while reading: nothing of the forgotten entry is kept", "555-0100" not in disk, disk[:300])
+        names = {t["name"] for t in g.latest.values()}
+        check("forget while reading: the entries left are read again", {"family", "cycling"} <= names, str(names))
+        check("forget while reading: read up to the last entry", g.read_upto == 3, str(g.read_upto))
+
+
 def main() -> int:
     offline()
     at_scale()
@@ -366,6 +402,7 @@ def main() -> int:
     personal_world()
     filled_from_messages()
     grows_in_layers()
+    forget_while_reading()
     if "--live" in sys.argv:
         live()
         live_world()
