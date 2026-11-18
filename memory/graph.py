@@ -353,6 +353,8 @@ class Graph:
         self.pending = threading.Event()
         self.idle = threading.Event()
         self.idle.set()
+        # Bumped by every rebuild: a reading begun before one is dropped, never kept in the new graph.
+        self.generation = 0
         self._load()
         threading.Thread(target=self._work, daemon=True, name="graph").start()
 
@@ -414,6 +416,9 @@ class Graph:
     def rebuild(self) -> None:
         """Everything read again from the journal: what the graph holds is derived, never the truth."""
         with self.lock:
+            self.generation += 1
+            # The vectors are keyed by the topics' texts: a forgotten topic's text goes with them.
+            self._vectors.clear()
             for name in ("mentions.jsonl", "links.jsonl", "topics.jsonl", "aliases.jsonl", "portraits.jsonl", "world.json",
                          "state.json"):
                 (self.where / name).unlink(missing_ok=True)
@@ -446,14 +451,21 @@ class Graph:
             if not self.pending.is_set():
                 self.idle.set()
 
+    def _read_upto(self, n: int, generation: int) -> None:
+        with self.lock:
+            if generation == self.generation:
+                self.read_upto = n
+                (self.where / "state.json").write_text(json.dumps({"read_upto": n}))
+
     def _read_next(self) -> bool:
+        generation = self.generation
         held = self.entries()
         new = [(n, h, t) for n, h, t in held if n > self.read_upto]
         if not new:
             return False
         n, heading, text = new[0]
         if source_of(heading) == WEB:
-            self._read_web(n, heading, text)
+            self._read_web(n, heading, text, generation)
             return True
         try:
             worth = float(self.about(text, WORTH))
@@ -462,9 +474,7 @@ class Graph:
             worth = 1.0
         trace.step("worth", entry=n, p=round(worth, 2), read=worth >= WORTH_READ)
         if worth < WORTH_READ:
-            with self.lock:
-                self.read_upto = n
-                (self.where / "state.json").write_text(json.dumps({"read_upto": n}))
+            self._read_upto(n, generation)
             return True
         dialogue = self.dialogue_of(n, held)
         earlier = [(m, t) for m, _, t in held if m in dialogue and m < n][-20:]
@@ -483,19 +493,21 @@ class Graph:
             parts=(", ".join(parts) if parts else "none of them"),
             portraits="\n".join(f"{r['of']}: {_tail(r['text'])}" for r in portraits) or "none yet")) or {}
         with self.lock:
+            if generation != self.generation:
+                # The graph was rebuilt while this entry was read: it is read again from the start.
+                return True
             links, versions = self._keep_reading(n, heading, text, dialogue[0], got)
-        self._classify(text, links, versions)
+        if not self._classify(text, links, versions, generation):
+            return True
         trace.step("read", entry=n, parts=parts,
                    links=[{k: l.get(k) for k in ("from", "relation", "to", "ended", "when", "class", "quote")} for l in links],
                    topics=[{"topic": t["topic"], "name": t["name"], "added": t.get("added", t["text"])} for t in versions],
                    portraits=[{"of": r["of"], "added": r.get("added", r.get("text"))} for r in self.portraits[-10:]
                               if r["entries"][-1] == n])
-        with self.lock:
-            self.read_upto = n
-            (self.where / "state.json").write_text(json.dumps({"read_upto": n}))
+        self._read_upto(n, generation)
         return True
 
-    def _read_web(self, n: int, heading: str, text: str) -> None:
+    def _read_web(self, n: int, heading: str, text: str, generation: int) -> None:
         """A web page's words, found for a topic of the user's: they extend that topic as a layer,
         and nothing else — no person, no link, no portrait: they are not the user's words."""
         topic = topic_of(heading)
@@ -511,14 +523,14 @@ class Graph:
             versions = [_version([before], added, _day(heading), n, topic=before["topic"], name=before["name"],
                                  **({"kind": before["kind"]} if before.get("kind") else {}))]
             with self.lock:
+                if generation != self.generation:
+                    return
                 self.topics += [_layer(v) for v in versions]
                 self._index([], [], versions)
                 self._append("topics.jsonl", [_layer(v) for v in versions])
         trace.step("read", entry=n, source=WEB, parts=[], links=[], portraits=[],
                    topics=[{"topic": v["topic"], "name": v["name"], "added": v.get("added", v["text"])} for v in versions])
-        with self.lock:
-            self.read_upto = n
-            (self.where / "state.json").write_text(json.dumps({"read_upto": n}))
+        self._read_upto(n, generation)
 
     def parts_of(self, text: str) -> list[str]:
         """The parts of a person's world the entry speaks of, down the tree: the groups, then the parts
@@ -668,9 +680,10 @@ class Graph:
                               else f"the user's {said.group(1).lower()}", quote))
         return found
 
-    def _classify(self, text: str, links: list[dict], versions: list[dict]) -> None:
+    def _classify(self, text: str, links: list[dict], versions: list[dict], generation: int) -> bool:
         """The closed questions, to the decision model and outside the lock: the class of each thing
-        the user says of themselves, the kind of each new topic. Then the links and topics are kept."""
+        the user says of themselves, the kind of each new topic. Then the links and topics are kept,
+        unless the graph was rebuilt meanwhile; False then."""
         def classify(l):
             try:
                 l["class"] = self.decide(
@@ -678,6 +691,8 @@ class Graph:
                     f'("{l["quote"]}")', "Which is this, of what the user says of themselves?", list(CLASSES.items()))
             except Exception:  # noqa: BLE001 - a link without a class is still a link
                 log.exception("classifying a link failed")
+        if generation != self.generation:
+            return False
         own = [l for l in links if l["from"] == USER and not l["common"]]
         if own:
             # One entry's links at once: a long history told in one go is read in hours otherwise.
@@ -691,6 +706,8 @@ class Graph:
                 except Exception:  # noqa: BLE001 - a topic without a kind is still a topic
                     log.exception("classifying a topic failed")
         with self.lock:
+            if generation != self.generation:
+                return False
             self.links += links
             self.topics += [_layer(t) for t in versions]
             self._index([], links, versions)
@@ -699,6 +716,7 @@ class Graph:
             if links:
                 self._settle_people(links[0]["text"], links[0]["day"])
                 self._write_world()
+        return True
 
     # --- what is read from it -------------------------------------------------------------------
 
