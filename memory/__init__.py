@@ -12,4 +12,4 @@ reads them into topics, portraits and the user's world in the quiet, and answers
 
 # The version of the memory. The Claude Code plugin (adapters/claude_code/plugin/.claude-plugin/plugin.json)
 # carries the same number; tests/test_version.py fails when they differ. A release is the tag v<version>.
-__version__ = "1.0.0"
+__version__ = "1.0.1"

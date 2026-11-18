@@ -12,6 +12,12 @@ The number lives in `memory/__init__.py` (`__version__`) and in the plugin's `pl
 `tests/test_version.py` fails when they differ. A release is a git tag `v<version>` on `main`, and
 its section below. Change the number in the same commit that changes the behaviour, not later.
 
+## 1.0.1 — 2026-11-18
+
+- A forget during a graph reading no longer leaves the graph half rebuilt, nor keeps the forgotten
+  entry in it (#2).
+- A forget takes the forgotten entry out of `trace.jsonl` too (#4).
+
 ## 1.0.0 — 2026-10-30
 
 The submission for the Nebius × NVIDIA Global AI Hackathon, Personal AI track.
