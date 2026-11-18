@@ -417,6 +417,8 @@ class Graph:
         """Everything read again from the journal: what the graph holds is derived, never the truth."""
         with self.lock:
             self.generation += 1
+            # The vectors are keyed by the topics' texts: a forgotten topic's text goes with them.
+            self._vectors.clear()
             for name in ("mentions.jsonl", "links.jsonl", "topics.jsonl", "aliases.jsonl", "portraits.jsonl", "world.json",
                          "state.json"):
                 (self.where / name).unlink(missing_ok=True)
@@ -689,6 +691,8 @@ class Graph:
                     f'("{l["quote"]}")', "Which is this, of what the user says of themselves?", list(CLASSES.items()))
             except Exception:  # noqa: BLE001 - a link without a class is still a link
                 log.exception("classifying a link failed")
+        if generation != self.generation:
+            return False
         own = [l for l in links if l["from"] == USER and not l["common"]]
         if own:
             # One entry's links at once: a long history told in one go is read in hours otherwise.
