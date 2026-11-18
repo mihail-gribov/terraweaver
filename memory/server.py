@@ -28,12 +28,14 @@ graph = None
 
 
 async def forgot(taken: list[tuple[int, str]], request: int, to_bin) -> list[str]:
-    """The journal's forget, carried to what is derived from it: the vectors go, and the graph is
-    read again without what was forgotten."""
+    """The journal's forget, carried to what is derived from it: the vectors go, the graph is read
+    again without what was forgotten, and the trace loses every line that holds it."""
     if search is not None:
         search.drop([n for n, _ in taken])
     if graph is not None:
         graph.rebuild()
+    from memory import trace
+    trace.forget(taken)
     return []
 
 
